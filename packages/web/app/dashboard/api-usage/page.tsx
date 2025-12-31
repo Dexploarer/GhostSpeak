@@ -80,9 +80,7 @@ export default function ApiUsagePage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">API Usage & Billing</h1>
-        <p className="text-muted-foreground mt-2">
-          Monitor your API usage and estimated costs
-        </p>
+        <p className="text-muted-foreground mt-2">Monitor your API usage and estimated costs</p>
       </div>
 
       {/* Filters */}
@@ -141,9 +139,7 @@ export default function ApiUsagePage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(usageSummary?.totalCost || 0)}
-            </div>
+            <div className="text-2xl font-bold">{formatCurrency(usageSummary?.totalCost || 0)}</div>
             <p className="text-xs text-muted-foreground">Current period</p>
           </CardContent>
         </Card>
@@ -188,7 +184,9 @@ export default function ApiUsagePage() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="date"
-                  tickFormatter={(date) => new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  tickFormatter={(date) =>
+                    new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                  }
                 />
                 <YAxis />
                 <Tooltip
@@ -242,17 +240,13 @@ export default function ApiUsagePage() {
       <Card>
         <CardHeader>
           <CardTitle>Projected Monthly Cost</CardTitle>
-          <CardDescription>
-            Estimated cost based on current usage patterns
-          </CardDescription>
+          <CardDescription>Estimated cost based on current usage patterns</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-3xl font-bold">
             {formatCurrency((usageSummary?.totalCost || 0) * 3)}
           </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            Based on {timeRange} average usage
-          </p>
+          <p className="text-sm text-muted-foreground mt-2">Based on {timeRange} average usage</p>
         </CardContent>
       </Card>
     </div>

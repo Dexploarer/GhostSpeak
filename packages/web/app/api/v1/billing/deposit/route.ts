@@ -24,10 +24,7 @@ export async function POST(request: NextRequest) {
     const authUser = await authenticateApiKey(request)
 
     if (!authUser) {
-      return NextResponse.json(
-        { error: 'Invalid or missing API key' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Invalid or missing API key' }, { status: 401 })
     }
 
     // Parse request body
@@ -55,20 +52,14 @@ export async function POST(request: NextRequest) {
     })
 
     if (!teamMembers || teamMembers.length === 0) {
-      return NextResponse.json(
-        { error: 'User is not part of any team' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User is not part of any team' }, { status: 404 })
     }
 
     const teamId = teamMembers[0].teamId
     const team = await convexClient.query(api.teams.getById, { teamId })
 
     if (!team) {
-      return NextResponse.json(
-        { error: 'Team not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Team not found' }, { status: 404 })
     }
 
     // Determine network
@@ -81,10 +72,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Create team token account (ATA)
       const teamWalletAddr = address(walletAddress)
-      const { tokenAccount, created } = await getOrCreateTeamTokenAccount(
-        teamWalletAddr,
-        network
-      )
+      const { tokenAccount, created } = await getOrCreateTeamTokenAccount(teamWalletAddr, network)
 
       tokenAccountAddress = tokenAccount.toString()
 

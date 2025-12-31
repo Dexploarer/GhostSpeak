@@ -5,46 +5,22 @@
  * used by the GhostSpeak Protocol smart contract.
  */
 
-// Core modules (working)
+// Core modules
 pub mod agent;
-// pub mod b2b_billing; // Commented out until implemented
-
-// Advanced features (2025)
-pub mod marketplace;
-pub mod reputation_nft;
-pub mod privacy;
-pub mod erc8004;
-
-// Additional modules
-// pub mod analytics; // Removed
 pub mod audit;
-pub mod did; // Decentralized identifiers (did:sol)
-// pub mod bulk_deals; // Removed
-// pub mod channel; // Removed
-// pub mod commerce; // Removed
-// pub mod compliance; // REMOVED: Unused - saves ~2100 lines
 pub mod credential;
-// pub mod dispute; // Removed
-// pub mod escrow; // Removed
-pub mod ghost_protect;
-// pub mod extensions; // Removed
-pub mod governance; // Contains multisig types - pending extraction to separate module
-// pub mod incentives; // Removed - payment-based incentives delegated to PayAI
-// pub mod marketplace; // Removed
-// pub mod message; // Removed
-// pub mod negotiation; // Removed
-// pub mod pricing; // Removed
-pub mod protocol_config;
-// pub mod protocol_structures; // REMOVED - messaging state not needed
-// pub mod replication; // Removed
-pub mod reputation;
-// pub mod revenue_pool; // Commented out until implemented
-// pub mod risk_management; // REMOVED: Unused - saves ~1950 lines
-// pub mod royalty; // Removed
-pub mod security_governance;
-pub mod staking;
-pub mod user_registry;
-// pub mod work_order; // Removed
+pub mod did; // W3C-compliant decentralized identifiers (did:sol)
+pub mod agent_auth; // Trustless agent pre-authorization system
+pub mod ghost_protect; // B2C escrow with dispute resolution
+pub mod governance; // Multisig and governance structures
+pub mod marketplace; // Service listings and job postings
+pub mod privacy; // Privacy-preserving reputation
+pub mod protocol_config; // Global protocol configuration
+pub mod reputation; // Multi-source reputation aggregation
+pub mod reputation_nft; // Reputation NFT badges
+pub mod security_governance; // RBAC and security policies
+pub mod staking; // GHOST token staking for reputation boost
+pub mod user_registry; // User and agent registry
 
 // Re-export all types with selective imports to avoid conflicts
 // Import from agent with conflict resolution
@@ -56,33 +32,21 @@ pub use agent::{
     AgentVerification,
     AgentVerificationData,
 };
-// Import B2B billing types - commented out until implemented
-// pub use b2b_billing::{
-//     FundsDeposited, FundsWithdrawn, LowBalanceAlert, SubscriptionTier, TeamAccountCreated,
-//     TeamBillingAccount, TierUpdated, UsageDeducted, UsageRecord,
-// };
-// Import compressed agent types
+// Compressed agent types
 pub use crate::instructions::agent_compressed::{
     AgentTreeConfig, CompressedAgentCreatedEvent, CompressedAgentMetadata,
 };
-// Import staking types
+// Staking types
 pub use staking::{
     AccessTier, GhostSlashedEvent, GhostStakedEvent, GhostUnstakedEvent, SlashReason,
     StakingAccount, StakingConfig, TierUpdatedEvent,
 };
-// Import revenue pool types - commented out until implemented
-// pub use revenue_pool::{
-//     RevenueDistributed, RevenuePool, RevenuePoolUpdated, RevenueSource, RewardsClaimed,
-//     UserRewards, UserWeightedStakeUpdated,
-// };
 // Import Ghost Protect escrow types
 pub use ghost_protect::{
     ArbitratorDecision, DeliverySubmittedEvent, DisputeFiledEvent, DisputeResolvedEvent,
     EscrowCompletedEvent, EscrowCreatedEvent, EscrowStatus, GhostProtectEscrow,
 };
-// Analytics re-exports removed
-// pub use auction::*; // Removed
-// Selective imports from audit to avoid conflicts
+// Audit module types
 pub use audit::{
     ApprovalLevel,
     AuditAction,
@@ -114,36 +78,17 @@ pub use audit::{
     TrendDirection as AuditTrendDirection,
     ViolationSeverity,
     ViolationType,
-    // WorkOrder, // REMOVED: Deleted state struct
 };
-// pub use bulk_deals::*; // Removed
-// pub use channel::*; // Removed
-// Commerce re-exports removed
-// REMOVED: compliance module exports - unused, saves ~2100 lines
-// pub use dispute::*; // Removed
-// pub use escrow::*; // Removed
-// Extensions re-exports removed
-pub use governance::*; // Multisig types needed - pending extraction to separate module
-// Incentives removed - payment-based incentives delegated to PayAI
-// pub use incentives::{AgentIncentives, IncentiveConfig, IncentiveProgram};
-// Selective imports from marketplace to avoid conflicts
+// Credential and DID modules
 pub use credential::*;
-// DID module exports
 pub use did::*;
-// pub use marketplace::{ // Removed
-//     JobApplication, JobApplicationData as MarketplaceJobApplicationData, JobCompletion,
-//     JobContract, JobPosting, PurchaseStatus, ServiceListing,
-//     ServiceListingData as MarketplaceServiceListingData, ServicePurchase,
-// };
-// pub use message::*; // Removed
-// pub use negotiation::*; // Removed
-// Pricing and Replication re-exports removed
-pub use reputation::{ReputationMetrics, TagScore};
-// REMOVED: risk_management exports - unused, saves ~1950 lines
-// Royalty re-exports removed
-// Selective imports from security_governance to avoid conflicts
+// Governance and multisig
+pub use governance::*;
+// Protocol configuration
 pub use protocol_config::*;
-// pub use protocol_structures::*; // REMOVED - messaging state not needed
+// Reputation types
+pub use reputation::{ReputationMetrics, TagScore};
+// Security and governance types
 pub use security_governance::{
     AccessAuditConfig, AccessPolicy, AccountLockoutPolicies, Action, ActionConstraint, ActionType,
     ActivationRequirement, ActivationRequirementType, AgingPolicy, ApprovalRequirement,
@@ -165,26 +110,22 @@ pub use security_governance::{
     SessionConstraints, SessionPolicies, SodConstraint, SodConstraintType, StepUpTrigger,
     TimeConstraints, UnlockMethod, ValueType,
 };
+// User registry
 pub use user_registry::*;
-// pub use work_order::*; // Removed
+
+// Advanced feature modules
+pub use marketplace::*;
+pub use reputation_nft::*;
+pub use privacy::*;
+pub use agent_auth::*;
 
 // Re-export error types from main lib
 pub use crate::GhostSpeakError;
 
 // Security constants
 pub const MAX_NAME_LENGTH: usize = 64;
-pub const MAX_GENERAL_STRING_LENGTH: usize = 128; // Reduced from 256 to prevent memory allocation issues
-pub const MAX_CAPABILITIES_COUNT: usize = 5; // Reduced from 20 to prevent memory allocation issues
+pub const MAX_GENERAL_STRING_LENGTH: usize = 128;
+pub const MAX_CAPABILITIES_COUNT: usize = 5;
 pub const MAX_PARTICIPANTS_COUNT: usize = 50;
 pub const MAX_PAYMENT_AMOUNT: u64 = 1_000_000_000_000; // 1M tokens (with 6 decimals)
 pub const MIN_PAYMENT_AMOUNT: u64 = 1_000; // 0.001 tokens
-
-// Export new advanced feature modules
-pub use marketplace::*;
-pub use reputation_nft::*;
-pub use privacy::*;
-pub use erc8004::*;
-
-// Legacy constants removed
-
-// Legacy enums removed

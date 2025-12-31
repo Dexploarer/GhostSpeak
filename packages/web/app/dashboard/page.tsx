@@ -8,7 +8,7 @@ import { StatsCard } from '@/components/dashboard/shared/StatsCard'
 import { ActivityChart } from '@/components/dashboard/shared/ActivityChart'
 import { UserStatsCard } from '@/components/convex/UserStatsCard'
 import { Button } from '@/components/ui/button'
-import { Bot, Shield, TrendingUp, Activity, Plus, Award, Key } from 'lucide-react'
+import { Bot, Shield as _Shield, TrendingUp, Activity, Plus, Award, Key } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -25,7 +25,7 @@ export default function DashboardOverview() {
         : 0
 
     // Active agents (those with recent activity)
-    const activeAgentCount = agents.filter(a => a.reputation.score > 0).length
+    const activeAgentCount = agents.filter((a) => a.reputation.score > 0).length
 
     return {
       agentCount: agents.length,

@@ -13,6 +13,7 @@ import { ReputationModule } from '../modules/reputation/ReputationModule.js'
 import { DidModule } from '../modules/did/DidModule.js'
 import { PrivacyModule } from '../modules/privacy/PrivacyModule.js'
 import { AuthorizationModule } from '../modules/authorization/AuthorizationModule.js'
+import { StakingModule } from '../modules/staking/StakingModule.js'
 import { ProposalType } from '../generated/types/proposalType.js'
 import { VoteChoice } from '../generated/types/voteChoice.js'
 
@@ -174,6 +175,13 @@ export class GhostSpeakClient {
    */
   get authorization(): AuthorizationModule {
     return new AuthorizationModule(this.config)
+  }
+
+  /**
+   * Direct access to Staking Module for read operations
+   */
+  get staking(): StakingModule {
+    return new StakingModule(this.config)
   }
 
   // H2A module has been removed - use A2A (Agent-to-Agent) instructions instead

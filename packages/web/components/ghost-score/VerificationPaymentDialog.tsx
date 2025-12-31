@@ -111,14 +111,16 @@ export function VerificationPaymentDialog({
       }, 3000)
 
       // Stop polling after 5 minutes
-      setTimeout(() => {
-        clearInterval(pollInterval)
-        if (paymentStatus === 'processing') {
-          setLoading(false)
-          toast.info('Payment still processing. Check back in a moment.')
-        }
-      }, 5 * 60 * 1000)
-
+      setTimeout(
+        () => {
+          clearInterval(pollInterval)
+          if (paymentStatus === 'processing') {
+            setLoading(false)
+            toast.info('Payment still processing. Check back in a moment.')
+          }
+        },
+        5 * 60 * 1000
+      )
     } catch (error) {
       console.error('Card payment error:', error)
       setPaymentStatus('error')
@@ -148,12 +150,15 @@ export function VerificationPaymentDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) {
-        onClose()
-        resetDialog()
-      }
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          onClose()
+          resetDialog()
+        }
+      }}
+    >
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Verify Agent</DialogTitle>
@@ -235,9 +240,7 @@ export function VerificationPaymentDialog({
                 onChange={(e) => setUserEmail(e.target.value)}
                 disabled={loading}
               />
-              <p className="text-xs text-muted-foreground">
-                We'll send your receipt here
-              </p>
+              <p className="text-xs text-muted-foreground">We'll send your receipt here</p>
             </div>
 
             <div className="rounded-lg bg-muted p-3 text-sm space-y-1">
@@ -274,10 +277,12 @@ export function VerificationPaymentDialog({
               Cancel
             </Button>
           ) : paymentStatus === 'success' ? (
-            <Button onClick={() => {
-              onSuccess?.()
-              onClose()
-            }}>
+            <Button
+              onClick={() => {
+                onSuccess?.()
+                onClose()
+              }}
+            >
               Done
             </Button>
           ) : (
@@ -293,10 +298,7 @@ export function VerificationPaymentDialog({
                 Back
               </Button>
               {paymentMethod === 'card' && (
-                <Button
-                  onClick={handleCardPayment}
-                  disabled={loading || !userEmail}
-                >
+                <Button onClick={handleCardPayment} disabled={loading || !userEmail}>
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />

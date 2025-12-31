@@ -14,11 +14,7 @@ const crons = cronJobs()
  *
  * Attempts to deliver pending webhooks with exponential backoff retry logic.
  */
-crons.interval(
-  'process-webhooks',
-  { minutes: 1 },
-  internal.webhookProcessor.processWebhooks
-)
+crons.interval('process-webhooks', { minutes: 1 }, internal.webhookProcessor.processWebhooks)
 
 /**
  * Clean up old webhook deliveries every day at 2am UTC

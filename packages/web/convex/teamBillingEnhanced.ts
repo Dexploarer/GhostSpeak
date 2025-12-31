@@ -48,7 +48,7 @@ export const getTeamByApiKey = query({
     }
 
     // Get current month usage
-    const now = Date.now()
+    const _now = Date.now()
     const startOfMonth = new Date()
     startOfMonth.setDate(1)
     startOfMonth.setHours(0, 0, 0, 0)
@@ -89,13 +89,15 @@ export const getTeamAnalytics = query({
       return null
     }
 
-    const now = Date.now()
+    const _now = Date.now()
     const startDate = now - days * 24 * 60 * 60 * 1000
 
     // Get deductions
     const deductions = await ctx.db
       .query('billingDeductions')
-      .withIndex('by_team_timestamp', (q) => q.eq('teamId', args.teamId).gte('timestamp', startDate))
+      .withIndex('by_team_timestamp', (q) =>
+        q.eq('teamId', args.teamId).gte('timestamp', startDate)
+      )
       .collect()
 
     // Aggregate by day
@@ -126,7 +128,9 @@ export const getTeamAnalytics = query({
     // Get deposits
     const deposits = await ctx.db
       .query('billingDeposits')
-      .withIndex('by_team_timestamp', (q) => q.eq('teamId', args.teamId).gte('timestamp', startDate))
+      .withIndex('by_team_timestamp', (q) =>
+        q.eq('teamId', args.teamId).gte('timestamp', startDate)
+      )
       .collect()
 
     const totalDeposits = deposits.reduce((sum, d) => sum + d.amountUsdc, 0)
@@ -164,12 +168,14 @@ export const getEndpointBreakdown = query({
   },
   handler: async (ctx, args) => {
     const days = args.days || 30
-    const now = Date.now()
+    const _now = Date.now()
     const startDate = now - days * 24 * 60 * 60 * 1000
 
     const deductions = await ctx.db
       .query('billingDeductions')
-      .withIndex('by_team_timestamp', (q) => q.eq('teamId', args.teamId).gte('timestamp', startDate))
+      .withIndex('by_team_timestamp', (q) =>
+        q.eq('teamId', args.teamId).gte('timestamp', startDate)
+      )
       .collect()
 
     // Group by endpoint
@@ -220,7 +226,7 @@ export const incrementUsage = mutation({
     }
 
     // Check if month has reset
-    const now = Date.now()
+    const _now = Date.now()
     const lastReset = team.lastBillingAt || team.createdAt
     const daysSinceReset = (now - lastReset) / (24 * 60 * 60 * 1000)
 

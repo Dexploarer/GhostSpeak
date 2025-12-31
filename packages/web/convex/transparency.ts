@@ -16,7 +16,7 @@ import { v } from 'convex/values'
 export const getProtocolMetrics = query({
   args: {},
   handler: async (ctx) => {
-    const now = Date.now()
+    const _now = Date.now()
     const thisMonthStart = new Date()
     thisMonthStart.setDate(1)
     thisMonthStart.setHours(0, 0, 0, 0)
@@ -80,20 +80,13 @@ export const getProtocolMetrics = query({
       .collect()
 
     // Calculate B2B revenue (cost is in USD cents)
-    const thisMonthB2BRevenue = thisMonthApiUsage.reduce(
-      (sum, usage) => sum + (usage.cost || 0),
-      0
-    ) / 100 // Convert cents to dollars
+    const thisMonthB2BRevenue =
+      thisMonthApiUsage.reduce((sum, usage) => sum + (usage.cost || 0), 0) / 100 // Convert cents to dollars
 
-    const lastMonthB2BRevenue = lastMonthApiUsage.reduce(
-      (sum, usage) => sum + (usage.cost || 0),
-      0
-    ) / 100
+    const lastMonthB2BRevenue =
+      lastMonthApiUsage.reduce((sum, usage) => sum + (usage.cost || 0), 0) / 100
 
-    const allTimeB2BRevenue = allApiUsage.reduce(
-      (sum, usage) => sum + (usage.cost || 0),
-      0
-    ) / 100
+    const allTimeB2BRevenue = allApiUsage.reduce((sum, usage) => sum + (usage.cost || 0), 0) / 100
 
     // Calculate total revenue
     const thisMonthTotal = thisMonthB2CRevenue + thisMonthB2BRevenue
@@ -193,7 +186,7 @@ export const getStakingMetrics = query({
 export const getAPYHistory = query({
   args: {},
   handler: async (ctx) => {
-    const now = Date.now()
+    const _now = Date.now()
 
     // Time periods
     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000
@@ -274,10 +267,7 @@ export const getAPYHistory = query({
       const weekVerifications = await ctx.db
         .query('verifications')
         .filter((q) =>
-          q.and(
-            q.gte(q.field('timestamp'), weekStart),
-            q.lte(q.field('timestamp'), weekEnd)
-          )
+          q.and(q.gte(q.field('timestamp'), weekStart), q.lte(q.field('timestamp'), weekEnd))
         )
         .collect()
 
@@ -324,10 +314,7 @@ export const getUserStakeDetails = query({
     const stakingAccount = await ctx.db
       .query('stakingAccounts')
       .filter((q) =>
-        q.and(
-          q.eq(q.field('agentAddress'), walletAddress),
-          q.eq(q.field('isActive'), true)
-        )
+        q.and(q.eq(q.field('agentAddress'), walletAddress), q.eq(q.field('isActive'), true))
       )
       .first()
 
@@ -354,13 +341,10 @@ export const getUserStakeDetails = query({
       .filter((q) => q.eq(q.field('isActive'), true))
       .collect()
 
-    const totalWeightedStake = allStakingAccounts.reduce(
-      (sum, account) => {
-        const accountTier = getTier(account.amountStaked)
-        return sum + account.amountStaked * accountTier.multiplier
-      },
-      0
-    )
+    const totalWeightedStake = allStakingAccounts.reduce((sum, account) => {
+      const accountTier = getTier(account.amountStaked)
+      return sum + account.amountStaked * accountTier.multiplier
+    }, 0)
 
     // Calculate share of pool
     const shareOfPool = totalWeightedStake > 0 ? (weightedStake / totalWeightedStake) * 100 : 0
@@ -407,7 +391,7 @@ export const getUserStakeDetails = query({
 export const getMonthlyRevenueHistory = query({
   args: {},
   handler: async (ctx) => {
-    const now = Date.now()
+    const _now = Date.now()
     const monthlyData = []
 
     for (let i = 11; i >= 0; i--) {
@@ -426,10 +410,7 @@ export const getMonthlyRevenueHistory = query({
       const monthVerifications = await ctx.db
         .query('verifications')
         .filter((q) =>
-          q.and(
-            q.gte(q.field('timestamp'), monthStart),
-            q.lt(q.field('timestamp'), monthEnd)
-          )
+          q.and(q.gte(q.field('timestamp'), monthStart), q.lt(q.field('timestamp'), monthEnd))
         )
         .collect()
 
@@ -456,7 +437,7 @@ export const getMonthlyRevenueHistory = query({
 export const getStakerGrowth = query({
   args: {},
   handler: async (ctx) => {
-    const now = Date.now()
+    const _now = Date.now()
     const growthData = []
 
     for (let i = 11; i >= 0; i--) {

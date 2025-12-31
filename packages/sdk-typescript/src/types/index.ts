@@ -33,11 +33,26 @@ export * from './rpc-client-types.js'
 // Token-2022 types removed - not aligned with pivot
 
 
-// Export reputation types (selective export to avoid conflicts)
-export type { SourceScore, VisibleMetrics } from './reputation-types.js'
-
-// Export reputation tags types
-export * from './reputation-tags.js'
+// Export reputation tags types (selective export to avoid conflicts with generated types)
+export type {
+  TagCriteria,
+  TagEvaluation,
+  TagFilters,
+  TagUpdateRequest,
+  BulkTagUpdateRequest,
+  TagQueryResult,
+  TagDecayConfig,
+  ReputationMetrics as ClientReputationMetrics // Alias to avoid conflict
+} from './reputation-tags.js'
+export {
+  TagCategory,
+  SkillTag,
+  BehaviorTag,
+  ComplianceTag,
+  TAG_CONSTANTS,
+  TagConfidenceLevel,
+  DEFAULT_TAG_DECAY
+} from './reputation-tags.js'
 
 // Export privacy types (selective export to avoid conflicts with generated types)
 export type {
@@ -45,7 +60,6 @@ export type {
   VisibilityLevel,
   MetricVisibility,
   PrivacySettings,
-  PrivacyAccessGrant,
   PrivacyPreset,
   ScoreRange,
   VisibleReputation
@@ -128,11 +142,14 @@ export interface GhostSpeakConfig {
   cluster?: 'mainnet-beta' | 'devnet' | 'testnet' | 'localnet'
   rpcEndpoint?: string
   wsEndpoint?: string
+  /** Optional logger for debug output */
+  logger?: { info: (...args: unknown[]) => void; error: (...args: unknown[]) => void }
+  /** Cache configuration for RPC result caching */
+  cache?: import('../core/CacheManager.js').CacheConfig
   /** Token 2022 configuration options */
   token2022?: Token2022Config
   /** IPFS configuration for large content storage */
   ipfsConfig?: IPFSConfig
-  /** Credential configuration for Crossmint sync */
   /** Credential configuration for Crossmint sync */
   credentials?: CredentialConfig
   /** PayAI configuration */

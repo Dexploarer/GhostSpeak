@@ -100,12 +100,12 @@ export interface ReputationMetrics {
  * Fetches on-chain data including job history, escrow performance, and account stats
  * to calculate a detailed reputation profile.
  *
- * @param agentAddress - The Solana public key of the agent to fetch
+ * @param _agentAddress - The Solana public key of the agent to fetch
  * @returns React Query result containing the @see ReputationMetrics
  */
-export function useAgentReputation(agentAddress: string) {
+export function useAgentReputation(_agentAddress: string) {
   return useQuery({
-    queryKey: ['reputation', 'agent', agentAddress],
+    queryKey: ['reputation', 'agent', _agentAddress],
     queryFn: async (): Promise<ReputationMetrics> => {
       try {
         const client = getGhostSpeakClient()
@@ -113,15 +113,15 @@ export function useAgentReputation(agentAddress: string) {
         // Get agent account data - use getAllAgents and filter
         const allAgents = await client.agents.getAllAgents()
         const agentAccount = allAgents.find(
-          (agent: { address: Address }) => agent.address.toString() === agentAddress
+          (agent: { address: Address }) => agent.address.toString() === _agentAddress
         )?.data as AgentAccountData | undefined
 
         if (!agentAccount) {
-          throw new Error(`Agent not found: ${agentAddress}`)
+          throw new Error(`Agent not found: ${_agentAddress}`)
         }
 
         // Calculate comprehensive reputation using real blockchain data
-        const reputationMetrics = await calculateComprehensiveReputation(agentAddress, agentAccount)
+        const reputationMetrics = await calculateComprehensiveReputation(_agentAddress, agentAccount)
 
         return reputationMetrics
       } catch (error) {
@@ -131,7 +131,7 @@ export function useAgentReputation(agentAddress: string) {
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
-    enabled: !!agentAddress,
+    enabled: !!_agentAddress,
   })
 }
 
@@ -139,14 +139,14 @@ export function useAgentReputation(agentAddress: string) {
  * Calculate comprehensive reputation metrics from blockchain data
  */
 async function calculateComprehensiveReputation(
-  agentAddress: string,
+  _agentAddress: string,
   agentAccount: AgentAccountData
 ): Promise<ReputationMetrics> {
   // Get job history for the agent
-  const jobHistory = await getAgentJobHistory(agentAddress)
+  const jobHistory = await getAgentJobHistory(_agentAddress)
 
   // Get escrow completion data
-  const escrowHistory = await getAgentEscrowHistory(agentAddress)
+  const escrowHistory = await getAgentEscrowHistory(_agentAddress)
 
   // Calculate base metrics from blockchain data
   const totalJobs = agentAccount.totalJobsCompleted || 0
@@ -187,7 +187,7 @@ async function calculateComprehensiveReputation(
 /**
  * Get agent job history from work orders and escrows
  */
-async function getAgentJobHistory(agentAddress: string) {
+async function getAgentJobHistory(_agentAddress: string) {
   const client = getGhostSpeakClient()
 
   try {
@@ -203,7 +203,7 @@ async function getAgentJobHistory(agentAddress: string) {
 
     // Filter work orders for this agent
     const agentWorkOrders = allWorkOrders.filter(
-      (wo: { data?: { agent?: Address } }) => wo.data?.agent?.toString() === agentAddress
+      (wo: { data?: { agent?: Address } }) => wo.data?.agent?.toString() === _agentAddress
     )
 
     return agentWorkOrders.map((wo: { address: Address; data?: WorkOrderData }) => ({
@@ -225,7 +225,7 @@ async function getAgentJobHistory(agentAddress: string) {
 /**
  * Get agent escrow history
  */
-async function getAgentEscrowHistory(agentAddress: string) {
+async function getAgentEscrowHistory(_agentAddress: string) {
   const client = getGhostSpeakClient()
 
   try {
@@ -238,7 +238,7 @@ async function getAgentEscrowHistory(agentAddress: string) {
 
     // Filter escrows where this agent is involved
     const agentEscrows = allEscrows.filter(
-      (escrow: { data?: { agent?: Address } }) => escrow.data?.agent?.toString() === agentAddress
+      (escrow: { data?: { agent?: Address } }) => escrow.data?.agent?.toString() === _agentAddress
     )
 
     return agentEscrows.map((escrow: { address: Address; data?: EscrowData }) => ({
@@ -261,7 +261,7 @@ async function getAgentEscrowHistory(agentAddress: string) {
 /**
  * Get agent marketplace activity
  */
-async function _getAgentMarketplaceActivity(agentAddress: string) {
+async function _getAgentMarketplaceActivity(_agentAddress: string) {
   // Marketplace module removed - return zeroed stats
   return { totalListings: 0, activeListings: 0, totalSales: 0 }
 }

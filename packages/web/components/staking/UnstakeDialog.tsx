@@ -72,8 +72,7 @@ export function UnstakeDialog({
             Unstake GHOST Tokens
           </DialogTitle>
           <DialogDescription>
-            You're about to unstake your GHOST tokens. This action will remove all staking
-            benefits.
+            You're about to unstake your GHOST tokens. This action will remove all staking benefits.
           </DialogDescription>
         </DialogHeader>
 
@@ -82,9 +81,7 @@ export function UnstakeDialog({
           <div className="p-4 bg-muted rounded-lg space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Amount to Unstake:</span>
-              <span className="text-lg font-bold">
-                {stakedAmount.toLocaleString()} GHOST
-              </span>
+              <span className="text-lg font-bold">{stakedAmount.toLocaleString()} GHOST</span>
             </div>
           </div>
 
@@ -117,8 +114,8 @@ export function UnstakeDialog({
                 I understand I'll lose all staking benefits
               </Label>
               <p className="text-xs text-muted-foreground">
-                Your GHOST tokens will be returned to your wallet, but you'll lose your
-                reputation boost and tier benefits.
+                Your GHOST tokens will be returned to your wallet, but you'll lose your reputation
+                boost and tier benefits.
               </p>
             </div>
           </div>

@@ -20,11 +20,7 @@ const TIER_CONFIG = {
     textColor: 'text-amber-200',
     borderColor: 'border-amber-600/50',
     bgColor: 'bg-amber-900/20',
-    benefits: [
-      '+5% Reputation Boost',
-      'Priority Support',
-      'Early Feature Access',
-    ],
+    benefits: ['+5% Reputation Boost', 'Priority Support', 'Early Feature Access'],
     requirement: '1,000 GHOST',
   },
   2: {
@@ -61,12 +57,7 @@ const TIER_CONFIG = {
   },
 }
 
-export function TierBadge({
-  tier,
-  className,
-  showLabel = false,
-  size = 'md',
-}: TierBadgeProps) {
+export function TierBadge({ tier, className, showLabel = false, size = 'md' }: TierBadgeProps) {
   const config = TIER_CONFIG[tier as keyof typeof TIER_CONFIG]
   if (!config) return null
 
@@ -109,9 +100,7 @@ export function TierBadge({
               <Icon className="w-5 h-5" />
               <h4 className="font-bold text-base">{config.name}</h4>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Required: {config.requirement}
-            </p>
+            <p className="text-xs text-muted-foreground">Required: {config.requirement}</p>
             <div className="border-t border-border pt-2 mt-2">
               <p className="text-xs font-semibold mb-1">Benefits:</p>
               <ul className="text-xs space-y-1">

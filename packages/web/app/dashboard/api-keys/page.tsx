@@ -26,7 +26,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { Key, Copy, Trash2, Plus, AlertCircle } from 'lucide-react'
@@ -41,10 +41,7 @@ export default function ApiKeysPage() {
   const [generatedKey, setGeneratedKey] = useState<string | null>(null)
 
   // Fetch user's API keys
-  const apiKeys = useQuery(
-    api.apiKeys.getByUser,
-    user?._id ? { userId: user._id } : 'skip'
-  )
+  const apiKeys = useQuery(api.apiKeys.getByUser, user?._id ? { userId: user._id } : 'skip')
 
   // Mutations
   const createKey = useMutation(api.apiKeys.create)
@@ -154,15 +151,9 @@ export default function ApiKeysPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="startup">
-                    Startup (10 req/min, 1K daily)
-                  </SelectItem>
-                  <SelectItem value="growth">
-                    Growth (60 req/min, 20K daily)
-                  </SelectItem>
-                  <SelectItem value="enterprise">
-                    Enterprise (300 req/min, unlimited)
-                  </SelectItem>
+                  <SelectItem value="startup">Startup (10 req/min, 1K daily)</SelectItem>
+                  <SelectItem value="growth">Growth (60 req/min, 20K daily)</SelectItem>
+                  <SelectItem value="enterprise">Enterprise (300 req/min, unlimited)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -188,11 +179,7 @@ export default function ApiKeysPage() {
             <div className="space-y-4">
               <div className="bg-muted p-4 rounded-lg flex items-center justify-between">
                 <code className="text-sm break-all">{generatedKey}</code>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => copyToClipboard(generatedKey)}
-                >
+                <Button variant="ghost" size="sm" onClick={() => copyToClipboard(generatedKey)}>
                   <Copy className="w-4 h-4" />
                 </Button>
               </div>

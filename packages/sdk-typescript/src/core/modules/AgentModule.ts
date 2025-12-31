@@ -293,8 +293,94 @@ export class AgentModule extends BaseModule {
         encoding: 'base58' as const
       }
     }]
-    
+
     return this.getProgramAccounts<Agent>('getAgentDecoder', filters)
+  }
+
+  /**
+   * Batch get multiple agent accounts
+   *
+   * Uses efficient batching (100 accounts per RPC call) with optional caching.
+   *
+   * @param addresses - Agent addresses to fetch
+   * @param onProgress - Optional progress callback
+   * @returns Array of agent accounts (null for non-existent)
+   *
+   * @example
+   * ```typescript
+   * const agents = await client.agents.batchGetAgents(
+   *   ['agent1...', 'agent2...', 'agent3...'],
+   *   (completed, total) => console.log(`${completed}/${total}`)
+   * )
+   * ```
+   */
+  async batchGetAgents(
+    addresses: Address[],
+    onProgress?: (completed: number, total: number) => void
+  ): Promise<(Agent | null)[]> {
+    // Use BaseModule's getAccounts which has caching built-in
+    return super.getAccounts<Agent>(addresses, 'getAgentDecoder')
+  }
+
+  /**
+   * Batch get only existing agent accounts
+   *
+   * Filters out non-existent addresses.
+   *
+   * @param addresses - Agent addresses to fetch
+   * @param onProgress - Optional progress callback
+   * @returns Array of existing agents with their addresses
+   *
+   * @example
+   * ```typescript
+   * const existingAgents = await client.agents.batchGetExistingAgents(['addr1', 'addr2'])
+   * // Returns: [{ address: 'addr1', account: Agent }, ...]
+   * ```
+   */
+  async batchGetExistingAgents(
+    addresses: Address[],
+    onProgress?: (completed: number, total: number) => void
+  ): Promise<Array<{ address: Address; account: Agent }>> {
+    const { batchGetExistingAccounts } = await import('../../utils/batch-operations.js')
+    return batchGetExistingAccounts<Agent>(
+      this.config.rpc,
+      addresses,
+      { onProgress }
+    )
+  }
+
+  /**
+   * Batch get and map agents to a simplified format
+   *
+   * Useful for creating agent summaries or lists.
+   *
+   * @param addresses - Agent addresses to fetch
+   * @param mapper - Transform function
+   * @returns Array of mapped results
+   *
+   * @example
+   * ```typescript
+   * const summaries = await client.agents.batchGetAndMapAgents(
+   *   addresses,
+   *   (agent, address) => agent ? {
+   *     address,
+   *     name: agent.name,
+   *     type: agent.agentType,
+   *     active: agent.isActive
+   *   } : null
+   * )
+   * ```
+   */
+  async batchGetAndMapAgents<R>(
+    addresses: Address[],
+    mapper: (agent: Agent | null, address: Address, index: number) => R
+  ): Promise<R[]> {
+    const { batchGetAndMap } = await import('../../utils/batch-operations.js')
+    return batchGetAndMap<Agent, R>(
+      this.config.rpc,
+      addresses,
+      mapper
+    )
   }
 
   // Helper methods

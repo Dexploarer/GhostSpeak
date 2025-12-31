@@ -47,7 +47,8 @@ export function generateApiKey(): { apiKey: string; hashedKey: string; keyPrefix
  * Returns authenticated user or null if invalid
  */
 export async function authenticateApiKey(request: NextRequest): Promise<AuthenticatedUser | null> {
-  const apiKey = request.headers.get('X-API-Key') || request.headers.get('Authorization')?.replace('Bearer ', '')
+  const apiKey =
+    request.headers.get('X-API-Key') || request.headers.get('Authorization')?.replace('Bearer ', '')
 
   if (!apiKey) {
     return null
@@ -114,7 +115,8 @@ export async function withBalanceCheck<T>(
   authUser: AuthenticatedUser,
   handler: () => Promise<T>
 ): Promise<{ success: true; data: T } | { success: false; error: string; status: number }> {
-  const { getTeamBalance, checkSufficientBalance, calculateRequestCost, deductUsage } = await import('@/lib/b2b-token-accounts')
+  const { getTeamBalance, checkSufficientBalance, calculateRequestCost, deductUsage } =
+    await import('@/lib/b2b-token-accounts')
   const { api } = await import('@/convex/_generated/api')
   const { ConvexHttpClient } = await import('convex/browser')
 

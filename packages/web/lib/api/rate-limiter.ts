@@ -19,10 +19,7 @@ export interface RateLimitResult {
  * Check rate limit for an API key
  * Uses sliding window algorithm with Convex queries
  */
-export async function checkRateLimit(
-  apiKeyId: string,
-  tier: string
-): Promise<RateLimitResult> {
+export async function checkRateLimit(apiKeyId: string, tier: string): Promise<RateLimitResult> {
   const limits = {
     startup: { requests: 10, window: 60 }, // 10 req/min
     growth: { requests: 60, window: 60 }, // 60 req/min

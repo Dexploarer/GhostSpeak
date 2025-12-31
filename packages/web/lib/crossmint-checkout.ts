@@ -174,10 +174,7 @@ export function verifyWebhookSignature(
   try {
     const hmac = crypto.createHmac('sha256', secret)
     const expectedSignature = hmac.update(payload).digest('hex')
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature)
-    )
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))
   } catch (error) {
     console.error('Webhook signature verification failed:', error)
     return false

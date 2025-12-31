@@ -27,6 +27,15 @@ The official TypeScript SDK for [GhostSpeak Protocol](https://github.com/ghostsp
 - **Multi-Source Aggregation** - Combine reputation from PayAI, GitHub, and custom sources 🆕
 - **Conflict Detection** - Automatic detection of conflicting reputation data 🆕
 
+### **🔐 Authorization System** 🆕
+- **Pre-Signed Authorizations** - Agents pre-authorize facilitators (e.g., PayAI) for reputation updates
+- **Off-Chain by Default** - FREE signature-based authorizations with no blockchain fees
+- **Optional On-Chain Storage** - Immutable audit trail for ~0.002 SOL (configurable)
+- **Flexible Fee Structures** - Default, custom, and tiered pricing models
+- **Usage Limits** - Built-in index limits and expiration for security
+- **Cost Estimation** - Calculate fees before transactions
+- **Facilitator Integration** - Seamless PayAI and X402 protocol support
+
 ### **🎫 Credential Management**
 - **Issue Credentials** - Grant verifiable credentials to agents
 - **Revoke Credentials** - Remove invalid or expired credentials
@@ -316,12 +325,61 @@ await client.token2022.confidentialTransfer(sender, {
 })
 ```
 
-### **8. Analytics & Monitoring**
+### **8. Authorization System (PayAI Integration)** 🆕
+
+Pre-authorize facilitators to update your agent's reputation with built-in security limits.
+
+```typescript
+// Create off-chain authorization (FREE)
+const authorization = await client.authorization.createAuthorization({
+  authorizedSource: payAIFacilitatorAddress,
+  indexLimit: 1000, // Allow 1000 reputation updates
+  expiresIn: 30 * 24 * 60 * 60, // 30 days
+  network: 'mainnet-beta'
+}, agentKeypair)
+
+// Share with facilitator webhook
+await fetch('https://payai.example.com/register-agent', {
+  method: 'POST',
+  body: JSON.stringify({
+    agentAddress: authorization.agentAddress,
+    authorization: client.authorization.serializeAuthorization(authorization)
+  })
+})
+
+// Estimate on-chain storage cost (optional)
+const cost = await client.authorization.estimateStorageCost({
+  authorizedSource: payAIFacilitatorAddress,
+  expiresIn: 30 * 24 * 60 * 60
+})
+console.log(`On-chain storage: ${cost} SOL`) // 0.002 SOL
+
+// Store on-chain for audit trail (optional, ~0.002 SOL)
+const signature = await client.authorization.storeAuthorizationOnChain(
+  authorization,
+  agentSigner,
+  {
+    storageFee: 1500000n, // Custom: 0.0015 SOL
+    feePayedByAgent: true
+  }
+)
+
+// Verify authorization signature
+const isValid = await client.authorization.verifySignature(authorization)
+
+// Check authorization status
+const status = client.authorization.getAuthorizationStatus(authorization, 0)
+console.log(`Remaining uses: ${status.remainingUses}/${authorization.indexLimit}`)
+```
+
+**See:** [Authorization Storage Guide](./docs/AUTHORIZATION_STORAGE.md) for complete documentation.
+
+### **9. Analytics & Monitoring**
 ```typescript
 // Collect real-time analytics
 const analytics = await client.analytics.collectAllMetrics()
 
-// Generate performance reports  
+// Generate performance reports
 const report = await client.analytics.generateReport({
   agentId: agentAddress,
   timeRange: { start: startDate, end: endDate },
@@ -332,7 +390,7 @@ const report = await client.analytics.generateReport({
 const exportData = await client.analytics.exportForDashboard('grafana')
 ```
 
-### **9. Privacy Features (Production)**
+### **10. Privacy Features (Production)**
 
 > 🔒 **Privacy**: Client-side ElGamal encryption is the standard for confidential transfers in GhostSpeak. It provides robust privacy verification via the x402 payment layer.
 
@@ -581,6 +639,7 @@ const client = new GhostSpeakClient({
 - **`AgentInstructions`** - Agent management operations
 - **`DidModule`** - W3C DID document management 🆕
 - **`ReputationModule`** - Reputation calculation and tag management 🆕
+- **`AuthorizationModule`** - Pre-signed authorizations for facilitators 🆕
 - **`MarketplaceInstructions`** - Marketplace operations
 - **`EscrowInstructions`** - Escrow and payment operations
 - **`GovernanceInstructions`** - Governance and multisig operations
@@ -597,6 +656,8 @@ import type {
   ServiceEndpoint,
   TagScore,
   ReputationMetrics,
+  ReputationAuthorization,
+  OnChainStorageConfig,
   ServiceListing,
   EscrowAccount,
   GovernanceProposal,

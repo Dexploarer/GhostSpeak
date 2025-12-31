@@ -145,9 +145,7 @@ export const upvoteReview = mutation({
     // Check if user already voted
     const existingVote = await ctx.db
       .query('reviewVotes')
-      .withIndex('by_user_review', (q) =>
-        q.eq('userId', args.userId).eq('reviewId', args.reviewId)
-      )
+      .withIndex('by_user_review', (q) => q.eq('userId', args.userId).eq('reviewId', args.reviewId))
       .first()
 
     const review = await ctx.db.get(args.reviewId)
@@ -201,9 +199,7 @@ export const downvoteReview = mutation({
     // Check if user already voted
     const existingVote = await ctx.db
       .query('reviewVotes')
-      .withIndex('by_user_review', (q) =>
-        q.eq('userId', args.userId).eq('reviewId', args.reviewId)
-      )
+      .withIndex('by_user_review', (q) => q.eq('userId', args.userId).eq('reviewId', args.reviewId))
       .first()
 
     const review = await ctx.db.get(args.reviewId)
@@ -256,9 +252,7 @@ export const getUserVote = query({
   handler: async (ctx, args) => {
     const vote = await ctx.db
       .query('reviewVotes')
-      .withIndex('by_user_review', (q) =>
-        q.eq('userId', args.userId).eq('reviewId', args.reviewId)
-      )
+      .withIndex('by_user_review', (q) => q.eq('userId', args.userId).eq('reviewId', args.reviewId))
       .first()
 
     return vote?.vote || 0

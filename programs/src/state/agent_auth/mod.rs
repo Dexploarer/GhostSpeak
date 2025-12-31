@@ -1,8 +1,8 @@
 /*!
- * ERC-8004 Adapter Module
+ * Agent Authorization Module
  *
- * Provides Solana-native implementations of the ERC-8004 standard
- * for trustless AI agent interactions across chains.
+ * GhostSpeak's trustless agent pre-authorization system for
+ * secure, delegated reputation management across protocols.
  */
 
 pub mod agent_authorization;

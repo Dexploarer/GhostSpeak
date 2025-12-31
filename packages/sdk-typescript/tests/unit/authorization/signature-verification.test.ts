@@ -1,7 +1,7 @@
 /**
  * Authorization Signature Verification Tests
  *
- * Tests for ERC-8004-compliant agent authorization signature creation and verification
+ * Tests for GhostSpeak's agent authorization signature creation and verification
  */
 
 import { describe, test, expect, beforeEach } from 'bun:test'

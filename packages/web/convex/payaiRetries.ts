@@ -31,9 +31,7 @@ export const storeFailedRecording = mutation({
     // Check if this payment signature already exists
     const existing = await ctx.db
       .query('payaiFailedRecordings')
-      .withIndex('by_payment_signature', (q) =>
-        q.eq('paymentSignature', args.paymentSignature)
-      )
+      .withIndex('by_payment_signature', (q) => q.eq('paymentSignature', args.paymentSignature))
       .first()
 
     if (existing) {
@@ -81,9 +79,7 @@ export const markRecordingSucceeded = mutation({
   handler: async (ctx, args) => {
     const recording = await ctx.db
       .query('payaiFailedRecordings')
-      .withIndex('by_payment_signature', (q) =>
-        q.eq('paymentSignature', args.paymentSignature)
-      )
+      .withIndex('by_payment_signature', (q) => q.eq('paymentSignature', args.paymentSignature))
       .first()
 
     if (!recording) {

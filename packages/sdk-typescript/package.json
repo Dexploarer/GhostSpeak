@@ -138,7 +138,8 @@
     "@solana/sysvars": "^5.0.0",
     "bs58": "^6.0.0",
     "drizzle-orm": "^0.36.0",
-    "kubo-rpc-client": "^5.2.0"
+    "kubo-rpc-client": "^5.2.0",
+    "lru-cache": "^11.2.4"
   },
   "devDependencies": {
     "@codama/cli": "^1.2.1",

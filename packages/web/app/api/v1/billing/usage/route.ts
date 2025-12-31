@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authenticateApiKey } from '@/lib/api/auth'
 import {
-  calculateRequestCost,
+  _calculateRequestCost,
   calculateOverageFees,
   PRICING_TIERS,
   type PricingTier,
@@ -28,10 +28,7 @@ export async function GET(request: NextRequest) {
     const authUser = await authenticateApiKey(request)
 
     if (!authUser) {
-      return NextResponse.json(
-        { error: 'Invalid or missing API key' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Invalid or missing API key' }, { status: 401 })
     }
 
     // Parse query params

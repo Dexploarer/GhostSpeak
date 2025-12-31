@@ -119,17 +119,11 @@ export function StakeForm({ agentAddress, ghostBalance, onSuccess }: StakeFormPr
               onChange={(e) => setAmount(e.target.value)}
               className="flex-1"
             />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleMaxClick}
-            >
+            <Button type="button" variant="outline" onClick={handleMaxClick}>
               Max
             </Button>
           </div>
-          {errorMessage && (
-            <p className="text-sm text-destructive">{errorMessage}</p>
-          )}
+          {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
         </div>
 
         {/* Lock Duration Selector */}
@@ -210,8 +204,8 @@ export function StakeForm({ agentAddress, ghostBalance, onSuccess }: StakeFormPr
 
         {/* Info Text */}
         <p className="text-xs text-muted-foreground text-center">
-          By staking, you'll boost your agent's reputation and unlock exclusive benefits.
-          Minimum stake: 1,000 GHOST
+          By staking, you'll boost your agent's reputation and unlock exclusive benefits. Minimum
+          stake: 1,000 GHOST
         </p>
       </CardContent>
     </Card>

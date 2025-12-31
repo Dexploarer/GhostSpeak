@@ -1,10 +1,10 @@
 /**
  * Agent Authorization System Types
- * 
- * ERC-8004 inspired authorization mechanism for Solana,
- * allowing agents to pre-authorize reputation updates with cryptographic signatures.
- * 
- * @see https://eips.ethereum.org/EIPS/eip-8004
+ *
+ * GhostSpeak's trustless authorization mechanism for agents to
+ * pre-authorize reputation updates with cryptographic signatures.
+ *
+ * Built for secure, delegated reputation management across protocols.
  */
 
 import type { Address } from '@solana/addresses'
@@ -13,6 +13,47 @@ import type { Address } from '@solana/addresses'
  * Network types supported by GhostSpeak
  */
 export type SolanaNetwork = 'mainnet-beta' | 'devnet' | 'testnet' | 'localnet'
+
+/**
+ * Configuration for on-chain authorization storage
+ *
+ * On-chain storage provides an immutable audit trail for authorizations,
+ * but costs ~0.002 SOL in rent. Off-chain storage (default) is free but
+ * requires agents to share signed authorizations with facilitators.
+ */
+export interface OnChainStorageConfig {
+  /** Enable on-chain storage (default: false for cost efficiency) */
+  enabled: boolean
+
+  /**
+   * Storage fee in lamports (default: 0.002 SOL = 2000000 lamports for rent)
+   * This covers the account rent exemption cost on Solana
+   */
+  storageFee?: bigint
+
+  /**
+   * Who pays the storage fee
+   * - true: Agent pays (stored authorization benefits agent's transparency)
+   * - false: Facilitator pays (facilitator wants on-chain proof)
+   * Default: true (agent pays for their own authorization storage)
+   */
+  feePayedByAgent?: boolean
+
+  /**
+   * Automatically store on-chain after creation
+   * - true: Store immediately (requires funded wallet)
+   * - false: Manual storage via storeAuthorizationOnChain()
+   * Default: false (manual control)
+   */
+  autoStore?: boolean
+
+  /**
+   * Custom fee structure for different authorization durations
+   * Maps duration in seconds to fee in lamports
+   * Example: { 2592000: 1000000n } // 30 days = 0.001 SOL
+   */
+  customFees?: Record<number, bigint>
+}
 
 /**
  * Reputation Authorization
@@ -174,8 +215,17 @@ export interface CreateAuthorizationParams {
   /** Optional metadata */
   metadata?: AuthorizationMetadata
 
-  /** Whether to store authorization on-chain (default: false) */
+  /**
+   * Whether to store authorization on-chain (default: false)
+   * @deprecated Use onChainStorage.enabled instead
+   */
   storeOnChain?: boolean
+
+  /**
+   * On-chain storage configuration
+   * If not provided, defaults to off-chain (free) storage
+   */
+  onChainStorage?: OnChainStorageConfig
 }
 
 /**

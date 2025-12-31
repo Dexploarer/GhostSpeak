@@ -11,23 +11,15 @@
  * - Enterprise: Custom
  */
 
-import {
-  address,
-  type Address
-} from '@solana/addresses'
-import {
-  createSolanaRpc,
-  createSolanaRpcSubscriptions,
-  type Rpc,
-  lamports
-} from '@solana/web3.js'
+import { address, type Address } from '@solana/addresses'
+import { createSolanaRpc, createSolanaRpcSubscriptions as _createSolanaRpcSubscriptions, type Rpc, lamports } from '@solana/web3.js'
 import {
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountInstruction,
   createTransferInstruction,
   getAccount,
   TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID
+  ASSOCIATED_TOKEN_PROGRAM_ID,
 } from '@solana/spl-token'
 import { getServerWallet, getRpc } from './server-wallet'
 
@@ -109,9 +101,7 @@ export async function getOrCreateTeamTokenAccount(
 
   try {
     // Check if account exists
-    const accountInfo = await rpc
-      .getAccountInfo(tokenAccount, { encoding: 'base64' })
-      .send()
+    const accountInfo = await rpc.getAccountInfo(tokenAccount, { encoding: 'base64' }).send()
 
     if (accountInfo.value) {
       return { tokenAccount, created: false }
@@ -123,7 +113,7 @@ export async function getOrCreateTeamTokenAccount(
   // Account doesn't exist, create it
   const serverWallet = await getServerWallet()
 
-  const createIx = createAssociatedTokenAccountInstruction(
+  const _createIx = createAssociatedTokenAccountInstruction(
     serverWallet.address, // payer
     tokenAccount, // ata
     teamWalletAddress, // owner
@@ -197,7 +187,7 @@ export async function deductUsage(
 
   try {
     const serverWallet = await getServerWallet()
-    const rpc = getRpc()
+    const _rpc = getRpc()
     const usdcMint = USDC_MINTS[network]
 
     // Get protocol treasury ATA
@@ -223,7 +213,7 @@ export async function deductUsage(
     }
 
     // Create transfer instruction
-    const transferIx = createTransferInstruction(
+    const _transferIx = createTransferInstruction(
       teamTokenAccount, // from
       protocolTreasuryAta, // to
       serverWallet.address, // authority (requires delegation)
@@ -258,9 +248,9 @@ export async function createDepositTransaction(
   amountUsdc: number,
   network: 'mainnet' | 'devnet' = 'devnet'
 ): Promise<{
-  transaction: string; // Base64 encoded transaction
-  amount: bigint;
-  amountUi: number;
+  transaction: string // Base64 encoded transaction
+  amount: bigint
+  amountUi: number
 }> {
   const usdcMint = USDC_MINTS[network]
   const amountMicroUsdc = BigInt(Math.floor(amountUsdc * Math.pow(10, USDC_DECIMALS)))
@@ -275,7 +265,7 @@ export async function createDepositTransaction(
   )
 
   // Create transfer instruction
-  const transferIx = createTransferInstruction(
+  const _transferIx = createTransferInstruction(
     fromTokenAccount, // from
     toTokenAccount, // to (team's prepaid account)
     fromWalletAddress, // authority

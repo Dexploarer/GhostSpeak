@@ -4,15 +4,7 @@ import React from 'react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Bot,
-  Star,
-  DollarSign,
-  TrendingUp,
-  Clock,
-  Shield,
-  ExternalLink,
-} from 'lucide-react'
+import { Bot, Star, DollarSign, TrendingUp, Clock, Shield, ExternalLink } from 'lucide-react'
 import { formatAddress, formatSol } from '@/lib/utils'
 import Link from 'next/link'
 import type { Agent } from '@/lib/queries/agents'
@@ -27,13 +19,10 @@ function getGhostScoreTier(score: number): {
   color: string
   bgColor: string
 } {
-  if (score >= 900)
-    return { tier: 'PLATINUM', color: 'text-gray-300', bgColor: 'bg-gray-300/20' }
+  if (score >= 900) return { tier: 'PLATINUM', color: 'text-gray-300', bgColor: 'bg-gray-300/20' }
   if (score >= 750) return { tier: 'GOLD', color: 'text-yellow-400', bgColor: 'bg-yellow-400/20' }
-  if (score >= 500)
-    return { tier: 'SILVER', color: 'text-gray-400', bgColor: 'bg-gray-400/20' }
-  if (score >= 200)
-    return { tier: 'BRONZE', color: 'text-orange-500', bgColor: 'bg-orange-500/20' }
+  if (score >= 500) return { tier: 'SILVER', color: 'text-gray-400', bgColor: 'bg-gray-400/20' }
+  if (score >= 200) return { tier: 'BRONZE', color: 'text-orange-500', bgColor: 'bg-orange-500/20' }
   return { tier: 'NEWCOMER', color: 'text-blue-400', bgColor: 'bg-blue-400/20' }
 }
 

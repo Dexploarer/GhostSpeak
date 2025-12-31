@@ -59,19 +59,23 @@ async function sendAlert(walletStatus: WalletStatus) {
   if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     try {
       const Sentry = await import('@sentry/nextjs')
-      Sentry.captureMessage(`Server wallet balance ${walletStatus.status}: ${walletStatus.balanceSol.toFixed(4)} SOL`, {
-        level: walletStatus.status === 'critical' ? 'error' : 'warning',
-        tags: {
-          wallet: walletStatus.address,
-          cluster: walletStatus.cluster,
-        },
-        contexts: {
-          wallet: {
-            balance: walletStatus.balanceSol,
-            threshold: walletStatus.status === 'critical' ? CRITICAL_BALANCE_SOL : MIN_BALANCE_SOL,
+      Sentry.captureMessage(
+        `Server wallet balance ${walletStatus.status}: ${walletStatus.balanceSol.toFixed(4)} SOL`,
+        {
+          level: walletStatus.status === 'critical' ? 'error' : 'warning',
+          tags: {
+            wallet: walletStatus.address,
+            cluster: walletStatus.cluster,
           },
-        },
-      })
+          contexts: {
+            wallet: {
+              balance: walletStatus.balanceSol,
+              threshold:
+                walletStatus.status === 'critical' ? CRITICAL_BALANCE_SOL : MIN_BALANCE_SOL,
+            },
+          },
+        }
+      )
       console.log('✅ Alert sent to Sentry')
     } catch (error) {
       console.error('❌ Failed to send Sentry alert:', error)
@@ -91,7 +95,8 @@ async function sendAlert(walletStatus: WalletStatus) {
               type: 'section',
               text: {
                 type: 'mrkdwn',
-                text: `*Server Wallet Balance Alert*\n\n` +
+                text:
+                  `*Server Wallet Balance Alert*\n\n` +
                   `Status: *${walletStatus.status.toUpperCase()}*\n` +
                   `Balance: ${walletStatus.balanceSol.toFixed(4)} SOL\n` +
                   `Threshold: ${walletStatus.status === 'critical' ? CRITICAL_BALANCE_SOL : MIN_BALANCE_SOL} SOL\n` +
@@ -133,7 +138,9 @@ async function monitorContinuously() {
     try {
       const status = await checkWalletBalance()
 
-      console.log(`[${new Date().toISOString()}] Balance: ${status.balanceSol.toFixed(4)} SOL (${status.status})`)
+      console.log(
+        `[${new Date().toISOString()}] Balance: ${status.balanceSol.toFixed(4)} SOL (${status.status})`
+      )
 
       if (status.status === 'critical') {
         consecutiveCritical++
@@ -169,7 +176,9 @@ async function runSingleCheck() {
   console.log(`Address: ${status.address}`)
   console.log(`Balance: ${status.balanceSol.toFixed(4)} SOL`)
   console.log(`Cluster: ${status.cluster}`)
-  console.log(`Status:  ${status.status === 'healthy' ? '✅' : status.status === 'low' ? '⚠️' : '🚨'} ${status.status.toUpperCase()}\n`)
+  console.log(
+    `Status:  ${status.status === 'healthy' ? '✅' : status.status === 'low' ? '⚠️' : '🚨'} ${status.status.toUpperCase()}\n`
+  )
 
   if (status.status !== 'healthy') {
     console.log('⚠️  Wallet balance is low. Consider refilling.\n')

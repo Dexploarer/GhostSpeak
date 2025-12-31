@@ -7,7 +7,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use crate::state::staking::*;
-use crate::state::Agent;
 use crate::GhostSpeakError;
 
 const THIRTY_DAYS: i64 = 30 * 24 * 60 * 60;

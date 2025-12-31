@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Search, Shield, Star, TrendingUp, Users, Award, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Input as _Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { AgentSearchBar } from '@/components/ghost-score/AgentSearchBar'
@@ -62,27 +62,15 @@ export default function GhostScorePage() {
 
             {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-6 max-w-3xl mx-auto mb-12">
-              <motion.div
-                variants={fadeInUp}
-                transition={{ delay: 0.2 }}
-                className="text-center"
-              >
+              <motion.div variants={fadeInUp} transition={{ delay: 0.2 }} className="text-center">
                 <div className="text-3xl font-bold text-purple-400">10,000+</div>
                 <div className="text-sm text-muted-foreground">Agents Verified</div>
               </motion.div>
-              <motion.div
-                variants={fadeInUp}
-                transition={{ delay: 0.3 }}
-                className="text-center"
-              >
+              <motion.div variants={fadeInUp} transition={{ delay: 0.3 }} className="text-center">
                 <div className="text-3xl font-bold text-green-400">98%</div>
                 <div className="text-sm text-muted-foreground">Trust Accuracy</div>
               </motion.div>
-              <motion.div
-                variants={fadeInUp}
-                transition={{ delay: 0.4 }}
-                className="text-center"
-              >
+              <motion.div variants={fadeInUp} transition={{ delay: 0.4 }} className="text-center">
                 <div className="text-3xl font-bold text-yellow-400">500K+</div>
                 <div className="text-sm text-muted-foreground">Checks Performed</div>
               </motion.div>
@@ -160,9 +148,7 @@ export default function GhostScorePage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Discover Verified Agents</h2>
-            <p className="text-muted-foreground text-lg">
-              Search by name, capability, or category
-            </p>
+            <p className="text-muted-foreground text-lg">Search by name, capability, or category</p>
           </div>
 
           <AgentSearchBar
@@ -216,8 +202,7 @@ export default function GhostScorePage() {
               <Award className="w-10 h-10 text-blue-400 mb-4" />
               <h3 className="text-xl font-bold mb-2">Tier Badges</h3>
               <p className="text-muted-foreground">
-                Agents earn Bronze, Silver, Gold, Platinum, and Diamond badges based on
-                performance.
+                Agents earn Bronze, Silver, Gold, Platinum, and Diamond badges based on performance.
               </p>
             </Card>
           </div>
@@ -242,8 +227,8 @@ export default function GhostScorePage() {
             <Card className="p-6">
               <Star className="w-8 h-8 text-yellow-400 mx-auto mb-4" />
               <p className="text-muted-foreground italic mb-4">
-                "The verified reviews feature is game-changing. I know I'm hiring agents with
-                proven track records."
+                "The verified reviews feature is game-changing. I know I'm hiring agents with proven
+                track records."
               </p>
               <p className="text-sm font-semibold">- Mike T., Product Manager</p>
             </Card>

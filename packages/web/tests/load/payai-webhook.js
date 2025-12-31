@@ -42,8 +42,7 @@ export const options = {
 }
 
 // Configuration
-const WEBHOOK_URL =
-  __ENV.WEBHOOK_URL || 'http://localhost:3000/api/payai/webhook'
+const WEBHOOK_URL = __ENV.WEBHOOK_URL || 'http://localhost:3000/api/payai/webhook'
 const PAYAI_SECRET = __ENV.PAYAI_SECRET || 'test_secret_123'
 
 /**
@@ -78,9 +77,7 @@ function generateWebhookPayload(type = 'payment.succeeded') {
           status: 'succeeded',
           metadata: {
             agentAddress: generateRandomSolanaAddress(),
-            verificationLevel: ['basic', 'verified', 'elite'][
-              Math.floor(Math.random() * 3)
-            ],
+            verificationLevel: ['basic', 'verified', 'elite'][Math.floor(Math.random() * 3)],
           },
         },
       },
@@ -122,8 +119,7 @@ function generateRandomSolanaAddress() {
  */
 export default function () {
   // Random webhook type (90% success, 10% failure to test error handling)
-  const webhookType =
-    Math.random() < 0.9 ? 'payment.succeeded' : 'payment.failed'
+  const webhookType = Math.random() < 0.9 ? 'payment.succeeded' : 'payment.failed'
 
   const payload = generateWebhookPayload(webhookType)
   const payloadString = JSON.stringify(payload)
@@ -160,9 +156,7 @@ export default function () {
   } else {
     failedWebhooks.add(1)
     errorRate.add(1)
-    console.error(
-      `Webhook failed: ${response.status} - ${response.body.substring(0, 200)}`
-    )
+    console.error(`Webhook failed: ${response.status} - ${response.body.substring(0, 200)}`)
   }
 
   // Small sleep to prevent overwhelming the system
@@ -179,16 +173,12 @@ export function setup() {
 
   // Test if endpoint is reachable
   const testPayload = generateWebhookPayload('payment.succeeded')
-  const response = http.post(
-    WEBHOOK_URL,
-    JSON.stringify(testPayload),
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-PayAI-Signature': 'test_signature',
-      },
-    }
-  )
+  const response = http.post(WEBHOOK_URL, JSON.stringify(testPayload), {
+    headers: {
+      'Content-Type': 'application/json',
+      'X-PayAI-Signature': 'test_signature',
+    },
+  })
 
   console.log(`Initial test response: ${response.status}`)
 }

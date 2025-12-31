@@ -9,10 +9,12 @@ Complete GHOST token staking interface for reputation boosts, built using Next.j
 ### 1. Convex Schema & Queries (`/packages/web/convex/`)
 
 **Schema Updates** (`schema.ts`)
+
 - `stakingAccounts` table: Tracks active stakes with tier info
 - `stakingEvents` table: Historical staking events (staked/unstaked/slashed)
 
 **Queries & Mutations** (`staking.ts`)
+
 - `getStakingAccount`: Fetch staking data for an agent
 - `getStakingLeaderboard`: Top stakers
 - `getStakingHistory`: Staking event history
@@ -26,6 +28,7 @@ Complete GHOST token staking interface for reputation boosts, built using Next.j
 **Core Components:**
 
 #### `TierBadge.tsx`
+
 - Reusable tier badge with tooltip
 - Shows Bronze/Silver/Gold tiers with gradient backgrounds
 - Displays tier benefits on hover
@@ -35,6 +38,7 @@ Complete GHOST token staking interface for reputation boosts, built using Next.j
   ```
 
 #### `StakingStatsCard.tsx`
+
 - Displays current staking stats for an agent
 - Shows total staked amount, reputation boost, unlock countdown
 - Active benefits list
@@ -45,6 +49,7 @@ Complete GHOST token staking interface for reputation boosts, built using Next.j
   - Empty state for unstaked agents
 
 #### `StakeForm.tsx`
+
 - Form to stake GHOST tokens
 - Lock duration selector (30/90/180/365 days)
 - Tier preview based on amount
@@ -56,6 +61,7 @@ Complete GHOST token staking interface for reputation boosts, built using Next.j
   - Warning about lock period
 
 #### `TierProgressCard.tsx`
+
 - Shows progress toward next tier
 - Visual progress bar
 - All tiers overview with unlock status
@@ -65,6 +71,7 @@ Complete GHOST token staking interface for reputation boosts, built using Next.j
   - Completion celebration for max tier
 
 #### `BenefitsDisplayCard.tsx`
+
 - Lists all benefits by tier
 - Visual unlock indicators (✓ or 🔒)
 - Highlights current active tier
@@ -74,6 +81,7 @@ Complete GHOST token staking interface for reputation boosts, built using Next.j
   - "Active" badge for current tier
 
 #### `UnstakeDialog.tsx`
+
 - Confirmation dialog for unstaking
 - Shows benefits that will be lost
 - Requires explicit confirmation checkbox
@@ -85,12 +93,14 @@ Complete GHOST token staking interface for reputation boosts, built using Next.j
 ### 3. Dashboard Page (`/packages/web/app/dashboard/staking/page.tsx`)
 
 **Layout:**
+
 - 3-column layout: Stats | Stake Form | Benefits & Progress
 - Agent selector dropdown
 - Platform-wide stats cards
 - Tabbed interface: Overview | History
 
 **Features:**
+
 - Real-time staking data via Convex
 - Staking history timeline
 - Platform statistics
@@ -99,24 +109,28 @@ Complete GHOST token staking interface for reputation boosts, built using Next.j
 ### 4. UI Components Added
 
 **New shadcn/ui components:**
+
 - `checkbox.tsx`: Confirmation checkboxes
 - `use-toast.ts`: Toast notification hook
 
 ### 5. Navigation Updates
 
 **Sidebar** (`components/dashboard/layout/Sidebar.tsx`)
+
 - Added "Staking" nav item with Coins icon
 - Positioned after Ghost Score for logical flow
 
 ### 6. Agent Profile Updates (`/packages/web/app/agents/[id]/page.tsx`)
 
 **Added:**
+
 - Tier badge display in header
 - Verified badge for Tier 2+
 - Premium badge for Tier 3
 - Reputation boost indicator (+X% badge)
 
 **Visual Changes:**
+
 - Staking tier shown prominently
 - Green boost percentage next to reputation score
 - Badge collection shows staking status
@@ -124,12 +138,14 @@ Complete GHOST token staking interface for reputation boosts, built using Next.j
 ## Tier System
 
 ### Tier 1: Bronze (1,000 GHOST)
+
 - **Boost:** +5% reputation (500 bps)
 - **Benefits:**
   - Priority Support
   - Early Feature Access
 
 ### Tier 2: Silver (10,000 GHOST)
+
 - **Boost:** +15% reputation (1500 bps)
 - **Benefits:**
   - Verified Badge
@@ -137,6 +153,7 @@ Complete GHOST token staking interface for reputation boosts, built using Next.j
   - Priority Dispute Resolution
 
 ### Tier 3: Gold (100,000 GHOST)
+
 - **Boost:** +15% reputation (1500 bps)
 - **Benefits:**
   - All Tier 2 Benefits
@@ -150,11 +167,13 @@ Complete GHOST token staking interface for reputation boosts, built using Next.j
 ### Available Instructions (from SDK)
 
 1. **Initialize Staking Config** (Admin Only)
+
    ```typescript
    import { getInitializeStakingConfigInstructionAsync } from '@ghostspeak/sdk'
    ```
 
 2. **Stake GHOST**
+
    ```typescript
    import { getStakeGhostInstructionAsync } from '@ghostspeak/sdk'
 
@@ -170,6 +189,7 @@ Complete GHOST token staking interface for reputation boosts, built using Next.j
    ```
 
 3. **Unstake GHOST**
+
    ```typescript
    import { getUnstakeGhostInstructionAsync } from '@ghostspeak/sdk'
 
@@ -189,6 +209,7 @@ Complete GHOST token staking interface for reputation boosts, built using Next.j
 ## Implementation Status
 
 ### ✅ Completed
+
 1. Convex schema for staking accounts and events
 2. Convex queries and mutations
 3. All UI components (6 components)
@@ -201,7 +222,9 @@ Complete GHOST token staking interface for reputation boosts, built using Next.j
 The UI is complete but needs actual blockchain integration. Update these files:
 
 #### `StakeForm.tsx` (Line ~104)
+
 Replace the placeholder with:
+
 ```typescript
 const handleStake = async () => {
   if (!isValid) return
@@ -209,10 +232,7 @@ const handleStake = async () => {
 
   try {
     // 1. Get GHOST token account
-    const tokenAccount = await getAssociatedTokenAddress(
-      GHOST_MINT_ADDRESS,
-      wallet.publicKey
-    )
+    const tokenAccount = await getAssociatedTokenAddress(GHOST_MINT_ADDRESS, wallet.publicKey)
 
     // 2. Create stake instruction
     const lockDurationSeconds = selectedDuration.days * 24 * 60 * 60
@@ -252,10 +272,13 @@ const handleStake = async () => {
 ```
 
 #### `UnstakeDialog.tsx` (Line ~44)
+
 Replace the placeholder with similar blockchain integration for unstaking.
 
 ### Required Constants
+
 Create `/packages/web/lib/constants/staking.ts`:
+
 ```typescript
 export const GHOST_MINT_ADDRESS = 'YOUR_GHOST_TOKEN_MINT'
 export const STAKING_VAULT_ADDRESS = 'YOUR_STAKING_VAULT_PDA'
@@ -265,17 +288,20 @@ export const STAKING_CONFIG_ADDRESS = 'YOUR_STAKING_CONFIG_PDA'
 ## Design Guidelines
 
 ### Color System
+
 - **Bronze Tier:** Amber gradient (`from-amber-700 via-amber-600`)
 - **Silver Tier:** Slate gradient (`from-slate-400 via-slate-300`)
 - **Gold Tier:** Yellow gradient (`from-yellow-500 via-amber-400`)
 
 ### Visual Effects
+
 - Smooth progress bar animations
 - Hover scale on tier badges
 - Pulsing network status indicator
 - Countdown timer updates
 
 ### Mobile Responsive
+
 - 3-column layout → 1-column on mobile
 - Collapsible sidebar
 - Touch-friendly buttons
@@ -309,6 +335,7 @@ export const STAKING_CONFIG_ADDRESS = 'YOUR_STAKING_CONFIG_PDA'
 ## API Endpoints
 
 ### Convex Functions
+
 - `api.staking.getStakingAccount`
 - `api.staking.getStakingHistory`
 - `api.staking.getStakingStats`
@@ -378,6 +405,7 @@ packages/web/
 ## Support
 
 For questions or issues:
+
 - Check SDK documentation: `/packages/sdk-typescript/src/generated/instructions/`
 - Review smart contract code: `/programs/src/instructions/`
 - Consult Convex schema: `/packages/web/convex/schema.ts`
@@ -385,6 +413,7 @@ For questions or issues:
 ---
 
 **Built with:**
+
 - Next.js 15 (App Router)
 - Convex (Real-time database)
 - shadcn/ui (UI components)

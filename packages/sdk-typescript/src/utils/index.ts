@@ -44,7 +44,7 @@ export * as ipfs from './ipfs-client.js'
 // Privacy and encryption (specialized usage)
 export * as privacy from './client-encryption.js'
 
-// Agent authorization signatures (ERC-8004 parity)
+// Agent authorization signatures - GhostSpeak trustless delegation
 export * as authSignatures from './signature-verification.js'
 export {
   createAuthorizationMessage,

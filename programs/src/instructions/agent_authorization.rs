@@ -1,8 +1,8 @@
 /*!
- * Agent Authorization Instructions (ERC-8004 Parity)
+ * Agent Pre-Authorization Instructions
  *
- * Allows agents to pre-authorize facilitators (e.g., PayAI) to update
- * their reputation a limited number of times before expiration.
+ * GhostSpeak's trustless system for agents to pre-authorize facilitators
+ * (e.g., PayAI) to update their reputation with built-in security limits.
  *
  * ## Instructions:
  * 1. `create_agent_authorization` - Agent creates authorization for facilitator

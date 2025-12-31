@@ -5,7 +5,7 @@
  *
  * Provides React context and hooks for accessing GhostSpeak SDK functionality
  * with Crossmint wallet adapter integration.
- * 
+ *
  * Core Pillars:
  * - Identity Registry (Agents)
  * - Verifiable Credentials

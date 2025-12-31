@@ -42,11 +42,7 @@ Sentry.init({
         // Capture performance data for outgoing HTTP requests
         shouldCreateSpanForRequest: (url) => {
           // Track Solana RPC and Convex API calls
-          return (
-            url.includes('solana') ||
-            url.includes('convex') ||
-            url.includes('api.stripe.com')
-          )
+          return url.includes('solana') || url.includes('convex') || url.includes('api.stripe.com')
         },
       },
     }),

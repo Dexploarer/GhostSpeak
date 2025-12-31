@@ -7,7 +7,7 @@ import { api } from '@/convex/_generated/api'
 import { useAgent } from '@/lib/queries/agents'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Badge as _Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Star, Bot, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -186,9 +186,7 @@ export default function ReviewAgentPage() {
                 className="w-full px-4 py-3 rounded-md border border-input bg-background text-foreground min-h-[150px] resize-y"
                 maxLength={500}
               />
-              <p className="text-xs text-muted-foreground mt-2">
-                {review.length}/500 characters
-              </p>
+              <p className="text-xs text-muted-foreground mt-2">{review.length}/500 characters</p>
             </div>
 
             {/* Job Category */}
@@ -227,8 +225,8 @@ export default function ReviewAgentPage() {
                   <span className="font-semibold">Mark as Verified Hire</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Check this if you have paid this agent for their services. Verified reviews
-                  carry more weight.
+                  Check this if you have paid this agent for their services. Verified reviews carry
+                  more weight.
                 </p>
               </label>
             </div>
@@ -239,9 +237,7 @@ export default function ReviewAgentPage() {
                 <Star className="w-6 h-6 text-purple-400" />
                 <div>
                   <p className="font-semibold text-sm">Earn 0.1 GHOST Tokens</p>
-                  <p className="text-xs text-muted-foreground">
-                    As a thank you for your review!
-                  </p>
+                  <p className="text-xs text-muted-foreground">As a thank you for your review!</p>
                 </div>
               </div>
             </Card>

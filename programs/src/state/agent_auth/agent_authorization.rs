@@ -1,8 +1,9 @@
 /*!
- * Agent Reputation Update Authorization (ERC-8004 Parity)
+ * Agent Reputation Update Authorization
  *
- * Allows agents to pre-authorize specific sources (e.g., PayAI facilitators)
- * to update their reputation a limited number of times before expiration.
+ * GhostSpeak's trustless system for agents to pre-authorize specific sources
+ * (e.g., PayAI facilitators) to update their reputation a limited number of
+ * times before expiration.
  *
  * This complements the existing FeedbackAuth (which is for clients authorizing feedback)
  * by allowing agents to authorize facilitators to update reputation automatically.
@@ -10,8 +11,6 @@
  * ## Key Difference from FeedbackAuth:
  * - FeedbackAuth: Client → Agent (clients authorize feedback submission)
  * - AgentReputationAuth: Agent → Facilitator (agents authorize reputation updates)
- *
- * @see https://eips.ethereum.org/EIPS/eip-8004
  */
 
 use anchor_lang::prelude::*;
@@ -316,7 +315,7 @@ impl AgentReputationAuth {
     /// - Expiration timestamp (8 bytes, u64 big-endian)
     /// - Network string (variable length)
     /// - Nonce (optional, variable length)
-    pub fn verify_signature_message(&self, expected_agent_pubkey: &Pubkey) -> Vec<u8> {
+    pub fn verify_signature_message(&self, _expected_agent_pubkey: &Pubkey) -> Vec<u8> {
         let mut message = Vec::new();
 
         // Domain separator

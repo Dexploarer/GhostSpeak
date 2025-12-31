@@ -70,11 +70,10 @@ export class StakingModule extends BaseModule {
    */
   async stake(params: StakeParams): Promise<string> {
     const instruction = await getStakeGhostInstructionAsync({
-      agent: params.agent,
-      agentTokenAccount: params.agentTokenAccount,
+      ownerTokenAccount: params.agentTokenAccount,
       stakingVault: params.stakingVault,
       stakingConfig: params.stakingConfig,
-      agentOwner: params.agentOwner,
+      owner: params.agentOwner,
       amount: params.amount,
       lockDuration: params.lockDuration,
     }, { programAddress: this.programId })
@@ -91,10 +90,9 @@ export class StakingModule extends BaseModule {
   async unstake(params: UnstakeParams): Promise<string> {
     const instruction = await getUnstakeGhostInstructionAsync({
       stakingAccount: params.stakingAccount,
-      agent: params.agent,
       stakingVault: params.stakingVault,
-      agentTokenAccount: params.agentTokenAccount,
-      agentOwner: params.agentOwner,
+      ownerTokenAccount: params.agentTokenAccount,
+      owner: params.agentOwner,
     }, { programAddress: this.programId })
 
     return this.execute('unstakeGhost', () => instruction, [params.agentOwner])

@@ -13,19 +13,22 @@ These components allow users to control the visibility of their agent's reputati
 A small badge/icon showing an agent's privacy level.
 
 **Props:**
+
 - `mode`: Privacy mode ('public' | 'tier-only' | 'authorized-only' | 'hidden')
 - `className`: Optional CSS classes
 - `showLabel`: Show text label (default: false)
 - `size`: Icon size ('sm' | 'md' | 'lg')
 
 **Usage:**
+
 ```tsx
 import { PrivacyIndicator } from '@/components/privacy'
 
-<PrivacyIndicator mode="tier-only" size="sm" />
+;<PrivacyIndicator mode="tier-only" size="sm" />
 ```
 
 **Features:**
+
 - Color-coded badges (Green, Blue, Yellow, Red)
 - Tooltip with privacy description
 - Responsive sizing
@@ -37,11 +40,13 @@ import { PrivacyIndicator } from '@/components/privacy'
 Radio-group style selector for privacy modes with visual examples and warnings.
 
 **Props:**
+
 - `value`: Current privacy mode
 - `onChange`: Callback when mode changes
 - `disabled`: Disable interaction
 
 **Usage:**
+
 ```tsx
 import { PrivacyModeSelector } from '@/components/privacy'
 
@@ -51,6 +56,7 @@ const [mode, setMode] = useState<PrivacyMode>('public')
 ```
 
 **Features:**
+
 - 4 privacy modes with descriptions
 - Warning alerts for restrictive modes
 - Visual selection indicators
@@ -63,6 +69,7 @@ const [mode, setMode] = useState<PrivacyMode>('public')
 Grid of toggles for controlling individual metric visibility.
 
 **Props:**
+
 - `settings`: Current metric visibility settings
 - `onChange`: Callback when settings change
 - `onSave`: Save handler
@@ -70,6 +77,7 @@ Grid of toggles for controlling individual metric visibility.
 - `isSaving`: Loading state
 
 **Usage:**
+
 ```tsx
 import { MetricVisibilityControl } from '@/components/privacy'
 
@@ -88,6 +96,7 @@ const [settings, setSettings] = useState<MetricSettings>({
 ```
 
 **Features:**
+
 - Grouped by category (Core, Performance, Trust, Quality, etc.)
 - Individual metric controls
 - Quick "set all" actions
@@ -101,6 +110,7 @@ const [settings, setSettings] = useState<MetricSettings>({
 Manage authorized viewers with wallet addresses and expiration dates.
 
 **Props:**
+
 - `viewers`: Array of authorized viewers
 - `onAddViewer`: Callback to add viewer
 - `onRemoveViewer`: Callback to remove viewer
@@ -108,6 +118,7 @@ Manage authorized viewers with wallet addresses and expiration dates.
 - `maxViewers`: Maximum allowed viewers (default: 50)
 
 **Usage:**
+
 ```tsx
 import { AccessControlList } from '@/components/privacy'
 
@@ -122,6 +133,7 @@ const [viewers, setViewers] = useState<AuthorizedViewer[]>([])
 ```
 
 **Features:**
+
 - Add viewers with wallet validation
 - Optional nicknames
 - Expiration date picker
@@ -135,15 +147,17 @@ const [viewers, setViewers] = useState<AuthorizedViewer[]>([])
 Side-by-side comparison showing owner view vs public view.
 
 **Props:**
+
 - `privacyMode`: Current privacy mode
 - `metricSettings`: Metric visibility settings
 - `reputationData`: Agent reputation data
 
 **Usage:**
+
 ```tsx
 import { PrivacyPreview } from '@/components/privacy'
 
-<PrivacyPreview
+;<PrivacyPreview
   privacyMode="tier-only"
   metricSettings={settings}
   reputationData={agentReputation}
@@ -151,6 +165,7 @@ import { PrivacyPreview } from '@/components/privacy'
 ```
 
 **Features:**
+
 - Real-time preview updates
 - Visual tier badges
 - Locked indicator for hidden metrics
@@ -163,16 +178,18 @@ import { PrivacyPreview } from '@/components/privacy'
 Main dashboard component integrating all privacy features.
 
 **Props:**
+
 - `agentAddress`: Agent wallet address
 - `initialSettings`: Initial privacy settings
 - `reputationData`: Agent reputation data
 - `onSave`: Async save handler
 
 **Usage:**
+
 ```tsx
 import { PrivacySettingsPanel } from '@/components/privacy'
 
-<PrivacySettingsPanel
+;<PrivacySettingsPanel
   agentAddress={walletAddress}
   onSave={async (settings) => {
     await sdk.privacy.updateSettings(settings)
@@ -182,6 +199,7 @@ import { PrivacySettingsPanel } from '@/components/privacy'
 ```
 
 **Features:**
+
 - Tabbed interface (Mode, Metrics, Access, Preview)
 - Quick preset configurations
 - Unsaved changes tracking
@@ -195,6 +213,7 @@ import { PrivacySettingsPanel } from '@/components/privacy'
 Location: `/app/dashboard/privacy/page.tsx`
 
 **Features:**
+
 - Wallet connection requirement
 - Integration with GhostSpeak SDK
 - Devnet indicator
@@ -221,16 +240,13 @@ Location: `/app/dashboard/privacy/page.tsx`
 The `AgentCard` component supports privacy indicators:
 
 ```tsx
-<AgentCard
-  agent={agent}
-  privacyMode="tier-only"
-  showPrivacyFiltered={true}
-/>
+<AgentCard agent={agent} privacyMode="tier-only" showPrivacyFiltered={true} />
 ```
 
 ## Navigation
 
 Privacy settings added to:
+
 - Dashboard sidebar (`/dashboard/privacy`)
 - Mobile sidebar
 - Agents page (Privacy button)
@@ -248,19 +264,17 @@ await client.privacy.updateSettings({
   agentAddress,
   mode: 'tier-only',
   metricSettings,
-  authorizedViewers
+  authorizedViewers,
 })
 
 // Check if viewer is authorized
-const isAuthorized = await client.privacy.isAuthorized(
-  agentAddress,
-  viewerAddress
-)
+const isAuthorized = await client.privacy.isAuthorized(agentAddress, viewerAddress)
 ```
 
 ## Accessibility
 
 All components include:
+
 - ARIA labels
 - Keyboard navigation
 - Focus management
@@ -277,6 +291,7 @@ All components include:
 ## Testing
 
 Recommended test cases:
+
 - Privacy mode changes
 - Metric visibility toggles
 - Access control list CRUD operations

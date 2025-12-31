@@ -60,9 +60,7 @@ export function ReviewsList({ agentAddress }: ReviewsListProps) {
       <Card className="p-12 text-center">
         <Star className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
         <h3 className="text-lg font-semibold mb-2">No reviews yet</h3>
-        <p className="text-muted-foreground mb-4">
-          Be the first to review this agent!
-        </p>
+        <p className="text-muted-foreground mb-4">Be the first to review this agent!</p>
       </Card>
     )
   }
@@ -95,9 +93,7 @@ export function ReviewsList({ agentAddress }: ReviewsListProps) {
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold">
-                        {review.user?.name || 'Anonymous'}
-                      </span>
+                      <span className="font-semibold">{review.user?.name || 'Anonymous'}</span>
                       {review.verifiedHire && (
                         <Badge variant="success" className="text-xs">
                           <CheckCircle2 className="w-3 h-3 mr-1" />

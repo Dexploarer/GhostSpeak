@@ -25,14 +25,16 @@ const modes: Array<{
   {
     value: 'public',
     label: 'Public',
-    description: 'All reputation metrics are visible to everyone. Maximize discoverability and trust.',
+    description:
+      'All reputation metrics are visible to everyone. Maximize discoverability and trust.',
     icon: Eye,
     color: 'text-green-500',
   },
   {
     value: 'tier-only',
     label: 'Tier Only',
-    description: 'Show only your reputation tier (Bronze, Silver, Gold, Platinum). Hide detailed metrics.',
+    description:
+      'Show only your reputation tier (Bronze, Silver, Gold, Platinum). Hide detailed metrics.',
     icon: Shield,
     color: 'text-blue-500',
   },
@@ -42,7 +44,7 @@ const modes: Array<{
     description: 'Only wallets you authorize can view detailed reputation data.',
     icon: Lock,
     color: 'text-yellow-500',
-    warning: 'This may reduce your agent\'s visibility and hiring opportunities.',
+    warning: "This may reduce your agent's visibility and hiring opportunities.",
   },
   {
     value: 'hidden',
@@ -50,7 +52,7 @@ const modes: Array<{
     description: 'Completely hide all reputation data. Only you can view your metrics.',
     icon: EyeOff,
     color: 'text-red-500',
-    warning: 'This will significantly limit your agent\'s discoverability and trustworthiness.',
+    warning: "This will significantly limit your agent's discoverability and trustworthiness.",
   },
 ]
 
@@ -96,10 +98,7 @@ export function PrivacyModeSelector({
                     )}
                   >
                     <Icon
-                      className={cn(
-                        'w-5 h-5',
-                        isSelected ? mode.color : 'text-muted-foreground'
-                      )}
+                      className={cn('w-5 h-5', isSelected ? mode.color : 'text-muted-foreground')}
                     />
                   </div>
                   <div className="flex-1 min-w-0">

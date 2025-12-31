@@ -1,7 +1,7 @@
 /**
  * Authorization Module Exports
  *
- * ERC-8004 parity for agent pre-authorization of reputation updates.
+ * GhostSpeak's trustless pre-authorization system for delegated reputation updates.
  */
 
 export { AuthorizationModule } from './AuthorizationModule.js'

@@ -20,12 +20,10 @@ const TIER_THRESHOLDS = [
 export function TierProgressCard({ currentAmount, currentTier }: TierProgressCardProps) {
   // Find next tier
   const nextTier = TIER_THRESHOLDS.find((t) => t.tier > currentTier)
-  const currentTierData = TIER_THRESHOLDS.find((t) => t.tier === currentTier)
+  const _currentTierData = TIER_THRESHOLDS.find((t) => t.tier === currentTier)
 
   // Calculate progress to next tier
-  const progressPercentage = nextTier
-    ? Math.min(100, (currentAmount / nextTier.amount) * 100)
-    : 100
+  const progressPercentage = nextTier ? Math.min(100, (currentAmount / nextTier.amount) * 100) : 100
 
   const amountNeeded = nextTier ? nextTier.amount - currentAmount : 0
 
@@ -69,9 +67,7 @@ export function TierProgressCard({ currentAmount, currentTier }: TierProgressCar
         ) : (
           <div className="text-center py-4 space-y-2">
             <p className="text-lg font-semibold text-primary">Maximum Tier Reached!</p>
-            <p className="text-sm text-muted-foreground">
-              You've unlocked all staking benefits
-            </p>
+            <p className="text-sm text-muted-foreground">You've unlocked all staking benefits</p>
           </div>
         )}
 

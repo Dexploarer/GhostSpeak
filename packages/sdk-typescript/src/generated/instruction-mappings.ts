@@ -384,6 +384,141 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       }
     ]
   },
+  "create_agent_authorization": {
+    "name": "create_agent_authorization",
+    "expectedAccounts": [
+      {
+        "name": "agent",
+        "pda": false
+      },
+      {
+        "name": "authorization",
+        "pda": true
+      },
+      {
+        "name": "authority",
+        "pda": false
+      },
+      {
+        "name": "system_program",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "agent",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Agent granting authorization"
+        ]
+      },
+      {
+        "name": "authorization",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Authorization account (PDA)"
+        ],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                97,
+                103,
+                101,
+                110,
+                116,
+                95,
+                97,
+                117,
+                116,
+                104
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "agent"
+            },
+            {
+              "kind": "arg",
+              "path": "authorized_source"
+            },
+            {
+              "kind": "arg",
+              "path": "nonce"
+            }
+          ]
+        }
+      },
+      {
+        "name": "authority",
+        "writable": true,
+        "signer": true,
+        "optional": false,
+        "docs": [
+          "Authority (agent owner)"
+        ]
+      },
+      {
+        "name": "system_program",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "System program"
+        ],
+        "address": "11111111111111111111111111111111"
+      }
+    ],
+    "docs": "Create agent authorization for reputation updates  Allows an agent to pre-authorize a facilitator (e.g., PayAI) to update their reputation a limited number of times before expiration.  Parameters: - authorized_source: Pubkey of the facilitator being authorized - index_limit: Maximum number of updates allowed - expires_at: Unix timestamp when authorization expires - network: Network ID for cross-chain compatibility - signature: Ed25519 signature proving agent's consent - nonce: Optional nonce for multiple authorizations to same facilitator",
+    "discriminator": [
+      48,
+      219,
+      232,
+      202,
+      151,
+      97,
+      230,
+      20
+    ],
+    "args": [
+      {
+        "name": "authorized_source",
+        "type": "pubkey"
+      },
+      {
+        "name": "index_limit",
+        "type": "u64"
+      },
+      {
+        "name": "expires_at",
+        "type": "i64"
+      },
+      {
+        "name": "network",
+        "type": "u8"
+      },
+      {
+        "name": "signature",
+        "type": {
+          "array": [
+            "u8",
+            64
+          ]
+        }
+      },
+      {
+        "name": "nonce",
+        "type": {
+          "option": "string"
+        }
+      }
+    ]
+  },
   "create_credential_template": {
     "name": "create_credential_template",
     "expectedAccounts": [
@@ -3051,6 +3186,103 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
     ],
     "args": []
   },
+  "revoke_authorization": {
+    "name": "revoke_authorization",
+    "expectedAccounts": [
+      {
+        "name": "agent",
+        "pda": false
+      },
+      {
+        "name": "authorization",
+        "pda": true
+      },
+      {
+        "name": "authority",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "agent",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Agent revoking authorization"
+        ]
+      },
+      {
+        "name": "authorization",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Authorization account (PDA)"
+        ],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                97,
+                103,
+                101,
+                110,
+                116,
+                95,
+                97,
+                117,
+                116,
+                104
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "agent"
+            },
+            {
+              "kind": "account",
+              "path": "authorization.authorized_source",
+              "account": "AgentReputationAuth"
+            },
+            {
+              "kind": "arg",
+              "path": "_nonce"
+            }
+          ]
+        }
+      },
+      {
+        "name": "authority",
+        "writable": false,
+        "signer": true,
+        "optional": false,
+        "docs": [
+          "Authority (agent owner)"
+        ]
+      }
+    ],
+    "docs": "Revoke agent authorization  Allows an agent to revoke a previously granted authorization. Once revoked, the facilitator can no longer update reputation.  Parameters: - nonce: Optional nonce identifying the specific authorization to revoke",
+    "discriminator": [
+      222,
+      179,
+      207,
+      59,
+      191,
+      78,
+      24,
+      248
+    ],
+    "args": [
+      {
+        "name": "nonce",
+        "type": {
+          "option": "string"
+        }
+      }
+    ]
+  },
   "revoke_credential": {
     "name": "revoke_credential",
     "expectedAccounts": [
@@ -4349,6 +4581,229 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       }
     ]
   },
+  "update_reputation_with_auth": {
+    "name": "update_reputation_with_auth",
+    "expectedAccounts": [
+      {
+        "name": "agent",
+        "pda": false
+      },
+      {
+        "name": "reputation_metrics",
+        "pda": true
+      },
+      {
+        "name": "authorization",
+        "pda": true
+      },
+      {
+        "name": "usage_record",
+        "pda": true
+      },
+      {
+        "name": "authorized_source",
+        "pda": false
+      },
+      {
+        "name": "system_program",
+        "pda": false
+      },
+      {
+        "name": "clock",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "agent",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Agent whose reputation is being updated"
+        ]
+      },
+      {
+        "name": "reputation_metrics",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Agent reputation metrics"
+        ],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                114,
+                101,
+                112,
+                117,
+                116,
+                97,
+                116,
+                105,
+                111,
+                110,
+                95,
+                109,
+                101,
+                116,
+                114,
+                105,
+                99,
+                115
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "agent"
+            }
+          ]
+        }
+      },
+      {
+        "name": "authorization",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Authorization account (PDA)"
+        ],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                97,
+                103,
+                101,
+                110,
+                116,
+                95,
+                97,
+                117,
+                116,
+                104
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "agent"
+            },
+            {
+              "kind": "account",
+              "path": "authorized_source"
+            },
+            {
+              "kind": "arg",
+              "path": "_nonce"
+            }
+          ]
+        }
+      },
+      {
+        "name": "usage_record",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Usage record account (optional, for audit trail)"
+        ],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                97,
+                117,
+                116,
+                104,
+                95,
+                117,
+                115,
+                97,
+                103,
+                101
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "authorization"
+            },
+            {
+              "kind": "account",
+              "path": "authorization.current_index",
+              "account": "AgentReputationAuth"
+            }
+          ]
+        }
+      },
+      {
+        "name": "authorized_source",
+        "writable": true,
+        "signer": true,
+        "optional": false,
+        "docs": [
+          "Authorized source (e.g., PayAI facilitator)"
+        ]
+      },
+      {
+        "name": "system_program",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "System program"
+        ],
+        "address": "11111111111111111111111111111111"
+      },
+      {
+        "name": "clock",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Clock for timestamps"
+        ],
+        "address": "SysvarC1ock11111111111111111111111111111111"
+      }
+    ],
+    "docs": "Update agent reputation using authorization  Facilitators (e.g., PayAI) use this to update agent reputation using a pre-existing authorization from the agent.  Parameters: - reputation_change: Change to reputation score (can be positive or negative) - transaction_signature: Transaction signature for audit trail - metadata: Optional metadata about the reputation update - nonce: Optional nonce matching the authorization",
+    "discriminator": [
+      61,
+      236,
+      225,
+      167,
+      134,
+      43,
+      53,
+      93
+    ],
+    "args": [
+      {
+        "name": "reputation_change",
+        "type": "i64"
+      },
+      {
+        "name": "transaction_signature",
+        "type": "string"
+      },
+      {
+        "name": "metadata",
+        "type": {
+          "option": "string"
+        }
+      },
+      {
+        "name": "nonce",
+        "type": {
+          "option": "string"
+        }
+      }
+    ]
+  },
   "update_source_reputation": {
     "name": "update_source_reputation",
     "expectedAccounts": [
@@ -4610,6 +5065,104 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       {
         "name": "verified_at",
         "type": "i64"
+      }
+    ]
+  },
+  "verify_authorization": {
+    "name": "verify_authorization",
+    "expectedAccounts": [
+      {
+        "name": "agent",
+        "pda": false
+      },
+      {
+        "name": "authorization",
+        "pda": true
+      },
+      {
+        "name": "clock",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "agent",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Agent account"
+        ]
+      },
+      {
+        "name": "authorization",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Authorization account (PDA)"
+        ],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                97,
+                103,
+                101,
+                110,
+                116,
+                95,
+                97,
+                117,
+                116,
+                104
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "agent"
+            },
+            {
+              "kind": "account",
+              "path": "authorization.authorized_source",
+              "account": "AgentReputationAuth"
+            },
+            {
+              "kind": "arg",
+              "path": "_nonce"
+            }
+          ]
+        }
+      },
+      {
+        "name": "clock",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "Clock for timestamp validation"
+        ],
+        "address": "SysvarC1ock11111111111111111111111111111111"
+      }
+    ],
+    "docs": "Verify agent authorization (view-only)  Checks if an authorization is valid and returns its status. This is a read-only instruction for verification purposes.  Parameters: - nonce: Optional nonce identifying the specific authorization to verify",
+    "discriminator": [
+      43,
+      9,
+      131,
+      59,
+      74,
+      118,
+      113,
+      170
+    ],
+    "args": [
+      {
+        "name": "nonce",
+        "type": {
+          "option": "string"
+        }
       }
     ]
   }

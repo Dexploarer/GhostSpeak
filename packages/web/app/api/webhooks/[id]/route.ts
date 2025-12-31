@@ -8,10 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { api } from '@/convex/_generated/api'
 import { fetchQuery, fetchMutation } from 'convex/nextjs'
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
 

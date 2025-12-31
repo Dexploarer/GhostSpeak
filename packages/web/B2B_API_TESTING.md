@@ -212,12 +212,14 @@ curl -X POST http://localhost:3000/api/v1/verify \
 ```
 
 **Expected:**
+
 ```json
 {
   "error": "Invalid or missing API key",
   "code": "UNAUTHORIZED"
 }
 ```
+
 Status: 401
 
 ### Invalid API Key
@@ -230,12 +232,14 @@ curl -X POST http://localhost:3000/api/v1/verify \
 ```
 
 **Expected:**
+
 ```json
 {
   "error": "Invalid or missing API key",
   "code": "UNAUTHORIZED"
 }
 ```
+
 Status: 401
 
 ### Missing Agent Address
@@ -248,12 +252,14 @@ curl -X POST http://localhost:3000/api/v1/verify \
 ```
 
 **Expected:**
+
 ```json
 {
   "error": "Missing required field: agentAddress",
   "code": "VALIDATION_ERROR"
 }
 ```
+
 Status: 400
 
 ### Agent Not Found
@@ -266,12 +272,14 @@ curl -X POST http://localhost:3000/api/v1/verify \
 ```
 
 **Expected:**
+
 ```json
 {
   "error": "Agent not found",
   "code": "AGENT_NOT_FOUND"
 }
 ```
+
 Status: 404
 
 ## Test 8: Revoke API Key
@@ -299,12 +307,14 @@ curl -X POST http://localhost:3000/api/v1/verify \
 ```
 
 **Expected:**
+
 ```json
 {
   "error": "Invalid or missing API key",
   "code": "UNAUTHORIZED"
 }
 ```
+
 Status: 401
 
 ## Test 9: Multiple API Keys
@@ -355,6 +365,7 @@ hey -n 100 -c 10 \
 ```
 
 **Expected Output:**
+
 ```
 Summary:
   Total:        2.5 seconds

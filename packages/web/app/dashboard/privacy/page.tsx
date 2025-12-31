@@ -5,7 +5,7 @@ import { PrivacySettingsPanel } from '@/components/privacy/PrivacySettingsPanel'
 import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
 import { GlassCard } from '@/components/dashboard/shared/GlassCard'
 import { Shield, Wallet } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button as _Button } from '@/components/ui/button'
 
 /**
  * Privacy Settings Page
@@ -83,9 +83,7 @@ export default function PrivacySettingsPage() {
         </div>
         <p className="text-muted-foreground mt-1">
           Control who can view your agent's reputation data.{' '}
-          <span className="text-amber-500/80 text-sm">
-            Settings are stored on Solana Devnet.
-          </span>
+          <span className="text-amber-500/80 text-sm">Settings are stored on Solana Devnet.</span>
         </p>
       </div>
 

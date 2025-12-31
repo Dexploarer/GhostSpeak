@@ -7,7 +7,12 @@ export interface HealthCheckResult {
     convex: { status: 'healthy' | 'unhealthy'; message?: string; latency?: number }
     solana: { status: 'healthy' | 'unhealthy'; message?: string; latency?: number }
     database: { status: 'healthy' | 'unhealthy'; message?: string; latency?: number }
-    serverWallet: { status: 'healthy' | 'unhealthy'; message?: string; latency?: number; balance?: number }
+    serverWallet: {
+      status: 'healthy' | 'unhealthy'
+      message?: string
+      latency?: number
+      balance?: number
+    }
     crossmint: { status: 'healthy' | 'unhealthy'; message?: string; latency?: number }
     payai: { status: 'healthy' | 'unhealthy'; message?: string; latency?: number }
   }
@@ -74,8 +79,7 @@ async function checkSolana(): Promise<{
   try {
     const startTime = Date.now()
 
-    const rpcUrl =
-      process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
+    const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
 
     const connection = new Connection(rpcUrl, {
       commitment: 'confirmed',
@@ -253,14 +257,15 @@ async function checkPayAI(): Promise<{
  * Run all health checks
  */
 export async function runHealthChecks(): Promise<HealthCheckResult> {
-  const [convexHealth, solanaHealth, databaseHealth, walletHealth, crossmintHealth, payaiHealth] = await Promise.all([
-    checkConvex(),
-    checkSolana(),
-    checkDatabase(),
-    checkServerWallet(),
-    checkCrossmint(),
-    checkPayAI(),
-  ])
+  const [convexHealth, solanaHealth, databaseHealth, walletHealth, crossmintHealth, payaiHealth] =
+    await Promise.all([
+      checkConvex(),
+      checkSolana(),
+      checkDatabase(),
+      checkServerWallet(),
+      checkCrossmint(),
+      checkPayAI(),
+    ])
 
   const allHealthy =
     convexHealth.status === 'healthy' &&

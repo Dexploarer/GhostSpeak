@@ -43,12 +43,7 @@ async function checkEnvironmentVariables() {
     const value = process.env[varName]
     const passed = !!value && value.length > 0
 
-    addCheck(
-      `ENV: ${varName}`,
-      passed,
-      passed ? '✅ Configured' : '❌ Missing or empty',
-      true
-    )
+    addCheck(`ENV: ${varName}`, passed, passed ? '✅ Configured' : '❌ Missing or empty', true)
   }
 
   // Check that URLs are production (not localhost)
@@ -71,9 +66,7 @@ async function checkEnvironmentVariables() {
   addCheck(
     'ENV: Mainnet RPC',
     isMainnetRpc,
-    isMainnetRpc
-      ? `✅ Using mainnet RPC`
-      : `⚠️  Using non-mainnet RPC: ${rpcUrl}`,
+    isMainnetRpc ? `✅ Using mainnet RPC` : `⚠️  Using non-mainnet RPC: ${rpcUrl}`,
     true
   )
 
@@ -286,7 +279,7 @@ async function printResults() {
     process.exit(0)
   } else {
     console.log('✅ DEPLOYMENT READY')
-    console.log('   All checks passed! You\'re ready to deploy to mainnet.\n')
+    console.log("   All checks passed! You're ready to deploy to mainnet.\n")
     process.exit(0)
   }
 }

@@ -80,7 +80,9 @@ export function AgentCard({
               <div className="flex items-center gap-2">
                 <Star className="w-4 h-4 text-yellow-500" />
                 <span>{agent.reputation.score.toFixed(1)}</span>
-                <span className="text-gray-500">({formatNumber(agent.reputation.totalJobs)} jobs)</span>
+                <span className="text-gray-500">
+                  ({formatNumber(agent.reputation.totalJobs)} jobs)
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <DollarSign className="w-4 h-4 text-green-500" />

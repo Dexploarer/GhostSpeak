@@ -478,7 +478,7 @@ export function useMultisigs(options?: { enabled?: boolean }) {
     queryFn: async (): Promise<Multisig[]> => {
       if (!isConnected || !address) return []
 
-      const client = getGhostSpeakClient()
+      const _client = getGhostSpeakClient()
 
       try {
         // Query multisig accounts - SDK doesn't have getAllMultisigs yet
@@ -509,7 +509,7 @@ export function useMultisig(multisigAddress: Address | undefined, options?: { en
     queryFn: async (): Promise<Multisig | null> => {
       if (!multisigAddress) return null
 
-      // const client = getGhostSpeakClient()
+      // const _client = getGhostSpeakClient()
 
       try {
         // Fetch multisig account data
@@ -563,7 +563,7 @@ export function useCreateMultisig() {
     mutationFn: async (data: CreateMultisigData): Promise<Multisig> => {
       if (!isConnected || !address) throw new Error('Wallet not connected')
 
-      // const client = getGhostSpeakClient()
+      // const _client = getGhostSpeakClient()
       const signer = createSigner()
       if (!signer) throw new Error('Could not create signer')
 
@@ -591,7 +591,7 @@ export function useCreateMultisig() {
       const multisigId = BigInt(Date.now())
 
       // Create the multisig using SDK
-      const client = getGhostSpeakClient()
+      const _client = getGhostSpeakClient()
 
       // Call SDK's MultisigModule.createMultisig
       const signature = await client.multisigModule.createMultisig({
@@ -707,7 +707,7 @@ export function useApproveTransaction() {
       if (!signer) throw new Error('Could not create signer')
 
       // Use SDK's MultisigModule.approveProposal for voting on pending transactions
-      const client = getGhostSpeakClient()
+      const _client = getGhostSpeakClient()
 
       // Find the proposal address from the transaction ID
       // In a real implementation, transactions would have associated proposal addresses
@@ -746,7 +746,7 @@ export function useExecuteTransaction() {
       if (!signer) throw new Error('Could not create signer')
 
       // Use SDK's MultisigModule.executeProposal
-      const client = getGhostSpeakClient()
+      const _client = getGhostSpeakClient()
 
       const proposalAddress = data.multisigAddress // Placeholder - would need mapping
 

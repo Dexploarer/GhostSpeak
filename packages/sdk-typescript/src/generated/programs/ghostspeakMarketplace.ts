@@ -17,6 +17,7 @@ import {
   type ParsedActivateAgentInstruction,
   type ParsedApproveDeliveryInstruction,
   type ParsedArbitrateDisputeInstruction,
+  type ParsedCreateAgentAuthorizationInstruction,
   type ParsedCreateCredentialTemplateInstruction,
   type ParsedCreateCredentialTypeInstruction,
   type ParsedCreateDidDocumentInstruction,
@@ -27,14 +28,6 @@ import {
   type ParsedDeactivateCredentialTypeInstruction,
   type ParsedDeactivateDidDocumentInstruction,
   type ParsedEnableProtocolFeesInstruction,
-  type ParsedExportActionInstruction,
-  type ParsedExportAuditContextInstruction,
-  type ParsedExportBiometricQualityInstruction,
-  type ParsedExportComplianceStatusInstruction,
-  type ParsedExportMultisigConfigInstruction,
-  type ParsedExportReportEntryInstruction,
-  type ParsedExportResourceConstraintsInstruction,
-  type ParsedExportRuleConditionInstruction,
   type ParsedFileDisputeInstruction,
   type ParsedGenerateComplianceReportInstruction,
   type ParsedInitializeAuditTrailInstruction,
@@ -51,6 +44,7 @@ import {
   type ParsedRegisterAgentInstruction,
   type ParsedResetReentrancyGuardInstruction,
   type ParsedResolveDidDocumentInstruction,
+  type ParsedRevokeAuthorizationInstruction,
   type ParsedRevokeCredentialInstruction,
   type ParsedSlashStakeInstruction,
   type ParsedStakeGhostInstruction,
@@ -64,8 +58,10 @@ import {
   type ParsedUpdateDidDocumentInstruction,
   type ParsedUpdateProtocolConfigInstruction,
   type ParsedUpdateReputationTagsInstruction,
+  type ParsedUpdateReputationWithAuthInstruction,
   type ParsedUpdateSourceReputationInstruction,
   type ParsedVerifyAgentInstruction,
+  type ParsedVerifyAuthorizationInstruction,
 } from "../instructions";
 
 export const GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS =
@@ -73,9 +69,11 @@ export const GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS =
 
 export enum GhostspeakMarketplaceAccount {
   Agent,
+  AgentReputationAuth,
   AgentTreeConfig,
   AgentVerification,
   AuditTrail,
+  AuthorizationUsageRecord,
   ComplianceReport,
   Credential,
   CredentialTemplate,
@@ -112,6 +110,17 @@ export function identifyGhostspeakMarketplaceAccount(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([30, 249, 165, 44, 155, 194, 188, 175]),
+      ),
+      0,
+    )
+  ) {
+    return GhostspeakMarketplaceAccount.AgentReputationAuth;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([145, 145, 156, 0, 197, 232, 130, 245]),
       ),
       0,
@@ -140,6 +149,17 @@ export function identifyGhostspeakMarketplaceAccount(
     )
   ) {
     return GhostspeakMarketplaceAccount.AuditTrail;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([109, 102, 102, 17, 210, 84, 85, 210]),
+      ),
+      0,
+    )
+  ) {
+    return GhostspeakMarketplaceAccount.AuthorizationUsageRecord;
   }
   if (
     containsBytes(
@@ -312,17 +332,10 @@ export function identifyGhostspeakMarketplaceAccount(
 }
 
 export enum GhostspeakMarketplaceInstruction {
-  ExportAction,
-  ExportAuditContext,
-  ExportBiometricQuality,
-  ExportComplianceStatus,
-  ExportMultisigConfig,
-  ExportReportEntry,
-  ExportResourceConstraints,
-  ExportRuleCondition,
   ActivateAgent,
   ApproveDelivery,
   ArbitrateDispute,
+  CreateAgentAuthorization,
   CreateCredentialTemplate,
   CreateCredentialType,
   CreateDidDocument,
@@ -349,6 +362,7 @@ export enum GhostspeakMarketplaceInstruction {
   RegisterAgentCompressed,
   ResetReentrancyGuard,
   ResolveDidDocument,
+  RevokeAuthorization,
   RevokeCredential,
   SlashStake,
   StakeGhost,
@@ -362,102 +376,16 @@ export enum GhostspeakMarketplaceInstruction {
   UpdateDidDocument,
   UpdateProtocolConfig,
   UpdateReputationTags,
+  UpdateReputationWithAuth,
   UpdateSourceReputation,
   VerifyAgent,
+  VerifyAuthorization,
 }
 
 export function identifyGhostspeakMarketplaceInstruction(
   instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
 ): GhostspeakMarketplaceInstruction {
   const data = "data" in instruction ? instruction.data : instruction;
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([206, 39, 235, 232, 29, 98, 124, 4]),
-      ),
-      0,
-    )
-  ) {
-    return GhostspeakMarketplaceInstruction.ExportAction;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([146, 64, 145, 33, 190, 17, 82, 70]),
-      ),
-      0,
-    )
-  ) {
-    return GhostspeakMarketplaceInstruction.ExportAuditContext;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([30, 229, 117, 69, 175, 246, 7, 143]),
-      ),
-      0,
-    )
-  ) {
-    return GhostspeakMarketplaceInstruction.ExportBiometricQuality;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([25, 78, 239, 255, 21, 9, 170, 98]),
-      ),
-      0,
-    )
-  ) {
-    return GhostspeakMarketplaceInstruction.ExportComplianceStatus;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([100, 100, 216, 86, 42, 163, 37, 64]),
-      ),
-      0,
-    )
-  ) {
-    return GhostspeakMarketplaceInstruction.ExportMultisigConfig;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([34, 42, 234, 113, 80, 201, 15, 95]),
-      ),
-      0,
-    )
-  ) {
-    return GhostspeakMarketplaceInstruction.ExportReportEntry;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([250, 43, 164, 121, 205, 210, 124, 127]),
-      ),
-      0,
-    )
-  ) {
-    return GhostspeakMarketplaceInstruction.ExportResourceConstraints;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([87, 78, 249, 236, 50, 103, 49, 173]),
-      ),
-      0,
-    )
-  ) {
-    return GhostspeakMarketplaceInstruction.ExportRuleCondition;
-  }
   if (
     containsBytes(
       data,
@@ -490,6 +418,17 @@ export function identifyGhostspeakMarketplaceInstruction(
     )
   ) {
     return GhostspeakMarketplaceInstruction.ArbitrateDispute;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([48, 219, 232, 202, 151, 97, 230, 20]),
+      ),
+      0,
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.CreateAgentAuthorization;
   }
   if (
     containsBytes(
@@ -781,6 +720,17 @@ export function identifyGhostspeakMarketplaceInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([222, 179, 207, 59, 191, 78, 24, 248]),
+      ),
+      0,
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.RevokeAuthorization;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([38, 123, 95, 95, 223, 158, 169, 87]),
       ),
       0,
@@ -924,6 +874,17 @@ export function identifyGhostspeakMarketplaceInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([61, 236, 225, 167, 134, 43, 53, 93]),
+      ),
+      0,
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.UpdateReputationWithAuth;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([161, 240, 255, 69, 130, 227, 71, 123]),
       ),
       0,
@@ -942,6 +903,17 @@ export function identifyGhostspeakMarketplaceInstruction(
   ) {
     return GhostspeakMarketplaceInstruction.VerifyAgent;
   }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([43, 9, 131, 59, 74, 118, 113, 170]),
+      ),
+      0,
+    )
+  ) {
+    return GhostspeakMarketplaceInstruction.VerifyAuthorization;
+  }
   throw new Error(
     "The provided instruction could not be identified as a ghostspeakMarketplace instruction.",
   );
@@ -951,30 +923,6 @@ export type ParsedGhostspeakMarketplaceInstruction<
   TProgram extends string = "4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB",
 > =
   | ({
-      instructionType: GhostspeakMarketplaceInstruction.ExportAction;
-    } & ParsedExportActionInstruction<TProgram>)
-  | ({
-      instructionType: GhostspeakMarketplaceInstruction.ExportAuditContext;
-    } & ParsedExportAuditContextInstruction<TProgram>)
-  | ({
-      instructionType: GhostspeakMarketplaceInstruction.ExportBiometricQuality;
-    } & ParsedExportBiometricQualityInstruction<TProgram>)
-  | ({
-      instructionType: GhostspeakMarketplaceInstruction.ExportComplianceStatus;
-    } & ParsedExportComplianceStatusInstruction<TProgram>)
-  | ({
-      instructionType: GhostspeakMarketplaceInstruction.ExportMultisigConfig;
-    } & ParsedExportMultisigConfigInstruction<TProgram>)
-  | ({
-      instructionType: GhostspeakMarketplaceInstruction.ExportReportEntry;
-    } & ParsedExportReportEntryInstruction<TProgram>)
-  | ({
-      instructionType: GhostspeakMarketplaceInstruction.ExportResourceConstraints;
-    } & ParsedExportResourceConstraintsInstruction<TProgram>)
-  | ({
-      instructionType: GhostspeakMarketplaceInstruction.ExportRuleCondition;
-    } & ParsedExportRuleConditionInstruction<TProgram>)
-  | ({
       instructionType: GhostspeakMarketplaceInstruction.ActivateAgent;
     } & ParsedActivateAgentInstruction<TProgram>)
   | ({
@@ -983,6 +931,9 @@ export type ParsedGhostspeakMarketplaceInstruction<
   | ({
       instructionType: GhostspeakMarketplaceInstruction.ArbitrateDispute;
     } & ParsedArbitrateDisputeInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.CreateAgentAuthorization;
+    } & ParsedCreateAgentAuthorizationInstruction<TProgram>)
   | ({
       instructionType: GhostspeakMarketplaceInstruction.CreateCredentialTemplate;
     } & ParsedCreateCredentialTemplateInstruction<TProgram>)
@@ -1062,6 +1013,9 @@ export type ParsedGhostspeakMarketplaceInstruction<
       instructionType: GhostspeakMarketplaceInstruction.ResolveDidDocument;
     } & ParsedResolveDidDocumentInstruction<TProgram>)
   | ({
+      instructionType: GhostspeakMarketplaceInstruction.RevokeAuthorization;
+    } & ParsedRevokeAuthorizationInstruction<TProgram>)
+  | ({
       instructionType: GhostspeakMarketplaceInstruction.RevokeCredential;
     } & ParsedRevokeCredentialInstruction<TProgram>)
   | ({
@@ -1101,8 +1055,14 @@ export type ParsedGhostspeakMarketplaceInstruction<
       instructionType: GhostspeakMarketplaceInstruction.UpdateReputationTags;
     } & ParsedUpdateReputationTagsInstruction<TProgram>)
   | ({
+      instructionType: GhostspeakMarketplaceInstruction.UpdateReputationWithAuth;
+    } & ParsedUpdateReputationWithAuthInstruction<TProgram>)
+  | ({
       instructionType: GhostspeakMarketplaceInstruction.UpdateSourceReputation;
     } & ParsedUpdateSourceReputationInstruction<TProgram>)
   | ({
       instructionType: GhostspeakMarketplaceInstruction.VerifyAgent;
-    } & ParsedVerifyAgentInstruction<TProgram>);
+    } & ParsedVerifyAgentInstruction<TProgram>)
+  | ({
+      instructionType: GhostspeakMarketplaceInstruction.VerifyAuthorization;
+    } & ParsedVerifyAuthorizationInstruction<TProgram>);

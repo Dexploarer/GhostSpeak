@@ -74,10 +74,7 @@ export const getRecentEscrows = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
     const limit = args.limit ?? 20
-    const escrows = await ctx.db
-      .query('escrows')
-      .order('desc')
-      .take(limit)
+    const escrows = await ctx.db.query('escrows').order('desc').take(limit)
 
     return escrows
   },
@@ -245,12 +242,14 @@ export const addTimelineEvent = mutation({
     escrowId: v.string(),
     eventType: v.string(),
     actor: v.string(),
-    data: v.optional(v.object({
-      deliveryProof: v.optional(v.string()),
-      disputeReason: v.optional(v.string()),
-      arbitratorDecision: v.optional(v.string()),
-      transactionSignature: v.optional(v.string()),
-    })),
+    data: v.optional(
+      v.object({
+        deliveryProof: v.optional(v.string()),
+        disputeReason: v.optional(v.string()),
+        arbitratorDecision: v.optional(v.string()),
+        transactionSignature: v.optional(v.string()),
+      })
+    ),
   },
   handler: async (ctx, args) => {
     const eventId = await ctx.db.insert('escrowEvents', {

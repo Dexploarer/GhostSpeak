@@ -9,6 +9,7 @@ This directory contains examples and test utilities for the GhostSpeak B2B API.
 Demonstrates how to verify webhook signatures using HMAC-SHA256.
 
 **Features:**
+
 - Signature verification function
 - Express.js webhook handler example
 - Next.js API route webhook handler example
@@ -43,6 +44,7 @@ bun run examples/verify-webhook-signature.ts
 Test utility for bulk agent verification endpoint.
 
 **Features:**
+
 - Batch verification testing
 - Performance benchmarking
 - Cost comparison (batch vs individual)
@@ -112,11 +114,7 @@ const response = await fetch('https://ghostspeak.ai/api/v1/verify/batch', {
     'Content-Type': 'application/json',
   },
   body: JSON.stringify({
-    agents: [
-      'AgentAddress1...',
-      'AgentAddress2...',
-      'AgentAddress3...',
-    ],
+    agents: ['AgentAddress1...', 'AgentAddress2...', 'AgentAddress3...'],
   }),
 })
 
@@ -189,11 +187,11 @@ Based on testing with production data:
 
 ### Batch Verification
 
-| Agents | Avg Time/Agent | Total Time | Cost    |
-|--------|----------------|------------|---------|
-| 10     | 18ms           | 180ms      | $0.05   |
-| 50     | 19ms           | 950ms      | $0.25   |
-| 100    | 20ms           | 2000ms     | $0.50   |
+| Agents | Avg Time/Agent | Total Time | Cost  |
+| ------ | -------------- | ---------- | ----- |
+| 10     | 18ms           | 180ms      | $0.05 |
+| 50     | 19ms           | 950ms      | $0.25 |
+| 100    | 20ms           | 2000ms     | $0.50 |
 
 ### Webhook Delivery
 

@@ -6,7 +6,7 @@ export class Analytics {
   private static instance: Analytics
   private initialized = false
 
-  private constructor() {}
+  private constructor() {} // Empty constructor
 
   static getInstance(): Analytics {
     if (!Analytics.instance) {
@@ -79,10 +79,7 @@ export class Analytics {
   }
 
   // B2C Ghost Score events
-  trackAgentVerification(
-    agentAddress: string,
-    verificationLevel: 'basic' | 'verified' | 'elite'
-  ) {
+  trackAgentVerification(agentAddress: string, verificationLevel: 'basic' | 'verified' | 'elite') {
     if (!this.initialized) return
     posthog.capture('agent_verified', {
       agent_address: agentAddress,
@@ -98,11 +95,7 @@ export class Analytics {
     })
   }
 
-  trackCredentialIssued(
-    agentAddress: string,
-    credentialType: string,
-    issuer: string
-  ) {
+  trackCredentialIssued(agentAddress: string, credentialType: string, issuer: string) {
     if (!this.initialized) return
     posthog.capture('credential_issued', {
       agent_address: agentAddress,

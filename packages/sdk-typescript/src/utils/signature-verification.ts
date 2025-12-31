@@ -1,10 +1,10 @@
 /**
  * Agent Authorization Signature Verification
  *
- * Ed25519 signature creation and verification for ERC-8004-compliant
- * agent pre-authorization system.
+ * Ed25519 signature creation and verification for GhostSpeak's
+ * trustless agent pre-authorization system.
  *
- * @see https://eips.ethereum.org/EIPS/eip-8004
+ * Enables verifiable delegation of reputation update authority.
  */
 
 import type { Address } from '@solana/addresses'
@@ -164,8 +164,9 @@ export async function createSignedAuthorization(
   // Default network (would need to be passed or detected from cluster)
   const network: SolanaNetwork = params.network || 'devnet'
 
-  // Generate nonce if not provided (prevents replay attacks)
-  const nonce = params.nonce || generateNonce()
+  // Use "default" nonce if not provided to avoid PDA seed length issues (64-char hex exceeds 32-byte limit)
+  // Note: This matches Rust's unwrap_or(&String::from("default")) behavior
+  const nonce = params.nonce !== undefined ? params.nonce : "default"
 
   // Create message
   const message: AuthorizationMessage = {

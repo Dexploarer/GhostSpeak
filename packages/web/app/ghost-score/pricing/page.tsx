@@ -5,17 +5,7 @@ import { motion } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  Check,
-  X,
-  Zap,
-  Shield,
-  TrendingUp,
-  Users,
-  Star,
-  Crown,
-  Sparkles,
-} from 'lucide-react'
+import { Check, X, Zap, Shield, TrendingUp, Users, Star, Crown, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 
@@ -147,9 +137,7 @@ export default function PricingPage() {
 
             {/* Annual Toggle */}
             <div className="flex items-center justify-center gap-4 mb-12">
-              <span className={isAnnual ? 'text-muted-foreground' : 'font-semibold'}>
-                Monthly
-              </span>
+              <span className={isAnnual ? 'text-muted-foreground' : 'font-semibold'}>Monthly</span>
               <button
                 onClick={() => setIsAnnual(!isAnnual)}
                 className={`relative w-16 h-8 rounded-full transition-colors ${isAnnual ? 'bg-purple-600' : 'bg-gray-600'}`}
@@ -175,9 +163,10 @@ export default function PricingPage() {
           <div className="grid md:grid-cols-3 gap-8">
             {PRICING_TIERS.map((tier, idx) => {
               const Icon = tier.icon
-              const price = isAnnual && tier.price !== '$0'
-                ? `$${(parseFloat(tier.price.slice(1)) * 0.8).toFixed(2)}`
-                : tier.price
+              const price =
+                isAnnual && tier.price !== '$0'
+                  ? `$${(parseFloat(tier.price.slice(1)) * 0.8).toFixed(2)}`
+                  : tier.price
 
               return (
                 <motion.div
@@ -251,9 +240,7 @@ export default function PricingPage() {
       {/* Features Comparison */}
       <section className="py-20 px-4 bg-card/20 border-t border-border">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12">
-            All Plans Include
-          </h2>
+          <h2 className="text-4xl font-bold text-center mb-12">All Plans Include</h2>
 
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="p-6">
@@ -286,9 +273,7 @@ export default function PricingPage() {
       {/* FAQ */}
       <section className="py-20 px-4 border-t border-border">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12">
-            Frequently Asked Questions
-          </h2>
+          <h2 className="text-4xl font-bold text-center mb-12">Frequently Asked Questions</h2>
 
           <div className="space-y-6">
             <Card className="p-6">
@@ -316,8 +301,8 @@ export default function PricingPage() {
             <Card className="p-6">
               <h3 className="font-bold mb-2">How do verification limits work?</h3>
               <p className="text-muted-foreground">
-                Free users get 3 verifications per month. The limit resets on the 1st of each
-                month. Pro users have unlimited verifications.
+                Free users get 3 verifications per month. The limit resets on the 1st of each month.
+                Pro users have unlimited verifications.
               </p>
             </Card>
           </div>

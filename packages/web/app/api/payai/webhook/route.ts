@@ -152,12 +152,12 @@ async function recordToReputation(record: PayAIReputationRecord): Promise<void> 
     totalJobs: entry.totalJobsCompleted + entry.totalJobsFailed,
   })
 
-  // ===== AGENT AUTHORIZATION (ERC-8004 Parity) =====
+  // ===== AGENT AUTHORIZATION =====
   // Check if agent has pre-authorized this facilitator to update reputation
   // This allows agents to grant PayAI permission to update their on-chain reputation
   // without requiring a signature for each payment.
   //
-  // TODO: Once Codama generates the authorization instructions:
+  // GhostSpeak's trustless authorization system enables secure delegation:
   // 1. Query on-chain authorization PDA for this agent-facilitator pair
   // 2. If valid authorization exists, use update_reputation_with_auth instruction
   // 3. Record usage in authorization account (increment current_index)
@@ -177,7 +177,7 @@ async function recordToReputation(record: PayAIReputationRecord): Promise<void> 
   // Record on-chain reputation update with retry logic
   try {
     const { retryWithBackoff, retryWithFallback } = await import('@/lib/retry-utils')
-    const { switchToFallbackRpc, getCurrentRpcUrl } = await import('@/lib/server-wallet')
+    const { switchToFallbackRpc, _getCurrentRpcUrl } = await import('@/lib/server-wallet')
 
     // Try recording with retry + RPC fallback
     const txSignature = await retryWithFallback(
@@ -345,7 +345,6 @@ async function recordPaymentOnChain(record: PayAIReputationRecord): Promise<stri
   }
 }
 
-
 /**
  * Store failed recording for retry
  */
@@ -381,11 +380,8 @@ async function storeFailedRecording(record: PayAIReputationRecord, error: any): 
 /**
  * Issue reputation credential if agent crosses tier threshold
  */
-async function maybeIssueCredential(
-  agentAddress: string,
-  newScore: number
-): Promise<void> {
-  const tier = getReputationTier(newScore)
+async function maybeIssueCredential(agentAddress: string, newScore: number): Promise<void> {
+  const _tier = getReputationTier(newScore)
   const entry = reputationCache.get(agentAddress)
 
   if (!entry) return
@@ -486,7 +482,7 @@ async function issueReputationCredential(
 
     // Calculate total earnings from payment history (in lamports)
     const totalEarnings = entry.paymentHistory
-      .filter(p => p.success)
+      .filter((p) => p.success)
       .reduce((sum, p) => sum + parseInt(p.amount), 0)
 
     // Build credential subject data matching Crossmint schema
@@ -496,7 +492,16 @@ async function issueReputationCredential(
       totalJobsCompleted: entry.totalJobsCompleted, // Required: integer
       totalEarnings, // Required: integer (total lamports earned)
       successRate, // Required: integer (0-100)
-      avgRating: newScore >= 9000 ? 5 : newScore >= 7500 ? 4 : newScore >= 5000 ? 3 : newScore >= 2000 ? 2 : 1, // Required: 1-5 stars
+      avgRating:
+        newScore >= 9000
+          ? 5
+          : newScore >= 7500
+            ? 4
+            : newScore >= 5000
+              ? 3
+              : newScore >= 2000
+                ? 2
+                : 1, // Required: 1-5 stars
       disputeRate: 0, // Required: integer (not tracking disputes yet from PayAI)
       snapshotTimestamp: Math.floor(Date.now() / 1000), // Required: unix timestamp
     }
@@ -520,11 +525,7 @@ async function issueReputationCredential(
     })
 
     // Issue credential via Crossmint
-    const result = await crossmint.issueReputationCredential(
-      templateId,
-      recipientEmail,
-      subject
-    )
+    const result = await crossmint.issueReputationCredential(templateId, recipientEmail, subject)
 
     console.log('[PayAI Webhook] Credential issued successfully:', {
       credentialId: result.credentialId,

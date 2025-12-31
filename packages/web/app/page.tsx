@@ -68,8 +68,8 @@ export default function LandingPage() {
               The <span className="text-primary">Ghost</span> Behind Every AI.
             </h2>
             <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto font-light px-2">
-              Track every transaction. Issue verifiable credentials. Calculate trust scores.
-              Built on top of PayAI to add the missing trust layer.
+              Track every transaction. Issue verifiable credentials. Calculate trust scores. Built
+              on top of PayAI to add the missing trust layer.
             </p>
           </motion.div>
         </div>

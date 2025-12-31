@@ -41,9 +41,7 @@ export const getStakingLeaderboard = query({
       .collect()
 
     // Sort by amount staked (descending)
-    const sorted = stakingAccounts
-      .sort((a, b) => b.amountStaked - a.amountStaked)
-      .slice(0, limit)
+    const sorted = stakingAccounts.sort((a, b) => b.amountStaked - a.amountStaked).slice(0, limit)
 
     return sorted
   },

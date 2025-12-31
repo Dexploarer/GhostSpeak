@@ -7,9 +7,11 @@
  */
 
 export * from "./agent";
+export * from "./agentReputationAuth";
 export * from "./agentTreeConfig";
 export * from "./agentVerification";
 export * from "./auditTrail";
+export * from "./authorizationUsageRecord";
 export * from "./complianceReport";
 export * from "./credential";
 export * from "./credentialTemplate";

@@ -7,6 +7,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 ## Setup First
 
 1. **Install Stripe CLI**:
+
    ```bash
    brew install stripe/stripe-cli/stripe
    stripe login
@@ -17,6 +18,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 3. **Add env vars** to `.env.local`
 
 4. **Start webhook listener**:
+
    ```bash
    stripe listen --forward-to localhost:3000/api/stripe/webhook
    ```
@@ -32,6 +34,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 ## Test 1: B2C Subscription - Stripe Checkout
 
 ### Steps
+
 1. Navigate to `http://localhost:3000/ghost-score/pricing`
 2. Click **"Start Free Trial"** on Pro plan
 3. Fill checkout form:
@@ -46,16 +49,19 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 ### Screenshots to Capture
 
 **Screenshot 1: Pricing Page**
+
 - URL: `/ghost-score/pricing`
 - Highlight: "Start Free Trial" button on Pro plan
 - Caption: "Pricing page with Subscribe buttons"
 
 **Screenshot 2: Stripe Checkout**
+
 - URL: `checkout.stripe.com/...`
 - Show: Test card entered (`4242 4242 4242 4242`)
 - Caption: "Stripe Checkout with test card"
 
 **Screenshot 3: Convex Subscriptions Table**
+
 - Go to: Convex Dashboard > Data > `subscriptions`
 - Show: New row with:
   - `tier: "pro"`
@@ -65,6 +71,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 - Caption: "Subscription created in Convex database"
 
 **Screenshot 4: Stripe Dashboard**
+
 - Go to: Stripe Dashboard > Customers
 - Show: New customer with successful payment
 - Caption: "Stripe Dashboard showing successful subscription"
@@ -74,6 +81,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 ## Test 2: Freemium Enforcement
 
 ### Steps
+
 1. Ensure you're on **free tier** (no active subscription)
 2. Navigate to `/ghost-score`
 3. Search for an agent
@@ -84,6 +92,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 ### Screenshots to Capture
 
 **Screenshot 5: Browser DevTools - Network Tab**
+
 - Open DevTools > Network tab
 - Make 4th verification request
 - Show: Response with:
@@ -100,6 +109,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 - Caption: "402 Payment Required on 4th verification"
 
 **Screenshot 6: UpgradeModal**
+
 - Show: Modal displayed with:
   - Title: "Verification Limit Reached"
   - Message: "You've used 3 of 3 free verifications"
@@ -108,6 +118,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 - Caption: "UpgradeModal shown when limit reached"
 
 **Screenshot 7: Convex Verifications Table**
+
 - Go to: Convex Dashboard > Data > `verifications`
 - Show: 3 rows for current month
 - Highlight: All have same `userId`
@@ -118,6 +129,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 ## Test 3: Pro Subscription Unlimited Access
 
 ### Steps
+
 1. Subscribe to Pro (from Test 1)
 2. Navigate to `/ghost-score`
 3. Verify 5+ agents in a row
@@ -126,12 +138,14 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 ### Screenshots to Capture
 
 **Screenshot 8: Multiple Successful Verifications**
+
 - Show: Browser console or Network tab
 - Multiple requests to `/api/ghost-score/verify`
 - All returning `200 OK`
 - Caption: "Pro user: Unlimited verifications working"
 
 **Screenshot 9: Convex Verifications (Pro User)**
+
 - Convex Dashboard > `verifications`
 - Show: More than 3 rows for current month
 - Highlight: `subscriptionTier: "pro"`
@@ -142,10 +156,12 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 ## Test 4: B2B API Metered Billing
 
 ### Prerequisites
+
 - Create API key via dashboard
 - Set up metered Stripe subscription for API key
 
 ### Steps
+
 1. Make API request:
    ```bash
    curl -X POST http://localhost:3000/api/v1/verify \
@@ -161,6 +177,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 ### Screenshots to Capture
 
 **Screenshot 10: API Request/Response**
+
 - Terminal showing:
   - Request command
   - Response:
@@ -178,6 +195,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 - Caption: "B2B API verification request successful"
 
 **Screenshot 11: Convex apiUsage Table**
+
 - Convex Dashboard > `apiUsage`
 - Show: New row with:
   - `endpoint: "/verify"`
@@ -188,6 +206,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 - Caption: "API usage tracked in Convex"
 
 **Screenshot 12: Stripe Usage Record** (if subscription exists)
+
 - Stripe Dashboard > Subscriptions > Usage
 - Show: Usage increment
 - Caption: "Stripe metered billing usage reported"
@@ -197,6 +216,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 ## Test 5: Review System
 
 ### Steps
+
 1. Navigate to `/ghost-score/AGENT_ADDRESS`
 2. Click **"Write a Review"**
 3. Fill form:
@@ -210,6 +230,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 ### Screenshots to Capture
 
 **Screenshot 13: Review Form**
+
 - Show: Form filled out
   - 4 stars selected
   - Review text entered
@@ -218,12 +239,14 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 - Caption: "Review form ready to submit"
 
 **Screenshot 14: Success Toast**
+
 - Show: Toast notification:
   - "Review submitted successfully!"
   - "Reward: 0.1 GHOST tokens will be sent to your wallet!"
 - Caption: "Review submission success message"
 
 **Screenshot 15: Convex Reviews Table**
+
 - Convex Dashboard > `reviews`
 - Show: New row with:
   - `agentAddress: "..."`
@@ -235,6 +258,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 - Caption: "Review stored in Convex database"
 
 **Screenshot 16: Duplicate Prevention**
+
 - Try submitting another review for same agent
 - Show: Error toast:
   - "You have already reviewed this agent"
@@ -245,6 +269,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 ## Test 6: Review Voting
 
 ### Steps
+
 1. Navigate to agent profile with reviews
 2. Click **upvote** button on a review
 3. Counter should increment
@@ -254,6 +279,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 ### Screenshots to Capture
 
 **Screenshot 17: Review with Voting**
+
 - Show: Review card with:
   - Upvote button (highlighted)
   - Upvote count: 1
@@ -261,6 +287,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 - Caption: "Review voting UI"
 
 **Screenshot 18: Convex reviewVotes Table**
+
 - Convex Dashboard > `reviewVotes`
 - Show: New row with:
   - `reviewId: "..."`
@@ -273,6 +300,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 ## Test 7: Stripe Webhook Events
 
 ### Steps
+
 1. With Stripe CLI running (`stripe listen --forward-to localhost:3000/api/stripe/webhook`)
 2. Trigger events:
    ```bash
@@ -285,6 +313,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 ### Screenshots to Capture
 
 **Screenshot 19: Stripe CLI Output**
+
 - Terminal showing:
   - Webhook events received
   - Status: 200 OK
@@ -292,6 +321,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 - Caption: "Stripe webhooks forwarded to local server"
 
 **Screenshot 20: Server Logs**
+
 - Show console output:
   - "Subscription created for user XXX: pro"
   - "Payment succeeded for subscription sub_XXX"
@@ -299,6 +329,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 - Caption: "Webhook events processed by server"
 
 **Screenshot 21: Stripe Dashboard - Webhooks**
+
 - Stripe Dashboard > Developers > Webhooks
 - Show: Recent webhook deliveries
 - All showing "Succeeded" status
@@ -309,6 +340,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 ## Test 8: Customer Portal
 
 ### Steps
+
 1. Subscribe to a plan
 2. Navigate to `/dashboard/ghost-score` (or wherever you add portal link)
 3. Click **"Manage Subscription"**
@@ -318,6 +350,7 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 ### Screenshots to Capture
 
 **Screenshot 22: Customer Portal**
+
 - Show: Stripe Customer Portal page
   - Current plan displayed
   - Update payment method option
@@ -328,30 +361,30 @@ This guide shows exactly what to test and what screenshots to capture for proof 
 
 ## Summary of Required Screenshots
 
-| # | Test | Screenshot |
-|---|------|------------|
-| 1 | B2C Checkout | Pricing page with Subscribe buttons |
-| 2 | B2C Checkout | Stripe Checkout with test card |
-| 3 | B2C Checkout | Convex subscriptions table |
-| 4 | B2C Checkout | Stripe Dashboard payment |
-| 5 | Freemium | 402 Payment Required response |
-| 6 | Freemium | UpgradeModal displayed |
-| 7 | Freemium | Convex verifications table (3 max) |
-| 8 | Pro Unlimited | Multiple successful verifications |
-| 9 | Pro Unlimited | Convex verifications (more than 3) |
-| 10 | B2B API | API request/response |
-| 11 | B2B API | Convex apiUsage table |
-| 12 | B2B API | Stripe usage record (optional) |
-| 13 | Reviews | Review form filled |
-| 14 | Reviews | Success toast |
-| 15 | Reviews | Convex reviews table |
-| 16 | Reviews | Duplicate prevention error |
-| 17 | Voting | Review with vote UI |
-| 18 | Voting | Convex reviewVotes table |
-| 19 | Webhooks | Stripe CLI output |
-| 20 | Webhooks | Server logs |
-| 21 | Webhooks | Stripe webhook delivery status |
-| 22 | Portal | Customer portal page |
+| #   | Test          | Screenshot                          |
+| --- | ------------- | ----------------------------------- |
+| 1   | B2C Checkout  | Pricing page with Subscribe buttons |
+| 2   | B2C Checkout  | Stripe Checkout with test card      |
+| 3   | B2C Checkout  | Convex subscriptions table          |
+| 4   | B2C Checkout  | Stripe Dashboard payment            |
+| 5   | Freemium      | 402 Payment Required response       |
+| 6   | Freemium      | UpgradeModal displayed              |
+| 7   | Freemium      | Convex verifications table (3 max)  |
+| 8   | Pro Unlimited | Multiple successful verifications   |
+| 9   | Pro Unlimited | Convex verifications (more than 3)  |
+| 10  | B2B API       | API request/response                |
+| 11  | B2B API       | Convex apiUsage table               |
+| 12  | B2B API       | Stripe usage record (optional)      |
+| 13  | Reviews       | Review form filled                  |
+| 14  | Reviews       | Success toast                       |
+| 15  | Reviews       | Convex reviews table                |
+| 16  | Reviews       | Duplicate prevention error          |
+| 17  | Voting        | Review with vote UI                 |
+| 18  | Voting        | Convex reviewVotes table            |
+| 19  | Webhooks      | Stripe CLI output                   |
+| 20  | Webhooks      | Server logs                         |
+| 21  | Webhooks      | Stripe webhook delivery status      |
+| 22  | Portal        | Customer portal page                |
 
 ---
 

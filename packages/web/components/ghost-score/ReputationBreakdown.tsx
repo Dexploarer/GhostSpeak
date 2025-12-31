@@ -103,9 +103,7 @@ export function ReputationBreakdown({ reputation }: ReputationBreakdownProps) {
                   <Progress value={entry.score} className="h-2" />
                 </div>
                 <span className="font-semibold w-12">{entry.score}%</span>
-                <span className="text-muted-foreground w-20">
-                  {entry.jobsCompleted} jobs
-                </span>
+                <span className="text-muted-foreground w-20">{entry.jobsCompleted} jobs</span>
               </div>
             ))}
           </div>
@@ -131,7 +129,9 @@ export function ReputationBreakdown({ reputation }: ReputationBreakdownProps) {
       )}
 
       {/* Risk Assessment */}
-      <div className={`rounded-lg p-4 ${reputation.riskScore < 20 ? 'bg-green-500/10 border border-green-500/30' : reputation.riskScore < 40 ? 'bg-yellow-500/10 border border-yellow-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
+      <div
+        className={`rounded-lg p-4 ${reputation.riskScore < 20 ? 'bg-green-500/10 border border-green-500/30' : reputation.riskScore < 40 ? 'bg-yellow-500/10 border border-yellow-500/30' : 'bg-red-500/10 border border-red-500/30'}`}
+      >
         <h3 className="font-semibold mb-2 flex items-center gap-2">
           <Clock className="w-5 h-5" />
           Risk Assessment
@@ -140,7 +140,11 @@ export function ReputationBreakdown({ reputation }: ReputationBreakdownProps) {
           <span className="text-sm text-muted-foreground">Risk Score</span>
           <Badge
             variant={
-              reputation.riskScore < 20 ? 'success' : reputation.riskScore < 40 ? 'warning' : 'destructive'
+              reputation.riskScore < 20
+                ? 'success'
+                : reputation.riskScore < 40
+                  ? 'warning'
+                  : 'destructive'
             }
           >
             {reputation.riskScore}/100

@@ -6,7 +6,7 @@
  */
 
 use anchor_lang::prelude::*;
-use super::{GhostSpeakError, MAX_GENERAL_STRING_LENGTH};
+use super::GhostSpeakError;
 
 // PDA Seeds
 pub const REPUTATION_NFT_SEED: &[u8] = b"reputation_nft";

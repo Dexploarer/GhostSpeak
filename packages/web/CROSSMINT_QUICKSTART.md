@@ -34,6 +34,7 @@ bun scripts/test-crossmint-webhook.ts
 ```
 
 Expected output:
+
 ```
 ✅ Webhook test PASSED
 ✅ Invalid signature rejection test PASSED
@@ -80,7 +81,7 @@ Config:
 ```tsx
 import { CrossmintCheckout } from '@/components/payments/CrossmintCheckout'
 
-<CrossmintCheckout
+;<CrossmintCheckout
   userId={userId}
   agentAddress={agentAddress}
   onSuccess={() => {
@@ -140,11 +141,11 @@ User → Can now verify agent
 
 ### Test Cards (Staging)
 
-| Card Number          | Result  |
-|---------------------|---------|
-| 4242 4242 4242 4242 | Success |
-| 4000 0000 0000 0002 | Decline |
-| 4000 0027 6000 3184 | 3DS Auth|
+| Card Number         | Result   |
+| ------------------- | -------- |
+| 4242 4242 4242 4242 | Success  |
+| 4000 0000 0000 0002 | Decline  |
+| 4000 0027 6000 3184 | 3DS Auth |
 
 Expiry: Any future date (12/34)
 CVC: Any 3 digits (123)
@@ -167,6 +168,7 @@ bun scripts/test-crossmint-webhook.ts
 **Problem:** `Invalid signature`
 
 **Fix:**
+
 1. Check `CROSSMINT_WEBHOOK_SECRET` is correct
 2. Verify webhook URL is publicly accessible
 3. Ensure using raw request body
@@ -176,6 +178,7 @@ bun scripts/test-crossmint-webhook.ts
 **Problem:** User paid but can't verify
 
 **Fix:**
+
 1. Check Crossmint console → Webhooks → Delivery logs
 2. Verify webhook endpoint returns 200 OK
 3. Check Convex logs for errors
@@ -186,6 +189,7 @@ bun scripts/test-crossmint-webhook.ts
 **Problem:** CrossmintCheckout button shows "Payment Unavailable"
 
 **Fix:**
+
 1. Verify `NEXT_PUBLIC_CROSSMINT_API_KEY` is set
 2. Check `.env.local` file exists
 3. Restart dev server to load env vars

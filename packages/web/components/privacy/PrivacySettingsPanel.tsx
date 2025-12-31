@@ -125,9 +125,7 @@ export function PrivacySettingsPanel({
   const handleBulkRemoveViewers = (addresses: string[]) => {
     setSettings((prev) => ({
       ...prev,
-      authorizedViewers: prev.authorizedViewers.filter(
-        (v) => !addresses.includes(v.walletAddress)
-      ),
+      authorizedViewers: prev.authorizedViewers.filter((v) => !addresses.includes(v.walletAddress)),
     }))
     setHasChanges(true)
   }

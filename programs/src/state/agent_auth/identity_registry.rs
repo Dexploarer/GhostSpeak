@@ -1,18 +1,18 @@
 /*!
- * ERC-8004 Identity Registry (Solana Adapter)
+ * GhostSpeak Identity Registry
  *
- * Implements the ERC-8004 Identity Registry interface on Solana.
- * Maps GhostSpeak agents to ERC-721-compatible token IDs for cross-chain discovery.
+ * Maps GhostSpeak agents to unique token IDs for cross-chain discovery.
+ * Enables verifiable agent identity across multiple protocols and chains.
  */
 
 use anchor_lang::prelude::*;
 use crate::state::GhostSpeakError;
 
 // PDA Seeds
-pub const ERC8004_IDENTITY_SEED: &[u8] = b"erc8004_identity";
+pub const IDENTITY_SEED: &[u8] = b"identity";
 pub const IDENTITY_METADATA_SEED: &[u8] = b"identity_metadata";
 
-/// ERC-8004 Protocol endpoint types
+/// Protocol endpoint types
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq)]
 pub enum ProtocolEndpoint {
     /// Agent-to-Agent (A2A) protocol
@@ -27,8 +27,8 @@ pub enum ProtocolEndpoint {
     Custom,
 }
 
-/// Agent registration file (ERC-8004 format)
-/// This maps to the URI returned by ERC-721's tokenURI
+/// Agent registration file for cross-chain discovery
+/// Contains protocol endpoints and payment addresses
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
 pub struct RegistrationFile {
     /// Agent name
@@ -65,12 +65,12 @@ pub struct WalletAddress {
     pub address: String,
 }
 
-/// ERC-8004 Identity Registry entry for a GhostSpeak agent
+/// GhostSpeak Identity Registry entry for an agent
 #[account]
-pub struct ERC8004Identity {
+pub struct AgentIdentity {
     /// GhostSpeak agent account
     pub agent: Pubkey,
-    /// ERC-721 token ID (for cross-chain mapping)
+    /// Unique token ID for cross-chain mapping
     /// Derived from agent pubkey for uniqueness
     pub token_id: u64,
     /// Namespace (e.g., "eip155" for EVM chains)
@@ -99,7 +99,7 @@ pub struct ERC8004Identity {
     pub bump: u8,
 }
 
-impl ERC8004Identity {
+impl AgentIdentity {
     pub const MAX_NAMESPACE_LEN: usize = 16;
     pub const MAX_URI_LEN: usize = 128;
 
@@ -118,7 +118,7 @@ impl ERC8004Identity {
         8 + // updated_at
         1; // bump
 
-    /// Initialize ERC-8004 identity
+    /// Initialize agent identity
     pub fn initialize(
         &mut self,
         agent: Pubkey,
@@ -158,7 +158,7 @@ impl ERC8004Identity {
         Ok(())
     }
 
-    /// Generate global agent ID in ERC-8004 format
+    /// Generate global agent ID for cross-chain discovery
     /// Format: namespace:chain_id:registry_address:token_id
     pub fn generate_global_id(&self) -> String {
         format!(
@@ -193,7 +193,7 @@ impl ERC8004Identity {
     }
 }
 
-/// On-chain metadata for ERC-8004 identity
+/// On-chain metadata for agent identity
 /// Stores minimal data for quick queries
 #[account]
 pub struct IdentityMetadata {

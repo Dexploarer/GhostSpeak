@@ -11,10 +11,16 @@ import { UnstakeDialog } from '@/components/staking/UnstakeDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Info, TrendingUp, Users, Lock } from 'lucide-react'
+import { Info, _TrendingUp, Users, Lock } from 'lucide-react'
 import { useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import Link from 'next/link'
@@ -192,9 +198,7 @@ export default function StakingDashboard() {
                     currentTier={stakingAccount.tier}
                   />
                 )}
-                <BenefitsDisplayCard
-                  currentTier={stakingAccount?.tier || 0}
-                />
+                <BenefitsDisplayCard currentTier={stakingAccount?.tier || 0} />
               </div>
             </div>
           </TabsContent>
@@ -206,9 +210,7 @@ export default function StakingDashboard() {
               </CardHeader>
               <CardContent>
                 {!stakingHistory || stakingHistory.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    No staking history yet
-                  </p>
+                  <p className="text-center text-muted-foreground py-8">No staking history yet</p>
                 ) : (
                   <div className="space-y-4">
                     {stakingHistory.map((event) => (
@@ -226,7 +228,11 @@ export default function StakingDashboard() {
                                   : 'bg-yellow-500/20 text-yellow-500'
                             }`}
                           >
-                            {event.eventType === 'staked' ? '+' : event.eventType === 'unstaked' ? '-' : '!'}
+                            {event.eventType === 'staked'
+                              ? '+'
+                              : event.eventType === 'unstaked'
+                                ? '-'
+                                : '!'}
                           </div>
                           <div>
                             <p className="font-semibold capitalize">{event.eventType}</p>
@@ -236,9 +242,7 @@ export default function StakingDashboard() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold">
-                            {event.amount.toLocaleString()} GHOST
-                          </p>
+                          <p className="font-semibold">{event.amount.toLocaleString()} GHOST</p>
                           {event.tierReached && (
                             <p className="text-xs text-muted-foreground">
                               Tier {event.tierReached}

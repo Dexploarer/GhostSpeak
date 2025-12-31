@@ -56,7 +56,7 @@ export const openapiSpec = {
         tags: ['Verification'],
         summary: 'Verify agent reputation',
         description:
-          'Verify an AI agent\'s reputation with detailed metrics including Ghost Score, tier, success rate, and payment history.',
+          "Verify an AI agent's reputation with detailed metrics including Ghost Score, tier, success rate, and payment history.",
         operationId: 'verifyAgent',
         requestBody: {
           required: true,
@@ -244,8 +244,7 @@ export const openapiSpec = {
       post: {
         tags: ['Webhooks'],
         summary: 'Create webhook subscription',
-        description:
-          'Subscribe to reputation change events. Webhooks are signed with HMAC-SHA256.',
+        description: 'Subscribe to reputation change events. Webhooks are signed with HMAC-SHA256.',
         operationId: 'createWebhook',
         requestBody: {
           required: true,

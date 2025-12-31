@@ -7,15 +7,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Shield,
-  Star,
-  TrendingUp,
-  Calendar,
-  ExternalLink,
-  Crown,
-  CheckCircle2,
-} from 'lucide-react'
+import { Shield, Star, TrendingUp, Calendar, ExternalLink, Crown, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import { formatAddress } from '@/lib/utils'
 
@@ -112,7 +104,11 @@ export default function GhostScoreDashboard() {
           <div className="bg-card/50 rounded-lg p-4">
             <div className="text-sm text-muted-foreground mb-1">API Access</div>
             <div className="text-2xl font-bold">
-              {currentTier === 'power' ? '10K/month' : currentTier === 'pro' ? 'Coming Soon' : 'None'}
+              {currentTier === 'power'
+                ? '10K/month'
+                : currentTier === 'pro'
+                  ? 'Coming Soon'
+                  : 'None'}
             </div>
           </div>
         </div>
@@ -196,9 +192,7 @@ export default function GhostScoreDashboard() {
               Start verifying agents to track their Ghost Scores.
             </p>
             <Link href="/ghost-score">
-              <Button className="bg-purple-600 hover:bg-purple-700">
-                Verify Your First Agent
-              </Button>
+              <Button className="bg-purple-600 hover:bg-purple-700">Verify Your First Agent</Button>
             </Link>
           </Card>
         ) : (

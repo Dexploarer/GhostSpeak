@@ -7,7 +7,7 @@
  */
 
 use anchor_lang::prelude::*;
-use super::{GhostSpeakError, MAX_NAME_LENGTH, MAX_GENERAL_STRING_LENGTH};
+use super::GhostSpeakError;
 
 // PDA Seeds
 pub const AGENT_LISTING_SEED: &[u8] = b"agent_listing";

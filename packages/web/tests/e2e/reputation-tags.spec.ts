@@ -37,7 +37,9 @@ test.describe('Reputation Tags', () => {
     // Check for behavior tags section
     const behaviorTags = page.locator('[data-testid="behavior-tags"]')
     if (await behaviorTags.isVisible()) {
-      expect(await behaviorTags.locator('[data-testid="tag-badge"]').count()).toBeGreaterThanOrEqual(0)
+      expect(
+        await behaviorTags.locator('[data-testid="tag-badge"]').count()
+      ).toBeGreaterThanOrEqual(0)
     }
   })
 

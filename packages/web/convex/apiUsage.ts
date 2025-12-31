@@ -21,7 +21,10 @@ export const getSummaryByKey = query({
     const records = await ctx.db
       .query('apiUsage')
       .withIndex('by_api_key_timestamp', (q) =>
-        q.eq('apiKeyId', args.apiKeyId).gte('timestamp', args.startDate).lte('timestamp', args.endDate)
+        q
+          .eq('apiKeyId', args.apiKeyId)
+          .gte('timestamp', args.startDate)
+          .lte('timestamp', args.endDate)
       )
       .collect()
 

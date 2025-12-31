@@ -38,9 +38,7 @@ export function AgentGrid({ agents, isLoading }: AgentGridProps) {
       <Card className="p-12 text-center">
         <Bot className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
         <h3 className="text-xl font-semibold mb-2">No agents found</h3>
-        <p className="text-muted-foreground">
-          Try adjusting your search criteria or filters.
-        </p>
+        <p className="text-muted-foreground">Try adjusting your search criteria or filters.</p>
       </Card>
     )
   }

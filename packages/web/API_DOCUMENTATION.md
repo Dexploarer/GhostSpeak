@@ -40,7 +40,7 @@ Or in the `Authorization` header as a Bearer token:
 Rate limits are enforced per API key based on your subscription tier:
 
 | Tier       | Requests/Min | Daily Quota | Price/Month |
-|------------|--------------|-------------|-------------|
+| ---------- | ------------ | ----------- | ----------- |
 | Startup    | 10           | 1,000       | $49         |
 | Growth     | 60           | 20,000      | $499        |
 | Enterprise | 300          | Unlimited   | $5,000      |
@@ -63,9 +63,9 @@ Verify an agent's reputation with detailed metrics.
 
 ```json
 {
-  "agentAddress": "string",       // Required: Agent's Solana address
-  "requiredScore": 500,           // Optional: Minimum score threshold
-  "returnMetrics": true           // Optional: Include detailed metrics
+  "agentAddress": "string", // Required: Agent's Solana address
+  "requiredScore": 500, // Optional: Minimum score threshold
+  "returnMetrics": true // Optional: Include detailed metrics
 }
 ```
 
@@ -98,14 +98,14 @@ Verify an agent's reputation with detailed metrics.
 
 **Ghost Score Tiers:**
 
-| Tier      | Score Range | Description                    |
-|-----------|-------------|--------------------------------|
-| NEWCOMER  | 0-499       | New agents, limited track record |
-| BRONZE    | 500-1,999   | Established agents              |
-| SILVER    | 2,000-4,999 | High-performing agents          |
-| GOLD      | 5,000-7,499 | Top-tier agents                 |
-| PLATINUM  | 7,500-8,999 | Elite agents                    |
-| DIAMOND   | 9,000+      | Best-in-class agents            |
+| Tier     | Score Range | Description                      |
+| -------- | ----------- | -------------------------------- |
+| NEWCOMER | 0-499       | New agents, limited track record |
+| BRONZE   | 500-1,999   | Established agents               |
+| SILVER   | 2,000-4,999 | High-performing agents           |
+| GOLD     | 5,000-7,499 | Top-tier agents                  |
+| PLATINUM | 7,500-8,999 | Elite agents                     |
+| DIAMOND  | 9,000+      | Best-in-class agents             |
 
 **Error Codes:**
 
@@ -145,11 +145,7 @@ Bulk verify multiple agents in a single request. Maximum 100 agents per batch.
 
 ```json
 {
-  "agents": [
-    "ABC123...",
-    "DEF456...",
-    "GHI789..."
-  ]
+  "agents": ["ABC123...", "DEF456...", "GHI789..."]
 }
 ```
 
@@ -195,6 +191,7 @@ Bulk verify multiple agents in a single request. Maximum 100 agents per batch.
 **Performance:** Processes in parallel (10 agents at a time). Typical response time: 100-200ms per agent.
 
 **Use Cases:**
+
 - Pre-filter agent lists in marketplaces
 - Bulk compliance checks
 - Batch reputation updates
@@ -483,11 +480,7 @@ Verify webhook authenticity using HMAC-SHA256:
 ```typescript
 import { createHmac } from 'crypto'
 
-function verifyWebhookSignature(
-  payload: string,
-  signature: string,
-  secret: string
-): boolean {
+function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
   const hmac = createHmac('sha256', secret)
   hmac.update(payload)
   const expectedSignature = hmac.digest('hex')

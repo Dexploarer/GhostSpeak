@@ -35,6 +35,18 @@ export { BaseModule } from './core/BaseModule.js'
 export { InstructionBuilder } from './core/InstructionBuilder.js'
 export { RpcClient } from './core/rpc-client.js'
 
+// Cache and performance utilities
+export { CacheManager, type CacheConfig } from './core/CacheManager.js'
+export {
+  batchGetAccounts,
+  batchGetExistingAccounts,
+  batchGetAndMap,
+  batchGetAccountsWithRetry,
+  createBatchFetcher,
+  type BatchProgressCallback,
+  type BatchFetchConfig
+} from './utils/batch-operations.js'
+
 // =====================================================
 // MODULE EXPORTS
 // =====================================================
@@ -42,7 +54,7 @@ export { RpcClient } from './core/rpc-client.js'
 // Agent module
 export { AgentModule } from './core/modules/AgentModule.js'
 
-// Authorization module (ERC-8004 parity)
+// Authorization module - Trustless agent pre-authorization
 export { AuthorizationModule } from './modules/authorization/index.js'
 
 // Escrow module
@@ -119,6 +131,45 @@ export {
   type CategoryReputation,
   type PayAIReputationRecordInput,
 } from './modules/reputation/ReputationModule.js'
+
+// Reputation Tag Engine (Pillar 2: Granular Tags)
+export { ReputationTagEngine } from './utils/reputation-tag-engine.js'
+
+// Reputation tag types and enums
+export {
+  TagCategory,
+  SkillTag,
+  BehaviorTag,
+  ComplianceTag,
+  TAG_CONSTANTS,
+  TagConfidenceLevel,
+  DEFAULT_TAG_DECAY,
+  type TagScore as TagScoreType,
+  type TagCriteria,
+  type TagEvaluation,
+  type TagFilters,
+  type TagUpdateRequest,
+  type BulkTagUpdateRequest,
+  type TagQueryResult,
+  type TagDecayConfig,
+  type ReputationMetrics as TagReputationMetrics,
+} from './types/reputation-tags.js'
+
+// Multi-Source Reputation Aggregator (Pillar 3: External Sources)
+export {
+  MultiSourceAggregator,
+  type AggregatedReputation,
+  type SourceScoreBreakdown,
+} from './modules/reputation/MultiSourceAggregator.js'
+
+// Reputation source adapters and types
+export {
+  ReputationSource,
+  BaseReputationAdapter,
+  type ReputationSourceAdapter,
+  type ReputationSourceConfig,
+  type SourceReputationData,
+} from './modules/reputation/adapters/ReputationSourceAdapter.js'
 
 // Privacy module
 export {
@@ -309,7 +360,7 @@ export type {
   RpcSubscriptionApi
 } from './types/index.js'
 
-// Export authorization types (ERC-8004 parity)
+// Export authorization types
 export type {
   SolanaNetwork,
   ReputationAuthorization,
@@ -335,7 +386,7 @@ export {
   findProgramDerivedAddress
 } from './utils/pda.js'
 
-// Export authorization signature utilities (ERC-8004 parity)
+// Export authorization signature utilities
 export {
   createAuthorizationMessage,
   signAuthorizationMessage,
@@ -397,6 +448,15 @@ export {
   getFileDisputeInstruction,
   getArbitrateDisputeInstruction,
 
+  // ===== DID INSTRUCTIONS (W3C Decentralized Identifiers) =====
+  getCreateDidDocumentInstructionAsync,
+  getUpdateDidDocumentInstructionAsync,
+  getDeactivateDidDocumentInstructionAsync,
+  getResolveDidDocumentInstructionAsync,
+
+  // ===== REPUTATION TAG INSTRUCTIONS =====
+  getUpdateReputationTagsInstructionAsync,
+
   // ===== STAKING TYPES =====
   type SlashReason,
   type StakingAccount,
@@ -414,6 +474,11 @@ export {
   type DeliverySubmittedEvent,
   type DisputeFiledEvent,
   type DisputeResolvedEvent,
+
+  // ===== REPUTATION TAG TYPES =====
+  type TagScore,
+  type ReputationTagsUpdatedEvent,
+  type TagDecayAppliedEvent,
 
   // Other generated utilities
   GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS

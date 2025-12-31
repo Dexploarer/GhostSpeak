@@ -44,8 +44,7 @@ export const options = {
 // Configuration
 const API_BASE_URL = __ENV.API_BASE_URL || 'http://localhost:3000'
 const API_KEY = __ENV.API_KEY || 'test_key_123'
-const TEST_AGENT_ADDRESS =
-  __ENV.TEST_AGENT_ADDRESS || '11111111111111111111111111111111'
+const TEST_AGENT_ADDRESS = __ENV.TEST_AGENT_ADDRESS || '11111111111111111111111111111111'
 
 const headers = {
   'Content-Type': 'application/json',
@@ -117,10 +116,9 @@ function testVerifyAgent() {
  */
 function testGetAgentScore() {
   const startTime = Date.now()
-  const response = http.get(
-    `${API_BASE_URL}/api/v1/agents/${TEST_AGENT_ADDRESS}/score`,
-    { headers }
-  )
+  const response = http.get(`${API_BASE_URL}/api/v1/agents/${TEST_AGENT_ADDRESS}/score`, {
+    headers,
+  })
   const duration = Date.now() - startTime
 
   scoreLatency.add(duration)

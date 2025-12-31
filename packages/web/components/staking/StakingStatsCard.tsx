@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { TierBadge } from './TierBadge'
 import { Shield, Clock, TrendingUp, Unlock, CheckCircle2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn as _cn } from '@/lib/utils'
 import { useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 
@@ -15,11 +15,7 @@ interface StakingStatsCardProps {
   onUnstake?: () => void
 }
 
-export function StakingStatsCard({
-  agentAddress,
-  onStakeMore,
-  onUnstake,
-}: StakingStatsCardProps) {
+export function StakingStatsCard({ agentAddress, onStakeMore, onUnstake }: StakingStatsCardProps) {
   const stakingAccount = useQuery(api.staking.getStakingAccount, { agentAddress })
   const isLoading = stakingAccount === undefined
 
@@ -122,9 +118,7 @@ export function StakingStatsCard({
               <Shield className="w-5 h-5 text-primary" />
               <span className="font-semibold">Reputation Boost</span>
             </div>
-            <span className="text-2xl font-bold text-primary">
-              +{boostPercentage}%
-            </span>
+            <span className="text-2xl font-bold text-primary">+{boostPercentage}%</span>
           </div>
         </div>
 
@@ -184,11 +178,7 @@ export function StakingStatsCard({
 
         {/* Actions */}
         <div className="flex gap-2 pt-4 border-t border-border">
-          <Button
-            onClick={onStakeMore}
-            variant="outline"
-            className="flex-1"
-          >
+          <Button onClick={onStakeMore} variant="outline" className="flex-1">
             Stake More
           </Button>
           <Button

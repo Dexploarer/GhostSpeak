@@ -150,9 +150,7 @@ export function MetricVisibilityControl({
                       {categoryMetrics.length}
                     </Badge>
                   </span>
-                  <span className="text-muted-foreground">
-                    {isExpanded ? '−' : '+'}
-                  </span>
+                  <span className="text-muted-foreground">{isExpanded ? '−' : '+'}</span>
                 </button>
 
                 {isExpanded && (

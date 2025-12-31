@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'sonner'
-import { Building2, Check, Mail, Phone, Users, Zap } from 'lucide-react'
+import { Building2, Check, Mail as _Mail, Phone as _Phone, Users, Zap } from 'lucide-react'
 
 export default function EnterprisePage() {
   const [formData, setFormData] = useState({
@@ -47,10 +47,7 @@ export default function EnterprisePage() {
       })
 
       if (response.ok) {
-        toast.success(
-          'Thank you! Our team will contact you within 24 hours.',
-          { duration: 5000 }
-        )
+        toast.success('Thank you! Our team will contact you within 24 hours.', { duration: 5000 })
         setFormData({
           companyName: '',
           contactName: '',
@@ -89,8 +86,8 @@ export default function EnterprisePage() {
             Across Your Organization
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Custom plans for large teams with dedicated support, advanced features, and
-            volume discounts.
+            Custom plans for large teams with dedicated support, advanced features, and volume
+            discounts.
           </p>
         </div>
 
@@ -135,7 +132,9 @@ export default function EnterprisePage() {
                 <CardDescription>For growing teams</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold mb-4">$499<span className="text-lg text-muted-foreground">/mo</span></div>
+                <div className="text-3xl font-bold mb-4">
+                  $499<span className="text-lg text-muted-foreground">/mo</span>
+                </div>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-green-500" />
@@ -202,15 +201,16 @@ export default function EnterprisePage() {
                 <CardDescription>For small teams</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold mb-4">$49<span className="text-lg text-muted-foreground">/mo</span></div>
+                <div className="text-3xl font-bold mb-4">
+                  $49<span className="text-lg text-muted-foreground">/mo</span>
+                </div>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-green-500" />
                     1,000 verifications/month
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-green-500" />
-                    5 team members
+                    <Check className="h-4 w-4 text-green-500" />5 team members
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-green-500" />

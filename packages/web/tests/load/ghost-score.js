@@ -45,12 +45,7 @@ const APP_BASE_URL = __ENV.APP_BASE_URL || 'http://localhost:3000'
 /**
  * User scenarios - simulate different user behaviors
  */
-const scenarios = [
-  browseHomePage,
-  searchAndViewAgent,
-  verifyAgentFreemium,
-  viewDashboard,
-]
+const scenarios = [browseHomePage, searchAndViewAgent, verifyAgentFreemium, viewDashboard]
 
 /**
  * Main test function
@@ -137,8 +132,7 @@ function verifyAgentFreemium() {
   let response = http.get(`${APP_BASE_URL}/agents/${testAgentAddress}`)
 
   check(response, {
-    'agent details: status is 200 or 404': (r) =>
-      r.status === 200 || r.status === 404,
+    'agent details: status is 200 or 404': (r) => r.status === 200 || r.status === 404,
   })
 
   sleep(2) // User reads details

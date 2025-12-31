@@ -5,6 +5,7 @@ This guide will help you configure Crossmint for Ghost Score verification paymen
 ## Overview
 
 **Payment Flow:**
+
 1. User wants verification but has no crypto
 2. Clicks "Pay with Card" → Crossmint checkout opens
 3. User pays $1.03 with credit card (includes 3% fee)
@@ -79,11 +80,13 @@ The USDC payments will be sent to the wallet address configured in your collecti
 Crossmint provides test credit cards for staging:
 
 **Test Cards:**
+
 - **Success:** 4242 4242 4242 4242
 - **Failure:** 4000 0000 0000 0002
 - **3D Secure:** 4000 0027 6000 3184
 
 **Test Details:**
+
 - Any future expiry date (e.g., 12/34)
 - Any 3-digit CVC (e.g., 123)
 - Any ZIP code (e.g., 12345)
@@ -119,6 +122,7 @@ Before production:
 **Problem:** Webhook returns 401 Invalid Signature
 
 **Solution:**
+
 1. Ensure you're using the correct signing secret from Crossmint Console
 2. Check that the webhook URL is publicly accessible (not localhost)
 3. Verify you're using the raw request body (not parsed JSON)
@@ -129,6 +133,7 @@ Before production:
 **Problem:** Payment completes but user doesn't get verification
 
 **Solution:**
+
 1. Check webhook delivery logs in Crossmint Console
 2. Verify webhook endpoint is responding with 200 OK
 3. Check Convex logs for mutation errors
@@ -139,6 +144,7 @@ Before production:
 **Problem:** User's card is charged but payment shows as failed
 
 **Solution:**
+
 1. Check Crossmint transaction logs for detailed error
 2. Verify recipient wallet address is correct
 3. Ensure wallet has sufficient SOL for rent
@@ -185,17 +191,20 @@ Monitor these metrics in production:
 ## Cost Analysis
 
 **Per Verification:**
+
 - User pays: $1.03 USD
 - Crossmint fee: $0.03 (3%)
 - Protocol receives: 1.00 USDC
 - Net revenue: 1.00 USDC
 
 **Monthly Projections (from GHOST_TOKEN_RESEARCH.md):**
+
 - 100K verifications/month = $100K revenue
 - Crossmint fees: $3K/month
 - Net revenue: $100K USDC
 
 **Alternative: Direct USDC Payment**
+
 - User pays: 1.00 USDC (no fee)
 - Protocol receives: 1.00 USDC
 - Net revenue: 1.00 USDC

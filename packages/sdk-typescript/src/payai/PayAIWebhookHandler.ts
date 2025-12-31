@@ -20,6 +20,7 @@ import type {
   PayAIReputationRecord,
   PayAIPaymentData
 } from './PayAITypes.js'
+import type { AuthorizationModule } from '../modules/authorization/AuthorizationModule.js'
 
 // =====================================================
 // CONSTANTS
@@ -72,11 +73,19 @@ interface _PayAIWebhookHandlerEvents {
 export class PayAIWebhookHandler extends EventEmitter {
   private readonly options: PayAIWebhookHandlerOptions
   private readonly verifySignatures: boolean
+  private readonly authorizationModule?: AuthorizationModule
+  private readonly payAIFacilitatorAddress?: Address
 
-  constructor(options: PayAIWebhookHandlerOptions = {}) {
+  constructor(
+    options: PayAIWebhookHandlerOptions = {},
+    authorizationModule?: AuthorizationModule,
+    payAIFacilitatorAddress?: Address
+  ) {
     super()
     this.options = options
     this.verifySignatures = options.verifySignatures ?? process.env.NODE_ENV === 'production'
+    this.authorizationModule = authorizationModule
+    this.payAIFacilitatorAddress = payAIFacilitatorAddress
   }
 
   // =====================================================
@@ -232,6 +241,20 @@ export class PayAIWebhookHandler extends EventEmitter {
 
         // Record to reputation on settlement
         if (this.options.onRecordReputation) {
+          // Verify on-chain authorization if module is configured
+          if (this.authorizationModule && this.payAIFacilitatorAddress) {
+            const isAuthorized = await this.verifyOnChainAuthorization(data.merchant as Address)
+            if (!isAuthorized) {
+              return {
+                success: false,
+                eventType: type,
+                paymentId: data.paymentId,
+                error: 'Agent has not authorized PayAI facilitator to update reputation',
+                reputationRecorded: false
+              }
+            }
+          }
+
           const record = this.paymentToReputationRecord(data)
           await this.options.onRecordReputation(record)
           this.emit('reputation:recorded', record)
@@ -281,6 +304,44 @@ export class PayAIWebhookHandler extends EventEmitter {
       eventType: type,
       paymentId: data.paymentId,
       reputationRecorded: false
+    }
+  }
+
+  /**
+   * Verify on-chain authorization for an agent
+   *
+   * Checks if the agent has pre-authorized the PayAI facilitator
+   * to update their reputation on-chain.
+   */
+  private async verifyOnChainAuthorization(agentAddress: Address): Promise<boolean> {
+    if (!this.authorizationModule || !this.payAIFacilitatorAddress) {
+      // If authorization module is not configured, skip verification
+      // (This maintains backwards compatibility)
+      return true
+    }
+
+    try {
+      // Fetch authorization from on-chain
+      const authorization = await this.authorizationModule.fetchAuthorization(
+        agentAddress,
+        this.payAIFacilitatorAddress
+      )
+
+      if (!authorization) {
+        return false
+      }
+
+      // Check if authorization is still valid
+      const status = this.authorizationModule.getAuthorizationStatus(
+        authorization,
+        authorization.currentIndex
+      )
+
+      return status.isValid
+    } catch (error) {
+      // Log error but don't throw - authorization verification is optional
+      console.error('Failed to verify on-chain authorization:', error)
+      return false
     }
   }
 

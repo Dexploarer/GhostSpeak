@@ -65,8 +65,7 @@ export function BenefitsDisplayCard({ currentTier }: BenefitsDisplayCardProps) {
               key={tier.tier}
               className={cn(
                 'p-4 rounded-lg border transition-all',
-                isCurrent &&
-                  'bg-primary/10 border-primary/30 ring-2 ring-primary/20',
+                isCurrent && 'bg-primary/10 border-primary/30 ring-2 ring-primary/20',
                 !isCurrent && isUnlocked && 'bg-green-500/5 border-green-500/20',
                 !isUnlocked && 'bg-muted/30 border-border opacity-60'
               )}
@@ -74,12 +73,7 @@ export function BenefitsDisplayCard({ currentTier }: BenefitsDisplayCardProps) {
               {/* Tier Header */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <div
-                    className={cn(
-                      'p-2 rounded-lg',
-                      isUnlocked ? 'bg-primary/20' : 'bg-muted'
-                    )}
-                  >
+                  <div className={cn('p-2 rounded-lg', isUnlocked ? 'bg-primary/20' : 'bg-muted')}>
                     <Icon
                       className={cn(
                         'w-5 h-5',
@@ -97,33 +91,20 @@ export function BenefitsDisplayCard({ currentTier }: BenefitsDisplayCardProps) {
                     Active
                   </span>
                 )}
-                {!isCurrent && isUnlocked && (
-                  <Check className="w-5 h-5 text-green-500" />
-                )}
-                {!isUnlocked && (
-                  <Lock className="w-5 h-5 text-muted-foreground" />
-                )}
+                {!isCurrent && isUnlocked && <Check className="w-5 h-5 text-green-500" />}
+                {!isUnlocked && <Lock className="w-5 h-5 text-muted-foreground" />}
               </div>
 
               {/* Benefits List */}
               <ul className="space-y-2">
                 {tier.benefits.map((benefit, index) => (
-                  <li
-                    key={index}
-                    className="flex items-start gap-2 text-sm"
-                  >
+                  <li key={index} className="flex items-start gap-2 text-sm">
                     {isUnlocked ? (
                       <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
                     ) : (
                       <Lock className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                     )}
-                    <span
-                      className={cn(
-                        isUnlocked
-                          ? 'text-foreground'
-                          : 'text-muted-foreground'
-                      )}
-                    >
+                    <span className={cn(isUnlocked ? 'text-foreground' : 'text-muted-foreground')}>
                       {benefit.label}
                     </span>
                   </li>

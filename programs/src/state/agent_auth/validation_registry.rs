@@ -1,15 +1,15 @@
 /*!
- * ERC-8004 Validation Registry (Solana Adapter)
+ * GhostSpeak Validation Registry
  *
- * Implements the ERC-8004 Validation Registry interface on Solana.
  * Enables independent validators to verify agent work quality.
+ * Part of GhostSpeak's trustless reputation system.
  */
 
 use anchor_lang::prelude::*;
 use crate::state::GhostSpeakError;
 
 // PDA Seeds
-pub const ERC8004_VALIDATION_SEED: &[u8] = b"erc8004_validation";
+pub const VALIDATION_SEED: &[u8] = b"validation";
 pub const VALIDATOR_REGISTRY_SEED: &[u8] = b"validator_registry";
 
 /// Validation method type
@@ -145,7 +145,7 @@ pub struct ValidationResponse {
     pub request: Pubkey,
     /// Validator providing the response
     pub validator: Pubkey,
-    /// Validation outcome (0-100, as per ERC-8004 spec)
+    /// Validation outcome (0-100)
     /// 0 = failed validation, 100 = perfect validation
     pub outcome_score: u8,
     /// Detailed response URI (IPFS/Arweave)

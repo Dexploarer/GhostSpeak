@@ -4,7 +4,7 @@ import React, { useMemo } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
-import { GlassCard } from '@/components/dashboard/shared/GlassCard'
+import { GlassCard as _GlassCard } from '@/components/dashboard/shared/GlassCard'
 import { StatsCard } from '@/components/dashboard/shared/StatsCard'
 import { ActivityChart } from '@/components/dashboard/shared/ActivityChart'
 import { Button } from '@/components/ui/button'
@@ -12,19 +12,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
-  DollarSign,
+  _DollarSign,
   TrendingUp,
   Users,
   Percent,
   Coins,
   Award,
   ArrowDownToLine,
-  AlertTriangle,
+  _AlertTriangle,
   BarChart3,
   PieChart,
   LineChart,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn as _cn } from '@/lib/utils'
 import {
   PieChart as RechartsPie,
   Pie,
@@ -467,9 +467,7 @@ export default function TransparencyDashboard() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">Revenue Share Multiplier</p>
-                      <p className="text-xl font-semibold text-cyan-500">
-                        {userStake.multiplier}x
-                      </p>
+                      <p className="text-xl font-semibold text-cyan-500">{userStake.multiplier}x</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">Weighted Stake</p>

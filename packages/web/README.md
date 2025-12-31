@@ -60,7 +60,7 @@ NEXT_PUBLIC_SOLANA_NETWORK=devnet
    - `orders.create`
    - `orders.read`
    - `wallets:transactions.create`
-   → `CROSSMINT_SERVER_API_KEY`
+     → `CROSSMINT_SERVER_API_KEY`
 
 ### Installation
 
@@ -91,13 +91,13 @@ GhostSpeak uses **Crossmint** for wallet connection ([docs](https://docs.crossmi
 
 GhostSpeak integrates with [Crossmint's Agentic Commerce](https://docs.crossmint.com/solutions/ai-agents/introduction) for autonomous AI agent purchases:
 
-| Feature | Endpoint | Description |
-|---------|----------|-------------|
-| **Payment Delegation** | `/api/crossmint/order-intent` | Create order intents with mandates |
-| **Order Creation** | `/api/crossmint/orders` | Create purchase orders |
-| **Order Tracking** | `/api/crossmint/orders?orderId=xxx` | Track order status |
-| **Agent Wallets** | `/api/crossmint/wallets` | Programmable wallets for agents |
-| **Transactions** | `/api/crossmint/transactions` | Sign and submit payments |
+| Feature                | Endpoint                            | Description                        |
+| ---------------------- | ----------------------------------- | ---------------------------------- |
+| **Payment Delegation** | `/api/crossmint/order-intent`       | Create order intents with mandates |
+| **Order Creation**     | `/api/crossmint/orders`             | Create purchase orders             |
+| **Order Tracking**     | `/api/crossmint/orders?orderId=xxx` | Track order status                 |
+| **Agent Wallets**      | `/api/crossmint/wallets`            | Programmable wallets for agents    |
+| **Transactions**       | `/api/crossmint/transactions`       | Sign and submit payments           |
 
 ### React Hook
 
@@ -105,12 +105,12 @@ GhostSpeak integrates with [Crossmint's Agentic Commerce](https://docs.crossmint
 import { useCrossmintAgentCommerce } from '@/lib/hooks/useCrossmintAgentCommerce'
 
 function AgentPurchaseComponent() {
-  const { 
+  const {
     createAgentWallet,
     createOrder,
     purchaseWithAgent,
     pollOrderStatus,
-    loading 
+    loading
   } = useCrossmintAgentCommerce()
 
   const handlePurchase = async () => {

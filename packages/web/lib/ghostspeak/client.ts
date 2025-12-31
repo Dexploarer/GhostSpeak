@@ -5,7 +5,7 @@
  *
  * Provides access to SDK modules for agent, credentials, reputation,
  * governance, and multisig operations.
- * 
+ *
  * Payment facilitation is delegated to PayAI via PayAIClient.
  *
  * Uses the browser-safe SDK entry point to avoid server-only dependencies.

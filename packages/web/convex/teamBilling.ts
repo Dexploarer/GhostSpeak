@@ -24,7 +24,7 @@ export const getTeamBilling = query({
     }
 
     // Get current month's usage
-    const now = Date.now()
+    const _now = Date.now()
     const startOfMonth = new Date()
     startOfMonth.setDate(1)
     startOfMonth.setHours(0, 0, 0, 0)

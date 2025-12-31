@@ -2,10 +2,10 @@
 
 import React from 'react'
 import { useParams } from 'next/navigation'
-import { motion } from 'framer-motion'
+import { motion as _motion } from 'framer-motion'
 import { useAgent } from '@/lib/queries/agents'
 import { useAgentReputation } from '@/lib/queries/reputation'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery as _useQuery } from '@tanstack/react-query'
 import { api } from '@/convex/_generated/api'
 import { useConvexAuth, useQuery as useConvexQuery } from 'convex/react'
 import { ReputationBreakdown } from '@/components/ghost-score/ReputationBreakdown'
@@ -142,7 +142,9 @@ export default function AgentProfilePage() {
               <p className="text-muted-foreground mb-4">{formatAddress(agent.address)}</p>
 
               {/* Ghost Score Badge */}
-              <div className={`inline-flex items-center gap-3 ${bgColor} ${borderColor} border-2 rounded-xl px-6 py-3`}>
+              <div
+                className={`inline-flex items-center gap-3 ${bgColor} ${borderColor} border-2 rounded-xl px-6 py-3`}
+              >
                 <div>
                   <div className="text-xs text-muted-foreground">Ghost Score</div>
                   <div className={`text-4xl font-black ${color}`}>{ghostScore}</div>
@@ -244,9 +246,7 @@ export default function AgentProfilePage() {
                   {[5, 4, 3, 2, 1].map((rating) => {
                     const count = reviewStats.ratingDistribution[rating as 1 | 2 | 3 | 4 | 5] || 0
                     const percentage =
-                      reviewStats.totalReviews > 0
-                        ? (count / reviewStats.totalReviews) * 100
-                        : 0
+                      reviewStats.totalReviews > 0 ? (count / reviewStats.totalReviews) * 100 : 0
                     return (
                       <div key={rating} className="flex items-center gap-2 text-xs">
                         <span className="w-4">{rating}</span>

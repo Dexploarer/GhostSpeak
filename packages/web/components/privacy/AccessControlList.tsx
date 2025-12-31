@@ -192,9 +192,7 @@ export function AccessControlList({
                 min="1"
                 placeholder="Leave empty for no expiration"
                 value={expirationDays}
-                onChange={(e) =>
-                  setExpirationDays(e.target.value ? parseInt(e.target.value) : '')
-                }
+                onChange={(e) => setExpirationDays(e.target.value ? parseInt(e.target.value) : '')}
               />
             </div>
 
@@ -225,9 +223,7 @@ export function AccessControlList({
                 onCheckedChange={toggleSelectAll}
               />
               <span className="text-sm text-muted-foreground">
-                {selectedViewers.size > 0
-                  ? `${selectedViewers.size} selected`
-                  : 'Select all'}
+                {selectedViewers.size > 0 ? `${selectedViewers.size} selected` : 'Select all'}
               </span>
             </div>
             {selectedViewers.size > 0 && (
@@ -279,9 +275,7 @@ export function AccessControlList({
                       )}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>
-                        Added {new Date(viewer.addedAt).toLocaleDateString()}
-                      </span>
+                      <span>Added {new Date(viewer.addedAt).toLocaleDateString()}</span>
                       {viewer.expiresAt && (
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />

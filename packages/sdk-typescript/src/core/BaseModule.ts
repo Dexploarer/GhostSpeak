@@ -7,6 +7,7 @@ type IInstruction = Instruction
 import type { GhostSpeakConfig } from '../types/index.js'
 import { InstructionBuilder } from './InstructionBuilder.js'
 import type { TransactionResult } from '../utils/transaction-urls.js'
+import { CacheManager } from './CacheManager.js'
 
 /**
  * Base class for all instruction modules using the unified InstructionBuilder.
@@ -16,11 +17,13 @@ export abstract class BaseModule {
   protected builder: InstructionBuilder
   protected config: GhostSpeakConfig
   protected logger?: { info: (...args: unknown[]) => void; error: (...args: unknown[]) => void }
+  protected cacheManager: CacheManager
   private _debugMode = false
 
   constructor(config: GhostSpeakConfig) {
     this.config = config
     this.builder = new InstructionBuilder(config)
+    this.cacheManager = new CacheManager(config.cache)
     // Optional: Set logger if provided in config
     this.logger = config.logger
   }
@@ -147,23 +150,82 @@ export abstract class BaseModule {
   }
 
   /**
-   * Get decoded account
+   * Get decoded account (with optional caching)
    */
   protected async getAccount<T>(
     address: Address,
     decoderImportName: string
   ): Promise<T | null> {
-    return this.builder.getAccount<T>(address, decoderImportName)
+    // Check cache first (if enabled)
+    if (this.cacheManager.isEnabled()) {
+      const cached = this.cacheManager.getAccount<T>(address, this.commitment)
+      if (cached !== undefined) {
+        this.logger?.info(`[Cache HIT] ${address}`)
+        return cached
+      }
+    }
+
+    // Cache miss - fetch from RPC
+    const account = await this.builder.getAccount<T>(address, decoderImportName)
+
+    // Cache the result (if enabled and account exists)
+    if (this.cacheManager.isEnabled() && account !== null) {
+      // Get current slot for cache metadata (optional enhancement)
+      const slot = 0 // TODO: fetch current slot from RPC context
+      this.cacheManager.setAccount(address, account, this.commitment, slot)
+      this.logger?.info(`[Cache SET] ${address}`)
+    }
+
+    return account
   }
 
   /**
-   * Get multiple decoded accounts
+   * Get multiple decoded accounts (with optional caching)
    */
   protected async getAccounts<T>(
     addresses: Address[],
     decoderImportName: string
   ): Promise<(T | null)[]> {
-    return this.builder.getAccounts<T>(addresses, decoderImportName)
+    if (!this.cacheManager.isEnabled()) {
+      // Caching disabled - fetch all
+      return this.builder.getAccounts<T>(addresses, decoderImportName)
+    }
+
+    // Check cache for each address
+    const results: (T | null)[] = new Array(addresses.length)
+    const uncachedIndices: number[] = []
+    const uncachedAddresses: Address[] = []
+
+    for (let i = 0; i < addresses.length; i++) {
+      const cached = this.cacheManager.getAccount<T>(addresses[i], this.commitment)
+      if (cached !== undefined) {
+        results[i] = cached
+        this.logger?.info(`[Cache HIT] ${addresses[i]}`)
+      } else {
+        uncachedIndices.push(i)
+        uncachedAddresses.push(addresses[i])
+      }
+    }
+
+    // Fetch uncached accounts
+    if (uncachedAddresses.length > 0) {
+      this.logger?.info(`[Cache MISS] Fetching ${uncachedAddresses.length}/${addresses.length} accounts`)
+      const fetched = await this.builder.getAccounts<T>(uncachedAddresses, decoderImportName)
+
+      // Insert fetched results and cache them
+      const slot = 0 // TODO: fetch current slot
+      for (let i = 0; i < fetched.length; i++) {
+        const originalIndex = uncachedIndices[i]
+        const account = fetched[i]
+        results[originalIndex] = account
+
+        if (account !== null) {
+          this.cacheManager.setAccount(uncachedAddresses[i], account, this.commitment, slot)
+        }
+      }
+    }
+
+    return results
   }
 
   /**
@@ -202,5 +264,28 @@ export abstract class BaseModule {
    */
   public getCommitment() {
     return this.config.commitment ?? 'confirmed'
+  }
+
+  /**
+   * Invalidate cache for specific account
+   */
+  public invalidateCache(address: Address): void {
+    this.cacheManager.invalidateAccount(address)
+    this.logger?.info(`[Cache INVALIDATE] ${address}`)
+  }
+
+  /**
+   * Clear all caches
+   */
+  public clearCache(): void {
+    this.cacheManager.clear()
+    this.logger?.info('[Cache CLEAR] All caches cleared')
+  }
+
+  /**
+   * Get cache statistics
+   */
+  public getCacheStats() {
+    return this.cacheManager.getStats()
   }
 }

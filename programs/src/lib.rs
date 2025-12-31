@@ -74,6 +74,9 @@ pub use state::VotingResults;
 pub use state::CredentialKind;
 pub use state::CrossChainStatus;
 
+// Governance and multisig types
+pub use state::MultisigConfig;
+
 // Staking types (GHOST token staking for reputation boost)
 pub use state::AccessTier;
 pub use state::SlashReason;
@@ -90,6 +93,21 @@ pub use state::ServiceEndpoint;
 
 // Reputation tag types (Pillar 2: Reputation Tags)
 pub use state::TagScore;
+
+// Nested types exported for IDL generation (fixes Codama import errors)
+pub use state::AuditContext;
+pub use state::BiometricQuality;
+pub use state::Action;
+pub use state::RuleCondition;
+pub use state::ReportEntry;
+
+// Agent authorization types (for TypeScript SDK generation)
+pub use state::AgentReputationAuth;
+pub use state::AuthorizationUsageRecord;
+pub use state::AuthorizationStatus;
+pub use state::AgentFeedback;
+pub use state::AgentReputationSummary;
+pub use state::AgentIdentity;
 
 // =====================================================
 // DATA STRUCTURES
@@ -1412,156 +1430,98 @@ pub mod ghostspeak_marketplace {
     }
 
     // =====================================================
-    // TYPE EXPORT INSTRUCTIONS FOR IDL GENERATION
+    // AGENT PRE-AUTHORIZATION INSTRUCTIONS
     // =====================================================
-    // These dummy instructions force Anchor to include nested types in the IDL
-    // They are never meant to be called - they exist solely for IDL generation
+    // GhostSpeak's trustless agent pre-authorization system allows agents
+    // to delegate reputation update authority to facilitators (e.g., PayAI)
+    // with built-in limits and expiration for security.
+    //
+    // This enables verifiable, time-bound reputation management across protocols.
 
-    /// Dummy instruction to export AuditContext type
-    pub fn _export_audit_context(
-        _ctx: Context<DummyContext>,
-        _data: crate::state::audit::AuditContext,
+    /// Create agent authorization for reputation updates
+    ///
+    /// Allows an agent to pre-authorize a facilitator (e.g., PayAI) to update
+    /// their reputation a limited number of times before expiration.
+    ///
+    /// Parameters:
+    /// - authorized_source: Pubkey of the facilitator being authorized
+    /// - index_limit: Maximum number of updates allowed
+    /// - expires_at: Unix timestamp when authorization expires
+    /// - network: Network ID for cross-chain compatibility
+    /// - signature: Ed25519 signature proving agent's consent
+    /// - nonce: Optional nonce for multiple authorizations to same facilitator
+    pub fn create_agent_authorization(
+        ctx: Context<CreateAgentAuthorization>,
+        authorized_source: Pubkey,
+        index_limit: u64,
+        expires_at: i64,
+        network: u8,
+        signature: [u8; 64],
+        nonce: Option<String>,
     ) -> Result<()> {
-        err!(GhostSpeakError::FeatureNotEnabled)
+        instructions::agent_authorization::create_agent_authorization(
+            ctx,
+            authorized_source,
+            index_limit,
+            expires_at,
+            network,
+            signature,
+            nonce,
+        )
     }
 
-    /// Dummy instruction to export BiometricQuality type
-    pub fn _export_biometric_quality(
-        _ctx: Context<DummyContext>,
-        _data: crate::state::security_governance::BiometricQuality,
+    /// Update agent reputation using authorization
+    ///
+    /// Facilitators (e.g., PayAI) use this to update agent reputation
+    /// using a pre-existing authorization from the agent.
+    ///
+    /// Parameters:
+    /// - reputation_change: Change to reputation score (can be positive or negative)
+    /// - transaction_signature: Transaction signature for audit trail
+    /// - metadata: Optional metadata about the reputation update
+    /// - nonce: Optional nonce matching the authorization
+    pub fn update_reputation_with_auth(
+        ctx: Context<UpdateReputationWithAuth>,
+        reputation_change: i64,
+        transaction_signature: String,
+        metadata: Option<String>,
+        nonce: Option<String>,
     ) -> Result<()> {
-        err!(GhostSpeakError::FeatureNotEnabled)
+        instructions::agent_authorization::update_reputation_with_auth(
+            ctx,
+            reputation_change,
+            transaction_signature,
+            metadata,
+            nonce,
+        )
     }
 
-    /// Dummy instruction to export ComplianceStatus type
-    pub fn _export_compliance_status(
-        _ctx: Context<DummyContext>,
-        _data: crate::state::audit::ComplianceStatus,
+    /// Revoke agent authorization
+    ///
+    /// Allows an agent to revoke a previously granted authorization.
+    /// Once revoked, the facilitator can no longer update reputation.
+    ///
+    /// Parameters:
+    /// - nonce: Optional nonce identifying the specific authorization to revoke
+    pub fn revoke_authorization(
+        ctx: Context<RevokeAuthorization>,
+        nonce: Option<String>,
     ) -> Result<()> {
-        err!(GhostSpeakError::FeatureNotEnabled)
+        instructions::agent_authorization::revoke_authorization(ctx, nonce)
     }
 
-    /// Dummy instruction to export MultisigConfig type
-    pub fn _export_multisig_config(
-        _ctx: Context<DummyContext>,
-        _data: crate::state::governance::MultisigConfig,
-    ) -> Result<()> {
-        err!(GhostSpeakError::FeatureNotEnabled)
+    /// Verify agent authorization (view-only)
+    ///
+    /// Checks if an authorization is valid and returns its status.
+    /// This is a read-only instruction for verification purposes.
+    ///
+    /// Parameters:
+    /// - nonce: Optional nonce identifying the specific authorization to verify
+    pub fn verify_authorization(
+        ctx: Context<VerifyAuthorization>,
+        nonce: Option<String>,
+    ) -> Result<bool> {
+        instructions::agent_authorization::verify_authorization(ctx, nonce)
     }
 
-    /// Dummy instruction to export Action type
-    pub fn _export_action(
-        _ctx: Context<DummyContext>,
-        _data: crate::state::security_governance::Action,
-    ) -> Result<()> {
-        err!(GhostSpeakError::FeatureNotEnabled)
-    }
-
-    /// Dummy instruction to export RuleCondition type
-    pub fn _export_rule_condition(
-        _ctx: Context<DummyContext>,
-        _data: crate::state::security_governance::RuleCondition,
-    ) -> Result<()> {
-        err!(GhostSpeakError::FeatureNotEnabled)
-    }
-
-    /// Dummy instruction to export ReportEntry type
-    pub fn _export_report_entry(
-        _ctx: Context<DummyContext>,
-        _data: crate::state::audit::ReportEntry,
-    ) -> Result<()> {
-        err!(GhostSpeakError::FeatureNotEnabled)
-    }
-
-    /// Dummy instruction to export ResourceConstraints type
-    pub fn _export_resource_constraints(
-        _ctx: Context<DummyContext>,
-        _data: crate::state::security_governance::ResourceConstraints,
-    ) -> Result<()> {
-        err!(GhostSpeakError::FeatureNotEnabled)
-    }
 }
-
-// =====================================================
-// DUMMY CONTEXT FOR TYPE EXPORTS
-// =====================================================
-/// Dummy context for type export instructions
-#[derive(Accounts)]
-pub struct DummyContext<'info> {
-    pub system_program: Program<'info, System>,
-}
-
-// =====================================================
-// DUMMY EVENTS FOR TYPE EXPORTS
-// =====================================================
-// These events force Anchor to include nested types in the IDL
-
-#[event]
-pub struct AuditContextExport {
-    pub data: crate::state::audit::AuditContext,
-}
-
-#[event]
-pub struct BiometricQualityExport {
-    pub data: crate::state::security_governance::BiometricQuality,
-}
-
-#[event]
-pub struct ComplianceStatusExport {
-    pub data: crate::state::audit::ComplianceStatus,
-}
-
-#[event]
-pub struct MultisigConfigExport {
-    pub data: crate::state::governance::MultisigConfig,
-}
-
-#[event]
-pub struct ActionExport {
-    pub data: crate::state::security_governance::Action,
-}
-
-#[event]
-pub struct RuleConditionExport {
-    pub data: crate::state::security_governance::RuleCondition,
-}
-
-#[event]
-pub struct ReportEntryExport {
-    pub data: crate::state::audit::ReportEntry,
-}
-
-#[event]
-pub struct ResourceConstraintsExport {
-    pub data: crate::state::security_governance::ResourceConstraints,
-}
-
-// =====================================================
-// EXPLICIT TYPE EXPORTS FOR IDL GENERATION
-// =====================================================
-// These types are used within nested structures but need to be
-// explicitly declared for Anchor to include them in the IDL
-
-/// Re-export AuditContext for IDL
-pub use crate::state::audit::AuditContext;
-
-/// Re-export BiometricQuality for IDL  
-pub use crate::state::security_governance::BiometricQuality;
-
-/// Re-export ComplianceStatus for IDL
-pub use crate::state::audit::ComplianceStatus;
-
-/// Re-export MultisigConfig for IDL
-pub use crate::state::governance::MultisigConfig;
-
-/// Re-export Action for IDL
-pub use crate::state::security_governance::Action;
-
-/// Re-export RuleCondition for IDL
-pub use crate::state::security_governance::RuleCondition;
-
-/// Re-export ReportEntry for IDL
-pub use crate::state::audit::ReportEntry;
-
-/// Re-export ResourceConstraints for IDL
-pub use crate::state::security_governance::ResourceConstraints;

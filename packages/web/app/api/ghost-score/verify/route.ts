@@ -5,7 +5,6 @@ import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
-const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
 
 function getGhostScoreTier(score: number): string {
   if (score >= 900) return 'PLATINUM'
@@ -20,10 +19,7 @@ export async function POST(request: NextRequest) {
     const { agentAddress, userId } = await request.json()
 
     if (!agentAddress) {
-      return NextResponse.json(
-        { error: 'Agent address is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Agent address is required' }, { status: 400 })
     }
 
     // Check user's verification limit
@@ -80,18 +76,12 @@ export async function POST(request: NextRequest) {
     let agentData
     try {
       agentData = await client.agents.getAgentAccount(agentAddress as Address)
-    } catch (error) {
-      return NextResponse.json(
-        { error: 'Agent not found on blockchain' },
-        { status: 404 }
-      )
+    } catch () {
+      return NextResponse.json({ error: 'Agent not found on blockchain' }, { status: 404 })
     }
 
     if (!agentData) {
-      return NextResponse.json(
-        { error: 'Agent not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
     }
 
     // Calculate Ghost Score metrics
@@ -100,9 +90,8 @@ export async function POST(request: NextRequest) {
     const ghostScore = Math.round(reputationScore / 100) // Convert from basis points
 
     const tier = getGhostScoreTier(ghostScore)
-    const successRate = totalJobs > 0
-      ? Math.min(100, Math.round(reputationScore / totalJobs / 100))
-      : 0
+    const successRate =
+      totalJobs > 0 ? Math.min(100, Math.round(reputationScore / totalJobs / 100)) : 0
 
     // Calculate metrics
     const metrics = {
@@ -121,9 +110,10 @@ export async function POST(request: NextRequest) {
         last30Days: {
           transactions: Number(agentData.x402TotalCalls ?? 0),
           volume: `$${(Number(agentData.x402TotalPayments ?? BigInt(0)) / 1e9).toFixed(2)}`,
-          avgAmount: Number(agentData.x402TotalCalls ?? 0) > 0
-            ? `$${(Number(agentData.x402TotalPayments ?? BigInt(0)) / Number(agentData.x402TotalCalls ?? 1) / 1e9).toFixed(2)}`
-            : '$0.00',
+          avgAmount:
+            Number(agentData.x402TotalCalls ?? 0) > 0
+              ? `$${(Number(agentData.x402TotalPayments ?? BigInt(0)) / Number(agentData.x402TotalCalls ?? 1) / 1e9).toFixed(2)}`
+              : '$0.00',
         },
       }
     }
@@ -158,9 +148,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Verification error:', error)
-    return NextResponse.json(
-      { error: 'Failed to verify agent' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to verify agent' }, { status: 500 })
   }
 }

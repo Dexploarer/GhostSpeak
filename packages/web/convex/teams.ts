@@ -253,7 +253,8 @@ export const acceptTeamInvite = mutation({
       viewer: { canManageMembers: false, canManageApiKeys: false, canViewBilling: false },
     }
 
-    const rolePermissions = permissions[invite.role as keyof typeof permissions] || permissions.viewer
+    const rolePermissions =
+      permissions[invite.role as keyof typeof permissions] || permissions.viewer
 
     // Add user to team
     await ctx.db.insert('teamMembers', {

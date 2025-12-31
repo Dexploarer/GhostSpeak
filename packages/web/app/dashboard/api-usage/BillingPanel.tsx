@@ -251,7 +251,9 @@ export default function BillingPanel({ apiKey }: { apiKey: string }) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <div className="text-sm text-muted-foreground">Total Requests</div>
-                <div className="text-2xl font-bold">{usage.summary.totalRequests.toLocaleString()}</div>
+                <div className="text-2xl font-bold">
+                  {usage.summary.totalRequests.toLocaleString()}
+                </div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Remaining</div>
@@ -276,8 +278,8 @@ export default function BillingPanel({ apiKey }: { apiKey: string }) {
                 <TrendingUp className="h-4 w-4" />
                 <AlertDescription>
                   You have {usage.overage.overageRequests.toLocaleString()} overage requests at $
-                  {usage.overage.overageRate.toFixed(4)} per request. 100% of overage fees go to GHOST
-                  stakers.
+                  {usage.overage.overageRate.toFixed(4)} per request. 100% of overage fees go to
+                  GHOST stakers.
                 </AlertDescription>
               </Alert>
             )}

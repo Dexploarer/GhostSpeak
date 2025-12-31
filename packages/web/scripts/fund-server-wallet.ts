@@ -66,17 +66,19 @@ async function generateWallet() {
     // In Solana Web3.js v2, we need to extract the private key
     // For now, we'll use a workaround since the exact API may vary
     console.log(' Wallet generated successfully!\n')
-    console.log('=Ë Wallet Information:')
+    console.log('=ï¿½ Wallet Information:')
     console.log(`   Public Key: ${wallet.address}`)
-    console.log(`   NOTE: Store the private key in your .env file as PAYMENT_RECORDER_PRIVATE_KEY\n`)
+    console.log(
+      `   NOTE: Store the private key in your .env file as PAYMENT_RECORDER_PRIVATE_KEY\n`
+    )
 
-    console.log('   IMPORTANT SECURITY NOTES:')
+    console.log('ï¿½  IMPORTANT SECURITY NOTES:')
     console.log('   1. NEVER commit the private key to version control')
     console.log('   2. Store it in .env.local (which is gitignored)')
     console.log('   3. For production, use a secrets manager (Vercel, Railway, etc.)')
     console.log('   4. This wallet only needs ~0.1 SOL for transaction fees\n')
 
-    console.log('=Ý Next Steps:')
+    console.log('=ï¿½ Next Steps:')
     console.log('   1. Generate keypair with Solana CLI:')
     console.log('      solana-keygen new --no-bip39-passphrase -o payment-recorder.json')
     console.log('   2. Extract base58 private key:')
@@ -85,7 +87,6 @@ async function generateWallet() {
     console.log('      PAYMENT_RECORDER_PRIVATE_KEY=<base58_key>')
     console.log('   4. Fund the wallet:')
     console.log(`      bun run scripts/fund-server-wallet.ts --fund\n`)
-
   } catch (error) {
     console.error('L Failed to generate wallet:', error)
     process.exit(1)
@@ -93,7 +94,7 @@ async function generateWallet() {
 }
 
 async function fundWallet() {
-  console.log('=° Funding server wallet...\n')
+  console.log('=ï¿½ Funding server wallet...\n')
 
   try {
     // Check environment
@@ -119,8 +120,8 @@ async function fundWallet() {
     const { getServerWallet } = await import('../lib/server-wallet')
     const wallet = await getServerWallet()
 
-    console.log(`=á Network: ${cluster}`)
-    console.log(`=Í RPC URL: ${RPC_URL}`)
+    console.log(`=ï¿½ Network: ${cluster}`)
+    console.log(`=ï¿½ RPC URL: ${RPC_URL}`)
     console.log(`= Wallet: ${wallet.address}\n`)
 
     // Request airdrop
@@ -136,11 +137,11 @@ async function fundWallet() {
         jsonrpc: '2.0',
         id: 1,
         method: 'requestAirdrop',
-        params: [wallet.address, DEFAULT_AIRDROP_AMOUNT]
-      })
+        params: [wallet.address, DEFAULT_AIRDROP_AMOUNT],
+      }),
     })
 
-    const airdropResult = await airdropResponse.json() as {
+    const airdropResult = (await airdropResponse.json()) as {
       result?: string
       error?: { message: string }
     }
@@ -154,23 +155,26 @@ async function fundWallet() {
     console.log(` Airdrop requested: ${signature}\n`)
 
     // Wait for confirmation
-    console.log('ó Waiting for confirmation...')
+    console.log('ï¿½ Waiting for confirmation...')
 
     let confirmed = false
     for (let i = 0; i < 30; i++) {
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
       const statusResponse = await rpc.getSignatureStatuses([signature as any]).send()
       const status = statusResponse.value[0]
 
-      if (status && (status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized')) {
+      if (
+        status &&
+        (status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized')
+      ) {
         confirmed = true
         break
       }
     }
 
     if (!confirmed) {
-      console.warn('   Airdrop confirmation timeout. Check transaction manually.')
+      console.warn('ï¿½  Airdrop confirmation timeout. Check transaction manually.')
     } else {
       console.log(' Airdrop confirmed!\n')
     }
@@ -179,11 +183,12 @@ async function fundWallet() {
     const balanceResponse = await rpc.getBalance(wallet.address).send()
     const balanceSOL = Number(balanceResponse.value) / 1_000_000_000
 
-    console.log(`=µ Current Balance: ${balanceSOL.toFixed(4)} SOL\n`)
+    console.log(`=ï¿½ Current Balance: ${balanceSOL.toFixed(4)} SOL\n`)
 
-    console.log('<‰ Wallet funded successfully!')
-    console.log(`   View on explorer: https://explorer.solana.com/address/${wallet.address}?cluster=${cluster}`)
-
+    console.log('<ï¿½ Wallet funded successfully!')
+    console.log(
+      `   View on explorer: https://explorer.solana.com/address/${wallet.address}?cluster=${cluster}`
+    )
   } catch (error) {
     console.error('L Failed to fund wallet:', error)
     process.exit(1)
@@ -198,13 +203,13 @@ async function showInfo() {
 
     const info = await getWalletInfo()
 
-    console.log(`=Í Network: ${info.cluster}`)
-    console.log(`=á RPC URL: ${info.rpcUrl}`)
+    console.log(`=ï¿½ Network: ${info.cluster}`)
+    console.log(`=ï¿½ RPC URL: ${info.rpcUrl}`)
     console.log(`= Address: ${info.address}`)
-    console.log(`=µ Balance: ${info.balanceSol.toFixed(4)} SOL\n`)
+    console.log(`=ï¿½ Balance: ${info.balanceSol.toFixed(4)} SOL\n`)
 
     if (info.balanceSol < 0.1) {
-      console.warn('   Low balance! Please fund the wallet:')
+      console.warn('ï¿½  Low balance! Please fund the wallet:')
       if (info.cluster === 'devnet' || info.cluster === 'testnet') {
         console.log(`   bun run scripts/fund-server-wallet.ts --fund`)
       } else {
@@ -214,8 +219,9 @@ async function showInfo() {
       console.log(' Wallet is sufficiently funded')
     }
 
-    console.log(`\n= Explorer: https://explorer.solana.com/address/${info.address}?cluster=${info.cluster}`)
-
+    console.log(
+      `\n= Explorer: https://explorer.solana.com/address/${info.address}?cluster=${info.cluster}`
+    )
   } catch (error) {
     console.error('L Failed to get wallet info:', error)
     console.log('\nMake sure PAYMENT_RECORDER_PRIVATE_KEY is set in your .env')

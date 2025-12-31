@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   Bot,
-  Star,
   DollarSign,
   ExternalLink,
   Zap,
@@ -143,9 +142,7 @@ export default function AgentDetailPage(): React.JSX.Element {
                       Premium
                     </Badge>
                   )}
-                  {stakingAccount && (
-                    <TierBadge tier={stakingAccount.tier} size="sm" />
-                  )}
+                  {stakingAccount && <TierBadge tier={stakingAccount.tier} size="sm" />}
                 </div>
               </div>
             </div>
@@ -193,10 +190,15 @@ export default function AgentDetailPage(): React.JSX.Element {
                   </span>
                   <div className="flex flex-col">
                     <Badge variant="outline" className="border-purple-500 text-purple-600 mb-1">
-                      {agent.reputation.score >= 90 ? 'Platinum' :
-                       agent.reputation.score >= 75 ? 'Gold' :
-                       agent.reputation.score >= 50 ? 'Silver' :
-                       agent.reputation.score >= 20 ? 'Bronze' : 'Unranked'}
+                      {agent.reputation.score >= 90
+                        ? 'Platinum'
+                        : agent.reputation.score >= 75
+                          ? 'Gold'
+                          : agent.reputation.score >= 50
+                            ? 'Silver'
+                            : agent.reputation.score >= 20
+                              ? 'Bronze'
+                              : 'Unranked'}
                     </Badge>
                     <span className="text-xs text-muted-foreground">Built on PayAI data</span>
                   </div>

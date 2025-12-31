@@ -77,7 +77,7 @@ export const queueWebhookEvent = mutation({
 export const getPendingWebhooks = internalQuery({
   args: {},
   handler: async (ctx) => {
-    const now = Date.now()
+    const _now = Date.now()
     const fiveMinutesAgo = now - 5 * 60 * 1000
 
     // Get pending webhooks that haven't been tried recently
@@ -91,10 +91,7 @@ export const getPendingWebhooks = internalQuery({
       if (!webhook.lastAttemptAt) return true
 
       // Exponential backoff: 1min, 2min, 4min, 8min, 16min
-      const backoffMs = Math.min(
-        Math.pow(2, webhook.attemptCount) * 60 * 1000,
-        16 * 60 * 1000
-      )
+      const backoffMs = Math.min(Math.pow(2, webhook.attemptCount) * 60 * 1000, 16 * 60 * 1000)
 
       return now - webhook.lastAttemptAt > backoffMs
     })

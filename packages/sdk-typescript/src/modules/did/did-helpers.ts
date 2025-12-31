@@ -16,6 +16,7 @@ import {
   type VerificationMethod,
   type ServiceEndpoint,
   type W3CDidDocument,
+  VerificationMethodType,
   VerificationRelationship,
   DID_DOCUMENT_SEED,
   DidError,
@@ -249,13 +250,12 @@ export function createEd25519VerificationMethod(
   relationships: VerificationRelationship[] = [VerificationRelationship.Authentication]
 ): VerificationMethod {
   // Convert public key to multibase format (base58btc with 'z' prefix)
-  const publicKeyMultibase = typeof publicKey === 'string'
-    ? `z${publicKey}`
-    : `z${publicKey.toString()}`
+  // Address in @solana/kit v2 is just a string type, no .toString() needed
+  const publicKeyMultibase = `z${publicKey}`
 
   return {
     id,
-    methodType: 'Ed25519VerificationKey2020' as const,
+    methodType: VerificationMethodType.Ed25519VerificationKey2020,
     controller,
     publicKeyMultibase,
     relationships,

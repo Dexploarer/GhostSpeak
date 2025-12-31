@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
+import Image as _Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
@@ -61,7 +61,8 @@ export const Navigation: React.FC = () => {
   }, [])
 
   // Check if we're on a marketing/landing page where we shouldn't show the main app nav
-  const isMarketingPage = pathname === '/' || pathname === '/tokenomics' || pathname?.startsWith('/ghost-score')
+  const isMarketingPage =
+    pathname === '/' || pathname === '/tokenomics' || pathname?.startsWith('/ghost-score')
 
   // Hide navigation on dashboard routes - dashboard has its own sidebar
   const isDashboardPage = pathname?.startsWith('/dashboard') ?? false

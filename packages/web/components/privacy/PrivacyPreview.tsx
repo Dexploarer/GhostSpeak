@@ -169,8 +169,18 @@ export function PrivacyPreview({
               <Shield className="w-4 h-4" />
               Trust Metrics
             </h4>
-            {renderMetric('Disputes Filed', reputationData.disputesAgainst, 'disputesAgainst', true)}
-            {renderMetric('Disputes Resolved', reputationData.disputesResolved, 'disputesResolved', true)}
+            {renderMetric(
+              'Disputes Filed',
+              reputationData.disputesAgainst,
+              'disputesAgainst',
+              true
+            )}
+            {renderMetric(
+              'Disputes Resolved',
+              reputationData.disputesResolved,
+              'disputesResolved',
+              true
+            )}
             {renderMetric('Avg Rating', `${reputationData.avgRating}/5`, 'avgRating', true)}
           </div>
         </CardContent>
@@ -223,7 +233,12 @@ export function PrivacyPreview({
               'overallScore',
               false
             )}
-            {renderMetric('Reputation Tier', reputationData.reputationTier, 'reputationTier', false)}
+            {renderMetric(
+              'Reputation Tier',
+              reputationData.reputationTier,
+              'reputationTier',
+              false
+            )}
           </div>
 
           <Separator />
@@ -262,8 +277,18 @@ export function PrivacyPreview({
               <Shield className="w-4 h-4" />
               Trust Metrics
             </h4>
-            {renderMetric('Disputes Filed', reputationData.disputesAgainst, 'disputesAgainst', false)}
-            {renderMetric('Disputes Resolved', reputationData.disputesResolved, 'disputesResolved', false)}
+            {renderMetric(
+              'Disputes Filed',
+              reputationData.disputesAgainst,
+              'disputesAgainst',
+              false
+            )}
+            {renderMetric(
+              'Disputes Resolved',
+              reputationData.disputesResolved,
+              'disputesResolved',
+              false
+            )}
             {renderMetric('Avg Rating', `${reputationData.avgRating}/5`, 'avgRating', false)}
           </div>
         </CardContent>

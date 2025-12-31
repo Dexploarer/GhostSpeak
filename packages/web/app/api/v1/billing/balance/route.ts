@@ -9,7 +9,12 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { authenticateApiKey } from '@/lib/api/auth'
-import { getTeamBalance, shouldNotifyRefill, calculateProjectedBalance, type PricingTier } from '@/lib/b2b-token-accounts'
+import {
+  getTeamBalance,
+  shouldNotifyRefill,
+  calculateProjectedBalance,
+  type PricingTier,
+} from '@/lib/b2b-token-accounts'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import type { Id } from '@/convex/_generated/dataModel'
@@ -23,10 +28,7 @@ export async function GET(request: NextRequest) {
     const authUser = await authenticateApiKey(request)
 
     if (!authUser) {
-      return NextResponse.json(
-        { error: 'Invalid or missing API key' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Invalid or missing API key' }, { status: 401 })
     }
 
     // Get team info from Convex
@@ -35,10 +37,7 @@ export async function GET(request: NextRequest) {
     })
 
     if (!teamMembers || teamMembers.length === 0) {
-      return NextResponse.json(
-        { error: 'User is not part of any team' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User is not part of any team' }, { status: 404 })
     }
 
     // Get first team (user can be in multiple teams, use first for now)

@@ -33,8 +33,6 @@ export function useAvailableTokens() {
     queryKey: ['tokens', 'available'],
     queryFn: async (): Promise<Token[]> => {
       try {
-        const client = getGhostSpeakClient()
-
         // Marketplace module removed. Manual token list addition.
         const tokenAddresses = new Set<string>()
 

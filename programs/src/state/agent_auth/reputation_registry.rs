@@ -1,25 +1,25 @@
 /*!
- * ERC-8004 Reputation Registry (Solana Adapter)
+ * GhostSpeak Reputation Registry
  *
- * Implements the ERC-8004 Reputation Registry interface on Solana.
  * Allows clients to give feedback and agents to respond, building verifiable reputation.
+ * Part of GhostSpeak's multi-source reputation aggregation system.
  */
 
 use anchor_lang::prelude::*;
 use crate::state::GhostSpeakError;
 
 // PDA Seeds
-pub const ERC8004_FEEDBACK_SEED: &[u8] = b"erc8004_feedback";
+pub const FEEDBACK_SEED: &[u8] = b"feedback";
 pub const FEEDBACK_AUTH_SEED: &[u8] = b"feedback_auth";
 
-/// Feedback entry in ERC-8004 format
+/// Feedback entry for agent reputation
 #[account]
-pub struct ERC8004Feedback {
+pub struct AgentFeedback {
     /// Agent being rated
     pub agent: Pubkey,
     /// Client giving feedback
     pub client: Pubkey,
-    /// Numerical score (0-100, as per ERC-8004 spec)
+    /// Numerical score (0-100)
     /// Maps from Ghost Score (0-1000) by dividing by 10
     pub score: u8,
     /// Tags for categorizing feedback (max 5)
@@ -29,7 +29,7 @@ pub struct ERC8004Feedback {
     /// Transaction signature or job ID this feedback is for
     pub reference_tx: Option<String>,
     /// Feedback authorization signature
-    /// ERC-8004 requires pre-authorization via signed feedbackAuth
+    /// GhostSpeak requires pre-authorization via signed feedbackAuth
     pub auth_signature: [u8; 64],
     /// Whether this feedback has been revoked
     pub revoked: bool,
@@ -45,7 +45,7 @@ pub struct ERC8004Feedback {
     pub bump: u8,
 }
 
-impl ERC8004Feedback {
+impl AgentFeedback {
     pub const MAX_TAGS: usize = 5;
     pub const MAX_TAG_LEN: usize = 32;
     pub const MAX_URI_LEN: usize = 128;
@@ -141,14 +141,14 @@ impl ERC8004Feedback {
         Ok(())
     }
 
-    /// Convert Ghost Score (0-1000) to ERC-8004 score (0-100)
-    pub fn ghost_score_to_erc8004(ghost_score: u32) -> u8 {
+    /// Convert Ghost Score (0-1000) to feedback score (0-100)
+    pub fn ghost_score_to_feedback(ghost_score: u32) -> u8 {
         (ghost_score.min(1000) / 10) as u8
     }
 
-    /// Convert ERC-8004 score (0-100) to Ghost Score (0-1000)
-    pub fn erc8004_to_ghost_score(erc_score: u8) -> u32 {
-        (erc_score as u32) * 10
+    /// Convert feedback score (0-100) to Ghost Score (0-1000)
+    pub fn feedback_to_ghost_score(feedback_score: u8) -> u32 {
+        (feedback_score as u32) * 10
     }
 }
 
@@ -229,10 +229,10 @@ impl FeedbackAuth {
     }
 }
 
-/// Aggregate reputation data for ERC-8004
+/// Aggregate reputation data for GhostSpeak agents
 /// Provides quick access to reputation metrics
 #[account]
-pub struct ERC8004ReputationSummary {
+pub struct AgentReputationSummary {
     /// Agent this summary is for
     pub agent: Pubkey,
     /// Total feedback received
@@ -257,7 +257,7 @@ pub struct ERC8004ReputationSummary {
     pub bump: u8,
 }
 
-impl ERC8004ReputationSummary {
+impl AgentReputationSummary {
     pub const LEN: usize = 8 + // discriminator
         32 + // agent
         8 + // total_feedback

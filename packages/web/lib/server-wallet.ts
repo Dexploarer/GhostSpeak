@@ -65,7 +65,7 @@ export async function getServerWallet() {
   if (privateKeyBytes.length !== 64) {
     throw new Error(
       `Invalid private key length: ${privateKeyBytes.length} bytes. ` +
-      'Expected 64 bytes for Ed25519 keypair.'
+        'Expected 64 bytes for Ed25519 keypair.'
     )
   }
 
@@ -89,7 +89,11 @@ export function getRpc(): Rpc {
 
   _rpc = createSolanaRpc(rpcUrl)
 
-  console.log('[Server RPC] Connected to:', rpcUrl, `(${_currentRpcIndex + 1}/${RPC_ENDPOINTS.length})`)
+  console.log(
+    '[Server RPC] Connected to:',
+    rpcUrl,
+    `(${_currentRpcIndex + 1}/${RPC_ENDPOINTS.length})`
+  )
 
   return _rpc
 }
@@ -153,24 +157,29 @@ export async function ensureWalletFunded(minBalanceSol: number = 0.1): Promise<v
 
     if (balanceSol < minBalanceSol) {
       const rpcUrl = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com'
-      const cluster = rpcUrl.includes('mainnet') ? 'mainnet-beta'
-        : rpcUrl.includes('testnet') ? 'testnet'
-        : 'devnet'
+      const cluster = rpcUrl.includes('mainnet')
+        ? 'mainnet-beta'
+        : rpcUrl.includes('testnet')
+          ? 'testnet'
+          : 'devnet'
 
       if (cluster === 'mainnet-beta') {
         throw new Error(
           `Server wallet balance too low: ${balanceSol.toFixed(4)} SOL (minimum: ${minBalanceSol} SOL). ` +
-          'Please fund the wallet at ' + wallet.address
+            'Please fund the wallet at ' +
+            wallet.address
         )
       } else {
         throw new Error(
           `Server wallet balance too low: ${balanceSol.toFixed(4)} SOL (minimum: ${minBalanceSol} SOL). ` +
-          `Use the fund-server-wallet.ts script to airdrop funds on ${cluster}.`
+            `Use the fund-server-wallet.ts script to airdrop funds on ${cluster}.`
         )
       }
     }
 
-    console.log(`[Server Wallet] Balance check passed (${balanceSol.toFixed(4)} SOL >= ${minBalanceSol} SOL)`)
+    console.log(
+      `[Server Wallet] Balance check passed (${balanceSol.toFixed(4)} SOL >= ${minBalanceSol} SOL)`
+    )
   } catch (error) {
     if (error instanceof Error && error.message.includes('balance too low')) {
       throw error
@@ -196,9 +205,11 @@ export async function getWalletInfo(): Promise<{
   const rpc = getRpc()
   const rpcUrl = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com'
 
-  const cluster = rpcUrl.includes('mainnet') ? 'mainnet-beta'
-    : rpcUrl.includes('testnet') ? 'testnet'
-    : 'devnet'
+  const cluster = rpcUrl.includes('mainnet')
+    ? 'mainnet-beta'
+    : rpcUrl.includes('testnet')
+      ? 'testnet'
+      : 'devnet'
 
   try {
     const balanceResponse = await rpc.getBalance(wallet.address).send()
@@ -208,7 +219,7 @@ export async function getWalletInfo(): Promise<{
       address: wallet.address.toString(),
       balanceSol,
       cluster,
-      rpcUrl
+      rpcUrl,
     }
   } catch (error) {
     console.error('[Server Wallet] Failed to get wallet info:', error)
@@ -217,7 +228,7 @@ export async function getWalletInfo(): Promise<{
       address: wallet.address.toString(),
       balanceSol: 0,
       cluster,
-      rpcUrl
+      rpcUrl,
     }
   }
 }

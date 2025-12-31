@@ -6,9 +6,7 @@
  */
 
 use crate::state::did::*;
-use crate::GhostSpeakError;
 use crate::*;
-use anchor_lang::prelude::*;
 
 /// Create a new DID document
 #[derive(Accounts)]

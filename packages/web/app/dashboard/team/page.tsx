@@ -10,13 +10,7 @@ import { useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -178,7 +172,9 @@ export default function TeamDashboardPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className={`inline-flex items-center gap-2 px-2 py-1 rounded text-xs ${getRoleBadgeColor(team.role)}`}>
+                      <div
+                        className={`inline-flex items-center gap-2 px-2 py-1 rounded text-xs ${getRoleBadgeColor(team.role)}`}
+                      >
                         {getRoleIcon(team.role)}
                         <span className="capitalize">{team.role}</span>
                       </div>
@@ -250,9 +246,7 @@ export default function TeamDashboardPage() {
           </CardHeader>
           <CardContent>
             {!members || members.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No team members yet
-              </div>
+              <div className="text-center py-8 text-muted-foreground">No team members yet</div>
             ) : (
               <Table>
                 <TableHeader>
@@ -267,19 +261,19 @@ export default function TeamDashboardPage() {
                 <TableBody>
                   {members.map((member: any) => (
                     <TableRow key={member._id}>
-                      <TableCell className="font-medium">
-                        {member.name || 'Anonymous'}
-                      </TableCell>
-                      <TableCell>{member.email || member.walletAddress?.slice(0, 8) + '...'}</TableCell>
+                      <TableCell className="font-medium">{member.name || 'Anonymous'}</TableCell>
                       <TableCell>
-                        <div className={`inline-flex items-center gap-2 px-2 py-1 rounded text-xs ${getRoleBadgeColor(member.role)}`}>
+                        {member.email || member.walletAddress?.slice(0, 8) + '...'}
+                      </TableCell>
+                      <TableCell>
+                        <div
+                          className={`inline-flex items-center gap-2 px-2 py-1 rounded text-xs ${getRoleBadgeColor(member.role)}`}
+                        >
                           {getRoleIcon(member.role)}
                           <span className="capitalize">{member.role}</span>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        {new Date(member.joinedAt).toLocaleDateString()}
-                      </TableCell>
+                      <TableCell>{new Date(member.joinedAt).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         {member.role !== 'owner' && (
                           <Button

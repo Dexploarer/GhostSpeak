@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Caisper - GhostSpeak Verification Agent</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Inject Caisper configuration for standalone viewing
+      window.ELIZA_CONFIG = {
+        agentId: '2b4e7e22-c845-4e98-9f2e-4aaf1f190095', // Caisper's agent ID
+        apiBase: 'http://localhost:5173'
+      };
+    </script>
+    <script type="module" src="/src/frontend/index.tsx"></script>
+  </body>
+</html>

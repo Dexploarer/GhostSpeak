@@ -18,7 +18,19 @@ import { z } from 'zod';
 import { GhostSpeakClient, createPayAIClient } from '@ghostspeak/sdk';
 import type { Address } from '@solana/addresses';
 import { address } from '@solana/addresses';
-import { issueCredentialAction, registerAgentAction } from './actions';
+import {
+  issueCredentialAction,
+  registerAgentAction,
+  createDidAction,
+  resolveDidAction,
+  updateDidAction,
+  stakeGhostAction,
+  checkStakingAction,
+  setPrivacyModeAction,
+  createEscrowAction,
+  createProposalAction,
+  voteProposalAction,
+} from './actions';
 import { PayAIPollingService } from './services/PayAIPollingService';
 
 /**
@@ -1233,6 +1245,15 @@ const agent = await client.agents.register(signer, {
     checkGhostScoreAction,
     issueCredentialAction,
     registerAgentAction,
+    createDidAction,
+    resolveDidAction,
+    updateDidAction,
+    stakeGhostAction,
+    checkStakingAction,
+    setPrivacyModeAction,
+    createEscrowAction,
+    createProposalAction,
+    voteProposalAction,
     {
       name: 'VERIFY_ELIZAOS_AGENT',
       description: 'Verify an ElizaOS Cloud agent using GhostSpeak reputation and credentials. Checks Ghost Score, verifies W3C credentials, and provides trust assessment.',

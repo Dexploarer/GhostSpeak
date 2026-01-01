@@ -99,11 +99,10 @@
   "homepage": "https://www.ghostspeak.io/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Ghostspeak/GhostSpeak",
-    "directory": "packages/sdk-typescript"
+    "url": "https://github.com/Ghostspeak/sdk.git"
   },
   "bugs": {
-    "url": "https://github.com/Prompt-or-Die/ghostspeak/issues"
+    "url": "https://github.com/Ghostspeak/sdk/issues"
   },
   "publishConfig": {
     "access": "public"

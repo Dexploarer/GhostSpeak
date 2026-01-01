@@ -51,11 +51,10 @@
   "homepage": "https://www.ghostspeak.io/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Ghostspeak/GhostSpeak",
-    "directory": "packages/cli"
+    "url": "https://github.com/Ghostspeak/cli.git"
   },
   "bugs": {
-    "url": "https://github.com/Ghostspeak/GhostSpeak/issues "
+    "url": "https://github.com/Ghostspeak/cli/issues"
   },
   "publishConfig": {
     "access": "public"

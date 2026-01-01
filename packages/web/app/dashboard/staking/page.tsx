@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
+import { useWalletAddress } from '@/lib/hooks/useAuth'
 import { useAgents } from '@/lib/queries/agents'
 import { StakingStatsCard } from '@/components/staking/StakingStatsCard'
 import { StakeForm } from '@/components/staking/StakeForm'

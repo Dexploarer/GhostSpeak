@@ -6,7 +6,10 @@ import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
 import { useCrossmintSigner } from '@/lib/hooks/useCrossmintSigner'
 import { useTransactionFeedback } from '@/lib/transaction-feedback'
 import { getErrorInfo } from '@/lib/errors/error-messages'
+import { createMutationErrorHandler } from '@/lib/errors/error-coordinator'
+import { queryKeys } from '@/lib/queries/query-keys'
 import type { Address } from '@solana/addresses'
+import type { Agent, AgentFilters, AgentAccountData } from '@/lib/types/agent'
 
 // SDK doesn't export Agent type, using any for now
 // TODO: Update SDK to export Agent type or create local interface
@@ -36,62 +39,8 @@ function calculateAgentReputation(agentData: SDKAgent | null) {
   }
 }
 
-// Types for agent data (UI representation)
-/**
- * UI representation of a GhostSpeak Agent.
- * Normalized from SDK data.
- */
-interface Agent {
-  address: string
-  name: string
-  metadata: {
-    description?: string
-    avatar?: string
-    category?: string
-  }
-  owner: string
-  reputation: {
-    score: number
-    totalJobs: number
-    successRate: number
-  }
-  pricing: bigint
-  capabilities: string[]
-  isActive: boolean
-  createdAt: Date
-  // x402 Payment Protocol fields
-  x402?: {
-    enabled: boolean
-    paymentAddress: string
-    acceptedTokens: string[]
-    pricePerCall: bigint
-    serviceEndpoint: string
-    totalPayments: bigint
-    totalCalls: bigint
-    apiSpecUri?: string
-  }
-}
-
-// Query keys
-export const agentKeys = {
-  all: ['agents'] as const,
-  lists: () => [...agentKeys.all, 'list'] as const,
-  list: (filters: string) => [...agentKeys.lists(), { filters }] as const,
-  details: () => [...agentKeys.all, 'detail'] as const,
-  detail: (id: string) => [...agentKeys.details(), id] as const,
-}
-
-/**
- * Filter criteria for the agent directory.
- */
-interface AgentFilters {
-  category?: string
-  minReputation?: number
-  maxPricing?: bigint
-  isActive?: boolean
-  capabilities?: string[]
-  search?: string
-}
+// Re-export agent keys from centralized query keys for backwards compatibility
+export const agentKeys = queryKeys.agents
 
 // Helper to transform SDK agent to UI agent
 function transformSDKAgent(address: string, data: SDKAgent): Agent {
@@ -292,9 +241,7 @@ export function useRegisterAgent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: agentKeys.all })
     },
-    onError: (error) => {
-      console.error('Failed to register agent:', error)
-    },
+    onError: createMutationErrorHandler('agent registration'),
   })
 }
 
@@ -339,10 +286,7 @@ export function useUpdateAgent() {
       queryClient.invalidateQueries({ queryKey: agentKeys.all })
       toast.success('Agent updated successfully!')
     },
-    onError: (error) => {
-      console.error('Failed to update agent:', error)
-      toast.error('Failed to update agent')
-    },
+    onError: createMutationErrorHandler('agent update'),
   })
 }
 
@@ -380,10 +324,7 @@ export function useDeleteAgent() {
       queryClient.invalidateQueries({ queryKey: agentKeys.all })
       toast.success('Agent deactivated successfully!')
     },
-    onError: (error) => {
-      console.error('Failed to deactivate agent:', error)
-      toast.error('Failed to deactivate agent')
-    },
+    onError: createMutationErrorHandler('agent deactivation'),
   })
 }
 
@@ -420,12 +361,9 @@ export function useActivateAgent() {
       queryClient.invalidateQueries({ queryKey: agentKeys.all })
       toast.success('Agent activated successfully!')
     },
-    onError: (error) => {
-      console.error('Failed to activate agent:', error)
-      toast.error('Failed to activate agent')
-    },
+    onError: createMutationErrorHandler('agent activation'),
   })
 }
 
-// Export types and interfaces for use in components
-export type { Agent, AgentFilters }
+// Re-export types from canonical types file for backwards compatibility
+export type { Agent, AgentFilters, AgentAccountData } from '@/lib/types/agent'

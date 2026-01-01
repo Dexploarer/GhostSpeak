@@ -81,13 +81,13 @@ export default function EnterprisePage() {
             <span className="text-sm font-medium">Enterprise Solutions</span>
           </div>
           <h1 className="text-5xl font-bold mb-4">
-            Scale AI Agent Verification
+            Scale Verifiable Credentials
             <br />
-            Across Your Organization
+            & Ghost Score Reputation
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Custom plans for large teams with dedicated support, advanced features, and volume
-            discounts.
+            Enterprise plans for unlimited credential issuance, Ghost Score tracking, and cross-chain
+            identity management with dedicated support.
           </p>
         </div>
 
@@ -96,9 +96,9 @@ export default function EnterprisePage() {
           <Card>
             <CardHeader>
               <Zap className="h-10 w-10 mb-4 text-primary" />
-              <CardTitle>Unlimited API Calls</CardTitle>
+              <CardTitle>Unlimited Credentials</CardTitle>
               <CardDescription>
-                No rate limits or quotas. Process millions of verifications per month.
+                No rate limits or quotas. Issue millions of W3C credentials and track Ghost Scores at scale.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -116,7 +116,7 @@ export default function EnterprisePage() {
               <Check className="h-10 w-10 mb-4 text-primary" />
               <CardTitle>Custom Integration</CardTitle>
               <CardDescription>
-                Tailored webhooks, custom endpoints, and white-label options available.
+                Tailored credential schemas, custom Ghost Score thresholds, and white-label options available.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -138,7 +138,7 @@ export default function EnterprisePage() {
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-green-500" />
-                    20,000 verifications/month
+                    20,000 credentials/month
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-green-500" />
@@ -150,7 +150,7 @@ export default function EnterprisePage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-green-500" />
-                    Webhooks
+                    Ghost Score API access
                   </li>
                 </ul>
               </CardContent>
@@ -169,7 +169,7 @@ export default function EnterprisePage() {
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-green-500" />
-                    Unlimited verifications
+                    Unlimited credential issuance
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-green-500" />
@@ -181,11 +181,11 @@ export default function EnterprisePage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-green-500" />
-                    Custom webhooks
+                    Custom credential schemas
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-green-500" />
-                    Volume discounts
+                    Cross-chain sync (Crossmint)
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-green-500" />
@@ -207,7 +207,7 @@ export default function EnterprisePage() {
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-green-500" />
-                    1,000 verifications/month
+                    1,000 credentials/month
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-green-500" />5 team members
@@ -311,8 +311,8 @@ export default function EnterprisePage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="marketplace">AI Agent Marketplace</SelectItem>
-                    <SelectItem value="payment">Payment Processor</SelectItem>
-                    <SelectItem value="hiring">Hiring Platform</SelectItem>
+                    <SelectItem value="credentials">Credential Management</SelectItem>
+                    <SelectItem value="reputation">Reputation Tracking</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
@@ -324,7 +324,7 @@ export default function EnterprisePage() {
                   id="message"
                   value={formData.message}
                   onChange={(e) => handleChange('message', e.target.value)}
-                  placeholder="Expected monthly verification volume, custom requirements, etc."
+                  placeholder="Expected monthly credential volume, custom Ghost Score requirements, etc."
                   rows={4}
                 />
               </div>

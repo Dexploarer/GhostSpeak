@@ -6,8 +6,10 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAgents } from '@/lib/hooks/useGhostSpeak'
-import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
+import { useWalletAddress } from '@/lib/hooks/useAuth'
 import { toast } from 'sonner'
+import { createMutationErrorHandler } from '@/lib/errors/error-coordinator'
+import { queryKeys } from '@/lib/queries/query-keys'
 
 // Types
 export interface Credential {
@@ -33,12 +35,8 @@ export interface SyncCredentialParams {
   recipientEmail: string
 }
 
-// Query Keys
-export const credentialKeys = {
-  all: ['credentials'] as const,
-  list: (owner?: string) => [...credentialKeys.all, 'list', owner] as const,
-  detail: (id: string) => [...credentialKeys.all, 'detail', id] as const,
-}
+// Re-export credential keys from centralized query keys for backwards compatibility
+export const credentialKeys = queryKeys.credentials
 
 /**
  * Hook to fetch all credentials for the connected wallet
@@ -163,9 +161,7 @@ export function useSyncCredential() {
         }
       )
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to sync credential: ${error.message}`)
-    },
+    onError: createMutationErrorHandler('credential sync'),
   })
 }
 
@@ -174,7 +170,7 @@ export function useSyncCredential() {
  */
 export function useTokenMetadata() {
   return useQuery({
-    queryKey: ['tokenMetadata'],
+    queryKey: queryKeys.tokens.supportedMetadata(),
     queryFn: async () => {
       return {
         USDC: {
@@ -211,18 +207,5 @@ export function useTokenMetadata() {
   })
 }
 
-/**
- * Helper to format token amount with proper decimals
- */
-export function formatTokenAmount(
-  amount: number | bigint | string,
-  decimals: number = 6,
-  symbol?: string
-): string {
-  const value = typeof amount === 'bigint' ? Number(amount) : Number(amount)
-  const formatted = (value / Math.pow(10, decimals)).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: decimals > 2 ? 4 : 2,
-  })
-  return symbol ? `${formatted} ${symbol}` : formatted
-}
+// Re-export formatTokenAmount from utils for backwards compatibility
+export { formatTokenAmount } from '@/lib/utils'

@@ -1,10 +1,10 @@
 'use client'
 
 /**
- * GhostSpeak React Context and Hooks
+ * GhostSpeak Zustand Store Hooks
  *
- * Provides React context and hooks for accessing GhostSpeak SDK functionality
- * with Crossmint wallet adapter integration.
+ * Provides hooks for accessing GhostSpeak SDK functionality
+ * with Zustand state management (replacing React Context).
  *
  * Core Pillars:
  * - Identity Registry (Agents)
@@ -12,20 +12,22 @@
  * - Reputation Layer
  */
 
-import React, { createContext, useContext, useMemo, useCallback } from 'react'
+import React, { useEffect, useCallback } from 'react'
 import { useWallet } from '@crossmint/client-sdk-react-ui'
+import type { GhostSpeakClient, NetworkType, Address } from '../ghostspeak/client'
 import {
-  createGhostSpeakClient,
-  type GhostSpeakClient,
-  type NetworkType,
-  type Address,
-} from '../ghostspeak/client'
+  useSDKStore,
+  useSDKClient,
+  useSDKNetwork,
+  useSDKIsConnected,
+  useSDKPublicKey,
+} from '../stores/sdk.store'
 
 // Re-export types
 export type { GhostSpeakClient, NetworkType }
 
 /**
- * Context value interface
+ * GhostSpeak context value interface (for backwards compatibility)
  */
 interface GhostSpeakContextValue {
   client: GhostSpeakClient | null
@@ -34,10 +36,8 @@ interface GhostSpeakContextValue {
   network: NetworkType
 }
 
-const GhostSpeakContext = createContext<GhostSpeakContextValue | null>(null)
-
 /**
- * GhostSpeak context provider props
+ * GhostSpeak provider props
  */
 interface GhostSpeakProviderProps {
   children: React.ReactNode
@@ -46,9 +46,10 @@ interface GhostSpeakProviderProps {
 }
 
 /**
- * GhostSpeak context provider
+ * GhostSpeak provider component
  *
- * Wraps children with GhostSpeak SDK context, integrating with Crossmint wallet.
+ * Initializes SDK store and syncs wallet connection status.
+ * No longer uses React Context - uses Zustand store instead.
  */
 export function GhostSpeakProvider({
   children,
@@ -56,42 +57,46 @@ export function GhostSpeakProvider({
   customRpcUrl,
 }: GhostSpeakProviderProps) {
   const { wallet } = useWallet()
+  const initialize = useSDKStore((state) => state.initialize)
+  const updateConnectionStatus = useSDKStore((state) => state.updateConnectionStatus)
 
-  // Create client with custom or default RPC endpoint
-  const client = useMemo(() => {
-    return createGhostSpeakClient(network, customRpcUrl)
-  }, [network, customRpcUrl])
+  // Initialize SDK client on mount
+  useEffect(() => {
+    initialize(network, customRpcUrl)
+  }, [initialize, network, customRpcUrl])
 
-  const value = useMemo<GhostSpeakContextValue>(
-    () => ({
-      client,
-      isConnected: Boolean(wallet?.address),
-      publicKey: wallet?.address ?? null,
-      network,
-    }),
-    [client, wallet?.address, network]
-  )
+  // Sync wallet connection status
+  useEffect(() => {
+    updateConnectionStatus(Boolean(wallet?.address), wallet?.address ?? null)
+  }, [updateConnectionStatus, wallet?.address])
 
-  return <GhostSpeakContext.Provider value={value}>{children}</GhostSpeakContext.Provider>
+  return <>{children}</>
 }
 
 /**
- * Hook to access GhostSpeak context
+ * Hook to access GhostSpeak SDK state
+ * Maintains backwards compatibility with previous Context API
  */
 export function useGhostSpeak(): GhostSpeakContextValue {
-  const context = useContext(GhostSpeakContext)
-  if (!context) {
-    throw new Error('useGhostSpeak must be used within a GhostSpeakProvider')
+  const client = useSDKClient()
+  const network = useSDKNetwork()
+  const isConnected = useSDKIsConnected()
+  const publicKey = useSDKPublicKey()
+
+  return {
+    client,
+    isConnected,
+    publicKey,
+    network,
   }
-  return context
 }
 
 /**
  * Hook to access GhostSpeak client
+ * Optimized selector - directly accesses store
  */
 export function useGhostSpeakClient(): GhostSpeakClient | null {
-  const { client } = useGhostSpeak()
-  return client
+  return useSDKClient()
 }
 
 /**

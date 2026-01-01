@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { getGhostSpeakClient } from '../ghostspeak/client'
 import type { Address } from '@solana/addresses'
+import { queryKeys } from '@/lib/queries/query-keys'
 
 // Type definitions
 interface AgentAccountData {
@@ -105,7 +106,7 @@ export interface ReputationMetrics {
  */
 export function useAgentReputation(_agentAddress: string) {
   return useQuery({
-    queryKey: ['reputation', 'agent', _agentAddress],
+    queryKey: queryKeys.reputation.score(_agentAddress),
     queryFn: async (): Promise<ReputationMetrics> => {
       try {
         const client = getGhostSpeakClient()
@@ -461,7 +462,7 @@ function generatePerformanceHistory(
  */
 export function useReputationLeaderboard(category?: string, limit = 10) {
   return useQuery({
-    queryKey: ['reputation', 'leaderboard', category, limit],
+    queryKey: queryKeys.reputation.leaderboard(JSON.stringify({ category, limit })),
     queryFn: async () => {
       const client = getGhostSpeakClient()
       const allAgents = await client.agents.getAllAgents()

@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { PrivacySettingsPanel } from '@/components/privacy/PrivacySettingsPanel'
-import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
+import { useWalletAddress } from '@/lib/hooks/useAuth'
 import { GlassCard } from '@/components/dashboard/shared/GlassCard'
 import { Shield, Wallet } from 'lucide-react'
 import { Button as _Button } from '@/components/ui/button'

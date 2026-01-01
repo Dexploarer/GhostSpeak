@@ -9,7 +9,7 @@
 import { useQuery, useMutation } from 'convex/react'
 import { useMemo, useCallback } from 'react'
 import { api } from '@/convex/_generated/api'
-import { useConvexUser } from './useConvexUser'
+import { useUserId } from '@/lib/stores/auth.store'
 import type { Id } from '@/convex/_generated/dataModel'
 
 export interface Favorite {
@@ -23,7 +23,7 @@ export interface Favorite {
 }
 
 export function useConvexFavorites() {
-  const { userId } = useConvexUser()
+  const userId = useUserId()
 
   // Query all favorites for current user
   const favorites = useQuery(api.favorites.getByUser, userId ? { userId } : 'skip') as

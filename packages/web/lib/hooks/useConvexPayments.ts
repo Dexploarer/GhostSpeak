@@ -9,7 +9,7 @@
 import { useQuery, useMutation } from 'convex/react'
 import { useMemo, useCallback } from 'react'
 import { api } from '@/convex/_generated/api'
-import { useConvexUser } from './useConvexUser'
+import { useUserId } from '@/lib/stores/auth.store'
 import type { Id } from '@/convex/_generated/dataModel'
 
 export interface Payment {
@@ -35,7 +35,7 @@ export interface PaymentStats {
 }
 
 export function useConvexPayments(limit?: number) {
-  const { userId } = useConvexUser()
+  const userId = useUserId()
 
   // Query user's payments
   const payments = useQuery(api.payments.getByUser, userId ? { userId, limit } : 'skip') as

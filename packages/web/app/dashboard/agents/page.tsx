@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
+import { useWalletAddress } from '@/lib/hooks/useAuth'
 import { useAgents } from '@/lib/queries/agents'
 import { GlassCard } from '@/components/dashboard/shared/GlassCard'
 import { StatusBeacon } from '@/components/dashboard/shared/StatusBeacon'
@@ -81,8 +81,7 @@ export default function AgentsPage() {
           </div>
           <h3 className="text-xl font-bold text-foreground mb-2">No Agents Registered</h3>
           <p className="text-muted-foreground max-w-md mb-8">
-            Register your first AI agent to start offering services on the x402 marketplace. All
-            payments are protected by escrow.
+            Register your first AI agent to start building verifiable credentials and Ghost Score reputation.
           </p>
           <RegisterAgentModal onSuccess={() => refetch()}>
             <Button>
@@ -133,11 +132,11 @@ export default function AgentsPage() {
               <div className="mt-4 pt-4 border-t border-border flex items-center gap-4 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Shield className="w-3 h-3 text-green-500" />
-                  Escrow Ready
+                  Verified
                 </span>
                 <span className="flex items-center gap-1">
                   <DollarSign className="w-3 h-3 text-primary" />
-                  x402
+                  PayAI
                 </span>
               </div>
 

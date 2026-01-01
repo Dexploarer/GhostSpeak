@@ -19,7 +19,7 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useAgent } from '@/lib/queries/agents'
 import { formatAddress } from '@/lib/utils'
-import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
+import { useWalletAddress } from '@/lib/hooks/useAuth'
 
 interface Message {
   id: string
@@ -56,8 +56,8 @@ export default function AgentInteractPage(): React.JSX.Element {
           role: 'system',
           content: `Connected to ${agent.name}. ${
             agent.x402?.enabled
-              ? `Each request costs ${(Number(agent.x402.pricePerCall) / 1_000_000).toFixed(4)} USDC via x402 payment.`
-              : 'This agent does not have x402 payments enabled.'
+              ? `Each request costs ${(Number(agent.x402.pricePerCall) / 1_000_000).toFixed(4)} USDC via PayAI. Interactions build your Ghost Score reputation.`
+              : 'This agent does not have PayAI payments enabled.'
           }`,
           timestamp: new Date(),
         },
@@ -136,15 +136,15 @@ export default function AgentInteractPage(): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-purple-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600" />
+      <div className="min-h-screen bg-linear-to-br from-primary/5 via-white to-lime-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
       </div>
     )
   }
 
   if (error || !agent) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-purple-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-900">
+      <div className="min-h-screen bg-linear-to-br from-primary/5 via-white to-lime-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-900">
         <div className="max-w-4xl mx-auto px-4 py-8">
           <Card className="p-12 text-center">
             <AlertCircle className="w-16 h-16 mx-auto text-red-500 mb-4" />
@@ -163,7 +163,7 @@ export default function AgentInteractPage(): React.JSX.Element {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-purple-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-900 flex flex-col">
+    <div className="min-h-screen bg-linear-to-br from-primary/5 via-white to-lime-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-900 flex flex-col">
       {/* Header */}
       <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 px-4 py-4 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
@@ -175,8 +175,8 @@ export default function AgentInteractPage(): React.JSX.Element {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500 to-purple-600 flex items-center justify-center">
-                <Bot className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary to-lime-400 flex items-center justify-center">
+                <Bot className="w-5 h-5 text-black" />
               </div>
               <div>
                 <h1 className="font-semibold">{agent.name}</h1>
@@ -210,7 +210,7 @@ export default function AgentInteractPage(): React.JSX.Element {
               <div
                 className={`max-w-[80%] rounded-2xl p-4 ${
                   message.role === 'user'
-                    ? 'bg-purple-600 text-white'
+                    ? 'bg-primary text-black font-medium'
                     : message.role === 'system'
                       ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-sm'
                       : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
@@ -247,7 +247,7 @@ export default function AgentInteractPage(): React.JSX.Element {
 
                 <div
                   className={`text-xs mt-2 ${
-                    message.role === 'user' ? 'text-purple-200' : 'text-gray-400'
+                    message.role === 'user' ? 'text-black/60' : 'text-gray-400'
                   }`}
                 >
                   <Clock className="w-3 h-3 inline mr-1" />
@@ -277,7 +277,7 @@ export default function AgentInteractPage(): React.JSX.Element {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                 placeholder="Ask the agent anything..."
-                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"
                 disabled={isProcessing || !agent.isActive}
               />
               <Button
@@ -305,7 +305,7 @@ export default function AgentInteractPage(): React.JSX.Element {
           {agent.x402?.enabled && walletAddress && (
             <p className="text-xs text-center text-gray-500 mt-2 flex items-center justify-center gap-1">
               <DollarSign className="w-3 h-3" />
-              Each message requires an x402 payment to the agent&apos;s endpoint
+              PayAI payments build your Ghost Score reputation on-chain
             </p>
           )}
         </div>

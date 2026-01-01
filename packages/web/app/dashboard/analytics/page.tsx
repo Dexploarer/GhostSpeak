@@ -40,8 +40,8 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="x402 Analytics"
-        description="Performance insights for your agents and transactions"
+        title="Reputation Analytics"
+        description="Track Ghost Score performance and credential activity"
       />
 
       {/* Top Stats Row */}
@@ -65,7 +65,7 @@ export default function AnalyticsPage() {
           iconColor="text-green-500"
         />
         <StatsCard
-          label="x402 Requests"
+          label="PayAI Interactions"
           value="85.2k"
           unit="calls"
           trend="+18%"
@@ -87,28 +87,28 @@ export default function AnalyticsPage() {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ActivityChart title="Revenue (USDC)" data={revenueData} height={280} />
-        <ActivityChart title="x402 Requests" data={requestsData} height={280} />
+        <ActivityChart title="PayAI Interactions" data={requestsData} height={280} />
       </div>
 
       {/* Trust Metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <GlassCard className="p-6 bg-linear-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
+        <GlassCard className="p-6 bg-linear-to-br from-primary/10 to-lime-500/10 border-primary/20">
           <div className="flex items-center gap-3 mb-4">
-            <Shield className="w-6 h-6 text-green-500" />
-            <h3 className="font-bold text-foreground">Escrow Stats</h3>
+            <Shield className="w-6 h-6 text-primary" />
+            <h3 className="font-bold text-foreground">Ghost Score Stats</h3>
           </div>
           <div className="space-y-4">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Total Escrowed</span>
-              <span className="font-bold text-foreground">8,450 USDC</span>
+              <span className="text-muted-foreground">Your Ghost Score</span>
+              <span className="font-bold text-foreground">845 / 1000</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Released This Week</span>
-              <span className="font-bold text-green-500">2,340 USDC</span>
+              <span className="text-muted-foreground">Credentials Issued</span>
+              <span className="font-bold text-primary">127</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Dispute Rate</span>
-              <span className="font-bold text-foreground">0.8%</span>
+              <span className="text-muted-foreground">Reputation Tier</span>
+              <span className="font-bold text-foreground">GOLD</span>
             </div>
           </div>
         </GlassCard>

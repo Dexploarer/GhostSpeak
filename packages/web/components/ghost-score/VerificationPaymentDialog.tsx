@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { CreditCard, Wallet, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
-import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
+import { useWalletAddress } from '@/lib/hooks/useAuth'
 import { initializeCheckout } from '@/lib/crossmint-checkout'
 
 interface VerificationPaymentDialogProps {

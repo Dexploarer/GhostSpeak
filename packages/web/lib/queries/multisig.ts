@@ -5,6 +5,8 @@ import { useCrossmintSigner } from '@/lib/hooks/useCrossmintSigner'
 import type { Address } from '@solana/kit'
 import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
 import { toast } from 'sonner'
+import { createMutationErrorHandler } from '@/lib/errors/error-coordinator'
+import { queryKeys } from '@/lib/queries/query-keys'
 
 // =====================================================
 // TYPE DEFINITIONS
@@ -474,7 +476,7 @@ export function useMultisigs(options?: { enabled?: boolean }) {
   const { address, isConnected } = useCrossmintSigner()
 
   return useQuery({
-    queryKey: ['multisigs', address],
+    queryKey: queryKeys.multisig.accounts(),
     queryFn: async (): Promise<Multisig[]> => {
       if (!isConnected || !address) return []
 
@@ -505,7 +507,7 @@ export function useMultisigs(options?: { enabled?: boolean }) {
  */
 export function useMultisig(multisigAddress: Address | undefined, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ['multisig', multisigAddress],
+    queryKey: queryKeys.multisig.account(multisigAddress || ('' as Address)),
     queryFn: async (): Promise<Multisig | null> => {
       if (!multisigAddress) return null
 
@@ -514,7 +516,6 @@ export function useMultisig(multisigAddress: Address | undefined, options?: { en
       try {
         // Fetch multisig account data
         // This would use fetchMultisig from the SDK
-        console.log('Fetching multisig:', multisigAddress)
         return null
       } catch (error) {
         console.error('Failed to fetch multisig:', error)
@@ -533,14 +534,13 @@ export function useMultisigsAsSigner(options?: { enabled?: boolean }) {
   const { address, isConnected } = useCrossmintSigner()
 
   return useQuery({
-    queryKey: ['multisigs-as-signer', address],
+    queryKey: [...queryKeys.multisig.all, 'as-signer', address],
     queryFn: async (): Promise<Multisig[]> => {
       if (!isConnected || !address) return []
 
       try {
         // Query multisig accounts where user is a signer
         // In production, this would need a different filter
-        console.log('Fetching multisigs where user is signer:', address)
         return []
       } catch (error) {
         console.error('Failed to fetch multisigs as signer:', error)
@@ -651,13 +651,10 @@ export function useCreateMultisig() {
       return newMultisig
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['multisigs'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.multisig.accounts() })
       toast.success('Multisig created successfully!')
     },
-    onError: (error) => {
-      console.error('Failed to create multisig:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to create multisig')
-    },
+    onError: createMutationErrorHandler('multisig creation'),
   })
 }
 
@@ -677,17 +674,13 @@ export function useAddSigner() {
 
       // In production, this would create a pending transaction
       // that requires threshold signatures to execute
-      console.log('Adding signer:', data.newSigner, 'to multisig:', data.multisigAddress)
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['multisig', variables.multisigAddress] })
-      queryClient.invalidateQueries({ queryKey: ['multisigs'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.multisig.account(variables.multisigAddress) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.multisig.accounts() })
       toast.success('Signer addition proposed!')
     },
-    onError: (error) => {
-      console.error('Failed to add signer:', error)
-      toast.error('Failed to propose signer addition')
-    },
+    onError: createMutationErrorHandler('signer addition'),
   })
 }
 
@@ -721,13 +714,10 @@ export function useApproveTransaction() {
       })
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['multisig', variables.multisigAddress] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.multisig.account(variables.multisigAddress) })
       toast.success('Transaction approved!')
     },
-    onError: (error) => {
-      console.error('Failed to approve transaction:', error)
-      toast.error('Failed to approve transaction')
-    },
+    onError: createMutationErrorHandler('transaction approval'),
   })
 }
 
@@ -759,14 +749,11 @@ export function useExecuteTransaction() {
       return signature ?? `tx_${Date.now()}`
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['multisig', variables.multisigAddress] })
-      queryClient.invalidateQueries({ queryKey: ['multisigs'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.multisig.account(variables.multisigAddress) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.multisig.accounts() })
       toast.success('Transaction executed successfully!')
     },
-    onError: (error) => {
-      console.error('Failed to execute transaction:', error)
-      toast.error('Failed to execute transaction')
-    },
+    onError: createMutationErrorHandler('transaction execution'),
   })
 }
 
@@ -784,16 +771,14 @@ export function useCancelTransaction() {
       const signer = createSigner()
       if (!signer) throw new Error('Could not create signer')
 
-      console.log('Cancelling transaction:', data.transactionId)
+      // Cancel the transaction via SDK
+      // This would call the SDK's cancel transaction method
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['multisig', variables.multisigAddress] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.multisig.account(variables.multisigAddress) })
       toast.success('Transaction cancelled!')
     },
-    onError: (error) => {
-      console.error('Failed to cancel transaction:', error)
-      toast.error('Failed to cancel transaction')
-    },
+    onError: createMutationErrorHandler('transaction cancellation'),
   })
 }
 
@@ -811,15 +796,13 @@ export function useFreezeMultisig() {
       const signer = createSigner()
       if (!signer) throw new Error('Could not create signer')
 
-      console.log('Freezing multisig:', multisigAddress)
+      // Freeze the multisig via SDK
+      // This would call the SDK's emergency freeze method
     },
     onSuccess: (_, multisigAddress) => {
-      queryClient.invalidateQueries({ queryKey: ['multisig', multisigAddress] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.multisig.account(multisigAddress) })
       toast.success('Multisig frozen!')
     },
-    onError: (error) => {
-      console.error('Failed to freeze multisig:', error)
-      toast.error('Failed to freeze multisig')
-    },
+    onError: createMutationErrorHandler('multisig freeze'),
   })
 }

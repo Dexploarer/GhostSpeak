@@ -5,6 +5,8 @@ import { useCrossmintSigner } from '@/lib/hooks/useCrossmintSigner'
 import type { Address } from '@solana/kit'
 import { getGhostSpeakClient } from '@/lib/ghostspeak/client'
 import { toast } from 'sonner'
+import { createMutationErrorHandler } from '@/lib/errors/error-coordinator'
+import { queryKeys } from '@/lib/queries/query-keys'
 
 // =====================================================
 // TYPE DEFINITIONS
@@ -281,7 +283,7 @@ function determineImpactLevel(proposalType: ProposalType): 'Low' | 'Medium' | 'H
  */
 export function useProposals(filters?: GovernanceFilters, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ['proposals', filters],
+    queryKey: queryKeys.governance.proposalList(JSON.stringify(filters)),
     queryFn: async (): Promise<Proposal[]> => {
       const client = getGhostSpeakClient()
 
@@ -371,7 +373,7 @@ export function useProposals(filters?: GovernanceFilters, options?: { enabled?: 
  */
 export function useProposal(address: Address | undefined, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ['proposal', address],
+    queryKey: queryKeys.governance.proposal(address || ('' as Address)),
     queryFn: async (): Promise<Proposal | null> => {
       if (!address) return null
 
@@ -428,7 +430,7 @@ export function useProposalVotes(
   options?: { enabled?: boolean }
 ) {
   return useQuery({
-    queryKey: ['proposal-votes', proposalAddress],
+    queryKey: queryKeys.governance.votes(proposalAddress || ('' as Address)),
     queryFn: async (): Promise<Vote[]> => {
       if (!proposalAddress) return []
 
@@ -479,7 +481,7 @@ export function useVotingPower(options?: { enabled?: boolean }) {
   const { address, isConnected } = useCrossmintSigner()
 
   return useQuery({
-    queryKey: ['voting-power', address],
+    queryKey: queryKeys.governance.votingPower(address || ('' as Address)),
     queryFn: async (): Promise<VotingPower | null> => {
       if (!isConnected) return null
 
@@ -536,7 +538,7 @@ export function useDelegations(options?: { enabled?: boolean }) {
   const { address, isConnected } = useCrossmintSigner()
 
   return useQuery({
-    queryKey: ['delegations', address],
+    queryKey: queryKeys.governance.delegations(address || ('' as Address)),
     queryFn: async (): Promise<{ given: Delegation[]; received: Delegation[] }> => {
       if (!isConnected) return { given: [], received: [] }
 
@@ -670,13 +672,10 @@ export function useCreateProposal() {
       return newProposal
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['proposals'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.governance.proposals() })
       toast.success('Proposal created successfully!')
     },
-    onError: (error) => {
-      console.error('Failed to create proposal:', error)
-      toast.error('Failed to create proposal')
-    },
+    onError: createMutationErrorHandler('proposal creation'),
   })
 }
 
@@ -727,15 +726,12 @@ export function useCastVote() {
       return newVote
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['proposal-votes', variables.proposalAddress] })
-      queryClient.invalidateQueries({ queryKey: ['proposal', variables.proposalAddress] })
-      queryClient.invalidateQueries({ queryKey: ['proposals'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.governance.votes(variables.proposalAddress) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.governance.proposal(variables.proposalAddress) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.governance.proposals() })
       toast.success('Vote cast successfully!')
     },
-    onError: (error) => {
-      console.error('Failed to cast vote:', error)
-      toast.error('Failed to cast vote')
-    },
+    onError: createMutationErrorHandler('vote casting'),
   })
 }
 
@@ -773,14 +769,10 @@ export function useDelegateVotes() {
       return newDelegation
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['delegations'] })
-      queryClient.invalidateQueries({ queryKey: ['voting-power'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.governance.all })
       toast.success('Delegation created successfully!')
     },
-    onError: (error) => {
-      console.error('Failed to delegate votes:', error)
-      toast.error('Failed to delegate votes')
-    },
+    onError: createMutationErrorHandler('vote delegation'),
   })
 }
 
@@ -810,13 +802,10 @@ export function useExecuteProposal() {
       return result
     },
     onSuccess: (_, proposalAddress) => {
-      queryClient.invalidateQueries({ queryKey: ['proposal', proposalAddress] })
-      queryClient.invalidateQueries({ queryKey: ['proposals'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.governance.proposal(proposalAddress) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.governance.proposals() })
       toast.success('Proposal executed successfully!')
     },
-    onError: (error) => {
-      console.error('Failed to execute proposal:', error)
-      toast.error('Failed to execute proposal')
-    },
+    onError: createMutationErrorHandler('proposal execution'),
   })
 }

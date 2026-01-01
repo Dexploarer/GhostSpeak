@@ -26,7 +26,7 @@ import {
   ArrowUp,
   ArrowDown,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatTokenAmount } from '@/lib/utils'
 import type { Proposal, CreateVoteData } from '@/lib/queries/governance'
 import { VoteChoice } from '@/lib/queries/governance'
 import { useCastVote, useProposalVotes, useVotingPower } from '@/lib/queries/governance'
@@ -151,13 +151,6 @@ export function VotingInterface({ proposal, className }: VotingInterfaceProps): 
     } catch (error) {
       console.error('Failed to cast vote:', error)
     }
-  }
-
-  const formatTokenAmount = (amount: string): string => {
-    const num = parseFloat(amount)
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
-    return num.toLocaleString()
   }
 
   const getUserInitials = (address: string, name?: string): string => {

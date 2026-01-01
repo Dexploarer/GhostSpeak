@@ -1,6 +1,7 @@
 // Real token queries for fetching available tokens from blockchain
 import { useQuery } from '@tanstack/react-query'
 import { getGhostSpeakClient } from '../ghostspeak/client'
+import { queryKeys } from '@/lib/queries/query-keys'
 
 export interface Token {
   address: string
@@ -30,7 +31,7 @@ export interface Token {
  */
 export function useAvailableTokens() {
   return useQuery({
-    queryKey: ['tokens', 'available'],
+    queryKey: queryKeys.tokens.all,
     queryFn: async (): Promise<Token[]> => {
       try {
         // Marketplace module removed. Manual token list addition.

@@ -33,10 +33,12 @@ import {
   type ProtocolConfig
 } from '@ghostspeak/sdk';
 
+import { getCurrentProgramId } from '../../config/program-ids'
+
 // CONFIGURATION - VERIFY THESE ADDRESSES BEFORE MAINNET DEPLOYMENT
 const MAINNET_CONFIG = {
-  // Program ID - UPDATE THIS after mainnet deployment
-  programId: 'GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9' as const, // PLACEHOLDER - Update with mainnet program ID
+  // Program ID - Uses config/program-ids.ts (update there after mainnet deployment)
+  programId: getCurrentProgramId('mainnet'),
 
   // Treasury addresses - VERIFY THESE ARE MULTISIG-CONTROLLED
   treasury: 'TREASURY_ADDRESS_HERE' as const, // TODO: Replace with actual multisig treasury
@@ -56,7 +58,7 @@ const MAINNET_CONFIG = {
 };
 
 const DEVNET_CONFIG = {
-  programId: 'GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9' as const,
+  programId: getCurrentProgramId('devnet'),
   treasury: 'DEVNET_TREASURY_ADDRESS' as const,
   buybackPool: 'DEVNET_BUYBACK_ADDRESS' as const,
   moderatorPool: 'DEVNET_MODERATOR_ADDRESS' as const,

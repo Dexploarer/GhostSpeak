@@ -29,11 +29,11 @@ import {
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { Key, Copy, Trash2, Plus, AlertCircle } from 'lucide-react'
-import { useConvexUser } from '@/lib/hooks/useConvexUser'
+import { useCurrentUser } from '@/lib/hooks/useAuth'
 import { generateApiKey } from '@/lib/api/auth'
 
 export default function ApiKeysPage() {
-  const { user } = useConvexUser()
+  const { user } = useCurrentUser()
   const [isGenerating, setIsGenerating] = useState(false)
   const [newKeyName, setNewKeyName] = useState('')
   const [newKeyTier, setNewKeyTier] = useState<'startup' | 'growth' | 'enterprise'>('startup')

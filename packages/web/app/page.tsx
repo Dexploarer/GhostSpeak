@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Hero } from '@/components/landing/Hero'
 import { BentoGrid } from '@/components/landing/BentoGrid'
@@ -13,6 +13,13 @@ import { ArchitectureLayers } from '@/components/landing/ArchitectureLayers'
 import { CostComparison } from '@/components/landing/CostComparison'
 import { IntegrationMarquee } from '@/components/landing/IntegrationMarquee'
 import { IdentityBridge } from '@/components/landing/IdentityBridge'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+// Register GSAP plugins
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger)
+}
 
 const AgentSwarm3D = dynamic(
   () => import('@/components/landing/3d/AgentSwarm3D').then((mod) => mod.AgentSwarm3D),
@@ -27,36 +34,93 @@ const AgentSwarm3D = dynamic(
 )
 
 export default function LandingPage() {
+  const pageRef = useRef<HTMLDivElement>(null)
+
+  // Setup scroll-triggered animations
+  useEffect(() => {
+    if (!pageRef.current) return
+
+    const ctx = gsap.context(() => {
+      // Animate sections on scroll
+      gsap.utils.toArray<HTMLElement>('.animate-on-scroll').forEach((section) => {
+        gsap.from(section, {
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 80%',
+            end: 'top 20%',
+            toggleActions: 'play none none reverse',
+          },
+          opacity: 0,
+          y: 60,
+          duration: 1,
+          ease: 'power3.out',
+        })
+      })
+
+      // Stagger animations for grid items
+      gsap.utils.toArray<HTMLElement>('.stagger-item').forEach((item, index) => {
+        gsap.from(item, {
+          scrollTrigger: {
+            trigger: item,
+            start: 'top 85%',
+          },
+          opacity: 0,
+          y: 40,
+          duration: 0.8,
+          delay: index * 0.1,
+          ease: 'power2.out',
+        })
+      })
+    }, pageRef)
+
+    return () => ctx.revert()
+  }, [])
+
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30">
+    <div
+      ref={pageRef}
+      className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30"
+    >
       {/* 1. Hero Section */}
       <Hero />
 
-      {/* 2. Manifesto - High Impact Brand Statement */}
-      <ManifestoSection />
+      {/* 2. Integration Marquee */}
+      <div className="animate-on-scroll">
+        <IntegrationMarquee />
+      </div>
 
-      {/* 1.5 Integration Marquee */}
-      <IntegrationMarquee />
+      {/* 3. Manifesto - High Impact Brand Statement */}
+      <div className="animate-on-scroll">
+        <ManifestoSection />
+      </div>
 
-      {/* 3. Live Telemetry - Proof of Performance */}
-      <section className="relative py-12 sm:py-16 md:py-24 border-b border-border">
+      {/* 4. Live Telemetry - Proof of Performance */}
+      <section className="animate-on-scroll relative py-12 sm:py-16 md:py-24 border-b border-border">
         <NetworkTelemetry />
       </section>
 
-      {/* 3. The Mascot Showcase - Brand Soul */}
-      <MascotShowcase />
+      {/* 5. The Mascot Showcase - Brand Soul */}
+      <div className="animate-on-scroll">
+        <MascotShowcase />
+      </div>
 
-      {/* 4. Architecture Deep Dive */}
-      <ArchitectureLayers />
+      {/* 6. Architecture Deep Dive */}
+      <div className="animate-on-scroll">
+        <ArchitectureLayers />
+      </div>
 
-      {/* 5. Cost Efficiency */}
-      <CostComparison />
+      {/* 7. Cost Efficiency */}
+      <div className="animate-on-scroll">
+        <CostComparison />
+      </div>
 
-      {/* 5.5 Cross-Chain Identity Bridge */}
-      <IdentityBridge />
+      {/* 8. Cross-Chain Identity Bridge */}
+      <div className="animate-on-scroll">
+        <IdentityBridge />
+      </div>
 
-      {/* 6. Protocol Visualization - The Trust Layer */}
-      <section className="py-16 sm:py-24 md:py-32 relative overflow-hidden">
+      {/* 9. Protocol Visualization - The Trust Layer */}
+      <section className="animate-on-scroll py-16 sm:py-24 md:py-32 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 mb-10 sm:mb-16 md:mb-20 text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -85,8 +149,8 @@ export default function LandingPage() {
         <div className="absolute top-1/2 left-0 -translate-y-1/2 w-96 h-96 bg-primary/10 rounded-full blur-[150px] -z-10" />
       </section>
 
-      {/* 5. Features Grid (Bento) */}
-      <section className="py-16 sm:py-24 md:py-32 relative border-t border-border">
+      {/* 10. Features Grid (Bento) */}
+      <section className="animate-on-scroll py-16 sm:py-24 md:py-32 relative border-t border-border">
         <div className="max-w-7xl mx-auto px-4 mb-10 sm:mb-16 md:mb-20 text-center">
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight">
             Built on <span className="text-primary italic">PayAI</span>. Extended by GhostSpeak.

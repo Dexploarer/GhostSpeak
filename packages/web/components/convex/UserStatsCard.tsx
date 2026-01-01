@@ -9,13 +9,13 @@
 import React from 'react'
 import { DollarSign, Zap, MessageSquare, Heart, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useConvexUser } from '@/lib/hooks/useConvexUser'
+import { useCurrentUser } from '@/lib/hooks/useAuth'
 import { usePaymentStats } from '@/lib/hooks/useConvexPayments'
 import { useConvexFavorites } from '@/lib/hooks/useConvexFavorites'
 import { useConvexConversations } from '@/lib/hooks/useConvexConversations'
 
 export function UserStatsCard(): React.JSX.Element | null {
-  const { user, isAuthenticated, isLoading: userLoading } = useConvexUser()
+  const { user, isAuthenticated, isLoading: userLoading } = useCurrentUser()
   const { stats, isLoading: statsLoading } = usePaymentStats()
   const { favorites } = useConvexFavorites()
   const { conversations } = useConvexConversations()
@@ -92,7 +92,7 @@ function StatItem({ icon: Icon, label, value, color }: StatItemProps) {
  * Compact inline stats for headers/navbars
  */
 export function UserStatsInline(): React.JSX.Element | null {
-  const { isAuthenticated } = useConvexUser()
+  const { isAuthenticated } = useCurrentUser()
   const { stats } = usePaymentStats()
   const { favorites } = useConvexFavorites()
 

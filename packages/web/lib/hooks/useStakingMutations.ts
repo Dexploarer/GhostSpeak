@@ -5,6 +5,8 @@ import { useStaking } from './useGhostSpeak'
 import { useCrossmintSigner } from './useCrossmintSigner'
 import { useToast } from '@/components/ui/use-toast'
 import { address, type Address } from '@solana/addresses'
+import { createMutationErrorHandler } from '@/lib/errors/error-coordinator'
+import { queryKeys } from '@/lib/queries/query-keys'
 
 // GHOST token mint addresses
 const GHOST_MINT_DEVNET = 'BV4uhhMJ84zjwRomS15JMH5wdXVrMP8o9E1URS4xtYoh'
@@ -82,17 +84,11 @@ export function useStakeMutation() {
       })
 
       // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['staking', variables.agentAddress] })
-      queryClient.invalidateQueries({ queryKey: ['agent', variables.agentAddress] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.staking.account(variables.agentAddress) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(variables.agentAddress) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.staking.stats() })
     },
-    onError: (error: Error) => {
-      console.error('Staking error:', error)
-      toast({
-        title: 'Staking Failed',
-        description: error.message || 'Unknown error occurred',
-        variant: 'destructive',
-      })
-    },
+    onError: createMutationErrorHandler('token staking'),
   })
 }
 
@@ -130,16 +126,10 @@ export function useUnstakeMutation() {
       })
 
       // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['staking', variables.agentAddress] })
-      queryClient.invalidateQueries({ queryKey: ['agent', variables.agentAddress] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.staking.account(variables.agentAddress) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(variables.agentAddress) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.staking.stats() })
     },
-    onError: (error: Error) => {
-      console.error('Unstaking error:', error)
-      toast({
-        title: 'Unstaking Failed',
-        description: error.message || 'Unknown error occurred',
-        variant: 'destructive',
-      })
-    },
+    onError: createMutationErrorHandler('token unstaking'),
   })
 }

@@ -8,6 +8,7 @@
   /* Brand Colors - Electric Lime (#ccff00) */
   --primary: #a3e635; /* Slightly more legible lime for light theme */
   --primary-foreground: #000000;
+  --primary-rgb: 163, 230, 53;
 
   --secondary: #ecfdf5; /* Clean emerald tint */
   --secondary-foreground: #065f46;
@@ -32,6 +33,10 @@
   --ring: #a3e635;
 
   --radius: 0.75rem;
+
+  /* Premium Enhancements */
+  --glass-border: rgba(0, 0, 0, 0.1);
+  --glow-intensity: 0.3;
 }
 
 .dark {
@@ -40,6 +45,7 @@
 
   --primary: #ccff00;
   --primary-foreground: #000000;
+  --primary-rgb: 204, 255, 0;
 
   --secondary: #1a2e00; /* Dark lime tint */
   --secondary-foreground: #d9f99d; /* Light lime for text */
@@ -62,6 +68,14 @@
   --border: #262626;
   --input: #262626;
   --ring: #ccff00;
+
+  /* Premium Enhancements */
+  --bg-void: #0a0a0a;
+  --bg-card: #141414;
+  --bg-elevated: #1a1a1a;
+  --border-subtle: #262626;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glow-intensity: 0.4;
 }
 
 @theme inline {
@@ -311,6 +325,103 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary);
+}
+
+/* ============================================
+   Premium Visual Effects
+   ============================================ */
+
+/* Radial Glow Effect */
+.glow-card {
+  position: relative;
+}
+
+.glow-card::before {
+  content: '';
+  position: absolute;
+  inset: -40px;
+  background: radial-gradient(
+    circle at center,
+    rgba(var(--primary-rgb), var(--glow-intensity)) 0%,
+    rgba(var(--primary-rgb), calc(var(--glow-intensity) * 0.3)) 40%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.glow-card:hover::before {
+  opacity: 1;
+}
+
+/* Pulse Glow Animation */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+/* Orb Glow Background */
+.orb-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Text Outline (Stroke) */
+.text-outline {
+  -webkit-text-stroke: 2px var(--foreground);
+  -webkit-text-fill-color: transparent;
+  paint-order: stroke fill;
+}
+
+.text-outline-primary {
+  -webkit-text-stroke: 2px var(--primary);
+  -webkit-text-fill-color: transparent;
+  paint-order: stroke fill;
+}
+
+/* Perspective Utilities */
+.perspective-2000 {
+  perspective: 2000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* Smooth Scroll */
+html.lenis {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
 }
 
 /* ============================================

@@ -47,11 +47,11 @@ export default function GhostScoreDashboard() {
       </div>
 
       {/* Subscription Card */}
-      <Card className="p-6 bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/30">
+      <Card className="p-6 bg-gradient-to-br from-primary/10 to-lime-500/10 border-primary/30">
         <div className="flex items-start justify-between mb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <Crown className="w-8 h-8 text-purple-400" />
+              <Crown className="w-8 h-8 text-primary" />
               <h2 className="text-2xl font-bold">Your Subscription</h2>
             </div>
             <p className="text-muted-foreground">
@@ -63,7 +63,7 @@ export default function GhostScoreDashboard() {
 
           {currentTier === 'free' && (
             <Link href="/ghost-score/pricing">
-              <Button className="bg-purple-600 hover:bg-purple-700">
+              <Button className="bg-primary hover:bg-primary/90">
                 <TrendingUp className="w-4 h-4 mr-2" />
                 Upgrade
               </Button>
@@ -129,8 +129,8 @@ export default function GhostScoreDashboard() {
       <div className="grid md:grid-cols-3 gap-6">
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-purple-400" />
+            <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+              <Shield className="w-6 h-6 text-primary" />
             </div>
             <div>
               <div className="text-2xl font-bold">{verificationHistory?.length || 0}</div>
@@ -192,7 +192,7 @@ export default function GhostScoreDashboard() {
               Start verifying agents to track their Ghost Scores.
             </p>
             <Link href="/ghost-score">
-              <Button className="bg-purple-600 hover:bg-purple-700">Verify Your First Agent</Button>
+              <Button className="bg-primary hover:bg-primary/90">Verify Your First Agent</Button>
             </Link>
           </Card>
         ) : (
@@ -212,8 +212,8 @@ export default function GhostScoreDashboard() {
                     <Card key={verification._id} className="p-4 hover:shadow-lg transition-shadow">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4 flex-1">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-                            <Shield className="w-6 h-6 text-white" />
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-lime-400 flex items-center justify-center">
+                            <Shield className="w-6 h-6 text-black" />
                           </div>
 
                           <div className="flex-1">

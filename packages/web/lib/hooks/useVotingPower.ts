@@ -398,20 +398,5 @@ export function formatVotingPower(power: bigint): string {
   return num.toLocaleString()
 }
 
-/**
- * Format token amount for display
- */
-export function formatTokenAmount(amount: bigint, decimals = 6): string {
-  const divisor = BigInt(10 ** decimals)
-  const whole = amount / divisor
-  const fraction = amount % divisor
-  const num = Number(whole) + Number(fraction) / Number(divisor)
-
-  if (num >= 1_000_000) {
-    return `${(num / 1_000_000).toFixed(2)}M`
-  }
-  if (num >= 1_000) {
-    return `${(num / 1_000).toFixed(2)}K`
-  }
-  return num.toLocaleString(undefined, { maximumFractionDigits: 2 })
-}
+// Re-export formatTokenAmount from utils for backwards compatibility
+export { formatTokenAmount } from '@/lib/utils'

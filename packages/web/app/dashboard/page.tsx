@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useMemo } from 'react'
-import { useWalletAddress } from '@/lib/hooks/useWalletAddress'
+import { useWalletAddress } from '@/lib/hooks/useAuth'
 import { useAgents } from '@/lib/queries/agents'
 import { GlassCard } from '@/components/dashboard/shared/GlassCard'
 import { StatsCard } from '@/components/dashboard/shared/StatsCard'

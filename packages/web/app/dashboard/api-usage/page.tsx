@@ -19,10 +19,10 @@ import {
 } from '@/components/ui/select'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Activity, DollarSign, TrendingUp, Clock } from 'lucide-react'
-import { useConvexUser } from '@/lib/hooks/useConvexUser'
+import { useCurrentUser } from '@/lib/hooks/useAuth'
 
 export default function ApiUsagePage() {
-  const { user } = useConvexUser()
+  const { user } = useCurrentUser()
   const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null)
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d')
 

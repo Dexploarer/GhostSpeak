@@ -12,9 +12,9 @@ import { ThemeProvider } from '@/components/theme-provider'
 import * as React from 'react'
 import dynamic from 'next/dynamic'
 import { GhostSpeakProvider } from '@/lib/hooks/useGhostSpeak'
-import { AuthQuerySyncProvider } from '@/lib/hooks/useAuthQuerySync'
 import { ConvexClientProvider } from '@/components/providers/ConvexClientProvider'
-import { UserSyncProvider } from '@/components/providers/UserSyncProvider'
+import { AuthSyncEngine } from '@/lib/auth/sync-engine'
+import { SmoothScrollProvider } from '@/components/providers/SmoothScrollProvider'
 
 const WalletContextProvider = dynamic(
   () => import('@/components/wallet/WalletProvider').then((mod) => mod.WalletContextProvider),
@@ -109,13 +109,13 @@ export function Providers(props: { children: React.ReactNode }) {
       <ReactQueryStreamedHydration>
         <ConvexClientProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <WalletContextProvider>
-              <AuthQuerySyncProvider>
-                <UserSyncProvider>
+            <SmoothScrollProvider>
+              <WalletContextProvider>
+                <AuthSyncEngine>
                   <GhostSpeakProvider network="devnet">{props.children}</GhostSpeakProvider>
-                </UserSyncProvider>
-              </AuthQuerySyncProvider>
-            </WalletContextProvider>
+                </AuthSyncEngine>
+              </WalletContextProvider>
+            </SmoothScrollProvider>
           </ThemeProvider>
         </ConvexClientProvider>
       </ReactQueryStreamedHydration>

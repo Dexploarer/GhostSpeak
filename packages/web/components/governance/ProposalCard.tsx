@@ -34,7 +34,7 @@ import {
   Coins,
   Sparkles,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatTokenAmount } from '@/lib/utils'
 import type { Proposal } from '@/lib/queries/governance'
 import { ProposalType, ProposalStatus, VoteChoice } from '@/lib/queries/governance'
 import { formatDistanceToNow } from 'date-fns'
@@ -199,13 +199,6 @@ export function ProposalCard({
         .slice(0, 2)
     }
     return address.slice(0, 2).toUpperCase()
-  }
-
-  const formatTokenAmount = (amount: string): string => {
-    const num = parseFloat(amount)
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
-    return num.toLocaleString()
   }
 
   return (

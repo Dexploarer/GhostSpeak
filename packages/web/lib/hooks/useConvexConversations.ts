@@ -9,7 +9,7 @@
 import { useQuery, useMutation } from 'convex/react'
 import { useMemo, useCallback, useState } from 'react'
 import { api } from '@/convex/_generated/api'
-import { useConvexUser } from './useConvexUser'
+import { useUserId } from '@/lib/stores/auth.store'
 import type { Id } from '@/convex/_generated/dataModel'
 
 export interface Conversation {
@@ -38,7 +38,7 @@ export interface Message {
 }
 
 export function useConvexConversations() {
-  const { userId } = useConvexUser()
+  const userId = useUserId()
 
   // Query all conversations for current user
   const conversations = useQuery(api.conversations.getByUser, userId ? { userId } : 'skip') as
@@ -131,7 +131,7 @@ export function useResourceChat(
     name: string
   } | null
 ) {
-  const { userId } = useConvexUser()
+  const userId = useUserId()
   const { conversations, create } = useConvexConversations()
   const [activeConversationId, setActiveConversationId] = useState<Id<'conversations'> | null>(null)
 

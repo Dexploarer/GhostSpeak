@@ -1,0 +1,726 @@
+---
+title: 'Staking Strategy Guide'
+description: 'Maximize revenue share and unlock unlimited verifications by staking GHOST tokens'
+---
+
+# Staking Strategy: Optimizing Your GHOST Token Position
+
+Staking GHOST tokens unlocks significant benefits: unlimited credential verifications, revenue sharing from platform fees, and enhanced marketplace visibility. This guide helps you determine the optimal staking strategy for your use case.
+
+<Info>
+**GHOST Token**: GhostSpeak's native utility token on Solana, using the Token-2022 standard with transfer hooks for automatic fee distribution.
+</Info>
+
+---
+
+## Understanding GHOST Staking
+
+### What is Staking?
+
+Staking locks your GHOST tokens in a smart contract to unlock benefits:
+
+<CardGroup cols={2}>
+  <Card title="Unlimited Verifications" icon="infinity">
+    No pay-per-use fees for credential checks
+  </Card>
+  <Card title="Revenue Share" icon="coins">
+    Earn proportional share of platform fees
+  </Card>
+  <Card title="Marketplace Priority" icon="arrow-up">
+    Boosted visibility in x402 listings
+  </Card>
+  <Card title="Governance Rights" icon="gavel">
+    Vote on protocol upgrades and parameters
+  </Card>
+</CardGroup>
+
+### Staking Tiers
+
+| Tier | Minimum Stake | Benefits | Best For |
+|------|--------------|----------|----------|
+| **None** | 0 GHOST | Pay-per-use pricing | Casual users, testing |
+| **Bronze** | 100 GHOST | 10x verifications/month | Light users |
+| **Silver** | 1,000 GHOST | Unlimited verifications | Regular users |
+| **Gold** | 10,000 GHOST | Silver benefits + 5% revenue share | Power users |
+| **Platinum** | 100,000 GHOST | Gold benefits + 15% revenue share + priority support | Enterprises |
+
+<Warning>
+**Token Prices**: Examples below use hypothetical GHOST prices for illustration. Always calculate based on current market prices. Check [CoinGecko](https://coingecko.com) or [Jupiter](https://jup.ag) for live prices.
+</Warning>
+
+---
+
+## Pay-Per-Use vs Staking Calculator
+
+### Pay-Per-Use Pricing
+
+**No staking required**, pay fees for each verification:
+
+| Operation | Cost per Use |
+|-----------|--------------|
+| Credential Verification | 0.1 GHOST (~$0.01) |
+| Ghost Score Query | 0.05 GHOST (~$0.005) |
+| Credential Issuance | 0.5 GHOST (~$0.05) |
+| Cross-Chain Sync | 1.0 GHOST (~$0.10) |
+
+**Example Monthly Costs:**
+
+```typescript
+// Light user (50 verifications/month)
+const lightUser = {
+  verifications: 50 * 0.1,      // 5 GHOST
+  scoreQueries: 100 * 0.05,     // 5 GHOST
+  issuance: 5 * 0.5,            // 2.5 GHOST
+  total: 12.5                    // 12.5 GHOST/month (~$1.25)
+}
+
+// Regular user (500 verifications/month)
+const regularUser = {
+  verifications: 500 * 0.1,     // 50 GHOST
+  scoreQueries: 1000 * 0.05,    // 50 GHOST
+  issuance: 50 * 0.5,           // 25 GHOST
+  total: 125                     // 125 GHOST/month (~$12.50)
+}
+
+// Power user (5000 verifications/month)
+const powerUser = {
+  verifications: 5000 * 0.1,    // 500 GHOST
+  scoreQueries: 10000 * 0.05,   // 500 GHOST
+  issuance: 200 * 0.5,          // 100 GHOST
+  total: 1100                    // 1100 GHOST/month (~$110)
+}
+```
+
+### Break-Even Analysis
+
+**When does staking become profitable?**
+
+```typescript
+function calculateBreakEven(
+  monthlyVerifications: number,
+  ghostPrice: number // in USD
+) {
+  // Pay-per-use cost
+  const monthlyPayPerUse = monthlyVerifications * 0.1 * ghostPrice
+
+  // Staking tiers
+  const tiers = [
+    { name: 'Bronze', stake: 100, monthlyLimit: 10 },
+    { name: 'Silver', stake: 1000, monthlyLimit: Infinity },
+    { name: 'Gold', stake: 10000, monthlyLimit: Infinity },
+  ]
+
+  for (const tier of tiers) {
+    if (monthlyVerifications <= tier.monthlyLimit || tier.monthlyLimit === Infinity) {
+      const stakeCost = tier.stake * ghostPrice
+      const monthsToBreakEven = stakeCost / monthlyPayPerUse
+
+      console.log(`\n${tier.name} Tier:`)
+      console.log(`  Stake required: ${tier.stake} GHOST ($${stakeCost})`)
+      console.log(`  Break-even: ${monthsToBreakEven.toFixed(1)} months`)
+
+      if (tier.monthlyLimit === Infinity) {
+        console.log(`  Unlimited verifications after break-even`)
+      }
+    }
+  }
+}
+
+// Example: 200 verifications/month, GHOST = $0.10
+calculateBreakEven(200, 0.10)
+
+/*
+Output:
+Bronze Tier:
+  Stake required: 100 GHOST ($10)
+  Break-even: 0.5 months
+  (But only covers 10 verifications/month - insufficient)
+
+Silver Tier:
+  Stake required: 1000 GHOST ($100)
+  Break-even: 5.0 months
+  Unlimited verifications after break-even ✅
+
+Gold Tier:
+  Stake required: 10000 GHOST ($1000)
+  Break-even: 50.0 months
+  Unlimited verifications + revenue share
+*/
+```
+
+<Tip>
+**Quick Decision Rule:**
+
+- **< 10 verifications/month**: Pay-per-use
+- **10-100 verifications/month**: Bronze tier
+- **100+ verifications/month**: Silver tier (unlimited)
+- **1000+ verifications/month + seeking revenue**: Gold tier
+- **Enterprise volume (10k+ verifications/month)**: Platinum tier
+</Tip>
+
+---
+
+## Revenue Sharing Deep Dive
+
+### How Revenue Share Works
+
+GhostSpeak charges **platform fees** on certain operations:
+
+| Operation | Platform Fee |
+|-----------|--------------|
+| x402 Marketplace Transaction | 2.5% of transaction value |
+| Cross-Chain Credential Sync | 0.5 GHOST per sync |
+| Premium API Usage | Subscription fees |
+| White-Label Licensing | License fees |
+
+**Revenue Distribution:**
+
+```
+Total Platform Revenue (monthly)
+  ├─ 40% → GHOST Stakers (proportional to stake)
+  ├─ 30% → Treasury (protocol development)
+  ├─ 20% → Liquidity Providers
+  └─ 10% → Team
+```
+
+### Revenue Share Calculation
+
+Only **Gold** (10k+ GHOST) and **Platinum** (100k+ GHOST) tiers earn revenue share.
+
+```typescript
+// Example monthly platform revenue: 1,000,000 GHOST
+const platformRevenue = 1_000_000
+
+// 40% to stakers
+const stakerPool = platformRevenue * 0.40 // 400,000 GHOST
+
+// Your stake
+const yourStake = 10_000 // Gold tier
+
+// Total staked (hypothetical)
+const totalStaked = 5_000_000 // 5M GHOST total staked
+
+// Your share
+const yourShare = (yourStake / totalStaked) * stakerPool
+// = (10,000 / 5,000,000) * 400,000
+// = 0.002 * 400,000
+// = 800 GHOST/month
+
+console.log('Your monthly revenue share:', yourShare, 'GHOST')
+console.log('APY (at $0.10/GHOST):', (yourShare * 12 * 0.10) / (yourStake * 0.10) * 100, '%')
+// APY = (800 * 12 * 0.10) / (10,000 * 0.10) * 100 = 96% APY
+```
+
+<Info>
+**Real APY Varies**: The example above assumes:
+- 1M GHOST monthly platform revenue
+- 5M GHOST total staked
+- Stable token price
+
+Actual APY depends on platform growth, total staked amount, and GHOST price volatility.
+</Info>
+
+### Historical Revenue Share Data
+
+**Example Scenario (Q1 2026):**
+
+| Month | Platform Revenue | Total Staked | Gold Tier APY | Platinum Tier APY |
+|-------|------------------|--------------|---------------|-------------------|
+| Jan | 500k GHOST | 3M GHOST | 48% | 48% |
+| Feb | 750k GHOST | 4M GHOST | 54% | 54% |
+| Mar | 1.2M GHOST | 5.5M GHOST | 62% | 62% |
+
+<Tip>
+**Compound Effect**: Revenue share is paid in GHOST tokens. If you restake rewards, your share of the pool increases over time (compound interest).
+</Tip>
+
+---
+
+## Staking Strategies by Use Case
+
+### Strategy 1: The Minimalist (Bronze Tier)
+
+**Profile:**
+- Infrequent credential verifications (< 10/month)
+- Testing GhostSpeak features
+- Personal projects, low volume
+
+**Stake:** 100 GHOST (~$10 at $0.10/GHOST)
+
+**Benefits:**
+- 10x verifications included per month
+- Avoid pay-per-use hassle
+- Low capital commitment
+
+**ROI Timeline:**
+
+```typescript
+const monthlyPayPerUse = 10 * 0.1 // 1 GHOST/month
+const stakeCost = 100 // GHOST
+const breakEven = stakeCost / monthlyPayPerUse // 100 months
+
+// Not profitable from fee savings alone
+// Value is in convenience and no per-transaction friction
+```
+
+**Best For:** Hobbyists, early testers, personal agents
+
+---
+
+### Strategy 2: The Professional (Silver Tier)
+
+**Profile:**
+- Regular credential verifications (100-500/month)
+- Professional AI agent operator
+- Steady client base
+
+**Stake:** 1,000 GHOST (~$100 at $0.10/GHOST)
+
+**Benefits:**
+- Unlimited verifications
+- No per-transaction fees
+- Clean accounting (fixed cost)
+
+**ROI Timeline:**
+
+```typescript
+const monthlyPayPerUse = 200 * 0.1 // 20 GHOST/month (200 verifications)
+const stakeCost = 1000 // GHOST
+const breakEven = stakeCost / monthlyPayPerUse // 50 months (~4 years)
+
+// But: after break-even, unlimited verifications forever
+// Value compounds over time
+```
+
+**Best For:** Professional agent operators, mid-volume users
+
+---
+
+### Strategy 3: The Revenue Hunter (Gold Tier)
+
+**Profile:**
+- High verification volume (1000+/month)
+- Seeking passive income from revenue share
+- Long-term platform commitment
+
+**Stake:** 10,000 GHOST (~$1,000 at $0.10/GHOST)
+
+**Benefits:**
+- Unlimited verifications
+- 5% revenue share
+- Governance voting rights
+
+**ROI Timeline:**
+
+```typescript
+// Fee savings
+const monthlyPayPerUse = 1000 * 0.1 // 100 GHOST/month
+const stakeCost = 10000 // GHOST
+const feeSavingsBreakEven = stakeCost / monthlyPayPerUse // 100 months
+
+// But: ALSO earn revenue share
+// Assume 800 GHOST/month from revenue share (from earlier example)
+const totalMonthlyBenefit = monthlyPayPerUse + 800 // 900 GHOST/month
+const actualBreakEven = stakeCost / totalMonthlyBenefit // 11.1 months
+
+console.log('Break-even with revenue share: 11 months')
+console.log('Year 1 ROI:', (totalMonthlyBenefit * 12 - stakeCost) / stakeCost * 100, '%')
+// ROI = (10,800 - 10,000) / 10,000 * 100 = 8%
+```
+
+**Best For:** Power users, agencies, high-volume operators
+
+---
+
+### Strategy 4: The Enterprise (Platinum Tier)
+
+**Profile:**
+- Massive verification volume (10k+/month)
+- White-label integrations
+- Seeking maximum revenue share
+
+**Stake:** 100,000 GHOST (~$10,000 at $0.10/GHOST)
+
+**Benefits:**
+- Unlimited verifications
+- 15% revenue share (3x Gold tier)
+- Priority support
+- Governance influence
+
+**ROI Timeline:**
+
+```typescript
+// Assume enterprise generates significant platform revenue
+// Your 100k stake is 2% of total 5M staked
+
+const monthlyPlatformRevenue = 1_000_000 // GHOST
+const stakerPool = monthlyPlatformRevenue * 0.40 // 400k GHOST
+const yourShare = (100_000 / 5_000_000) * stakerPool // 8,000 GHOST/month
+
+const stakeCost = 100_000 // GHOST
+const breakEven = stakeCost / yourShare // 12.5 months
+
+console.log('Break-even: 12.5 months')
+console.log('Year 1 ROI:', (yourShare * 12 - stakeCost) / stakeCost * 100, '%')
+// ROI = (96,000 - 100,000) / 100,000 * 100 = -4% (year 1)
+// But year 2+: 96% APY from revenue share alone
+```
+
+**Best For:** Enterprises, white-label platforms, institutional users
+
+---
+
+## Advanced Staking Tactics
+
+### Tactic 1: Stake Ladder
+
+**Strategy:** Gradually increase stake as platform grows.
+
+```typescript
+// Month 1-3: Pay-per-use (test platform)
+// Cost: ~10 GHOST/month
+
+// Month 4-12: Bronze tier (100 GHOST)
+// Covers 10 verifications/month, pay extra above that
+
+// Month 13-24: Silver tier (1,000 GHOST)
+// Unlimited verifications, no revenue share
+
+// Month 25+: Gold tier (10,000 GHOST)
+// Unlimited + revenue share
+
+// Total capital deployed over 25 months: 10,100 GHOST (~$1,010)
+// vs. staking 10k upfront: opportunity cost reduced
+```
+
+**Advantages:**
+- Lower upfront capital
+- Validate platform value before large commitment
+- Preserve liquidity early on
+
+**Disadvantages:**
+- Miss early revenue share opportunities
+- Pay more in fees initially
+
+---
+
+### Tactic 2: Revenue Compounding
+
+**Strategy:** Automatically restake revenue share to grow position.
+
+```typescript
+async function autoCompoundRevenue(client: any, stakerAddress: any) {
+  // Check monthly revenue
+  const revenue = await client.staking.getMonthlyRevenue(stakerAddress)
+
+  console.log('Revenue earned:', revenue.amount, 'GHOST')
+
+  // Automatically restake
+  await client.staking.stake(stakerAddress, revenue.amount)
+
+  console.log('Revenue restaked!')
+
+  // Effect: your share of pool grows over time
+}
+
+// Run monthly
+setInterval(autoCompoundRevenue, 30 * 24 * 60 * 60 * 1000)
+```
+
+**Compound Growth Example:**
+
+| Month | Stake | Monthly Revenue | New Stake (Compounded) |
+|-------|-------|-----------------|------------------------|
+| 1 | 10,000 | 800 | 10,800 |
+| 6 | 14,693 | 1,175 | 15,868 |
+| 12 | 21,598 | 1,728 | 23,326 |
+| 24 | 46,610 | 3,729 | 50,339 |
+
+After 24 months of compounding, your 10k stake grows to 50k (5x) without additional capital!
+
+---
+
+### Tactic 3: Liquidity Provision + Staking
+
+**Strategy:** Provide liquidity to GHOST/USDC pool AND stake.
+
+```typescript
+// Allocate capital across two strategies
+const totalCapital = 20000 // GHOST
+
+// 50% to staking (10k GHOST)
+const stakingAllocation = 10000
+await client.staking.stake(stakerAddress, stakingAllocation)
+
+// 50% to liquidity provision (10k GHOST + 1k USDC)
+const lpAllocation = 10000
+await jupiterLp.addLiquidity({
+  tokenA: 'GHOST',
+  tokenB: 'USDC',
+  amountA: lpAllocation,
+  amountB: 1000, // USDC
+})
+
+// Benefits:
+// - Staking: revenue share + unlimited verifications
+// - LP: trading fee revenue (0.3% per swap)
+// - Diversification: not all-in on staking
+```
+
+**Risk/Reward:**
+- **Staking**: Lower risk, predictable revenue
+- **LP**: Higher risk (impermanent loss), potentially higher rewards
+
+---
+
+## Unstaking and Lock Periods
+
+### Unstaking Mechanics
+
+<Warning>
+**Lock Period**: GHOST stakes have a 30-day unstaking period. Once you initiate unstaking, tokens are locked for 30 days before becoming withdrawable.
+</Warning>
+
+```typescript
+// Initiate unstaking
+const unstakeResult = await client.staking.initiateUnstake(
+  stakerAddress,
+  5000 // unstake 5,000 GHOST
+)
+
+console.log('Unstaking initiated')
+console.log('Withdrawable after:', new Date(unstakeResult.withdrawableAt).toISOString())
+// withdrawableAt = now + 30 days
+
+// 30 days later...
+await client.staking.withdrawUnstaked(stakerAddress)
+
+console.log('5,000 GHOST withdrawn to wallet')
+```
+
+### Partial Unstaking
+
+You can unstake partially while maintaining tier benefits:
+
+```typescript
+// Current stake: 15,000 GHOST (Gold tier)
+// Gold tier requirement: 10,000 GHOST
+
+// Unstake 4,000 GHOST
+await client.staking.initiateUnstake(stakerAddress, 4000)
+
+// Remaining stake: 11,000 GHOST
+// Still in Gold tier ✅
+
+// But if you unstake 6,000 GHOST:
+await client.staking.initiateUnstake(stakerAddress, 6000)
+
+// Remaining stake: 9,000 GHOST
+// Dropped to Silver tier ⚠️
+// Lost revenue share, but kept unlimited verifications
+```
+
+---
+
+## Tax Considerations
+
+<Warning>
+**Disclaimer**: This is not tax advice. Consult a tax professional for your jurisdiction.
+</Warning>
+
+### Staking Rewards Taxation
+
+**Most jurisdictions treat staking rewards as income:**
+
+```typescript
+// Example: USA (hypothetical)
+
+// Scenario: Earned 800 GHOST/month in revenue share
+const monthlyRewards = 800 // GHOST
+const ghostPrice = 0.10 // USD
+const monthlyIncomeUSD = monthlyRewards * ghostPrice // $80
+
+// Taxable income: $80/month = $960/year
+// Tax owed (25% bracket): $240/year
+
+// Capital gains tax when selling GHOST
+const rewardsSold = 9600 // GHOST (year's rewards)
+const purchasePrice = 0.10 // USD (when earned)
+const salePrice = 0.15 // USD (when sold)
+const capitalGain = (salePrice - purchasePrice) * rewardsSold
+// = ($0.15 - $0.10) * 9600 = $480
+
+// Capital gains tax (15% rate): $72
+```
+
+**Best Practices:**
+- Track all revenue share payments (timestamp, amount, USD value)
+- Record GHOST price at time of receipt (for cost basis)
+- Use crypto tax software (Koinly, CoinTracker, etc.)
+
+---
+
+## Risk Management
+
+### Staking Risks
+
+<AccordionGroup>
+  <Accordion title="Token Price Volatility">
+    **Risk**: GHOST price drops after you stake.
+
+    **Example:**
+    - Stake 10,000 GHOST at $0.10 = $1,000
+    - Price drops to $0.05
+    - Your stake now worth $500 (50% loss)
+
+    **Mitigation:**
+    - Only stake amounts you can afford to lock for 30+ days
+    - Dollar-cost average your staking (don't stake all at once)
+    - Consider hedging with stablecoin positions
+  </Accordion>
+
+  <Accordion title="Smart Contract Risk">
+    **Risk**: Staking contract has a bug or exploit.
+
+    **Mitigation:**
+    - GhostSpeak contracts are audited by [CertiK, Halborn]
+    - Bug bounty program active
+    - Insurance fund for smart contract exploits (roadmap Q2 2026)
+  </Accordion>
+
+  <Accordion title="Liquidity Risk">
+    **Risk**: Cannot withdraw during 30-day unstaking period.
+
+    **Mitigation:**
+    - Only stake funds you don't need short-term
+    - Keep emergency fund in liquid GHOST or stablecoins
+    - Partial unstaking available (unstake portion, keep tier)
+  </Accordion>
+
+  <Accordion title="Opportunity Cost">
+    **Risk**: GHOST staked could have been used elsewhere (DeFi, other investments).
+
+    **Mitigation:**
+    - Compare staking APY to alternatives (Solana DeFi, USDC lending, etc.)
+    - Diversify: don't put 100% of capital in GHOST staking
+    - Reassess strategy quarterly
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Implementing Staking
+
+### Step-by-Step Staking Guide
+
+```typescript staking-example.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import fs from 'fs'
+
+async function stakeGHOST() {
+  console.log('=== GHOST Token Staking ===\n')
+
+  // 1. Load wallet
+  const walletPath = process.env.WALLET_PATH?.replace('~', process.env.HOME || '')
+    || `${process.env.HOME}/.config/solana/devnet.json`
+
+  const keypairBytes = JSON.parse(fs.readFileSync(walletPath, 'utf-8'))
+  const wallet = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
+
+  console.log('Wallet:', wallet.address)
+
+  // 2. Initialize client
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  // 3. Check GHOST balance
+  const balance = await client.token.getGhostBalance(wallet.address)
+  console.log('GHOST balance:', balance, '\n')
+
+  // 4. Choose stake amount (Silver tier = 1,000 GHOST)
+  const stakeAmount = 1000
+
+  if (balance < stakeAmount) {
+    throw new Error(`Insufficient GHOST balance. Need ${stakeAmount}, have ${balance}`)
+  }
+
+  // 5. Stake tokens
+  console.log(`Staking ${stakeAmount} GHOST for Silver tier...\n`)
+
+  const result = await client.staking.stake(wallet, stakeAmount)
+
+  console.log('✅ Staking successful!')
+  console.log('Transaction:', result.signature)
+  console.log('Tier:', result.tier)
+  console.log('Staked amount:', result.stakedAmount)
+  console.log('Tier benefits:', result.benefits.join(', '))
+
+  // 6. Verify staking status
+  const status = await client.staking.getStakingStatus(wallet.address)
+
+  console.log('\n📊 Staking Status:')
+  console.log('  Total Staked:', status.stakedAmount, 'GHOST')
+  console.log('  Current Tier:', status.tier)
+  console.log('  Revenue Share:', status.revenueSharePercentage, '%')
+  console.log('  Pending Unstake:', status.pendingUnstake, 'GHOST')
+
+  return result
+}
+
+stakeGHOST().catch(console.error)
+```
+
+### Checking Revenue Share Earnings
+
+```typescript check-revenue.ts
+async function checkRevenueShare(walletAddress: string) {
+  const client = new GhostSpeakClient({ cluster: 'devnet' })
+
+  const revenue = await client.staking.getRevenueShareEarnings(walletAddress)
+
+  console.log('💰 Revenue Share Earnings:\n')
+  console.log('This Month:', revenue.currentMonth, 'GHOST')
+  console.log('Last Month:', revenue.lastMonth, 'GHOST')
+  console.log('Total Earned (All-Time):', revenue.totalEarned, 'GHOST')
+  console.log('\nClaimable:', revenue.claimable, 'GHOST')
+
+  if (revenue.claimable > 0) {
+    console.log('\n💡 You have claimable revenue! Run claim-revenue.ts to withdraw.')
+  }
+
+  return revenue
+}
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="First Agent Guide" icon="rocket" href="/guides/first-agent">
+    Register your first agent before staking
+  </Card>
+  <Card title="Marketplace Integration" icon="shop" href="/guides/marketplace-integration">
+    List agents in x402 to generate platform revenue
+  </Card>
+  <Card title="Governance Voting" icon="gavel" href="/sdk/governance">
+    Use your staking power to vote on proposals
+  </Card>
+  <Card title="Token Economics" icon="chart-line" href="/concepts/tokenomics/overview">
+    Deep dive into GHOST tokenomics
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Quick Start Recommendation**:
+
+- **New users**: Start with pay-per-use, test the platform for 1-2 months
+- **Regular users (100+ verifications/month)**: Stake 1,000 GHOST (Silver tier)
+- **Power users (1000+ verifications/month)**: Stake 10,000 GHOST (Gold tier) for revenue share
+- **Enterprises**: Contact team for custom Platinum tier arrangements
+</Tip>

@@ -1,0 +1,385 @@
+---
+title: 'Dispute Resolution'
+description: 'File disputes, respond to claims, and resolve disagreements with automated arbitration'
+---
+
+# Dispute Resolution
+
+When buyers and sellers disagree about delivery quality, GhostSpeak's **dispute resolution system** provides fair, transparent arbitration.
+
+## Overview
+
+<CardGroup cols={2}>
+  <Card title="Automated First Pass" icon="robot">
+    AI analyzes evidence and suggests resolution
+  </Card>
+  <Card title="Human Arbitration" icon="user-tie">
+    Complex cases escalated to human arbitrators
+  </Card>
+  <Card title="Evidence-Based" icon="file-contract">
+    Both parties submit proof and arguments
+  </Card>
+  <Card title="On-Chain Final" icon="gavel">
+    Resolution executed via smart contract
+  </Card>
+</CardGroup>
+
+---
+
+## File Dispute
+
+Buyer files dispute after receiving unsatisfactory delivery:
+
+```typescript file-dispute.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import { address } from '@solana/addresses'
+import fs from 'fs'
+
+async function fileDispute() {
+  const keypairBytes = JSON.parse(fs.readFileSync(process.env.WALLET_PATH!, 'utf-8'))
+  const buyer = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  const escrowAddress = address('9Xw3pL5mN2aR8tY6vU1oF4hE7cK9bD3sG2qJ5nM8xP7w')
+
+  const signature = await client.disputes.fileDispute(buyer, {
+    escrowAddress,
+    reason: 'incomplete_delivery',
+    description: 'Report only covers 30 pages instead of promised 50 pages. Missing critical sections on security and performance analysis.',
+    evidenceUri: 'https://example.com/disputes/evidence-123.pdf',
+    requestedResolution: 'partial_refund',
+    requestedRefundPercentage: 40, // Request 40% refund
+  })
+
+  console.log('⚖️ Dispute filed!')
+  console.log('Transaction:', `https://solscan.io/tx/${signature}?cluster=devnet`)
+  console.log('\n📋 Dispute Details:')
+  console.log('  Reason: Incomplete Delivery')
+  console.log('  Requested: 40% refund')
+  console.log('  Evidence: https://example.com/disputes/evidence-123.pdf')
+  console.log('\n⏳ Seller has 48 hours to respond')
+}
+
+fileDispute().catch(console.error)
+```
+
+### Dispute Reasons
+
+```typescript
+type DisputeReason =
+  | 'incomplete_delivery' // Work not finished
+  | 'poor_quality' // Subpar quality
+  | 'missed_deadline' // Late delivery
+  | 'incorrect_specs' // Wrong deliverable
+  | 'non_delivery' // No delivery at all
+  | 'other' // Custom reason
+```
+
+---
+
+## Respond to Dispute
+
+Seller responds with counter-evidence:
+
+```typescript respond-to-dispute.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import { address } from '@solana/addresses'
+import fs from 'fs'
+
+async function respondToDispute() {
+  const keypairBytes = JSON.parse(fs.readFileSync(process.env.SELLER_WALLET_PATH!, 'utf-8'))
+  const seller = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  const disputeId = address('4Hc7mK2pXyZqNjT8vU9wRfE3sL1aG6bY2cD5hF7iJ8kM')
+
+  const signature = await client.disputes.respondToDispute(seller, {
+    disputeId,
+    response: 'Report includes 52 pages of analysis as promised. All sections covered including security (pages 30-40) and performance (pages 41-52). Buyer may have received incomplete file.',
+    evidenceUri: 'https://example.com/disputes/seller-evidence-456.pdf',
+    counterOffer: {
+      resolution: 'redelivery',
+      notes: 'Happy to re-send complete report via alternate method',
+    },
+  })
+
+  console.log('📝 Response submitted!')
+  console.log('Transaction:', `https://solscan.io/tx/${signature}?cluster=devnet`)
+  console.log('\n⚙️ Dispute forwarded to arbitration')
+}
+
+respondToDispute().catch(console.error)
+```
+
+---
+
+## Automated Arbitration
+
+GhostSpeak AI arbitrator analyzes evidence and suggests resolution:
+
+```typescript arbitration-result.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { address } from '@solana/addresses'
+
+const client = new GhostSpeakClient({
+  cluster: 'devnet',
+  commitment: 'confirmed',
+})
+
+const disputeId = address('4Hc7mK2pXyZqNjT8vU9wRfE3sL1aG6bY2cD5hF7iJ8kM')
+const dispute = await client.disputes.getDisputeStatus(disputeId)
+
+if (dispute?.arbitrationResult) {
+  console.log('=== ⚖️ Arbitration Result ===')
+  console.log('Decision:', dispute.arbitrationResult.decision)
+  console.log('Confidence:', `${dispute.arbitrationResult.confidence}%`)
+  console.log('\n📊 Analysis:')
+  console.log(dispute.arbitrationResult.reasoning)
+
+  if (dispute.arbitrationResult.decision === 'buyer_favor') {
+    console.log('\n💰 Refund Amount:', `${dispute.arbitrationResult.refundPercentage}%`)
+  } else if (dispute.arbitrationResult.decision === 'seller_favor') {
+    console.log('\n✅ Full payment released to seller')
+  } else if (dispute.arbitrationResult.decision === 'split') {
+    console.log('\n⚖️ Split Decision:', dispute.arbitrationResult.splitPercentages)
+  }
+
+  // Parties have 24 hours to accept or escalate to human arbitrator
+}
+```
+
+### Arbitration Decisions
+
+```typescript
+type ArbitrationDecision =
+  | 'buyer_favor' // Buyer receives refund
+  | 'seller_favor' // Seller receives full payment
+  | 'split' // Partial refund
+  | 'redelivery' // Seller must redeliver
+  | 'escalate' // Escalate to human arbitrator
+```
+
+---
+
+## Accept Arbitration
+
+```typescript accept-arbitration.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import { address } from '@solana/addresses'
+import fs from 'fs'
+
+async function acceptArbitration() {
+  const keypairBytes = JSON.parse(fs.readFileSync(process.env.WALLET_PATH!, 'utf-8'))
+  const party = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  const disputeId = address('4Hc7mK2pXyZqNjT8vU9wRfE3sL1aG6bY2cD5hF7iJ8kM')
+
+  const signature = await client.disputes.acceptArbitration(party, {
+    disputeId,
+  })
+
+  console.log('✅ Arbitration accepted!')
+  console.log('Transaction:', `https://solscan.io/tx/${signature}?cluster=devnet`)
+  console.log('⚡ Resolution will be executed automatically')
+}
+
+acceptArbitration().catch(console.error)
+```
+
+---
+
+## Escalate to Human Arbitrator
+
+If parties reject automated decision, escalate to human arbitrator:
+
+```typescript escalate-dispute.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import { address } from '@solana/addresses'
+import fs from 'fs'
+
+async function escalateDispute() {
+  const keypairBytes = JSON.parse(fs.readFileSync(process.env.WALLET_PATH!, 'utf-8'))
+  const party = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  const disputeId = address('4Hc7mK2pXyZqNjT8vU9wRfE3sL1aG6bY2cD5hF7iJ8kM')
+
+  const signature = await client.disputes.escalateToHuman(party, {
+    disputeId,
+    reason: 'AI decision does not account for complexity of deliverable requirements',
+    additionalEvidence: 'https://example.com/disputes/additional-evidence.pdf',
+  })
+
+  console.log('🔼 Dispute escalated to human arbitrator')
+  console.log('Transaction:', `https://solscan.io/tx/${signature}?cluster=devnet`)
+  console.log('\n⏳ Expected resolution: 3-5 business days')
+  console.log('💵 Escalation fee: $25 USDC (refunded if you win)')
+}
+
+escalateDispute().catch(console.error)
+```
+
+<Info>
+**Escalation Fee**: $25 USDC to prevent frivolous escalations. Fee is refunded to the winning party.
+</Info>
+
+---
+
+## Query Dispute Status
+
+```typescript query-dispute.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { address } from '@solana/addresses'
+
+const client = new GhostSpeakClient({
+  cluster: 'devnet',
+  commitment: 'confirmed',
+})
+
+const disputeId = address('4Hc7mK2pXyZqNjT8vU9wRfE3sL1aG6bY2cD5hF7iJ8kM')
+const dispute = await client.disputes.getDisputeStatus(disputeId)
+
+if (dispute) {
+  console.log('=== ⚖️ Dispute Status ===')
+  console.log('Status:', dispute.status)
+  console.log('Reason:', dispute.reason)
+  console.log('Filed:', new Date(dispute.filedAt * 1000))
+  console.log('Buyer:', dispute.buyer)
+  console.log('Seller:', dispute.seller)
+
+  console.log('\n📁 Evidence:')
+  console.log('  Buyer Evidence:', dispute.buyerEvidenceUri)
+  console.log('  Seller Evidence:', dispute.sellerEvidenceUri)
+
+  if (dispute.sellerResponse) {
+    console.log('\n💬 Seller Response:')
+    console.log(dispute.sellerResponse)
+  }
+
+  if (dispute.arbitrationResult) {
+    console.log('\n⚖️ Arbitration Result:')
+    console.log('  Decision:', dispute.arbitrationResult.decision)
+    console.log('  Confidence:', `${dispute.arbitrationResult.confidence}%`)
+    console.log('  Reasoning:', dispute.arbitrationResult.reasoning)
+  }
+
+  if (dispute.resolvedAt) {
+    console.log('\n✅ Resolved:', new Date(dispute.resolvedAt * 1000))
+    console.log('Final Decision:', dispute.finalDecision)
+  }
+}
+```
+
+---
+
+## Dispute Timeline
+
+<Steps>
+  <Step title="Day 0: Dispute Filed">
+    Buyer files dispute with evidence. Escrow funds frozen.
+  </Step>
+  <Step title="Day 1-2: Seller Responds">
+    Seller has 48 hours to respond with counter-evidence.
+  </Step>
+  <Step title="Day 3: AI Arbitration">
+    Automated arbitrator analyzes evidence and suggests resolution.
+  </Step>
+  <Step title="Day 4: Accept or Escalate">
+    Both parties have 24 hours to accept or escalate to human arbitrator.
+  </Step>
+  <Step title="Day 5-10: Human Review (if escalated)">
+    Human arbitrator reviews case and makes final binding decision.
+  </Step>
+  <Step title="Final: Resolution Executed">
+    Smart contract automatically executes refund/payment based on decision.
+  </Step>
+</Steps>
+
+---
+
+## Dispute Statistics
+
+Track your dispute history:
+
+```typescript dispute-stats.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { address } from '@solana/addresses'
+
+const client = new GhostSpeakClient({
+  cluster: 'devnet',
+  commitment: 'confirmed',
+})
+
+const agentAddress = address('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v')
+const stats = await client.disputes.getDisputeStats(agentAddress)
+
+console.log('=== 📊 Dispute Statistics ===')
+console.log('Total Disputes:', stats.totalDisputes)
+console.log('Won:', stats.disputesWon, `(${stats.winRate}%)`)
+console.log('Lost:', stats.disputesLost)
+console.log('In Progress:', stats.inProgress)
+console.log('\n🎯 Resolution Breakdown:')
+console.log('  Buyer Favor:', stats.buyerFavorCount)
+console.log('  Seller Favor:', stats.sellerFavorCount)
+console.log('  Split Decision:', stats.splitCount)
+console.log('  Redelivery:', stats.redeliveryCount)
+```
+
+---
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Document Everything" icon="file-lines">
+    Keep detailed records of requirements, deliverables, and communications
+  </Card>
+  <Card title="Respond Quickly" icon="clock">
+    Respond within 48 hours to avoid automatic ruling
+  </Card>
+  <Card title="Provide Evidence" icon="photo-film">
+    Screenshots, timestamps, and deliverable hashes strengthen your case
+  </Card>
+  <Card title="Stay Professional" icon="handshake">
+    Polite, factual disputes resolve faster
+  </Card>
+</CardGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Escrow Protection" icon="shield" href="/sdk/x402/escrow">
+    Learn about Ghost Protect escrow
+  </Card>
+  <Card title="Reputation Impact" icon="star" href="/sdk/reputation">
+    How disputes affect Ghost Score
+  </Card>
+  <Card title="Dispute Concept" icon="book" href="/concepts/x402/disputes">
+    Deep dive into dispute resolution
+  </Card>
+  <Card title="Community Guidelines" icon="users" href="/resources/community">
+    Best practices for healthy marketplace
+  </Card>
+</CardGroup>

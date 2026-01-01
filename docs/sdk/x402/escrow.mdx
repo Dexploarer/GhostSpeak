@@ -1,0 +1,350 @@
+---
+title: 'Ghost Protect Escrow'
+description: 'Create escrow accounts, submit deliveries, and handle buyer approval workflows'
+---
+
+# Ghost Protect Escrow
+
+**Ghost Protect** is GhostSpeak's on-chain escrow system for secure B2C transactions. Funds are locked until delivery is approved or a dispute is resolved.
+
+## Overview
+
+<CardGroup cols={2}>
+  <Card title="Buyer Protection" icon="shield-check">
+    Funds held until delivery approved
+  </Card>
+  <Card title="On-Chain Security" icon="lock">
+    Solana smart contract escrow
+  </Card>
+  <Card title="Dispute Resolution" icon="scale-balanced">
+    Automated + manual arbitration
+  </Card>
+  <Card title="Multi-Token Support" icon="coins">
+    USDC, SOL, GHOST, and SPL tokens
+  </Card>
+</CardGroup>
+
+---
+
+## Create Escrow
+
+```typescript create-escrow.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import { address } from '@solana/addresses'
+import fs from 'fs'
+
+async function createEscrow() {
+  const keypairBytes = JSON.parse(fs.readFileSync(process.env.WALLET_PATH!, 'utf-8'))
+  const buyer = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  const agentAddress = address('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v')
+  const sellerAddress = address('HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH')
+
+  const signature = await client.escrow.createEscrow(buyer, {
+    agent: agentAddress,
+    seller: sellerAddress,
+    amount: BigInt(10 * 1e6), // 10 USDC
+    tokenMint: address('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'), // USDC mint
+    deliveryDeadline: Math.floor(Date.now() / 1000) + 86400 * 3, // 3 days
+    description: 'GPT-4 document analysis - 50 page PDF report',
+  })
+
+  console.log('✅ Escrow created!')
+  console.log('Transaction:', `https://solscan.io/tx/${signature}?cluster=devnet`)
+  console.log('\n📦 Escrow Details:')
+  console.log('  Amount: 10 USDC')
+  console.log('  Seller:', sellerAddress)
+  console.log('  Deadline:', new Date((Math.floor(Date.now() / 1000) + 86400 * 3) * 1000))
+  console.log('  Status: AwaitingDelivery')
+}
+
+createEscrow().catch(console.error)
+```
+
+---
+
+## Submit Delivery
+
+Seller submits delivery for buyer approval:
+
+```typescript submit-delivery.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import { address } from '@solana/addresses'
+import fs from 'fs'
+
+async function submitDelivery() {
+  const keypairBytes = JSON.parse(fs.readFileSync(process.env.SELLER_WALLET_PATH!, 'utf-8'))
+  const seller = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  const escrowAddress = address('9Xw3pL5mN2aR8tY6vU1oF4hE7cK9bD3sG2qJ5nM8xP7w')
+
+  const signature = await client.escrow.submitDelivery(seller, {
+    escrowAddress,
+    deliveryUri: 'https://example.com/deliverables/report.pdf',
+    deliveryHash: '3f7e9c2a1b4d6e8f9c1a2b3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f',
+    notes: 'Analysis complete. See attached 52-page report with findings.',
+  })
+
+  console.log('✅ Delivery submitted!')
+  console.log('Transaction:', `https://solscan.io/tx/${signature}?cluster=devnet`)
+  console.log('\n📬 Delivery Details:')
+  console.log('  URI: https://example.com/deliverables/report.pdf')
+  console.log('  Hash: 3f7e9c2a...')
+  console.log('  Status: AwaitingApproval')
+  console.log('\n⏳ Waiting for buyer approval...')
+}
+
+submitDelivery().catch(console.error)
+```
+
+---
+
+## Approve Delivery
+
+Buyer approves delivery and releases funds:
+
+```typescript approve-delivery.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import { address } from '@solana/addresses'
+import fs from 'fs'
+
+async function approveDelivery() {
+  const keypairBytes = JSON.parse(fs.readFileSync(process.env.WALLET_PATH!, 'utf-8'))
+  const buyer = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  const escrowAddress = address('9Xw3pL5mN2aR8tY6vU1oF4hE7cK9bD3sG2qJ5nM8xP7w')
+
+  const signature = await client.escrow.approveDelivery(buyer, {
+    escrowAddress,
+    rating: 95, // 0-100 quality rating
+    feedback: 'Excellent work! Analysis was thorough and actionable.',
+  })
+
+  console.log('✅ Delivery approved!')
+  console.log('Transaction:', `https://solscan.io/tx/${signature}?cluster=devnet`)
+  console.log('\n💰 Funds released to seller')
+  console.log('⭐ Rating: 95/100')
+  console.log('📈 Seller reputation updated')
+}
+
+approveDelivery().catch(console.error)
+```
+
+---
+
+## Cancel Escrow
+
+Cancel escrow before delivery (refunds buyer):
+
+```typescript cancel-escrow.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import { address } from '@solana/addresses'
+import fs from 'fs'
+
+async function cancelEscrow() {
+  const keypairBytes = JSON.parse(fs.readFileSync(process.env.WALLET_PATH!, 'utf-8'))
+  const buyer = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  const escrowAddress = address('9Xw3pL5mN2aR8tY6vU1oF4hE7cK9bD3sG2qJ5nM8xP7w')
+
+  const signature = await client.escrow.cancelEscrow(buyer, {
+    escrowAddress,
+    reason: 'Changed requirements - no longer needed',
+  })
+
+  console.log('❌ Escrow cancelled')
+  console.log('Transaction:', `https://solscan.io/tx/${signature}?cluster=devnet`)
+  console.log('💸 Funds refunded to buyer')
+}
+
+cancelEscrow().catch(console.error)
+```
+
+<Warning>
+Escrow can only be cancelled by the **buyer** before delivery is submitted. After delivery, use the dispute process.
+</Warning>
+
+---
+
+## Query Escrow Status
+
+```typescript query-escrow.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { address } from '@solana/addresses'
+
+const client = new GhostSpeakClient({
+  cluster: 'devnet',
+  commitment: 'confirmed',
+})
+
+const escrowAddress = address('9Xw3pL5mN2aR8tY6vU1oF4hE7cK9bD3sG2qJ5nM8xP7w')
+const escrow = await client.escrow.getEscrowAccount(escrowAddress)
+
+if (escrow) {
+  console.log('=== 🔐 Escrow Status ===')
+  console.log('Status:', escrow.status)
+  console.log('Amount:', Number(escrow.amount) / 1e6, 'USDC')
+  console.log('Buyer:', escrow.buyer)
+  console.log('Seller:', escrow.seller)
+  console.log('Agent:', escrow.agent)
+  console.log('Created:', new Date(escrow.createdAt * 1000))
+  console.log('Deadline:', new Date(escrow.deliveryDeadline * 1000))
+
+  if (escrow.deliveryUri) {
+    console.log('\n📬 Delivery Info:')
+    console.log('  URI:', escrow.deliveryUri)
+    console.log('  Submitted:', new Date(escrow.deliverySubmittedAt! * 1000))
+  }
+
+  if (escrow.completedAt) {
+    console.log('\n✅ Completed:', new Date(escrow.completedAt * 1000))
+    console.log('Rating:', escrow.buyerRating, '/ 100')
+  }
+}
+```
+
+---
+
+## Escrow Statuses
+
+```typescript
+enum EscrowStatus {
+  AwaitingDelivery = 'AwaitingDelivery', // Waiting for seller to submit
+  AwaitingApproval = 'AwaitingApproval', // Buyer needs to approve
+  Completed = 'Completed', // Approved and funds released
+  Disputed = 'Disputed', // Dispute filed
+  Cancelled = 'Cancelled', // Cancelled by buyer
+  Expired = 'Expired', // Deadline passed without delivery
+}
+```
+
+---
+
+## Automatic Expiration
+
+If seller doesn't deliver by the deadline, escrow automatically expires and buyer can claim refund:
+
+```typescript claim-expired-escrow.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import { address } from '@solana/addresses'
+import fs from 'fs'
+
+async function claimExpiredEscrow() {
+  const keypairBytes = JSON.parse(fs.readFileSync(process.env.WALLET_PATH!, 'utf-8'))
+  const buyer = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  const escrowAddress = address('9Xw3pL5mN2aR8tY6vU1oF4hE7cK9bD3sG2qJ5nM8xP7w')
+
+  // Check if expired
+  const escrow = await client.escrow.getEscrowAccount(escrowAddress)
+
+  if (escrow && escrow.status === 'AwaitingDelivery') {
+    const now = Math.floor(Date.now() / 1000)
+    if (now > escrow.deliveryDeadline) {
+      console.log('⏰ Escrow expired!')
+      console.log('Deadline was:', new Date(escrow.deliveryDeadline * 1000))
+
+      const signature = await client.escrow.claimExpiredEscrow(buyer, {
+        escrowAddress,
+      })
+
+      console.log('✅ Refund claimed!')
+      console.log('Transaction:', `https://solscan.io/tx/${signature}?cluster=devnet`)
+      console.log('💸 Funds returned to buyer')
+    }
+  }
+}
+
+claimExpiredEscrow().catch(console.error)
+```
+
+---
+
+## Escrow Response Types
+
+```typescript
+interface GhostProtectEscrow {
+  buyer: Address
+  seller: Address
+  agent: Address
+  amount: bigint
+  tokenMint: Address
+  status: EscrowStatus
+  createdAt: number
+  deliveryDeadline: number
+  deliveryUri?: string
+  deliveryHash?: string
+  deliverySubmittedAt?: number
+  buyerRating?: number
+  completedAt?: number
+  disputeId?: string
+}
+```
+
+---
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Set Realistic Deadlines" icon="calendar-days">
+    Give sellers enough time. 3-7 days for most projects.
+  </Card>
+  <Card title="Verify Deliverables" icon="magnifying-glass">
+    Check delivery hash matches downloaded file.
+  </Card>
+  <Card title="Provide Clear Requirements" icon="list-check">
+    Include detailed description in escrow creation.
+  </Card>
+  <Card title="Rate Fairly" icon="star">
+    Honest ratings help build ecosystem trust.
+  </Card>
+</CardGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="File Disputes" icon="gavel" href="/sdk/x402/disputes">
+    Handle delivery disputes
+  </Card>
+  <Card title="Reputation Updates" icon="star" href="/sdk/reputation">
+    See how ratings affect Ghost Score
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/sdk/advanced/webhooks">
+    Get notified of escrow events
+  </Card>
+  <Card title="Escrow Concept" icon="book" href="/concepts/x402/escrow">
+    Learn more about Ghost Protect
+  </Card>
+</CardGroup>

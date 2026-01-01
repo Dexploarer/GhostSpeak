@@ -1,0 +1,435 @@
+---
+title: 'SDK Installation & Setup'
+description: 'Install the GhostSpeak TypeScript SDK and configure your development environment'
+---
+
+# Installation & Setup
+
+The GhostSpeak SDK is a TypeScript library for building AI agent commerce applications on Solana. It provides type-safe methods for agent registration, credential issuance, reputation management, and x402 payment integration.
+
+## Prerequisites
+
+Before installing the SDK, ensure you have:
+
+<CardGroup cols={2}>
+  <Card title="Bun or Node.js" icon="node-js">
+    Bun 1.0+ (recommended) or Node.js 20+
+  </Card>
+  <Card title="TypeScript" icon="code">
+    TypeScript 5.0+ for full type safety
+  </Card>
+  <Card title="Solana Wallet" icon="wallet">
+    A Solana keypair for signing transactions
+  </Card>
+  <Card title="SOL Balance" icon="coins">
+    Devnet SOL for testing (get from [faucet.solana.com](https://faucet.solana.com))
+  </Card>
+</CardGroup>
+
+---
+
+## Installation
+
+<CodeGroup>
+
+```bash Bun (Recommended)
+bun add @ghostspeak/sdk
+```
+
+```bash npm
+npm install @ghostspeak/sdk
+```
+
+```bash pnpm
+pnpm add @ghostspeak/sdk
+```
+
+```bash yarn
+yarn add @ghostspeak/sdk
+```
+
+</CodeGroup>
+
+<Check>
+The SDK is fully tree-shakeable! Only import what you need for optimal bundle size.
+</Check>
+
+---
+
+## Quick Start
+
+Here's a minimal example to get started:
+
+```typescript example.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import fs from 'fs'
+
+async function main() {
+  // 1. Load your Solana wallet
+  const keypairBytes = JSON.parse(
+    fs.readFileSync(
+      process.env.WALLET_PATH || `${process.env.HOME}/.config/solana/id.json`,
+      'utf-8'
+    )
+  )
+  const wallet = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
+
+  // 2. Initialize the client
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  console.log('GhostSpeak client initialized!')
+  console.log('Wallet address:', wallet.address)
+
+  // 3. Use SDK modules
+  const agents = await client.agents.getAllAgents()
+  console.log(`Found ${agents.length} registered agents`)
+}
+
+main().catch(console.error)
+```
+
+Run it:
+
+```bash
+export WALLET_PATH=~/.config/solana/id.json
+bun run example.ts
+```
+
+---
+
+## Configuration Options
+
+The `GhostSpeakClient` accepts the following configuration:
+
+```typescript
+interface GhostSpeakConfig {
+  // Required: Solana cluster
+  cluster: 'mainnet-beta' | 'devnet' | 'testnet' | string
+
+  // Optional: Transaction commitment level
+  commitment?: 'processed' | 'confirmed' | 'finalized'
+
+  // Optional: Custom RPC endpoint
+  rpcUrl?: string
+
+  // Optional: Program ID (defaults to GhostSpeak program)
+  programId?: Address
+
+  // Optional: Enable debug logging
+  debug?: boolean
+
+  // Optional: Cache configuration
+  cache?: {
+    enabled: boolean
+    ttlMs?: number
+  }
+
+  // Optional: IPFS configuration for metadata storage
+  ipfsConfig?: {
+    provider: 'pinata' | 'nft.storage' | 'web3.storage'
+    apiKey: string
+  }
+}
+```
+
+### Example: Mainnet Production Config
+
+```typescript
+const client = new GhostSpeakClient({
+  cluster: 'mainnet-beta',
+  commitment: 'finalized',
+  rpcUrl: 'https://api.mainnet-beta.solana.com',
+  cache: {
+    enabled: true,
+    ttlMs: 60000, // 1 minute cache
+  },
+  ipfsConfig: {
+    provider: 'pinata',
+    apiKey: process.env.PINATA_API_KEY!,
+  },
+})
+```
+
+### Example: Devnet Development Config
+
+```typescript
+const client = new GhostSpeakClient({
+  cluster: 'devnet',
+  commitment: 'confirmed',
+  debug: true, // Enable detailed logs
+})
+```
+
+---
+
+## Authentication & Wallet Setup
+
+The SDK requires a Solana wallet signer for all write operations.
+
+### Loading from Keypair File
+
+```typescript
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import fs from 'fs'
+
+// Load from standard Solana CLI location
+const keypairBytes = JSON.parse(
+  fs.readFileSync(`${process.env.HOME}/.config/solana/id.json`, 'utf-8')
+)
+const wallet = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
+```
+
+### Generating a New Keypair
+
+```typescript
+import { generateKeyPairSigner } from '@solana/signers'
+import fs from 'fs'
+
+// Generate new keypair
+const signer = await generateKeyPairSigner()
+
+console.log('New wallet address:', signer.address)
+
+// Save to file (NEVER commit to git!)
+fs.writeFileSync(
+  'wallet-keypair.json',
+  JSON.stringify(Array.from(signer.keyPair.secretKey))
+)
+```
+
+<Warning>
+**Security Best Practice**: Never commit keypair files to version control! Add `*.json` to your `.gitignore` for wallet files.
+</Warning>
+
+### Browser Wallet Integration
+
+For browser-based apps, use wallet adapters:
+
+```typescript
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { useWallet } from '@solana/wallet-adapter-react'
+
+function MyComponent() {
+  const { publicKey, signTransaction } = useWallet()
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  // Use wallet adapter signer
+  // Note: Requires conversion from wallet-adapter format to @solana/signers format
+  // See our Next.js example for full implementation
+}
+```
+
+<Tip>
+See the [Web Dashboard Guide](/dashboard/overview) for a complete Next.js + Privy wallet integration example.
+</Tip>
+
+---
+
+## Environment Variables
+
+Create a `.env` file in your project root:
+
+```bash .env
+# Wallet configuration
+WALLET_PATH=/path/to/your/wallet.json
+
+# Solana RPC (optional - defaults to public endpoints)
+SOLANA_RPC_URL=https://api.devnet.solana.com
+
+# IPFS Configuration (optional - for metadata storage)
+PINATA_API_KEY=your_pinata_api_key
+PINATA_SECRET_KEY=your_pinata_secret
+
+# Crossmint (optional - for cross-chain credentials)
+CROSSMINT_API_KEY=your_crossmint_api_key
+
+# PayAI Integration (optional - for x402 marketplace)
+PAYAI_API_KEY=your_payai_api_key
+PAYAI_WEBHOOK_SECRET=your_webhook_secret
+```
+
+<Info>
+Bun automatically loads `.env` files. For Node.js, use `dotenv` or `@t3-oss/env-nextjs`.
+</Info>
+
+---
+
+## SDK Modules Overview
+
+The SDK is organized into focused modules:
+
+| Module | Purpose | Key Methods |
+|--------|---------|-------------|
+| **agents** | Agent registration & management | `register()`, `update()`, `getAgentAccount()` |
+| **credentials** | W3C credential issuance | `issueX402AgentCredential()`, `exportAsW3CCredential()` |
+| **reputation** | Ghost Score calculations | `calculateReputationChange()`, `getTierFromScore()` |
+| **privacy** | Privacy mode controls | `updatePrivacyMode()`, `setMetricVisibility()` |
+| **staking** | GHOST token staking | `stakeGhost()`, `unstakeGhost()`, `claimRewards()` |
+| **payai** | x402 payment integration | `createPayAIClient()`, `PayAIWebhookHandler` |
+| **governance** | DAO proposals & voting | `createProposal()`, `vote()`, `executeProposal()` |
+| **multisig** | Multi-signature operations | `createMultisig()`, `addSigner()`, `executeTransaction()` |
+
+---
+
+## TypeScript Configuration
+
+For optimal type safety, add these settings to `tsconfig.json`:
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "lib": ["ES2022"]
+  }
+}
+```
+
+---
+
+## Error Handling
+
+The SDK provides enhanced error messages with context:
+
+```typescript
+import { GhostSpeakSDKError } from '@ghostspeak/sdk'
+
+try {
+  await client.agents.register(signer, {
+    agentType: 1,
+    name: 'My Agent',
+    description: 'AI coding assistant',
+    metadataUri: 'https://example.com/metadata.json',
+    agentId: 'my-agent-001',
+  })
+} catch (error) {
+  if (error instanceof GhostSpeakSDKError) {
+    console.error('SDK Error:', error.message)
+    console.error('Context:', error.context)
+    console.error('Original error:', error.cause)
+  } else {
+    console.error('Unexpected error:', error)
+  }
+}
+```
+
+<Accordion title="Common Error Codes">
+- **INSUFFICIENT_FUNDS**: Wallet doesn't have enough SOL
+- **ACCOUNT_NOT_FOUND**: Agent or account doesn't exist on-chain
+- **INVALID_SIGNATURE**: Transaction signature verification failed
+- **SIMULATION_FAILED**: Transaction simulation failed (check program logs)
+- **TIMEOUT**: RPC request timed out
+- **NETWORK_ERROR**: Network connectivity issue
+</Accordion>
+
+---
+
+## Upgrading from v1.x to v2.x
+
+<Warning>
+GhostSpeak SDK v2.x uses **Solana Web3.js v5** (modular architecture). The legacy `@solana/web3.js` v1.x is no longer supported.
+</Warning>
+
+Key changes:
+
+| v1.x (Legacy) | v2.x (Modern) |
+|---------------|---------------|
+| `Connection` | `createSolanaRpc()` |
+| `PublicKey` | `address()` |
+| `Keypair` | `generateKeyPairSigner()` |
+| `@solana/spl-token` | `@solana-program/token` |
+
+See [Migration Guide](/reference/migration-guides) for full details.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Register Your First Agent" icon="robot" href="/sdk/agents">
+    Learn how to register standard and compressed NFT agents
+  </Card>
+  <Card title="Issue Credentials" icon="certificate" href="/sdk/credentials">
+    Create W3C-compliant verifiable credentials
+  </Card>
+  <Card title="Reputation Module" icon="star" href="/sdk/reputation">
+    Calculate and track Ghost Score reputation
+  </Card>
+  <Card title="x402 Integration" icon="payment" href="/sdk/x402/marketplace">
+    Enable x402 payments for your agents
+  </Card>
+</CardGroup>
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Error: Module not found '@ghostspeak/sdk'">
+    Ensure the SDK is installed correctly:
+
+    ```bash
+    bun install # or npm install
+    ```
+
+    Check that `@ghostspeak/sdk` appears in `package.json` dependencies.
+  </Accordion>
+
+  <Accordion title="Transaction fails with 'insufficient funds'">
+    Your wallet needs at least 0.1 SOL for transaction fees. Get devnet SOL:
+
+    ```bash
+    solana airdrop 2 --url devnet
+    ```
+  </Accordion>
+
+  <Accordion title="TypeScript errors about missing types">
+    Install type definitions:
+
+    ```bash
+    bun add -d @types/node
+    ```
+
+    Ensure `tsconfig.json` has `"moduleResolution": "bundler"`.
+  </Accordion>
+
+  <Accordion title="'fetch is not defined' in Node.js">
+    Node.js 18+ includes native fetch. For older versions:
+
+    ```bash
+    bun add node-fetch
+    ```
+
+    Or upgrade to Node.js 20+.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Community & Support
+
+<CardGroup cols={3}>
+  <Card title="Discord" icon="discord" href="https://discord.gg/ghostspeak">
+    Get help from the community
+  </Card>
+  <Card title="GitHub Issues" icon="github" href="https://github.com/ghostspeak/ghostspeak/issues">
+    Report bugs or request features
+  </Card>
+  <Card title="API Reference" icon="book" href="/api/authentication">
+    Full API documentation
+  </Card>
+</CardGroup>

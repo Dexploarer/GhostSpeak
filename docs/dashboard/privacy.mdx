@@ -1,0 +1,527 @@
+---
+title: 'Privacy Settings'
+description: 'Configure reputation data visibility and control who can view your Ghost Score metrics'
+---
+
+# Privacy Settings Dashboard
+
+The Privacy Settings page allows you to control what reputation data is publicly visible for your AI agents. Configure privacy modes, set per-metric visibility, and manage authorized viewers - all through an intuitive UI that writes settings directly to the Solana blockchain.
+
+<img
+  className="rounded-xl border border-gray-800"
+  src="/assets/screenshots/privacy-settings.png"
+  alt="Privacy Settings Screenshot"
+  noZoom
+/>
+**Screenshot: Privacy settings panel with mode selector and metric toggles**
+
+## Page Location
+
+**URL**: `https://ghostspeak.io/dashboard/privacy`
+
+**Navigation**: Dashboard sidebar → Privacy (Shield icon)
+
+## Page Header
+
+The header displays:
+
+- **Icon**: Shield icon (6x6) in primary color
+- **Title**: "Privacy Settings"
+- **Network Badge**: Amber "Demo • Devnet" badge
+- **Description**: "Control who can view your agent's reputation data"
+- **Warning Text**: "Settings are stored on Solana Devnet" (amber-500/80 color)
+
+## Authentication Required
+
+### Wallet Connection Check
+
+If wallet is not connected, the page shows an empty state:
+
+<Steps>
+  <Step title="Empty State Display">
+    GlassCard with dashed border, padding-16, centered content
+  </Step>
+  <Step title="Wallet Icon">
+    20x20 wallet icon in primary/10 circle
+  </Step>
+  <Step title="Call to Action">
+    - **Heading**: "Connect Your Wallet"
+    - **Description**: "Connect your wallet to manage privacy settings for your agent's reputation data"
+    - **No Button**: User must connect via top-right navbar button
+  </Step>
+</Steps>
+
+<Info>
+**Privacy by Default**: If you haven't configured privacy settings, your reputation data defaults to **Public** mode. Configure settings to restrict access before registering agents.
+</Info>
+
+## Privacy Settings Panel
+
+**Component**: `PrivacySettingsPanel`
+
+**Location**: `/packages/web/components/privacy/PrivacySettingsPanel.tsx`
+
+The panel provides a comprehensive interface for configuring privacy preferences:
+
+### Privacy Mode Selector
+
+Five privacy modes available:
+
+<Tabs>
+  <Tab title="Public">
+    **Visibility**: All reputation data publicly visible
+
+    **Use Case**: Agents seeking maximum transparency to build trust
+
+    **What's Visible**:
+    - Full Ghost Score (0-1000)
+    - All metric breakdowns (Success Rate, Quality, Response Time, Volume)
+    - Transaction history
+    - Tier status (Bronze, Silver, Gold, Platinum)
+  </Tab>
+
+  <Tab title="Tier Only">
+    **Visibility**: Only tier status visible (Bronze/Silver/Gold/Platinum)
+
+    **Use Case**: Agents who want to show high-level reputation without exposing exact score
+
+    **What's Visible**:
+    - Tier badge (e.g., "GOLD")
+    - Tier thresholds (e.g., "750-899")
+
+    **What's Hidden**:
+    - Exact Ghost Score
+    - Individual metrics
+    - Transaction details
+  </Tab>
+
+  <Tab title="Authorized Only">
+    **Visibility**: Full data visible only to authorized addresses
+
+    **Use Case**: B2B agents working with specific clients/partners
+
+    **What's Visible** (to authorized users):
+    - Full Ghost Score
+    - All metrics
+    - Transaction history
+
+    **What's Visible** (to public):
+    - Agent exists (basic presence)
+    - Privacy mode indicator
+
+    **Authorization**: Managed via Access Control List (see below)
+  </Tab>
+
+  <Tab title="Range Only">
+    **Visibility**: Ghost Score shown as range (e.g., "750-799")
+
+    **Use Case**: Agents wanting to show approximate reputation
+
+    **What's Visible**:
+    - Score range (50-point increments)
+    - Tier indicator
+
+    **What's Hidden**:
+    - Exact score
+    - Individual metric scores
+  </Tab>
+
+  <Tab title="Hidden">
+    **Visibility**: No reputation data visible publicly
+
+    **Use Case**: Private agents or those in early development
+
+    **What's Visible**:
+    - Nothing (agent appears unlisted in public searches)
+
+    **Note**: Agent can still participate in escrowed transactions where counterparty explicitly approves
+  </Tab>
+</Tabs>
+
+### Individual Metric Controls
+
+When **Custom** privacy is enabled, you can control visibility per metric:
+
+| Metric | Weight | Description |
+|--------|--------|-------------|
+| **Success Rate** | 40% | Payment completion and service delivery percentage |
+| **Service Quality** | 30% | Average client rating (1-5 stars) |
+| **Response Time** | 20% | Median response time in hours |
+| **Volume Consistency** | 10% | Transaction count and history length |
+
+Each metric has three visibility options:
+- **Visible**: Show exact value and contribution to score
+- **Hidden**: Don't show metric value
+- **Summary Only**: Show metric exists but hide exact value
+
+<CodeGroup>
+```typescript Privacy Settings Data Model
+interface PrivacySettings {
+  mode: 'public' | 'tier_only' | 'authorized_only' | 'range_only' | 'hidden'
+  metricSettings?: {
+    successRate: 'visible' | 'hidden' | 'summary'
+    serviceQuality: 'visible' | 'hidden' | 'summary'
+    responseTime: 'visible' | 'hidden' | 'summary'
+    volumeConsistency: 'visible' | 'hidden' | 'summary'
+  }
+  authorizedViewers?: string[] // Solana addresses
+}
+```
+</CodeGroup>
+
+### Access Control List (ACL)
+
+**Visible When**: Privacy mode is "Authorized Only"
+
+The ACL panel allows adding Solana addresses that can view full reputation data:
+
+<Steps>
+  <Step title="Add Authorized Viewer">
+    - Input field for Solana address (base58 format)
+    - "Add" button to append to list
+    - Validates address format before adding
+  </Step>
+  <Step title="View Authorized List">
+    Each authorized address displayed with:
+    - Truncated address (e.g., `ABC...XYZ`)
+    - "Remove" button (trash icon)
+  </Step>
+  <Step title="Remove Authorization">
+    Click remove button next to any address to revoke access
+  </Step>
+</Steps>
+
+<Warning>
+**Important**: Authorized viewer lists are stored on-chain. Once an address is added, they can view your historical reputation data. Revocation is immediate but doesn't delete cached data.
+</Warning>
+
+### Preview Panel
+
+**Location**: Right side of privacy panel (desktop) or below settings (mobile)
+
+Shows real-time preview of what your reputation looks like with current privacy settings:
+
+- **Mock Ghost Score**: 845 (example)
+- **Mock Metrics**: Sample values for all four metrics
+- **Visibility Toggles**: Grayed out sections based on privacy mode
+- **Public View vs Authorized View**: Toggle to see both perspectives
+
+<CodeGroup>
+```typescript Preview Component
+// Renders mock reputation card with current privacy filters applied
+function PrivacyPreview({ settings, reputationData }) {
+  const filteredData = applyPrivacyFilters(reputationData, settings)
+
+  return (
+    <ReputationCard
+      data={filteredData}
+      mode="preview"
+      showWatermark={true}
+    />
+  )
+}
+```
+</CodeGroup>
+
+## Save Settings Flow
+
+### Save Button
+
+**Location**: Bottom of privacy panel
+
+- **Label**: "Save Privacy Settings"
+- **State**:
+  - Disabled if no changes made
+  - Shows spinner when saving
+  - Success state with checkmark
+
+### On-Chain Transaction
+
+<Steps>
+  <Step title="User Clicks Save">
+    Triggers `handleSaveSettings()` function
+  </Step>
+  <Step title="Validate Settings">
+    Ensures privacy mode and metric settings are valid
+  </Step>
+  <Step title="Create Transaction">
+    SDK builds Solana transaction to update privacy account
+  </Step>
+  <Step title="Request Signature">
+    Wallet popup requests user approval
+  </Step>
+  <Step title="Submit to Blockchain">
+    Signed transaction submitted to Solana RPC
+  </Step>
+  <Step title="Confirm Success">
+    Toast notification: "Privacy settings saved successfully!"
+  </Step>
+  <Step title="Update UI">
+    Privacy mode badge updates across dashboard
+  </Step>
+</Steps>
+
+<CodeGroup>
+```typescript Save Handler
+const handleSaveSettings = async (settings: PrivacySettings) => {
+  // TODO on devnet: Implement on-chain privacy settings save
+  console.log('Saving privacy settings:', settings)
+
+  // Example SDK implementation (coming soon):
+  // const client = useGhostSpeakClient()
+  // await client.privacy.updateSettings({
+  //   agentAddress: walletAddress,
+  //   mode: settings.mode,
+  //   metricSettings: settings.metricSettings,
+  //   authorizedViewers: settings.authorizedViewers
+  // })
+
+  toast.success('Privacy settings saved!')
+}
+```
+
+```typescript SDK Method (Future)
+// @ghostspeak/sdk
+async updatePrivacySettings({
+  agentAddress: string,
+  mode: PrivacyMode,
+  metricSettings?: MetricVisibility,
+  authorizedViewers?: string[],
+}) {
+  // Creates Solana transaction to update privacy PDA
+  const ix = await this.program.methods
+    .updatePrivacy(mode, metricSettings, authorizedViewers)
+    .accounts({
+      agent: agentAddress,
+      privacyAccount: privacyPDA,
+      authority: this.wallet.publicKey,
+    })
+    .instruction()
+
+  return await this.sendAndConfirm([ix])
+}
+```
+</CodeGroup>
+
+## User Workflows
+
+### Setting Initial Privacy Mode
+
+<Steps>
+  <Step title="Connect Wallet">
+    Ensure wallet is connected (check top-right corner)
+  </Step>
+  <Step title="Navigate to Privacy Page">
+    Click "Privacy" in dashboard sidebar
+  </Step>
+  <Step title="Select Privacy Mode">
+    Choose from Public, Tier Only, Authorized Only, Range Only, or Hidden
+  </Step>
+  <Step title="Review Preview">
+    Check preview panel to see how reputation will appear
+  </Step>
+  <Step title="Save Settings">
+    Click "Save Privacy Settings" button
+  </Step>
+  <Step title="Approve Transaction">
+    Confirm in wallet popup (~0.0002 SOL fee)
+  </Step>
+  <Step title="Verify Success">
+    Toast notification confirms settings saved
+  </Step>
+</Steps>
+
+### Configuring Custom Visibility
+
+<Steps>
+  <Step title="Select 'Custom' Mode">
+    Choose Custom privacy mode from dropdown
+  </Step>
+  <Step title="Toggle Metric Visibility">
+    For each metric (Success Rate, Quality, Response Time, Volume):
+    - Click "Visible" to show exact value
+    - Click "Hidden" to hide completely
+    - Click "Summary Only" to show existence without value
+  </Step>
+  <Step title="Preview Changes">
+    Watch preview panel update in real-time
+  </Step>
+  <Step title="Save Configuration">
+    Click save button and approve transaction
+  </Step>
+</Steps>
+
+### Managing Authorized Viewers
+
+<Steps>
+  <Step title="Select 'Authorized Only' Mode">
+    Privacy mode dropdown → "Authorized Only"
+  </Step>
+  <Step title="Add Viewer Address">
+    - Paste Solana address into input field
+    - Click "Add" button
+    - Address appears in authorized list
+  </Step>
+  <Step title="Repeat for Multiple Viewers">
+    Add up to 10 authorized addresses (on-chain limit)
+  </Step>
+  <Step title="Remove Viewers if Needed">
+    Click trash icon next to any address to revoke access
+  </Step>
+  <Step title="Save ACL">
+    Click "Save Privacy Settings" to commit changes on-chain
+  </Step>
+</Steps>
+
+## Common Questions
+
+<AccordionGroup>
+  <Accordion title="What's the default privacy mode?">
+    **Default**: Public (all reputation data visible)
+
+    This default encourages transparency and trust-building for new agents. You can change this before registering your first agent.
+
+    **Recommendation for New Agents**: Start with "Public" mode to build trust, then switch to "Tier Only" or "Range Only" once you've established a good reputation.
+  </Accordion>
+
+  <Accordion title="Can I change privacy settings later?">
+    **Yes!** Privacy settings can be updated at any time:
+
+    - Changes take effect immediately after transaction confirms
+    - No penalty for changing modes frequently
+    - Historical data is not deleted (just hidden based on current settings)
+
+    **Note**: Once data is public, it may be cached by third parties. Changing to private mode hides future access but doesn't guarantee deletion of cached data.
+  </Accordion>
+
+  <Accordion title="Do privacy settings affect escrow transactions?">
+    **Partially**:
+
+    - **Escrow Creation**: Both parties see each other's full reputation during escrow setup (required for trust)
+    - **Dispute Resolution**: Arbitrators see full reputation data regardless of privacy mode
+    - **Public Transaction History**: Privacy mode controls what's shown in public explorer, but on-chain transaction records are always public
+
+    **Best Practice**: Use "Tier Only" or "Authorized Only" for maximum privacy while still enabling escrow transactions.
+  </Accordion>
+
+  <Accordion title="What happens with 'Hidden' mode?">
+    **Effects**:
+    - Agent doesn't appear in public agent directories
+    - Ghost Score not visible to anyone (except authorized viewers if ACL configured)
+    - Agent can still register and complete transactions
+    - Counterparties in escrow see "Hidden Agent" label with option to request access
+
+    **Use Case**: Experimental agents, internal testing, or agents in development phase.
+  </Accordion>
+
+  <Accordion title="Are authorized viewers stored on-chain?">
+    **Yes**:
+    - Authorized viewer list stored in Privacy PDA (Program Derived Address) on Solana
+    - Addresses are public (blockchain is transparent)
+    - However, only authorized addresses can query full reputation data via SDK/API
+
+    **Privacy Consideration**: If privacy is critical, use off-chain communication to share reputation data instead of on-chain ACLs.
+  </Accordion>
+</AccordionGroup>
+
+## Privacy Modes Comparison
+
+| Feature | Public | Tier Only | Authorized Only | Range Only | Hidden |
+|---------|--------|-----------|-----------------|------------|--------|
+| **Ghost Score** | Exact (e.g., 845) | Hidden | Authorized only | Range (e.g., 800-849) | Hidden |
+| **Tier Badge** | Shown | Shown | Shown (authorized) | Shown | Hidden |
+| **Success Rate** | Shown | Hidden | Authorized only | Hidden | Hidden |
+| **Service Quality** | Shown | Hidden | Authorized only | Hidden | Hidden |
+| **Response Time** | Shown | Hidden | Authorized only | Hidden | Hidden |
+| **Volume** | Shown | Hidden | Authorized only | Hidden | Hidden |
+| **Transaction History** | Public | Hidden | Authorized only | Hidden | Hidden |
+| **Agent Listed in Directory** | Yes | Yes | Yes | Yes | No |
+| **Escrow Participation** | Full access | Limited trust | Case-by-case | Limited trust | Request access |
+
+## SDK Integration
+
+Privacy settings are managed through the GhostSpeak SDK:
+
+```typescript
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+
+const client = new GhostSpeakClient({ cluster: 'devnet' })
+
+// Update privacy settings
+await client.privacy.updateSettings({
+  agentAddress: 'ABC123...',
+  mode: 'tier_only',
+})
+
+// Fetch current privacy settings
+const settings = await client.privacy.getSettings({
+  agentAddress: 'ABC123...',
+})
+
+console.log(settings.mode) // 'tier_only'
+
+// Add authorized viewer
+await client.privacy.addAuthorizedViewer({
+  agentAddress: 'ABC123...',
+  viewerAddress: 'DEF456...',
+})
+
+// Remove authorized viewer
+await client.privacy.removeAuthorizedViewer({
+  agentAddress: 'ABC123...',
+  viewerAddress: 'DEF456...',
+})
+```
+
+## Technical Architecture
+
+### On-Chain Storage
+
+Privacy settings are stored in a **Privacy PDA** (Program Derived Address):
+
+```rust
+// Solana program account structure
+pub struct PrivacyAccount {
+    pub agent: Pubkey,           // Agent address
+    pub mode: PrivacyMode,        // Privacy mode enum
+    pub metric_settings: MetricVisibility, // Per-metric settings
+    pub authorized_viewers: Vec<Pubkey>, // ACL (max 10)
+    pub updated_at: i64,          // Last update timestamp
+}
+```
+
+### Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `PrivacySettingsPage` | `/packages/web/app/dashboard/privacy/page.tsx` | Main page wrapper |
+| `PrivacySettingsPanel` | `/packages/web/components/privacy/PrivacySettingsPanel.tsx` | Settings UI component |
+| `usePrivacySettings()` | `/packages/web/lib/hooks/usePrivacySettings.ts` | Fetch/update privacy data |
+| Privacy SDK Module | `@ghostspeak/sdk` | Blockchain interaction layer |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Understand Privacy Tiers" icon="shield" href="/guides/privacy-tiers">
+    Deep dive into each privacy mode with examples
+  </Card>
+  <Card title="Ghost Score Algorithm" icon="chart-line" href="/concepts/ghost-score/algorithm">
+    Learn what reputation data is collected
+  </Card>
+  <Card title="Configure Staking" icon="lock" href="/dashboard/staking">
+    Stake GHOST to unlock advanced privacy features
+  </Card>
+  <Card title="API Privacy Controls" icon="key" href="/api/endpoints/reputation">
+    Programmatic privacy management via B2B API
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Best Practice**: Start with "Public" mode when launching a new agent to build trust quickly. Once you reach Gold tier, consider switching to "Tier Only" or "Range Only" to maintain privacy while still signaling high reputation.
+</Tip>
+
+<Warning>
+**Devnet Limitation**: Privacy settings are currently stored on Solana Devnet. On mainnet, privacy settings will be permanent and immutable (unless you update them). Test your privacy configuration thoroughly on devnet before mainnet launch.
+</Warning>

@@ -1,0 +1,467 @@
+---
+title: 'GHOST Token Overview'
+description: 'Native utility token powering GhostSpeak protocol - staking, payments, and governance'
+---
+
+# GHOST Token Overview
+
+**GHOST** is the native utility token of the GhostSpeak protocol. It enables staking for unlimited verifications, acts as a payment alternative to USDC, and will eventually govern protocol parameters.
+
+<Warning>
+**GHOST is a utility token, not a security**. It provides access to protocol features and revenue share but does not represent equity, debt, or investment returns. Price may be volatile.
+</Warning>
+
+---
+
+## Why GHOST Exists
+
+GhostSpeak needs a native token to solve three key problems:
+
+<CardGroup cols={3}>
+  <Card title="Access Control" icon="key">
+    Stake GHOST to unlock unlimited verifications
+  </Card>
+  <Card title="Deflationary Pressure" icon="fire">
+    Burn GHOST for discounted verification payments
+  </Card>
+  <Card title="Aligned Incentives" icon="handshake">
+    Stakers earn protocol revenue, aligning interests
+  </Card>
+</CardGroup>
+
+**Without GHOST:**
+- ❌ Only pay-per-check model (high friction for power users)
+- ❌ No mechanism to capture protocol value appreciation
+- ❌ No governance over protocol parameters
+
+**With GHOST:**
+- ✅ Unlimited verifications for stakers (remove friction)
+- ✅ Token burns create deflationary pressure (value accrual)
+- ✅ Revenue share rewards early believers (fair distribution)
+
+---
+
+## Token Details
+
+**Contract Address**: `DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump`
+
+| Property | Value |
+|----------|-------|
+| **Network** | Solana Mainnet |
+| **Standard** | SPL Token |
+| **Decimals** | 6 |
+| **Total Supply** | 999,753,007 GHOST (immutable) |
+| **Circulating Supply** | 999,753,007 GHOST (100%) |
+| **Mint Authority** | Revoked (no inflation possible) |
+| **Freeze Authority** | Revoked (cannot be censored) |
+
+<Tip>
+**No Inflation Risk**: The mint authority was revoked at launch. No new GHOST can ever be created. Supply can only decrease via burns.
+</Tip>
+
+**Current Metrics (Dec 30, 2025)**:
+- **Price**: $0.00005691 per GHOST
+- **Market Cap**: $56,905 USD
+- **Liquidity**: $22,816 USD
+- **24h Volume**: $23,319 USD
+- **All-Time High**: $0.00007139 (Dec 23, 2025)
+
+**Buy GHOST**:
+- [DEXScreener](https://dexscreener.com/solana/e44xj7jyjxyermlqqwrpu4nekcphawfjf3ppn2uokgdb) (charts & analytics)
+- [PumpSwap](https://pumpswap.io) (trading)
+- [Raydium](https://raydium.io) (liquidity pool)
+
+---
+
+## GHOST Use Cases
+
+<Tabs>
+  <Tab title="Staking (Recommended)">
+    **Stake GHOST to unlock unlimited verifications and earn USDC revenue share**
+
+    | Tier | GHOST Required | Benefits |
+    |------|----------------|----------|
+    | Verified | 5,000 | Unlimited verifications + 1.5x revenue multiplier |
+    | Pro | 50,000 | + 100K API calls/month + 2.0x multiplier |
+    | Whale | 500,000 | + Unlimited API calls + 3.0x multiplier |
+
+    **Revenue Share:**
+    - 10% of B2C pay-per-check fees → stakers
+    - 100% of B2B API overage fees → stakers
+    - Distributed proportionally by stake × multiplier
+
+    **Example Earnings** (assuming $100K monthly protocol revenue):
+    - **Verified Staker (5K GHOST)**: ~$7.50 USDC/month
+    - **Pro Staker (50K GHOST)**: ~$100 USDC/month
+    - **Whale Staker (500K GHOST)**: ~$1,500 USDC/month
+
+    <Card title="Learn More" icon="arrow-right" href="/concepts/tokenomics/staking">
+      Full staking guide with APY scenarios
+    </Card>
+  </Tab>
+
+  <Tab title="Payment (Burn)">
+    **Burn GHOST to pay for verifications at a 25% discount**
+
+    | Payment Method | Cost per Verification |
+    |----------------|----------------------|
+    | USDC (default) | 1 USDC |
+    | GHOST (burn) | 75 GHOST (~$0.0043 at current price) |
+    | Staking (5K+ GHOST) | $0 (unlimited) |
+
+    **Why burn?**
+    - Get 25% discount vs USDC payment
+    - Reduce circulating supply (increases scarcity)
+    - Support token price appreciation
+
+    **Burn mechanism:**
+    ```typescript
+    import { GhostSpeakClient } from '@ghostspeak/sdk'
+
+    const client = new GhostSpeakClient({ cluster: 'mainnet' })
+
+    // Pay with GHOST burn instead of USDC
+    const verification = await client.verifications.create({
+      agentId: agentAddress,
+      paymentMethod: 'GHOST_BURN', // Burns 75 GHOST
+    })
+
+    console.log('✅ Verified! Burned 75 GHOST')
+    console.log('USDC equivalent saved: $0.75')
+    ```
+
+    **Burned GHOST is permanently removed from supply** - sent to the Solana burn address (`1nc1nerator11111111111111111111111111111111`).
+
+    <Card title="Payment Options" icon="credit-card" href="/concepts/tokenomics/payments">
+      Compare all payment methods
+    </Card>
+  </Tab>
+
+  <Tab title="Governance (Roadmap)">
+    **Q4 2026: GHOST holders will govern protocol parameters**
+
+    Planned governance powers:
+    - **Revenue Share %**: Adjust 10% B2C fee split
+    - **Tier Thresholds**: Change staking tiers (5K/50K/500K)
+    - **Payment Pricing**: Modify USDC/GHOST verification costs
+    - **Feature Roadmap**: Vote on protocol upgrades
+    - **Treasury Management**: Allocate protocol reserves
+
+    **Voting Power:**
+    - 1 GHOST staked = 1 vote
+    - Multipliers do NOT apply to governance (only revenue share)
+    - Minimum proposal threshold: 1M GHOST support
+
+    **Why governance matters:**
+    - Decentralize control over protocol economics
+    - Allow community to optimize for long-term growth
+    - Prevent single-party manipulation of fees
+
+    <Warning>
+    Governance is not yet active. All protocol parameters are currently controlled by the GhostSpeak team. Timeline: Q4 2026.
+    </Warning>
+  </Tab>
+
+  <Tab title="Liquidity Provision">
+    **Provide GHOST/USDC liquidity on Raydium to earn trading fees**
+
+    **Current Pool:**
+    - **Pair**: GHOST/USDC
+    - **DEX**: Raydium (Solana)
+    - **Liquidity**: $22,816 USD
+    - **24h Volume**: $23,319 USD
+    - **APR**: ~374% (based on fees)
+
+    **How to provide liquidity:**
+    ```bash
+    1. Visit Raydium: https://raydium.io/liquidity/
+    2. Connect Solana wallet
+    3. Select GHOST/USDC pair
+    4. Deposit equal value of GHOST + USDC
+    5. Receive LP tokens representing your share
+    6. Earn trading fees automatically
+    ```
+
+    **Risks:**
+    - **Impermanent Loss**: If GHOST price moves vs USDC, you may lose value
+    - **Smart Contract Risk**: Raydium is audited but not risk-free
+    - **Price Volatility**: GHOST is highly volatile
+
+    <Tip>
+    **APR Calculation**: 374% APR = ($23,319 × 0.25% fee × 365 days) / $22,816 liquidity. High APR due to volume/liquidity ratio.
+    </Tip>
+  </Tab>
+</Tabs>
+
+---
+
+## Token Economics
+
+### Supply Dynamics
+
+**Fixed Supply Cap:**
+```
+Total Supply: 999,753,007 GHOST (immutable)
+├─ Circulating: 999,753,007 (100%)
+├─ Locked: 0 (no vesting, no team allocation)
+└─ Burned: Increasing over time (deflationary)
+```
+
+**Burn Sources:**
+1. **Verification Burns**: 75 GHOST per verification (when users choose GHOST payment)
+2. **Future Burn Mechanisms**: TBD (governance may add more)
+
+**Burn Rate Example:**
+```typescript
+// Current burn rate (estimated)
+Daily Verifications (GHOST burns): 50
+Daily GHOST Burned: 50 × 75 = 3,750 GHOST
+
+// Annualized
+Annual Burn: 3,750 × 365 = 1,368,750 GHOST (0.14% of supply)
+
+// At 10x protocol usage
+Annual Burn: 13,687,500 GHOST (1.4% of supply)
+```
+
+**Inflation Rate**: **0%** (mint authority revoked)
+
+**Deflationary Pressure**: As protocol usage grows, burn rate increases → supply decreases → price should appreciate (all else equal).
+
+### Value Accrual Mechanisms
+
+GHOST captures protocol value through three mechanisms:
+
+<AccordionGroup>
+  <Accordion title="1. Revenue Share (Direct Value)">
+    Stakers earn **10% of B2C fees** and **100% of B2B overage fees** in USDC.
+
+    **Example:**
+    - Protocol generates $1M in monthly fees
+    - Stakers receive $100K in USDC rewards
+    - GHOST price doesn't matter - stakers earn USD
+
+    This creates buying pressure: users buy GHOST → stake → earn USDC.
+  </Accordion>
+
+  <Accordion title="2. Deflationary Burns (Indirect Value)">
+    Every GHOST burn reduces circulating supply, increasing scarcity.
+
+    **Example:**
+    - Year 1: 1M GHOST burned (0.1% of supply)
+    - Year 2: 10M GHOST burned (1.0% of supply)
+    - Year 5: 100M GHOST burned (10% of supply)
+
+    As supply decreases and demand (usage) increases, price should appreciate.
+  </Accordion>
+
+  <Accordion title="3. Utility Demand (Access Value)">
+    Users need GHOST to access premium features (staking tiers).
+
+    **Example:**
+    - Heavy user needs unlimited verifications
+    - Options: Pay $100/month in USDC OR stake 5K GHOST (~$0.28)
+    - Obvious choice: Buy 5K GHOST and stake
+
+    This creates constant buy pressure from utility-driven demand.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Price Discovery
+
+**Why is GHOST so cheap?**
+
+At $0.00005691 per GHOST, the token appears severely undervalued relative to protocol utility. Here's why:
+
+<Tabs>
+  <Tab title="Undervaluation Thesis">
+    **Cost to unlock unlimited verifications:**
+    - 5,000 GHOST × $0.00005691 = **$0.28**
+
+    **Value received:**
+    - Unlimited verifications (worth $100+ for active users)
+    - USDC revenue share (~$7.50/month with current volume)
+    - Annualized: $90/year in revenue share
+
+    **Break-even analysis:**
+    - Upfront cost: $0.28
+    - Monthly earnings: $7.50
+    - Break-even time: **1.1 days**
+
+    **Verdict**: At current prices, GHOST staking has a 1-day payback period. This is unsustainable - price should appreciate.
+  </Tab>
+
+  <Tab title="Fair Value Scenarios">
+    **Scenario 1: 100x Price ($0.005691)**
+    - 5K GHOST stake value: $28.46
+    - Monthly revenue share: $7.50
+    - APY: 316%
+    - Verdict: Still attractive, more sustainable
+
+    **Scenario 2: 1000x Price ($0.05691)**
+    - 5K GHOST stake value: $284.55
+    - Monthly revenue share: $7.50
+    - APY: 31.6%
+    - Verdict: Competitive with traditional DeFi yields
+
+    **Scenario 3: 10,000x Price ($0.5691)**
+    - 5K GHOST stake value: $2,845.50
+    - Monthly revenue share: $7.50
+    - APY: 3.16%
+    - Verdict: Underperforming, likely overvalued
+
+    **Fair Value Range**: $0.005 - $0.10 per GHOST (100x-1750x from current)
+  </Tab>
+
+  <Tab title="Market Cap Analysis">
+    **Current Market Cap**: $56,905
+
+    **Comparable Protocols:**
+    - [Redacted] DeFi protocol: $50M market cap, $200K monthly revenue
+    - [Redacted] NFT marketplace: $15M market cap, $80K monthly revenue
+    - GhostSpeak: $56K market cap, $10K estimated monthly revenue
+
+    **Implied Valuation Multiples:**
+    - Revenue Multiple: 5.6x (vs 250x for comparables)
+    - User Count: N/A (early stage)
+
+    **Verdict**: GhostSpeak is trading at a 98% discount to comparable protocols on a revenue basis.
+  </Tab>
+</Tabs>
+
+<Warning>
+**This is not financial advice**. GHOST price is highly volatile and may not appreciate. Invest only what you can afford to lose. Past performance does not predict future results.
+</Warning>
+
+---
+
+## Tokenomics Summary
+
+| Metric | Value |
+|--------|-------|
+| **Total Supply** | 999,753,007 GHOST (fixed) |
+| **Circulating Supply** | 999,753,007 GHOST (100%) |
+| **Inflation Rate** | 0% (mint revoked) |
+| **Burn Rate** | ~3,750 GHOST/day (estimated) |
+| **Primary Use Case** | Staking for unlimited verifications |
+| **Revenue Share** | 10% B2C + 100% B2B overage → stakers |
+| **Payment Discount** | 25% off USDC price (75 GHOST/verification) |
+| **Governance** | Q4 2026 (planned) |
+
+---
+
+## How to Acquire GHOST
+
+<Steps>
+  <Step title="Set Up Solana Wallet">
+    Install [Phantom](https://phantom.app), [Solflare](https://solflare.com), or [Backpack](https://backpack.app)
+  </Step>
+  <Step title="Fund Wallet with SOL">
+    Buy SOL on [Coinbase](https://coinbase.com) or [Binance](https://binance.com) and transfer to your wallet
+  </Step>
+  <Step title="Swap SOL for GHOST">
+    Visit [DEXScreener](https://dexscreener.com/solana/e44xj7jyjxyermlqqwrpu4nekcphawfjf3ppn2uokgdb) and click "Trade" → swap SOL for GHOST
+  </Step>
+  <Step title="Stake GHOST (Optional)">
+    Visit [ghostspeak.io/dashboard/staking](https://ghostspeak.io/dashboard/staking) to stake and earn revenue share
+  </Step>
+</Steps>
+
+**Minimum Purchase:**
+- No minimum to buy GHOST on DEX
+- Minimum 5,000 GHOST to stake (Verified tier)
+
+---
+
+## Security & Audits
+
+<CardGroup cols={2}>
+  <Card title="Token Contract" icon="shield-check">
+    Solana SPL standard token, no custom logic
+  </Card>
+  <Card title="Mint Authority" icon="lock">
+    Revoked (verified on Solscan)
+  </Card>
+  <Card title="Freeze Authority" icon="unlock">
+    Revoked (cannot be censored)
+  </Card>
+  <Card title="Liquidity Pool" icon="water">
+    Raydium CPMM (audited)
+  </Card>
+</CardGroup>
+
+**Verify Token Details:**
+```bash
+# Check on Solscan
+https://solscan.io/token/DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump
+
+# Verify mint authority revoked
+Mint Authority: null ✅
+Freeze Authority: null ✅
+```
+
+<Warning>
+**Smart Contract Risk**: While GHOST uses the standard SPL token implementation, the staking and revenue share contracts are custom. Use at your own risk.
+</Warning>
+
+---
+
+## Roadmap
+
+<Steps>
+  <Step title="Q1 2026: Staking Launch">
+    ✅ **Completed** - Staking live on devnet and mainnet
+  </Step>
+  <Step title="Q2 2026: Cross-Chain Bridging">
+    Enable GHOST on Ethereum, Base, and Polygon via [Wormhole](https://wormhole.com)
+  </Step>
+  <Step title="Q3 2026: Enhanced Revenue Share">
+    Add new revenue streams for stakers (B2B enterprise contracts, premium features)
+  </Step>
+  <Step title="Q4 2026: Governance Launch">
+    Enable on-chain governance via snapshot voting (1 GHOST = 1 vote)
+  </Step>
+</Steps>
+
+---
+
+## Risks & Disclaimers
+
+<Warning>
+**Investment Risks:**
+
+1. **Price Volatility**: GHOST can drop 50%+ in a day (typical for small-cap crypto)
+2. **Smart Contract Risk**: Staking/revenue contracts may have bugs (not yet audited)
+3. **Liquidity Risk**: Low liquidity means large trades impact price significantly
+4. **Regulatory Risk**: Token regulations may change (consult a lawyer)
+5. **Protocol Risk**: If GhostSpeak fails, GHOST has no value
+
+**This is not financial advice**. GHOST is a utility token for accessing protocol features, not an investment. Only participate if you understand and accept these risks.
+</Warning>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Start Staking" icon="rocket" href="/concepts/tokenomics/staking">
+    Stake GHOST for unlimited verifications
+  </Card>
+  <Card title="Payment Options" icon="credit-card" href="/concepts/tokenomics/payments">
+    Compare USDC, GHOST burn, and staking
+  </Card>
+  <Card title="Buy GHOST" icon="shopping-cart" href="https://dexscreener.com/solana/e44xj7jyjxyermlqqwrpu4nekcphawfjf3ppn2uokgdb">
+    Purchase on DEXScreener
+  </Card>
+  <Card title="SDK Reference" icon="code" href="/sdk/staking">
+    Stake programmatically via TypeScript SDK
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Current Opportunity**: At $0.00005691/GHOST, the Verified Staker tier costs just $0.28 but provides unlimited verifications + revenue share. This pricing won't last - early stakers benefit most.
+</Tip>

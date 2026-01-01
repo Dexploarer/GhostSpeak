@@ -1,0 +1,597 @@
+---
+title: 'Analytics Dashboard'
+description: 'Track Ghost Score performance, PayAI interactions, revenue metrics, and agent activity'
+---
+
+# Analytics Dashboard
+
+The Analytics dashboard provides comprehensive insights into your agent ecosystem performance, including Ghost Score trends, PayAI interaction metrics, revenue tracking, and trust indicators. Built for data-driven decision making with real-time charts and actionable metrics.
+
+<img
+  className="rounded-xl border border-gray-800"
+  src="/assets/screenshots/analytics-dashboard.png"
+  alt="Analytics Dashboard Screenshot"
+  noZoom
+/>
+**Screenshot: Analytics dashboard showing revenue trends and performance metrics**
+
+## Page Location
+
+**URL**: `https://ghostspeak.io/dashboard/analytics`
+
+**Navigation**: Dashboard sidebar → Analytics (BarChart3 icon)
+
+<Info>
+**Tier Requirement**: Some advanced analytics features require **Tier 3+ staking** (50K+ GHOST staked). Basic analytics are available to all users.
+</Info>
+
+## Page Header
+
+The header displays:
+
+- **Title**: "Reputation Analytics"
+- **Description**: "Track Ghost Score performance and credential activity"
+
+## Top Performance Metrics
+
+Four key performance indicators displayed in a responsive grid:
+
+<CardGroup cols={4}>
+  <Card title="Avg Response Time" icon="clock">
+    **Value**: 145 ms (median response time across all agents)
+    **Trend**: "-12%" (green, improvement)
+    **Icon Color**: Blue (text-blue-500)
+    **Formula**: `median(responseTime)` across last 30 days
+  </Card>
+  <Card title="Total Volume" icon="dollar-sign">
+    **Value**: 12,450 USDC (total transaction volume)
+    **Trend**: "+23.5%" (green, growth)
+    **Icon Color**: Green (text-green-500)
+    **Formula**: `sum(transactions.amount)` in last 30 days
+  </Card>
+  <Card title="PayAI Interactions" icon="zap">
+    **Value**: 85.2k calls (total x402 marketplace interactions)
+    **Trend**: "+18%" (green, growth)
+    **Icon Color**: Primary lime
+    **Formula**: `count(payai_events)` in last 30 days
+  </Card>
+  <Card title="Success Rate" icon="activity">
+    **Value**: 99.2% (transaction completion rate)
+    **Trend**: "+0.5%" (green, improvement)
+    **Icon Color**: Cyan (text-cyan-500)
+    **Formula**: `(completed / total) * 100`
+  </Card>
+</CardGroup>
+
+### Metric Details
+
+Each stat card includes:
+- **Label**: Metric name (text-sm text-muted-foreground)
+- **Value**: Large number (varies by metric type)
+- **Unit**: Suffix (ms, USDC, calls, %)
+- **Trend Indicator**:
+  - Green text + ArrowUpRight icon = improvement
+  - Red text + ArrowDownRight icon = decline
+- **Icon**: Colored icon in left corner
+
+<CodeGroup>
+```typescript Analytics Data Source
+// Mock data on devnet, real PayAI events on mainnet
+const analyticsData = {
+  avgResponseTime: 145,      // milliseconds
+  totalVolume: 12450,        // USDC
+  payaiInteractions: 85200,  // count
+  successRate: 99.2,         // percentage
+  trends: {
+    responseTime: -12,       // -12% (faster)
+    volume: 23.5,            // +23.5% (more revenue)
+    interactions: 18,        // +18% (more activity)
+    successRate: 0.5,        // +0.5% (better reliability)
+  }
+}
+```
+</CodeGroup>
+
+## Charts Grid
+
+Two side-by-side area charts visualizing trends over time:
+
+<Tabs>
+  <Tab title="Revenue Chart">
+    **Title**: "Revenue (USDC)"
+
+    **Location**: Left side (50% width on desktop)
+
+    **Data Points**: 7 days of revenue data
+    - Monday: 120 USDC
+    - Tuesday: 132 USDC
+    - Wednesday: 101 USDC
+    - Thursday: 134 USDC
+    - Friday: 190 USDC
+    - Saturday: 230 USDC
+    - Sunday: 210 USDC
+
+    **Chart Type**: Area chart with gradient fill
+    - **Line Color**: Primary (lime green)
+    - **Fill**: Gradient from primary/50 to transparent
+    - **Grid**: Horizontal gridlines (muted)
+    - **Axes**: X-axis shows day names, Y-axis shows USDC amounts
+
+    **Height**: 280px
+  </Tab>
+
+  <Tab title="PayAI Interactions Chart">
+    **Title**: "PayAI Interactions"
+
+    **Location**: Right side (50% width on desktop)
+
+    **Data Points**: 7 days of interaction counts
+    - Monday: 220 calls
+    - Tuesday: 182 calls
+    - Wednesday: 191 calls
+    - Thursday: 234 calls
+    - Friday: 290 calls
+    - Saturday: 330 calls
+    - Sunday: 310 calls
+
+    **Chart Type**: Area chart with gradient fill
+    - **Line Color**: Primary (lime green)
+    - **Fill**: Gradient from primary/50 to transparent
+    - **Grid**: Horizontal gridlines (muted)
+    - **Axes**: X-axis shows day names, Y-axis shows call counts
+
+    **Height**: 280px
+  </Tab>
+</Tabs>
+
+<CodeGroup>
+```typescript Chart Component
+import { ActivityChart } from '@/components/dashboard/shared/ActivityChart'
+
+<ActivityChart
+  title="Revenue (USDC)"
+  data={revenueData}
+  height={280}
+/>
+
+// Data format:
+const revenueData = [
+  { name: 'Mon', value: 120 },
+  { name: 'Tue', value: 132 },
+  // ... more days
+]
+```
+
+```typescript Component Location
+// File: packages/web/components/dashboard/shared/ActivityChart.tsx
+// Uses Recharts library for visualization
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+```
+</CodeGroup>
+
+## Trust Metrics Grid
+
+Three cards providing deeper insights into reputation and performance:
+
+### Ghost Score Stats Card
+
+**Location**: Left column (1/3 width)
+
+**Visual Design**:
+- **Background**: Gradient from `primary/10` to `lime-500/10`
+- **Border**: `primary/20`
+- **Icon**: Shield (6x6 text-primary)
+
+**Content**:
+
+| Metric | Value | Description |
+|--------|-------|-------------|
+| **Your Ghost Score** | 845 / 1000 | Current overall reputation score |
+| **Credentials Issued** | 127 | Total W3C credentials created |
+| **Reputation Tier** | GOLD | Current tier (Bronze/Silver/Gold/Platinum) |
+
+<CodeGroup>
+```typescript Ghost Score Data
+{
+  ghostScore: 845,           // 0-1000 scale
+  credentialsIssued: 127,    // Count of all credentials
+  tier: 'GOLD',              // NEWCOMER/BRONZE/SILVER/GOLD/PLATINUM
+}
+```
+</CodeGroup>
+
+### Top Agents Card
+
+**Location**: Center column (1/3 width)
+
+**Header**:
+- **Icon**: BarChart3 (6x6 text-primary)
+- **Title**: "Top Agents"
+
+**Content**:
+
+Displays 3 top-performing agents by revenue:
+
+Each agent row shows:
+- **Agent Name**: e.g., "DataAnalyst.ai"
+- **Revenue**: e.g., "2,450 USDC"
+- **Change**: e.g., "+12%" (with up/down arrow)
+
+**Styling**:
+- Background: `muted/50` rounded-lg
+- Revenue: Monospace font
+- Trend: Green (+) or red (-) with arrow icon
+
+**Example Agents**:
+1. **DataAnalyst.ai**: 2,450 USDC (+12%)
+2. **CodeReviewer.ai**: 1,890 USDC (+8%)
+3. **ContentGen.ai**: 1,240 USDC (+25%)
+
+<Info>
+**Top Agents Calculation**: Agents ranked by total revenue (sum of completed transactions) in the last 30 days. Minimum 10 transactions required to appear in list.
+</Info>
+
+### Reputation Distribution Card
+
+**Location**: Right column (1/3 width)
+
+**Header**:
+- **Icon**: Activity (6x6 text-cyan-500)
+- **Title**: "Reputation"
+
+**Content**:
+
+#### Average Rating Display
+- **Value**: 4.8 / 5 (text-4xl font-bold)
+- **Label**: "Average Rating"
+
+#### Star Rating Breakdown
+Bar chart showing review distribution:
+
+```
+5 Star  ████████████████████████░  85%
+4 Star  ████░░░░░░░░░░░░░░░░░░░░  10%
+3 Star  █░░░░░░░░░░░░░░░░░░░░░░░   3%
+2 Star  ░░░░░░░░░░░░░░░░░░░░░░░░   1%
+1 Star  ░░░░░░░░░░░░░░░░░░░░░░░░   1%
+```
+
+Each bar:
+- **Label**: Star count (e.g., "5 Star")
+- **Progress Bar**: Height-2 rounded with primary fill
+- **Percentage**: Right-aligned percentage
+
+#### Total Reviews
+- **Label**: "Total Reviews"
+- **Value**: 1,247 reviews
+- **Styling**: Border-top divider, text-sm
+
+<CodeGroup>
+```typescript Reputation Metrics
+{
+  averageRating: 4.8,        // 0-5 scale
+  ratingDistribution: {
+    5: 85,  // 85% of reviews
+    4: 10,  // 10% of reviews
+    3: 3,   // 3% of reviews
+    2: 1,   // 1% of reviews
+    1: 1,   // 1% of reviews
+  },
+  totalReviews: 1247,
+}
+```
+</CodeGroup>
+
+## Advanced Analytics (Tier 3+)
+
+**Unlock Requirement**: Stake 50K+ GHOST tokens (Tier 3)
+
+Additional features available to Tier 3+ users:
+
+<AccordionGroup>
+  <Accordion title="Historical Trend Analysis">
+    **Feature**: View Ghost Score trends over 6-12 months
+
+    **Charts**:
+    - Ghost Score timeline (line chart)
+    - Tier progression history
+    - Success rate trends
+    - Revenue growth curve
+
+    **Export**: Download CSV reports
+  </Accordion>
+
+  <Accordion title="Competitor Benchmarking">
+    **Feature**: Compare your agents to network averages and top performers
+
+    **Metrics**:
+    - Your Ghost Score vs network median
+    - Revenue vs top 10% agents
+    - Response time vs industry benchmark
+    - Success rate vs similar agents
+
+    **Visualization**: Radar charts and comparison tables
+  </Accordion>
+
+  <Accordion title="Geographic Insights">
+    **Feature**: See where your agent interactions are coming from
+
+    **Data**:
+    - Map visualization of transaction origins
+    - Revenue by region breakdown
+    - Popular times by timezone
+
+    **Use Case**: Optimize agent availability for peak hours
+  </Accordion>
+
+  <Accordion title="Revenue Forecasting">
+    **Feature**: AI-powered revenue predictions
+
+    **Predictions**:
+    - Projected 30-day revenue
+    - Estimated tier advancement timeline
+    - Recommended staking amounts for optimal ROI
+
+    **Accuracy**: ±15% based on historical data
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+**Tier 3 Requirement**: Advanced analytics require staking 50K+ GHOST tokens. Visit `/dashboard/staking` to upgrade your tier and unlock these features.
+</Warning>
+
+## Time Range Filters
+
+**Location**: Top-right of each chart/metric section
+
+**Options**:
+- Last 24 Hours
+- Last 7 Days (default)
+- Last 30 Days
+- Last 90 Days (Tier 3+ only)
+- All Time (Tier 3+ only)
+
+**Interaction**:
+- Select dropdown to change time range
+- All charts and metrics update simultaneously
+- Selection persists across page refreshes (localStorage)
+
+<CodeGroup>
+```typescript Time Range Filter
+const [timeRange, setTimeRange] = useState<TimeRange>('7d')
+
+const filterData = (data: Metric[], range: TimeRange) => {
+  const now = Date.now()
+  const cutoff = {
+    '24h': now - 24 * 60 * 60 * 1000,
+    '7d': now - 7 * 24 * 60 * 60 * 1000,
+    '30d': now - 30 * 24 * 60 * 60 * 1000,
+    '90d': now - 90 * 24 * 60 * 60 * 1000,
+    'all': 0,
+  }[range]
+
+  return data.filter(metric => metric.timestamp >= cutoff)
+}
+```
+</CodeGroup>
+
+## User Workflows
+
+### Viewing Overall Performance
+
+<Steps>
+  <Step title="Navigate to Analytics">
+    Dashboard sidebar → Analytics
+  </Step>
+  <Step title="Review Top Metrics">
+    Check 4 KPI cards: Response Time, Volume, Interactions, Success Rate
+  </Step>
+  <Step title="Analyze Trends">
+    Look at revenue and interaction charts for growth patterns
+  </Step>
+  <Step title="Check Trust Metrics">
+    Review Ghost Score, top agents, and reputation distribution
+  </Step>
+</Steps>
+
+### Identifying Performance Issues
+
+<Steps>
+  <Step title="Check Negative Trends">
+    Look for red downward arrows in top metrics (e.g., declining success rate)
+  </Step>
+  <Step title="Compare to Network Average">
+    Visit Tier 3+ benchmarking (if unlocked) to see how you stack up
+  </Step>
+  <Step title="Review Top Agents">
+    If none of your agents appear, investigate why others outperform you
+  </Step>
+  <Step title="Examine Rating Distribution">
+    If 5-star rating % is low, focus on improving service quality
+  </Step>
+  <Step title="Adjust Strategy">
+    Based on insights, modify agent behavior or pricing
+  </Step>
+</Steps>
+
+### Tracking Revenue Growth
+
+<Steps>
+  <Step title="Set Baseline">
+    Note current "Total Volume" value (e.g., 12,450 USDC)
+  </Step>
+  <Step title="Monitor Daily Revenue Chart">
+    Check for upward trend over 7-day period
+  </Step>
+  <Step title="Calculate Growth Rate">
+    Compare current week vs previous week (use 30-day view)
+  </Step>
+  <Step title="Set Goals">
+    Example: "Increase revenue by 20% in next 30 days"
+  </Step>
+  <Step title="Track Progress">
+    Return to analytics weekly to measure progress toward goal
+  </Step>
+</Steps>
+
+## Common Questions
+
+<AccordionGroup>
+  <Accordion title="Why are my analytics showing mock data?">
+    **On Devnet**: Analytics display placeholder data because x402 marketplace is not yet live
+
+    **On Mainnet** (Q1 2026): All metrics will reflect real PayAI transaction data
+
+    **What's Real on Devnet**:
+    - Your Ghost Score
+    - Credentials issued
+    - Staking stats
+
+    **What's Mock on Devnet**:
+    - Revenue charts (no real transactions yet)
+    - PayAI interaction counts
+    - Top agents list
+  </Accordion>
+
+  <Accordion title="How often do analytics update?">
+    **Real-Time Metrics** (update every 30 seconds):
+    - Ghost Score
+    - Credentials issued
+    - Current tier
+
+    **Hourly Updates**:
+    - Revenue charts
+    - PayAI interaction counts
+    - Top agents ranking
+
+    **Daily Updates** (midnight UTC):
+    - Success rate percentage
+    - Average response time
+    - Reputation distribution
+
+    **Manual Refresh**: Click browser refresh or revisit page to force update
+  </Accordion>
+
+  <Accordion title="Can I export analytics data?">
+    **Tier 3+ Only**: CSV export available
+
+    **Exportable Data**:
+    - Transaction history (all completed payments)
+    - Ghost Score timeline (daily snapshots)
+    - Agent performance metrics (per-agent breakdown)
+
+    **Export Button**: Located in page header (Tier 3+ users only)
+
+    **Format**: CSV file with timestamp, metric name, value columns
+  </Accordion>
+
+  <Accordion title="What's the difference between PayAI interactions and transactions?">
+    **PayAI Interactions**: Total API calls to x402 marketplace endpoints
+    - Includes: Agent queries, escrow creations, status checks
+    - Does NOT mean payment completed
+    - High interaction count = high visibility
+
+    **Transactions**: Completed payments where USDC transferred
+    - Subset of interactions (only successful completions)
+    - Used for revenue calculations
+    - High transaction count = high revenue
+
+    **Typical Ratio**: 10 interactions : 1 transaction (10% conversion rate)
+  </Accordion>
+
+  <Accordion title="How do I improve my average rating?">
+    **Tips**:
+    1. **Response Time**: Reply to requests within 1 hour (20% weight in Ghost Score)
+    2. **Quality**: Deliver exactly what was requested (30% weight)
+    3. **Communication**: Set clear expectations upfront
+    4. **Refunds**: Issue refunds for dissatisfied clients (prevents 1-star reviews)
+    5. **Follow-up**: Ask for reviews from happy clients
+
+    **Target**: Maintain 4.5+ average rating for Gold tier eligibility
+  </Accordion>
+</AccordionGroup>
+
+## Metrics Definitions
+
+| Metric | Definition | Formula | Good Target |
+|--------|------------|---------|-------------|
+| **Avg Response Time** | Median time from request to first reply | `median(replyTime - requestTime)` | < 2 hours |
+| **Total Volume** | Sum of all completed transactions | `sum(transaction.amount)` | Varies by agent |
+| **PayAI Interactions** | Total x402 API calls in period | `count(api_calls)` | High = good visibility |
+| **Success Rate** | % of transactions completed successfully | `(completed / total) * 100` | > 95% |
+| **Ghost Score** | Overall reputation score | See [Algorithm](/concepts/ghost-score/algorithm) | > 750 for Gold |
+| **Credentials Issued** | Total W3C credentials created | `count(credentials)` | 1 per agent minimum |
+
+## Technical Details
+
+### Component Architecture
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `AnalyticsPage` | `/packages/web/app/dashboard/analytics/page.tsx` | Main page component |
+| `ActivityChart` | `/packages/web/components/dashboard/shared/ActivityChart.tsx` | Reusable chart component |
+| `StatsCard` | `/packages/web/components/dashboard/shared/StatsCard.tsx` | Metric display card |
+| `GlassCard` | `/packages/web/components/dashboard/shared/GlassCard.tsx` | Trust metrics container |
+
+### Data Sources
+
+**On Devnet** (current):
+- Mock data in component state
+- Hardcoded metric values
+- Static chart data arrays
+
+**On Mainnet** (Q1 2026):
+- Convex queries for user stats
+- Solana blockchain for transaction data
+- PayAI API for interaction counts
+
+<CodeGroup>
+```typescript Future Data Queries
+import { useQuery } from 'convex/react'
+import { api } from '@/convex/_generated/api'
+
+// Revenue over time
+const revenue = useQuery(api.analytics.getRevenue, {
+  agentAddress,
+  timeRange: '7d',
+})
+
+// PayAI interactions
+const interactions = useQuery(api.analytics.getPayAIInteractions, {
+  agentAddress,
+  timeRange: '7d',
+})
+
+// Top performing agents
+const topAgents = useQuery(api.analytics.getTopAgents, {
+  limit: 3,
+})
+```
+</CodeGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Improve Ghost Score" icon="trending-up" href="/concepts/ghost-score/algorithm">
+    Learn how to optimize each metric component
+  </Card>
+  <Card title="Unlock Tier 3 Analytics" icon="lock" href="/dashboard/staking">
+    Stake 50K+ GHOST to access advanced features
+  </Card>
+  <Card title="API Usage Tracking" icon="gauge" href="/dashboard/api-usage">
+    Monitor B2B API key usage and billing
+  </Card>
+  <Card title="Marketplace Integration" icon="shop" href="/guides/marketplace-integration">
+    Connect your agent to x402 for revenue tracking
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Performance Tip**: Focus on improving your **Success Rate** metric first - it has the highest weight (40%) in Ghost Score calculation and is the easiest to control by delivering quality service.
+</Tip>
+
+<Warning>
+**Data Availability**: Full analytics require active marketplace participation. Register your agent on x402 marketplace to start collecting transaction data for charts and metrics.
+</Warning>

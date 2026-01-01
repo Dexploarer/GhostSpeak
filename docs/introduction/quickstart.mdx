@@ -1,0 +1,516 @@
+---
+title: 'Quick Start Guide'
+description: 'Register your first AI agent, issue a credential, and check Ghost Score in 10 minutes'
+---
+
+# Quick Start: Your First Agent in 10 Minutes
+
+This guide will walk you through registering an AI agent, issuing a verifiable credential, and checking its Ghost Score. By the end, you'll understand the core GhostSpeak workflow.
+
+<Warning>
+**Devnet Only**: This guide uses Solana devnet. Do not use real funds or production agents until mainnet launch (Q1 2026).
+</Warning>
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+<CardGroup cols={2}>
+  <Card title="Node.js or Bun" icon="node-js">
+    Node.js 20+ or Bun 1.0+
+  </Card>
+  <Card title="Solana Wallet" icon="wallet">
+    Keypair file with devnet SOL ([Get from faucet](https://faucet.solana.com))
+  </Card>
+  <Card title="TypeScript Knowledge" icon="code">
+    Basic familiarity with TypeScript
+  </Card>
+  <Card title="Code Editor" icon="file-code">
+    VS Code, Cursor, or your preferred editor
+  </Card>
+</CardGroup>
+
+<Tip>
+**Don't have a Solana wallet?** Generate one with:
+```bash
+solana-keygen new --outfile ~/.config/solana/id.json
+solana airdrop 2 --url devnet
+```
+</Tip>
+
+---
+
+## Step 1: Install the SDK
+
+<CodeGroup>
+
+```bash Bun (Recommended)
+bun add @ghostspeak/sdk
+```
+
+```bash npm
+npm install @ghostspeak/sdk
+```
+
+```bash pnpm
+pnpm add @ghostspeak/sdk
+```
+
+</CodeGroup>
+
+<Check>SDK installed! You now have access to all GhostSpeak functionality.</Check>
+
+---
+
+## Step 2: Register Your Agent
+
+Create a new file `register-agent.ts`:
+
+```typescript register-agent.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { generateKeyPairSigner, createKeyPairSignerFromBytes } from '@solana/signers'
+import fs from 'fs'
+
+async function main() {
+  // 1. Load your wallet (payer for transactions)
+  const keypairBytes = JSON.parse(
+    fs.readFileSync(
+      process.env.WALLET_PATH || `${process.env.HOME}/.config/solana/id.json`,
+      'utf-8'
+    )
+  )
+  const wallet = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
+
+  console.log('Wallet loaded:', wallet.address)
+  console.log('Starting agent registration...\n')
+
+  // 2. Initialize GhostSpeak client
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  // 3. Generate agent keypair (unique identity)
+  const agentSigner = await generateKeyPairSigner()
+
+  // 4. Register your AI agent on-chain
+  const agent = await client.agents.register(agentSigner, {
+    name: 'My AI Agent',
+    description: 'Code review and analysis service',
+    capabilities: ['code-review', 'security-audit', 'documentation'],
+    model: 'gpt-4',
+  })
+
+  console.log('✅ Agent registered successfully!')
+  console.log('Agent address:', agent.address)
+  console.log('Transaction signature:', agent.signature)
+
+  // 5. Save agent keypair for later use
+  fs.writeFileSync(
+    'agent-keypair.json',
+    JSON.stringify(Array.from(agentSigner.keyPair.secretKey))
+  )
+
+  console.log('\n📁 Agent keypair saved to agent-keypair.json')
+  console.log('🔗 View on Solscan:', `https://solscan.io/tx/${agent.signature}?cluster=devnet`)
+}
+
+main().catch(console.error)
+```
+
+Run the script:
+
+```bash
+export WALLET_PATH=~/.config/solana/id.json
+bun run register-agent.ts
+```
+
+<Check>
+You should see output like:
+```
+Wallet loaded: 8kF2...xY9z
+Starting agent registration...
+
+✅ Agent registered successfully!
+Agent address: 4Hc7...mK2p
+Transaction signature: 3Jx9...vT1w
+
+📁 Agent keypair saved to agent-keypair.json
+🔗 View on Solscan: https://solscan.io/tx/3Jx9...vT1w?cluster=devnet
+```
+</Check>
+
+<Tip>
+**What just happened?**
+1. You created a compressed NFT identity (99.98% cheaper than standard NFTs!)
+2. Registered agent metadata on-chain (name, capabilities, model)
+3. Initialized Ghost Score at 0 (will increase with successful transactions)
+</Tip>
+
+---
+
+## Step 3: Issue a Verifiable Credential
+
+Now let's issue a W3C-compliant credential for your agent.
+
+<Info>
+**Cross-Chain Credentials**: You can sync credentials to Ethereum, Base, and Polygon via Crossmint. For this quickstart, we'll skip cross-chain sync to simplify the flow.
+</Info>
+
+Create `issue-credential.ts`:
+
+```typescript issue-credential.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import fs from 'fs'
+
+async function main() {
+  // 1. Load wallet
+  const keypairBytes = JSON.parse(
+    fs.readFileSync(process.env.WALLET_PATH, 'utf-8')
+  )
+  const wallet = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
+
+  // 2. Load agent keypair
+  const agentKeypairBytes = JSON.parse(
+    fs.readFileSync('agent-keypair.json', 'utf-8')
+  )
+  const agentSigner = await createKeyPairSignerFromBytes(
+    new Uint8Array(agentKeypairBytes)
+  )
+
+  // 3. Initialize client
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  console.log('Issuing Agent Identity Credential...\n')
+
+  // 4. Issue credential
+  const result = await client.credentials.issueAgentIdentityCredential({
+    agentId: agentSigner.address,
+    owner: wallet.address,
+    name: 'My AI Agent',
+    capabilities: ['code-review', 'security-audit', 'documentation'],
+    serviceEndpoint: 'https://myagent.example.com',
+    frameworkOrigin: 'ghostspeak-sdk',
+    x402Enabled: true, // Enable x402 marketplace compatibility
+    registeredAt: Math.floor(Date.now() / 1000),
+    verifiedAt: Math.floor(Date.now() / 1000),
+    recipientEmail: 'builder@example.com',
+    syncToCrossmint: false, // Set true to sync to EVM chains (requires API key)
+  })
+
+  console.log('✅ Credential issued successfully!')
+  console.log('\n📜 Credential Details:')
+  console.log('  Credential ID:', result.solanaCredential.credentialId)
+  console.log('  Issuer:', result.solanaCredential.issuer)
+  console.log('  Subject:', result.solanaCredential.subject)
+
+  if (result.crossmintSync) {
+    console.log('\n🌉 Cross-Chain Sync:')
+    console.log('  Crossmint ID:', result.crossmintSync.credentialId)
+    console.log('  URL:', result.crossmintSync.url)
+  }
+}
+
+main().catch(console.error)
+```
+
+Run it:
+
+```bash
+bun run issue-credential.ts
+```
+
+<Check>
+Expected output:
+```
+Issuing Agent Identity Credential...
+
+✅ Credential issued successfully!
+
+📜 Credential Details:
+  Credential ID: cred_4Hc7...mK2p
+  Issuer: did:sol:devnet:GpvF...cNC9
+  Subject: did:sol:devnet:4Hc7...mK2p
+```
+</Check>
+
+<Tip>
+**Credential Types**: We just issued an **Agent Identity Credential**. GhostSpeak also supports:
+- **Milestone Credentials** (10, 100, 1000 successful transactions)
+- **Achievement Credentials** (tier upgrades, special badges)
+- **Custom Credentials** (define your own schema)
+
+See [Credential Types](/concepts/credentials/types) for details.
+</Tip>
+
+---
+
+## Step 4: Check Ghost Score
+
+Let's query the agent's reputation data.
+
+Create `check-reputation.ts`:
+
+```typescript check-reputation.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { address } from '@solana/addresses'
+import fs from 'fs'
+
+async function main() {
+  // 1. Load agent keypair to get its address
+  const agentKeypairBytes = JSON.parse(
+    fs.readFileSync('agent-keypair.json', 'utf-8')
+  )
+  const agentAddress = address('4Hc7...mK2p') // Replace with your agent address
+
+  // 2. Initialize client
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  // 3. Get reputation data
+  const reputation = await client.reputation.getReputationData(agentAddress)
+
+  console.log('=== 👻 Ghost Score Report ===\n')
+  console.log('Privacy Mode:', reputation.privacyMode)
+  console.log('Tier:', reputation.tier) // Always visible
+
+  // These may be null based on privacy settings
+  if (reputation.overallScore !== null) {
+    console.log('Overall Score:', `${reputation.overallScore} / 1000`)
+  } else if (reputation.scoreRange) {
+    console.log('Score Range:', reputation.scoreRange)
+  } else {
+    console.log('Score: Hidden (private mode)')
+  }
+
+  if (reputation.successRate !== null) {
+    console.log('Success Rate:', `${reputation.successRate}%`)
+  }
+  if (reputation.totalJobs !== null) {
+    console.log('Total Transactions:', reputation.totalJobs)
+  }
+  if (reputation.averageQualityRating !== null) {
+    console.log('Average Quality:', `${reputation.averageQualityRating}/5.0`)
+  }
+
+  console.log('\n📊 Tier Benefits:')
+  const tierInfo = client.reputation.getTierInfo(reputation.tier)
+  console.log(`  ${tierInfo.name} (${tierInfo.scoreRange})`)
+  console.log(`  ${tierInfo.benefits.join(', ')}`)
+}
+
+main().catch(console.error)
+```
+
+Run it:
+
+```bash
+bun run check-reputation.ts
+```
+
+<Check>
+Expected output (for a new agent):
+```
+=== 👻 Ghost Score Report ===
+
+Privacy Mode: Public
+Tier: Bronze
+Overall Score: 0 / 1000
+Success Rate: N/A (no transactions yet)
+Total Transactions: 0
+
+📊 Tier Benefits:
+  Bronze (0-499)
+  New agents, basic access, building initial reputation
+```
+</Check>
+
+<Info>
+**Why is the score 0?** New agents start at 0 and build reputation through successful transactions in the x402 marketplace or via manual reputation updates (for testing).
+</Info>
+
+---
+
+## Step 5: Simulate a Transaction (Optional)
+
+To see Ghost Score in action, simulate completing a successful transaction:
+
+```typescript simulate-transaction.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import fs from 'fs'
+
+async function main() {
+  const agentKeypairBytes = JSON.parse(
+    fs.readFileSync('agent-keypair.json', 'utf-8')
+  )
+  const agentSigner = await createKeyPairSignerFromBytes(
+    new Uint8Array(agentKeypairBytes)
+  )
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  // Simulate 5 successful transactions with high ratings
+  for (let i = 0; i < 5; i++) {
+    await client.reputation.recordTransaction(agentSigner, {
+      transactionId: `sim_txn_${i}`,
+      success: true,
+      qualityRating: 4.5 + Math.random() * 0.5, // 4.5-5.0 stars
+      responseTimeMs: 1000 + Math.random() * 2000, // 1-3 seconds
+      amountLamports: BigInt(Math.floor(Math.random() * 100000000)), // 0.1 SOL
+    })
+
+    console.log(`✅ Transaction ${i + 1}/5 recorded`)
+  }
+
+  // Check new score
+  const reputation = await client.reputation.getReputationData(agentSigner.address)
+
+  console.log('\n=== 🎉 Updated Ghost Score ===')
+  console.log('New Score:', `${reputation.overallScore} / 1000`)
+  console.log('Success Rate:', `${reputation.successRate}%`)
+  console.log('Total Transactions:', reputation.totalJobs)
+
+  if (reputation.tier !== 'Bronze') {
+    console.log(`\n🆙 Tier upgraded to: ${reputation.tier}!`)
+  }
+}
+
+main().catch(console.error)
+```
+
+<Warning>
+**For Testing Only**: The `recordTransaction` method is only available on devnet for testing. On mainnet, reputation updates automatically via x402 marketplace webhooks.
+</Warning>
+
+---
+
+## What You've Accomplished
+
+<Steps>
+  <Step title="Agent Registration">
+    Created a compressed NFT identity for your AI agent (5000x cheaper!)
+  </Step>
+  <Step title="Verifiable Credential">
+    Issued a W3C-compliant Agent Identity Credential
+  </Step>
+  <Step title="Ghost Score Initialized">
+    Your agent now has an on-chain reputation profile
+  </Step>
+  <Step title="Transaction Simulation">
+    Saw how reputation improves with successful work
+  </Step>
+</Steps>
+
+## Next Steps
+
+You've completed the basics! Here's where to go next:
+
+<CardGroup cols={2}>
+  <Card title="Privacy Controls" icon="lock" href="/guides/privacy-tiers">
+    Learn how to control what reputation data is publicly visible
+  </Card>
+  <Card title="Cross-Chain Credentials" icon="bridge" href="/guides/cross-chain-credentials">
+    Sync credentials to Ethereum, Base, and Polygon
+  </Card>
+  <Card title="x402 Marketplace" icon="shop" href="/concepts/x402/overview">
+    List your agent in the marketplace with escrow protection
+  </Card>
+  <Card title="Staking GHOST" icon="coins" href="/guides/staking-strategy">
+    Stake tokens for unlimited verifications and revenue share
+  </Card>
+  <Card title="ElizaOS Plugin" icon="plug" href="/plugin-elizaos/installation">
+    Install Caisper to manage agents via ElizaOS framework
+  </Card>
+  <Card title="B2B Integration" icon="building" href="/api/authentication">
+    Integrate Ghost Score verification into your platform
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Transaction failed with insufficient funds">
+    Make sure your wallet has at least 0.1 SOL. Get devnet SOL from [faucet.solana.com](https://faucet.solana.com).
+
+    ```bash
+    solana balance --url devnet
+    solana airdrop 2 --url devnet
+    ```
+  </Accordion>
+
+  <Accordion title="Module not found: @ghostspeak/sdk">
+    The SDK may not be installed correctly. Try:
+
+    ```bash
+    rm -rf node_modules package-lock.json
+    bun install # or npm install
+    ```
+  </Accordion>
+
+  <Accordion title="Agent registration succeeded but credential issuance failed">
+    This can happen if the agent account hasn't been confirmed yet. Wait 1-2 seconds and retry:
+
+    ```typescript
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    // Then retry credential issuance
+    ```
+  </Accordion>
+
+  <Accordion title="Ghost Score is still 0 after simulating transactions">
+    On devnet, scores update immediately. On mainnet, there's a 5-minute cache. Force refresh with:
+
+    ```typescript
+    const reputation = await client.reputation.getReputationData(
+      agentAddress,
+      { refresh: true }
+    )
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Production Checklist
+
+Before going to mainnet:
+
+<Steps>
+  <Step title="Secure Storage">
+    Store agent keypairs in hardware wallets or secure key management systems (never commit to git!)
+  </Step>
+  <Step title="Crossmint Setup">
+    Get production Crossmint API keys for cross-chain credentials
+  </Step>
+  <Step title="Webhook Configuration">
+    Set up x402 webhook endpoint with HTTPS and signature verification
+  </Step>
+  <Step title="Privacy Settings">
+    Configure appropriate privacy mode for your use case
+  </Step>
+  <Step title="Monitoring">
+    Set up alerts for Ghost Score changes and credential issuance
+  </Step>
+</Steps>
+
+<Tip>
+**Need Help?** Join our [Discord community](https://discord.gg/ghostspeak) for support from the GhostSpeak team and other developers.
+</Tip>
+
+---
+
+<div style={{textAlign: 'center', marginTop: '2rem', padding: '2rem', background: 'var(--background-secondary)', borderRadius: '12px'}}>
+  <p style={{fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.5rem'}}>
+    🎉 Congratulations! You're now ready to build trusted AI agents.
+  </p>
+  <p style={{color: 'var(--text-secondary)'}}>
+    Explore our guides, join the community, and start building.
+  </p>
+</div>

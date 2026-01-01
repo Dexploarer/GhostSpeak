@@ -1,0 +1,564 @@
+---
+title: 'Configuration'
+description: 'Configure environment variables, wallet setup, and Crossmint bridge for Caisper'
+icon: 'gear'
+---
+
+## Environment Variables
+
+Caisper uses environment variables for sensitive configuration. Create a `.env` file in your ElizaOS project root:
+
+```bash filename=".env"
+# ============================================
+# Solana Configuration (Required)
+# ============================================
+
+# Network: devnet, testnet, or mainnet-beta
+SOLANA_CLUSTER=devnet
+
+# RPC endpoint (optional - uses public RPC if not set)
+SOLANA_RPC_URL=https://api.devnet.solana.com
+
+# Agent wallet private key (base58, hex, or JSON array format)
+AGENT_WALLET_PRIVATE_KEY=your-base58-private-key-here
+
+# ============================================
+# Crossmint Configuration (Optional)
+# ============================================
+
+# Required for EVM credential bridging
+CROSSMINT_SECRET_KEY=your-crossmint-api-key
+
+# Reputation credential template ID
+CROSSMINT_REPUTATION_TEMPLATE_ID=your-template-id
+
+# Environment: staging or production
+CROSSMINT_ENV=staging
+
+# Target EVM chain (default: base-sepolia)
+CROSSMINT_CHAIN=base-sepolia
+
+# ============================================
+# PayAI Configuration (Optional)
+# ============================================
+
+# Webhook secret for payment verification
+PAYAI_WEBHOOK_SECRET=your-webhook-secret
+
+# PayAI facilitator URL (default: https://facilitator.payai.network)
+PAYAI_FACILITATOR_URL=https://facilitator.payai.network
+
+# ============================================
+# ElizaOS Cloud (Optional)
+# ============================================
+
+# ElizaOS Cloud API key (if using cloud deployment)
+ELIZAOS_CLOUD_API_KEY=your-api-key
+ELIZAOS_CLOUD_API_URL=https://api.elizacloud.ai
+```
+
+<Warning>
+  Never commit `.env` files to version control! Add `.env` to your `.gitignore`:
+
+  ```bash
+  echo ".env" >> .gitignore
+  ```
+</Warning>
+
+## Wallet Configuration
+
+### Wallet Formats
+
+Caisper accepts private keys in three formats:
+
+<Tabs>
+  <Tab title="Base58 (Recommended)">
+    ```bash
+    # Export from Solana CLI
+    solana-keygen pubkey ~/.config/solana/id.json
+
+    # Get base58 private key (use carefully!)
+    cat ~/.config/solana/id.json | jq -r '.[:32] | @base64d | @base58'
+    ```
+
+    ```bash filename=".env"
+    AGENT_WALLET_PRIVATE_KEY=5J7Z9Xk2V...base58string...
+    ```
+
+    <Check>
+      Base58 is the most compact and readable format.
+    </Check>
+  </Tab>
+
+  <Tab title="Hex String">
+    ```bash
+    # Convert JSON keypair to hex
+    cat ~/.config/solana/id.json | jq -r '.[0:32] | map(tostring) | join("")'
+    ```
+
+    ```bash filename=".env"
+    AGENT_WALLET_PRIVATE_KEY=0x1a2b3c4d...hexstring...
+    ```
+  </Tab>
+
+  <Tab title="JSON Array">
+    ```bash
+    # Use Solana CLI keypair directly
+    cat ~/.config/solana/id.json
+    ```
+
+    ```bash filename=".env"
+    AGENT_WALLET_PRIVATE_KEY=[123,45,67,89,...]
+    ```
+
+    <Info>
+      JSON array format is convenient but longer. Use for development only.
+    </Info>
+  </Tab>
+</Tabs>
+
+### Generate New Wallet
+
+```bash
+# Generate new keypair for your agent
+solana-keygen new --outfile ~/.config/solana/ghostspeak-agent.json
+
+# Fund wallet on devnet
+solana airdrop 1 $(solana-keygen pubkey ~/.config/solana/ghostspeak-agent.json) --url devnet
+
+# Get public address
+solana-keygen pubkey ~/.config/solana/ghostspeak-agent.json
+```
+
+### Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use Separate Wallets" icon="users">
+    Don't reuse your personal wallet for agents:
+
+    ```bash
+    # Personal wallet (keep private)
+    ~/.config/solana/id.json
+
+    # Agent wallet (separate, funded minimally)
+    ~/.config/solana/ghostspeak-agent.json
+    ```
+  </Accordion>
+
+  <Accordion title="Minimal Funding" icon="coins">
+    Only fund agent wallets with what they need:
+
+    | Network | Recommended Balance | Use Case |
+    |---------|---------------------|----------|
+    | Devnet | 0.5 SOL | Testing and development |
+    | Testnet | 0.1 SOL | Staging |
+    | Mainnet | 0.01-0.05 SOL | Production (register + credentials) |
+
+    ```bash
+    # Check balance
+    solana balance ~/.config/solana/ghostspeak-agent.json --url devnet
+    ```
+  </Accordion>
+
+  <Accordion title="Rotate Keys Regularly" icon="rotate">
+    For production agents, rotate keys periodically:
+
+    ```bash
+    # Generate new keypair
+    solana-keygen new --outfile ~/.config/solana/ghostspeak-agent-new.json
+
+    # Transfer SOL to new wallet
+    solana transfer NEW_ADDRESS 0.01 \
+      --from ~/.config/solana/ghostspeak-agent.json \
+      --url devnet
+
+    # Update .env with new key
+    # Update agent registration if needed
+    ```
+  </Accordion>
+
+  <Accordion title="Use Secret Management" icon="lock">
+    For production deployments, use secret managers:
+
+    <Tabs>
+      <Tab title="Railway">
+        ```bash
+        # Add secrets to Railway project
+        railway variables set AGENT_WALLET_PRIVATE_KEY=your-key
+        railway variables set CROSSMINT_SECRET_KEY=your-key
+        ```
+      </Tab>
+      <Tab title="Vercel">
+        ```bash
+        # Add environment variables in Vercel dashboard
+        # Settings → Environment Variables
+        # Or use Vercel CLI
+        vercel env add AGENT_WALLET_PRIVATE_KEY
+        ```
+      </Tab>
+      <Tab title="Docker">
+        ```yaml filename="docker-compose.yml"
+        services:
+          agent:
+            image: my-eliza-agent
+            env_file:
+              - .env.production
+            secrets:
+              - agent_wallet_key
+
+        secrets:
+          agent_wallet_key:
+            file: ./secrets/agent_wallet.txt
+        ```
+      </Tab>
+    </Tabs>
+  </Accordion>
+</AccordionGroup>
+
+## Network Configuration
+
+### Choosing a Network
+
+<Tabs>
+  <Tab title="Devnet (Development)">
+    ```bash filename=".env"
+    SOLANA_CLUSTER=devnet
+    SOLANA_RPC_URL=https://api.devnet.solana.com
+    ```
+
+    <Info>
+      **Use devnet for:**
+      - Testing and development
+      - Learning GhostSpeak
+      - CI/CD pipelines
+      - Free SOL from faucet
+    </Info>
+
+    ```bash
+    # Get devnet SOL
+    solana airdrop 1 YOUR_ADDRESS --url devnet
+    ```
+  </Tab>
+
+  <Tab title="Testnet (Staging)">
+    ```bash filename=".env"
+    SOLANA_CLUSTER=testnet
+    SOLANA_RPC_URL=https://api.testnet.solana.com
+    ```
+
+    <Warning>
+      Testnet is less stable than devnet. Use for final staging only.
+    </Warning>
+  </Tab>
+
+  <Tab title="Mainnet (Production)">
+    ```bash filename=".env"
+    SOLANA_CLUSTER=mainnet-beta
+    SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+    ```
+
+    <Warning>
+      **Production checklist:**
+      - ✅ Test thoroughly on devnet first
+      - ✅ Use premium RPC endpoint (not public)
+      - ✅ Fund wallet with real SOL
+      - ✅ Implement error monitoring
+      - ✅ Set up key rotation
+    </Warning>
+  </Tab>
+</Tabs>
+
+### RPC Endpoint Configuration
+
+Public RPCs are rate-limited. For production, use premium providers:
+
+<CardGroup cols={2}>
+  <Card title="Helius" href="https://helius.dev">
+    ```bash
+    SOLANA_RPC_URL=https://mainnet.helius-rpc.com/?api-key=YOUR_KEY
+    ```
+
+    Free tier: 100k requests/day
+  </Card>
+
+  <Card title="QuickNode" href="https://quicknode.com">
+    ```bash
+    SOLANA_RPC_URL=https://YOUR_ENDPOINT.solana-mainnet.quiknode.pro/YOUR_KEY/
+    ```
+
+    Free tier: 500k requests/month
+  </Card>
+
+  <Card title="Triton" href="https://triton.one">
+    ```bash
+    SOLANA_RPC_URL=https://YOUR_ENDPOINT.rpcpool.com/YOUR_KEY
+    ```
+
+    Premium features: geyser, historical data
+  </Card>
+
+  <Card title="GenesysGo" href="https://genesysgo.com">
+    ```bash
+    SOLANA_RPC_URL=https://ssc-dao.genesysgo.net
+    ```
+
+    Community-run, reliable
+  </Card>
+</CardGroup>
+
+## Crossmint Configuration
+
+[Crossmint](https://crossmint.com) enables bridging Solana credentials to EVM chains.
+
+### Setup Crossmint
+
+<Steps>
+  <Step title="Create Crossmint Account">
+    1. Visit [https://crossmint.com](https://crossmint.com)
+    2. Sign up for developer account
+    3. Create new project
+  </Step>
+
+  <Step title="Get API Key">
+    ```bash
+    # Navigate to: Dashboard → API Keys
+    # Copy "Secret Key" (starts with cm_secret_...)
+    ```
+
+    ```bash filename=".env"
+    CROSSMINT_SECRET_KEY=cm_secret_abc123...
+    ```
+  </Step>
+
+  <Step title="Create Credential Template">
+    Create reputation credential template in Crossmint dashboard:
+
+    ```json filename="reputation-credential-template.json"
+    {
+      "@context": ["https://www.w3.org/2018/credentials/v1"],
+      "type": ["VerifiableCredential", "ReputationCredential"],
+      "credentialSubject": {
+        "agent": "{{agent}}",
+        "reputationScore": "{{reputationScore}}",
+        "totalJobsCompleted": "{{totalJobsCompleted}}",
+        "successRate": "{{successRate}}"
+      }
+    }
+    ```
+
+    Copy template ID to `.env`:
+
+    ```bash
+    CROSSMINT_REPUTATION_TEMPLATE_ID=tmpl_abc123xyz
+    ```
+  </Step>
+
+  <Step title="Choose Environment & Chain">
+    ```bash filename=".env"
+    # Use staging for testing
+    CROSSMINT_ENV=staging
+    CROSSMINT_CHAIN=base-sepolia
+
+    # Use production for mainnet
+    # CROSSMINT_ENV=production
+    # CROSSMINT_CHAIN=base
+    ```
+
+    Supported chains:
+    - `base-sepolia` (testnet)
+    - `base` (mainnet)
+    - `polygon-amoy` (testnet)
+    - `polygon` (mainnet)
+    - `arbitrum-sepolia` (testnet)
+    - `arbitrum` (mainnet)
+  </Step>
+</Steps>
+
+### Test Crossmint Integration
+
+```typescript
+// In ElizaOS chat:
+> issue reputation credential for YOUR_AGENT_ADDRESS crossmint
+
+// Should return:
+// ✅ Credential issued successfully!
+// **Crossmint ID**: vc_xyz123
+// **EVM Status**: pending
+```
+
+<Info>
+  Crossmint credentials take 1-5 minutes to propagate to EVM chains. Check status with `GET /api/credentials/{id}`.
+</Info>
+
+## PayAI Configuration
+
+[PayAI](https://payai.network) enables x402 payment protocol for AI services.
+
+### Setup PayAI
+
+<Steps>
+  <Step title="Register Agent Endpoint">
+    Register your agent with PayAI facilitator:
+
+    ```bash
+    curl -X POST https://facilitator.payai.network/api/agents/register \
+      -H "Content-Type: application/json" \
+      -d '{
+        "agent_id": "YOUR_SOLANA_ADDRESS",
+        "endpoint": "https://your-agent.example.com",
+        "capabilities": ["code-review", "security-audit"],
+        "price_per_call": 1000000
+      }'
+    ```
+  </Step>
+
+  <Step title="Configure Webhook Secret">
+    PayAI sends webhooks for payments. Secure them with a secret:
+
+    ```bash filename=".env"
+    PAYAI_WEBHOOK_SECRET=your-webhook-secret-here
+    ```
+
+    ```typescript
+    // Webhook is auto-handled by PayAIPollingService
+    // Signature verification happens automatically
+    ```
+  </Step>
+
+  <Step title="Set Facilitator URL">
+    ```bash filename=".env"
+    # Use default facilitator (recommended)
+    PAYAI_FACILITATOR_URL=https://facilitator.payai.network
+
+    # Or use custom facilitator
+    # PAYAI_FACILITATOR_URL=https://your-facilitator.example.com
+    ```
+  </Step>
+</Steps>
+
+### Test PayAI Integration
+
+```bash
+# Check if your agent is discoverable
+curl https://facilitator.payai.network/api/agents/discover?capability=code-review
+
+# Should list your agent if registered
+```
+
+## Configuration Validation
+
+Caisper validates configuration on startup using [Zod](https://zod.dev):
+
+```typescript
+// Config schema (from plugin.ts)
+const configSchema = z.object({
+  AGENT_WALLET_PRIVATE_KEY: z.string().optional(),
+  CROSSMINT_SECRET_KEY: z.string().optional(),
+  CROSSMINT_REPUTATION_TEMPLATE_ID: z.string().optional(),
+  CROSSMINT_ENV: z.enum(['staging', 'production']).optional(),
+  CROSSMINT_CHAIN: z.string().optional().default('base-sepolia'),
+  PAYAI_WEBHOOK_SECRET: z.string().optional(),
+})
+```
+
+### Check Configuration
+
+```bash
+# Start ElizaOS with debug logs
+LOG_LEVEL=debug elizaos dev
+
+# Look for validation messages:
+# ✓ Configuration validated successfully
+# ✓ Wallet loaded: 7xKXt...9Gk
+# ✓ Connected to Solana devnet
+# ✓ Crossmint integration enabled
+```
+
+### Common Validation Errors
+
+<AccordionGroup>
+  <Accordion title="Invalid Wallet Key Format" icon="key">
+    **Error**: `Invalid plugin configuration: AGENT_WALLET_PRIVATE_KEY must be base58, hex, or JSON array`
+
+    **Fix**:
+    ```bash
+    # Verify key format
+    echo $AGENT_WALLET_PRIVATE_KEY | wc -c
+    # Base58: ~88 chars
+    # Hex: 64 chars (without 0x prefix)
+    # JSON: [1,2,3,...] format
+    ```
+  </Accordion>
+
+  <Accordion title="Missing Required Variables" icon="circle-exclamation">
+    **Error**: `Required environment variable not set`
+
+    **Fix**:
+    ```bash
+    # Check which variables are missing
+    grep -E "^[A-Z_]+=" .env
+
+    # Ensure at minimum:
+    # - AGENT_WALLET_PRIVATE_KEY
+    # - SOLANA_CLUSTER
+    ```
+  </Accordion>
+
+  <Accordion title="Crossmint Key Invalid" icon="shield">
+    **Error**: `Invalid Crossmint API key`
+
+    **Fix**:
+    - Verify key starts with `cm_secret_`
+    - Check key hasn't expired in dashboard
+    - Ensure environment matches (staging vs production)
+  </Accordion>
+</AccordionGroup>
+
+## Advanced Configuration
+
+### Custom Service Configuration
+
+Override service behavior in character file:
+
+```json filename="characters/custom-agent.character.json"
+{
+  "name": "Custom Agent",
+  "plugins": ["@ghostspeak/plugin-elizaos"],
+  "settings": {
+    "services": {
+      "payai-polling": {
+        "enabled": true,
+        "pollInterval": 300000, // 5 minutes (ms)
+        "batchSize": 50
+      }
+    }
+  }
+}
+```
+
+### Runtime Configuration Updates
+
+```typescript
+// Update config at runtime (advanced)
+const service = runtime.getService('payai-polling')
+await service.updateConfig({
+  pollInterval: 60000, // Change to 1 minute
+})
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Actions Reference" icon="bolt" href="/plugin-elizaos/actions">
+    Learn all available actions and how to use them
+  </Card>
+  <Card title="Services" icon="gears" href="/plugin-elizaos/services">
+    Understand background services and runtime configuration
+  </Card>
+  <Card title="Examples" icon="code" href="/plugin-elizaos/examples">
+    See complete agent workflows and use cases
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/resources/troubleshooting">
+    Common issues and solutions
+  </Card>
+</CardGroup>

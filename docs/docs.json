@@ -1,105 +1,287 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "name": "GhostSpeak",
+  "logo": {
+    "light": "/assets/ghostspeak-logo.png",
+    "dark": "/assets/ghostspeak-logo.png"
+  },
+  "favicon": "/assets/favicon.png",
   "theme": "maple",
   "colors": {
     "primary": "#ccff00",
-    "light": "#e5ff80",
-    "dark": "#1a1a1a"
+    "light": "#a3e635",
+    "dark": "#9fcc2e"
   },
-  "logo": {
-    "dark": "/assets/ghostspeak-logo.png",
-    "light": "/assets/ghostspeak-logo.png"
+  "topbarCtaButton": {
+    "type": "button",
+    "label": "Launch App",
+    "href": "https://ghostspeak.io/dashboard"
   },
-  "favicon": "/assets/ghostspeak-logo.png",
-  "navbar": {
-    "links": [
-      {
-        "label": "GitHub",
-        "href": "https://github.com/ghostspeak/ghostspeak"
-      },
-      {
-        "label": "Discord",
-        "href": "https://discord.gg/ghostspeak"
-      }
-    ],
-    "primary": {
-      "type": "github",
-      "href": "https://github.com/ghostspeak/ghostspeak"
+  "topbarLinks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/ghostspeak/ghostspeak"
+    },
+    {
+      "name": "Discord",
+      "url": "https://discord.gg/ghostspeak"
     }
-  },
-  "footer": {
-    "socials": {
-      "github": "https://github.com/ghostspeak/ghostspeak",
-      "discord": "https://discord.gg/ghostspeak",
-      "x": "https://twitter.com/ghostspeak"
+  ],
+  "anchors": [
+    {
+      "name": "SDK Reference",
+      "icon": "code",
+      "url": "sdk"
+    },
+    {
+      "name": "API Reference",
+      "icon": "square-terminal",
+      "url": "api"
+    },
+    {
+      "name": "Community",
+      "icon": "discord",
+      "url": "https://discord.gg/ghostspeak"
+    },
+    {
+      "name": "GitHub",
+      "icon": "github",
+      "url": "https://github.com/ghostspeak/ghostspeak"
     }
-  },
+  ],
   "navigation": {
-    "groups": [
+    "languages": [
       {
-        "group": "Getting Started",
-        "pages": [
-          "index",
-          "quickstart",
-          "installation"
-        ]
-      },
-      {
-        "group": "Core Concepts",
-        "pages": [
-          "concepts/architecture",
-          "concepts/security",
-          "tokenomics"
-        ]
-      },
-      {
-        "group": "SDK Reference",
-        "pages": [
-          "sdk/api-reference",
-          "sdk/agents",
-          "sdk/credentials",
-          "sdk/escrow",
-          "sdk/staking",
-          "sdk/disputes",
-          "sdk/reputation",
-          "sdk/auctions",
-          "sdk/work-orders",
-          "sdk/channels",
-          "sdk/marketplace",
-          "sdk/governance",
-          "sdk/token2022"
-        ]
-      },
-      {
-        "group": "X402 Payments",
-        "pages": [
-          "x402/overview",
-          "x402/examples",
-          "x402/migration",
-          "x402/integration",
-          "x402/discovery"
-        ]
-      },
-      {
-        "group": "Guides",
-        "pages": [
-          "guides/deployment",
-          "guides/governance",
-          "guides/testing",
-          "guides/verifiable-credentials",
-          "guides/linking",
-          "guides/web-dashboard"
-        ]
-      },
-      {
-        "group": "CLI",
-        "pages": [
-          "cli/overview",
-          "cli/commands",
-          "cli/credentials"
+        "language": "en",
+        "tabs": [
+          {
+            "tab": "Documentation",
+            "groups": [
+              {
+                "group": "Introduction",
+                "icon": "house",
+                "pages": [
+                  "introduction/index",
+                  "introduction/quickstart",
+                  "introduction/why-ghostspeak",
+                  "introduction/architecture-overview"
+                ]
+              },
+              {
+                "group": "Core Concepts",
+                "icon": "lightbulb",
+                "pages": [
+                  {
+                    "group": "Verifiable Credentials",
+                    "pages": [
+                      "concepts/credentials/overview",
+                      "concepts/credentials/types",
+                      "concepts/credentials/cross-chain"
+                    ]
+                  },
+                  {
+                    "group": "Ghost Score",
+                    "pages": [
+                      "concepts/ghost-score/algorithm",
+                      "concepts/ghost-score/tiers",
+                      "concepts/ghost-score/privacy"
+                    ]
+                  },
+                  {
+                    "group": "x402 Marketplace",
+                    "pages": [
+                      "concepts/x402/overview",
+                      "concepts/x402/escrow",
+                      "concepts/x402/disputes",
+                      "concepts/x402/reputation"
+                    ]
+                  },
+                  {
+                    "group": "Tokenomics",
+                    "pages": [
+                      "concepts/tokenomics/overview",
+                      "concepts/tokenomics/staking",
+                      "concepts/tokenomics/payments"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "SDK Documentation",
+                "icon": "code",
+                "pages": [
+                  "sdk/installation",
+                  "sdk/agents",
+                  "sdk/credentials",
+                  "sdk/reputation",
+                  "sdk/privacy",
+                  "sdk/staking",
+                  {
+                    "group": "x402 Integration",
+                    "pages": [
+                      "sdk/x402/marketplace",
+                      "sdk/x402/escrow",
+                      "sdk/x402/disputes"
+                    ]
+                  },
+                  {
+                    "group": "Advanced",
+                    "pages": [
+                      "sdk/advanced/webhooks",
+                      "sdk/advanced/batch-operations"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "ElizaOS Plugin",
+                "icon": "plug",
+                "pages": [
+                  "plugin-elizaos/overview",
+                  "plugin-elizaos/installation",
+                  "plugin-elizaos/configuration",
+                  "plugin-elizaos/actions",
+                  "plugin-elizaos/services",
+                  "plugin-elizaos/examples"
+                ]
+              },
+              {
+                "group": "CLI Documentation",
+                "icon": "terminal",
+                "pages": [
+                  "cli/installation",
+                  "cli/authentication",
+                  "cli/agent-commands",
+                  "cli/credential-commands",
+                  "cli/reputation-commands",
+                  "cli/staking-commands"
+                ]
+              },
+              {
+                "group": "Web Dashboard",
+                "icon": "browser",
+                "pages": [
+                  "dashboard/overview",
+                  "dashboard/ghost-score",
+                  "dashboard/credentials",
+                  "dashboard/privacy",
+                  "dashboard/staking",
+                  "dashboard/api-keys",
+                  "dashboard/analytics"
+                ]
+              },
+              {
+                "group": "Guides & Tutorials",
+                "icon": "book",
+                "pages": [
+                  "guides/first-agent",
+                  "guides/privacy-tiers",
+                  "guides/staking-strategy",
+                  "guides/cross-chain-credentials",
+                  "guides/marketplace-integration",
+                  "guides/white-label",
+                  "guides/testing",
+                  "guides/production-deployment"
+                ]
+              },
+              {
+                "group": "Reference",
+                "icon": "book-open",
+                "pages": [
+                  "reference/smart-contracts",
+                  "reference/network-info",
+                  "reference/error-codes",
+                  "reference/changelog",
+                  "reference/migration-guides"
+                ]
+              },
+              {
+                "group": "Resources",
+                "icon": "circle-info",
+                "pages": [
+                  "resources/faq",
+                  "resources/troubleshooting",
+                  "resources/community",
+                  "resources/brand-assets",
+                  "resources/security"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API Reference",
+            "groups": [
+              {
+                "group": "B2B API",
+                "icon": "square-terminal",
+                "pages": [
+                  "api/authentication",
+                  "api/rate-limits",
+                  {
+                    "group": "Endpoints",
+                    "pages": [
+                      "api/endpoints/agents",
+                      "api/endpoints/reputation",
+                      "api/endpoints/credentials",
+                      "api/endpoints/webhooks"
+                    ]
+                  },
+                  "api/playground"
+                ]
+              }
+            ]
+          }
         ]
       }
     ]
+  },
+  "footerSocials": {
+    "twitter": "https://twitter.com/ghostspeak",
+    "discord": "https://discord.gg/ghostspeak",
+    "github": "https://github.com/ghostspeak/ghostspeak",
+    "website": "https://ghostspeak.io"
+  },
+  "api": {
+    "playground": {
+      "mode": "interactive"
+    },
+    "auth": {
+      "method": "bearer"
+    }
+  },
+  "analytics": {
+    "ga4": {
+      "measurementId": "G-XXXXXXXXXX"
+    },
+    "posthog": {
+      "apiKey": "phc_XXXXXXXXXX"
+    }
+  },
+  "feedback": {
+    "thumbsRating": true,
+    "suggestEdit": true,
+    "raiseIssue": true
+  },
+  "search": {
+    "prompt": "Search GhostSpeak documentation..."
+  },
+  "metadata": {
+    "og:site_name": "GhostSpeak Documentation",
+    "og:type": "website",
+    "og:image": "/assets/og-image.png",
+    "twitter:site": "@ghostspeak"
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "cursor"
+    ]
+  },
+  "styling": {
+    "breadcrumbs": true,
+    "navigationStyle": "nested"
   }
 }

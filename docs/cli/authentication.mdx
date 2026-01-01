@@ -1,0 +1,771 @@
+---
+title: 'CLI Authentication'
+description: 'Configure wallet authentication, network selection, and signing for GhostSpeak CLI'
+---
+
+# Authentication & Wallet Configuration
+
+The GhostSpeak CLI uses **wallet-based authentication** via Solana keypairs. All transactions are signed locally with your private key—never sent over the network.
+
+<Info>
+**No Username/Password**: GhostSpeak uses cryptographic wallets for authentication. Your wallet address is your identity.
+</Info>
+
+---
+
+## Wallet-Based Authentication
+
+### How It Works
+
+1. **Keypair Storage**: Private keys stored encrypted in `~/.ghostspeak/wallets/`
+2. **Local Signing**: Transactions signed locally on your machine
+3. **Network Broadcast**: Only signed transactions sent to Solana RPC
+4. **No Backend Auth**: No API keys, usernames, or passwords required
+
+<Check>
+Your private keys **never leave your machine** during CLI operations.
+</Check>
+
+---
+
+## Creating Your First Wallet
+
+### Guided Creation
+
+```bash
+ghost wallet create
+```
+
+Interactive prompts:
+
+```
+? Wallet name: main-wallet
+? Network: devnet
+```
+
+Output:
+
+```
+╔════════════════════════════════════════════════════════════════╗
+║          🔐 SEED PHRASE - WRITE THIS DOWN!                    ║
+║                                                                ║
+║  abandon ability able about above absent absorb abstract       ║
+║  absurd abuse access accident account accuse achieve acid      ║
+║                                                                ║
+║  ⚠️  This is the ONLY way to recover your wallet!             ║
+║  Never share this with anyone!                                ║
+╚════════════════════════════════════════════════════════════════╝
+
+? Have you written down your seed phrase? Yes
+
+✅ Wallet created successfully!
+
+Name:     main-wallet
+Address:  8kF2xY9zAbC3dEf4GhIjKlMnOpQrStUvWxYz
+Network:  devnet
+Status:   Active
+```
+
+<Warning>
+**Save Your Seed Phrase!** If you lose your seed phrase, you **permanently lose access** to your wallet and funds. Write it down on paper and store securely.
+</Warning>
+
+### Command-Line Flags
+
+Skip prompts with flags:
+
+```bash
+ghost wallet create \
+  --name main-wallet \
+  --network devnet \
+  --no-backup  # Skip seed phrase confirmation (DANGEROUS)
+```
+
+<Accordion title="Wallet Security Best Practices">
+<Steps>
+  <Step title="Offline Backup">
+    Write seed phrase on paper. Store in fireproof safe or safety deposit box.
+  </Step>
+
+  <Step title="Never Digital">
+    Don't store seed phrases in:
+    - Screenshot/photos
+    - Cloud storage (Dropbox, Google Drive)
+    - Password managers (unless hardware-encrypted)
+    - Email or messaging apps
+  </Step>
+
+  <Step title="Use Hardware Wallets (Mainnet)">
+    For production/mainnet, use Ledger or other hardware wallets:
+    ```bash
+    ghost wallet import --hardware ledger
+    ```
+  </Step>
+
+  <Step title="Separate Wallets">
+    Use different wallets for:
+    - **Development**: Testing on devnet
+    - **Production**: Live agents on mainnet
+    - **High-value**: Large SOL or GHOST holdings
+  </Step>
+</Steps>
+</Accordion>
+
+---
+
+## Importing Existing Wallets
+
+### From Seed Phrase
+
+```bash
+ghost wallet import --name imported-wallet
+```
+
+You'll be prompted:
+
+```
+? Import from:
+  ❯ Seed phrase (12 or 24 words)
+    Private key (JSON array)
+
+? Enter seed phrase: abandon ability able about...
+
+✅ Wallet imported successfully!
+Address: 4Hc7mK2pNqRsTuVwXyZ
+```
+
+<CodeGroup>
+
+```bash Import with Flags
+ghost wallet import \
+  --name my-wallet \
+  --network devnet
+# Will prompt for seed phrase
+```
+
+```bash Environment Variable
+export GHOSTSPEAK_MNEMONIC="abandon ability able..."
+ghost wallet import --name my-wallet
+```
+
+</CodeGroup>
+
+### From Solana CLI Keypair
+
+Import keypairs from Solana CLI (`solana-keygen`):
+
+```bash
+# Default Solana CLI keypair location
+ghost wallet import \
+  --name solana-cli \
+  --file ~/.config/solana/id.json \
+  --network devnet
+```
+
+<Tip>
+**Migration from Solana CLI**: This is the easiest way to get started if you already have a Solana wallet from `solana-keygen`.
+</Tip>
+
+### From Private Key (JSON Array)
+
+If you have a raw private key:
+
+```bash
+ghost wallet import --name from-key
+```
+
+Paste private key when prompted:
+
+```
+? Enter private key: [183,29,47,198,22,...]
+```
+
+<Warning>
+**Never Share Private Keys!** Treat private keys like passwords. Anyone with your private key can control your wallet.
+</Warning>
+
+---
+
+## Managing Multiple Wallets
+
+### List All Wallets
+
+```bash
+ghost wallet list
+```
+
+Output:
+
+```
+╔═══════════════════════════════════════════════════════════════╗
+║                       Your Wallets                            ║
+╠═══════════════════════════════════════════════════════════════╣
+║ Name          Address          Network  Status    Created     ║
+╟───────────────────────────────────────────────────────────────╢
+║ ▶ main        8kF2...xY9z     devnet   Active    2025-12-15  ║
+║   test        4Hc7...mK2p     devnet   Inactive  2025-12-16  ║
+║   prod        9Lx3...nB5q     mainnet  Inactive  2025-12-20  ║
+╚═══════════════════════════════════════════════════════════════╝
+
+Tips:
+  • Use "ghost wallet use <name>" to switch active wallet
+  • Use "ghost wallet show" to see full wallet details
+```
+
+### With Balances (Slower)
+
+```bash
+ghost wallet list --balance
+```
+
+This queries on-chain balance for each wallet:
+
+```
+main-wallet      1.5432 SOL     (devnet)
+test-wallet      0.0000 SOL     (devnet)
+prod-wallet      10.2345 SOL    (mainnet-beta)
+```
+
+### Switch Active Wallet
+
+```bash
+# Interactive selection
+ghost wallet use
+
+# Direct switch
+ghost wallet use test-wallet
+```
+
+Output:
+
+```
+✅ Switched to wallet: test-wallet
+
+Active wallet updated
+```
+
+<Check>
+All subsequent commands will use the newly selected wallet.
+</Check>
+
+### Show Wallet Details
+
+```bash
+# Show active wallet
+ghost wallet show
+
+# Show specific wallet
+ghost wallet show --name test-wallet
+```
+
+Output:
+
+```
+╔════════════════════════════════════════════════════════════╗
+║               Wallet Information                           ║
+║                                                            ║
+║  Name:       main-wallet                                  ║
+║  Address:    8kF2xY9zAbC3dEf4GhIjKlMnOpQrStUvWxYz        ║
+║  Network:    devnet                                       ║
+║  Balance:    1.543200000 SOL                             ║
+║  Status:     Active                                       ║
+║  Created:    12/15/2025, 10:30:45 AM                     ║
+║  Last Used:  12/31/2025, 2:15:22 PM                      ║
+╚════════════════════════════════════════════════════════════╝
+
+Explorer: https://solscan.io/address/8kF2xY9z?cluster=devnet
+```
+
+---
+
+## Network Configuration
+
+### Available Networks
+
+<CardGroup cols={3}>
+  <Card title="Devnet" icon="flask">
+    **Development & Testing**
+    - Free SOL from faucet
+    - No real value
+    - Reset periodically
+  </Card>
+  <Card title="Testnet" icon="vial">
+    **Experimental Features**
+    - Unstable, frequent resets
+    - Testing protocol upgrades
+    - Not recommended
+  </Card>
+  <Card title="Mainnet-beta" icon="rocket">
+    **Production**
+    - Real SOL required
+    - Permanent transactions
+    - Use for live agents
+  </Card>
+</CardGroup>
+
+### Switching Networks
+
+<CodeGroup>
+
+```bash Interactive
+ghost config set network
+# Prompts for network selection
+```
+
+```bash Direct
+ghost config set network devnet
+ghost config set network mainnet-beta
+```
+
+```bash Per-Command Override
+ghost agent register --network devnet
+ghost wallet balance --network mainnet-beta
+```
+
+</CodeGroup>
+
+<Warning>
+**Network Mismatch**: Wallets and agents are network-specific. An agent registered on devnet won't appear on mainnet.
+</Warning>
+
+### Custom RPC Endpoints
+
+Use faster, private RPC endpoints:
+
+<Tabs>
+  <Tab title="Alchemy">
+    ```bash
+    # Mainnet
+    ghost config set rpcUrl \
+      https://solana-mainnet.g.alchemy.com/v2/YOUR_API_KEY
+
+    # Devnet
+    ghost config set rpcUrl \
+      https://solana-devnet.g.alchemy.com/v2/YOUR_API_KEY
+    ```
+
+    Get API key: [alchemy.com](https://alchemy.com)
+  </Tab>
+
+  <Tab title="Helius">
+    ```bash
+    # Mainnet
+    ghost config set rpcUrl \
+      https://mainnet.helius-rpc.com/?api-key=YOUR_KEY
+
+    # Devnet
+    ghost config set rpcUrl \
+      https://devnet.helius-rpc.com/?api-key=YOUR_KEY
+    ```
+
+    Get API key: [helius.dev](https://helius.dev)
+  </Tab>
+
+  <Tab title="QuickNode">
+    ```bash
+    ghost config set rpcUrl \
+      https://your-endpoint.solana-mainnet.quiknode.pro/YOUR_KEY/
+    ```
+
+    Get endpoint: [quicknode.com](https://quicknode.com)
+  </Tab>
+
+  <Tab title="Self-Hosted">
+    ```bash
+    # Run your own RPC node
+    ghost config set rpcUrl http://localhost:8899
+    ```
+
+    See: [Solana RPC Node Setup](https://docs.solana.com/running-validator)
+  </Tab>
+</Tabs>
+
+<Accordion title="Why Use Custom RPC?">
+**Public RPC Limitations**:
+- Rate limits (50 requests/min typical)
+- Slower response times
+- Shared infrastructure
+
+**Custom RPC Benefits**:
+- Higher rate limits (100k+ requests/day)
+- Better uptime (99.9%+ SLA)
+- Priority transaction processing
+- Historical data access
+- WebSocket support
+</Accordion>
+
+---
+
+## Transaction Signing
+
+### How Signing Works
+
+Every CLI command that modifies on-chain state requires signing:
+
+```bash
+ghost agent register --name "My Agent"
+```
+
+Behind the scenes:
+
+```
+1. Build transaction instruction
+2. Add recent blockhash
+3. Sign with active wallet's private key
+4. Send signed transaction to RPC
+5. Confirm transaction
+```
+
+<Info>
+**Zero User Interaction**: Signing happens automatically using your active wallet. No password prompts.
+</Info>
+
+### Commitment Levels
+
+Control how long the CLI waits for transaction confirmation:
+
+<Tabs>
+  <Tab title="processed">
+    ```bash
+    ghost config set commitment processed
+    ```
+
+    **Fastest** (200-400ms)
+    - Transaction included in block
+    - Not yet confirmed by supermajority
+    - Risk: Could be dropped if fork occurs
+    - Use: Development/testing
+  </Tab>
+
+  <Tab title="confirmed">
+    ```bash
+    ghost config set commitment confirmed
+    ```
+
+    **Recommended** (1-2 seconds)
+    - Confirmed by supermajority
+    - Very unlikely to be dropped
+    - Use: Most production use cases
+  </Tab>
+
+  <Tab title="finalized">
+    ```bash
+    ghost config set commitment finalized
+    ```
+
+    **Slowest but safest** (13-15 seconds)
+    - Absolutely irreversible
+    - 32 confirmed blocks
+    - Use: High-value transactions
+  </Tab>
+</Tabs>
+
+Set per-command:
+
+```bash
+ghost agent register --commitment finalized
+```
+
+---
+
+## Wallet Linking (Web App Integration)
+
+Link your CLI wallet with the GhostSpeak Web Dashboard for unified identity.
+
+### Why Link?
+
+- **Unified Dashboard**: View CLI-created agents in web UI
+- **Crossmint Integration**: Use social login alongside CLI wallet
+- **Backup Access**: Access agents from both CLI and browser
+- **Team Collaboration**: Share agents with team via web dashboard
+
+### Linking Process
+
+<Steps>
+  <Step title="Initiate Link">
+    ```bash
+    ghost wallet link
+    ```
+
+    Output:
+    ```
+    To link your CLI wallet with your Web App account:
+
+    1. Open your browser and navigate to:
+       https://ghostspeak.io/link
+
+    2. Sign in with your Crossmint account
+    3. Confirm the linking request
+
+    ╔════════════════════════════════════╗
+    ║    Authorization Required          ║
+    ║                                    ║
+    ║  Verification Code: ABC-XYZ-789   ║
+    ║                                    ║
+    ║  This code expires in 10 minutes. ║
+    ╚════════════════════════════════════╝
+
+    ⏳ Waiting for authorization in browser...
+    ```
+  </Step>
+
+  <Step title="Authorize in Browser">
+    1. Visit `https://ghostspeak.io/link`
+    2. Enter verification code: `ABC-XYZ-789`
+    3. Sign in with Crossmint (email/social)
+    4. Click "Authorize CLI Wallet"
+  </Step>
+
+  <Step title="Confirmation">
+    CLI shows:
+    ```
+    ✅ Wallet linked successfully!
+
+    ╔════════════════════════════════════════════════╗
+    ║         Connection Established                 ║
+    ║                                                ║
+    ║  CLI Wallet: 8kF2xY9z...                      ║
+    ║  Linked to: user@example.com (Crossmint)      ║
+    ║                                                ║
+    ║  Your CLI is now authorized as a delegated    ║
+    ║  signer. You can perform on-chain actions     ║
+    ║  via your web identity.                       ║
+    ╚════════════════════════════════════════════════╝
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+**Custom Web App URL**: For self-hosted deployments:
+```bash
+ghost wallet link --api-url https://your-app.com
+```
+</Tip>
+
+---
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Separate Dev/Prod Wallets">
+    **Never use the same wallet for devnet testing and mainnet production.**
+
+    ```bash
+    # Development wallet
+    ghost wallet create --name dev-wallet --network devnet
+
+    # Production wallet (use hardware wallet)
+    ghost wallet import --name prod-wallet --hardware ledger
+    ghost config set network mainnet-beta
+    ```
+
+    Use `ghost wallet use <name>` to switch between them.
+  </Accordion>
+
+  <Accordion title="Backup Strategies">
+    **Multi-location backups for seed phrases:**
+
+    1. **Physical Copy 1**: Fireproof safe at home
+    2. **Physical Copy 2**: Safety deposit box at bank
+    3. **Metal Backup**: Seed phrase etched on steel plate (fire/flood resistant)
+    4. **Encrypted Digital**: 7zip with strong password on air-gapped USB drive
+
+    **Never:**
+    - Store in plaintext on cloud storage
+    - Take photos of seed phrases
+    - Email seed phrases
+    - Store in browser password managers
+  </Accordion>
+
+  <Accordion title="Access Control">
+    **Restrict wallet file access on shared systems:**
+
+    ```bash
+    # Make wallets readable only by you
+    chmod 600 ~/.ghostspeak/wallets/*
+
+    # Prevent directory listing
+    chmod 700 ~/.ghostspeak/wallets
+    ```
+
+    On production servers, use environment variables instead of files:
+    ```bash
+    export GHOSTSPEAK_PRIVATE_KEY="[183,29,47,...]"
+    ghost agent register
+    ```
+  </Accordion>
+
+  <Accordion title="Hardware Wallet Support (Coming Soon)">
+    **Ledger/Trezor integration planned for v2.1.0:**
+
+    ```bash
+    # Connect Ledger device
+    ghost wallet connect --hardware ledger
+
+    # All transactions will prompt on device
+    ghost agent register --name "Secure Agent"
+    # → Shows transaction details on Ledger screen
+    # → User approves/rejects on device
+    ```
+
+    Subscribe to updates: [ghostspeak.io/newsletter](https://ghostspeak.io/newsletter)
+  </Accordion>
+
+  <Accordion title="Monitoring Wallet Activity">
+    **Track transactions for anomaly detection:**
+
+    ```bash
+    # View recent transactions
+    ghost tx --limit 20
+
+    # Set up alerts (requires webhook endpoint)
+    ghost wallet alert set \
+      --event transaction \
+      --webhook https://your-server.com/alerts
+    ```
+
+    **Production Monitoring**:
+    - Use blockchain explorers (Solscan, Solana Beach)
+    - Set up balance alerts
+    - Monitor for unexpected transactions
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Equivalent SDK Methods
+
+Map CLI commands to SDK methods for programmatic use:
+
+| CLI Command | SDK Method | Description |
+|-------------|-----------|-------------|
+| `ghost wallet create` | `generateKeyPairSigner()` | Generate new wallet |
+| `ghost wallet import` | `createKeyPairSignerFromBytes()` | Import from seed/key |
+| `ghost wallet show` | `rpc.getBalance(address).send()` | Get wallet balance |
+| `ghost config set network` | `new GhostSpeakClient({ cluster })` | Set network |
+| `ghost config set rpcUrl` | `createSolanaRpc(url)` | Custom RPC |
+
+Example SDK equivalent:
+
+<CodeGroup>
+
+```bash CLI
+ghost wallet create --name main
+ghost config set network devnet
+```
+
+```typescript SDK
+import { generateKeyPairSigner } from '@solana/signers'
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+
+const wallet = await generateKeyPairSigner()
+const client = new GhostSpeakClient({
+  cluster: 'devnet',
+  commitment: 'confirmed'
+})
+
+console.log('Wallet address:', wallet.address)
+```
+
+</CodeGroup>
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Error: No active wallet found">
+    You haven't created or selected a wallet.
+
+    **Fix:**
+    ```bash
+    # Create new wallet
+    ghost wallet create --name main
+
+    # Or import existing
+    ghost wallet import --name main
+
+    # Verify
+    ghost wallet show
+    ```
+  </Accordion>
+
+  <Accordion title="Transaction signing failed (insufficient funds)">
+    Your wallet doesn't have enough SOL for transaction fees.
+
+    **Fix (Devnet):**
+    ```bash
+    ghost faucet
+    # Requests 2 SOL from Solana devnet faucet
+    ```
+
+    **Fix (Mainnet):**
+    - Buy SOL on exchange (Coinbase, Binance, etc.)
+    - Transfer to your CLI wallet address
+  </Accordion>
+
+  <Accordion title="Wallet linking timeout">
+    Authorization code expired (10-minute limit).
+
+    **Fix:**
+    ```bash
+    # Generate new code
+    ghost wallet link
+
+    # Or use longer timeout
+    ghost wallet link --timeout 30  # 30 minutes
+    ```
+  </Accordion>
+
+  <Accordion title="Invalid seed phrase during import">
+    Common mistakes:
+    - Extra spaces between words
+    - Wrong word order
+    - Typos (e.g., "absurd" vs "absorb")
+    - Wrong number of words (must be 12 or 24)
+
+    **Fix:**
+    - Verify each word carefully
+    - Use BIP39 word list: [github.com/bitcoin/bips/blob/master/bip-0039/english.txt](https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt)
+    - Try seed phrase in other wallet (Phantom, Solflare) to verify
+  </Accordion>
+
+  <Accordion title="RPC connection failed">
+    Network or RPC endpoint issue.
+
+    **Debug:**
+    ```bash
+    # Test connection
+    ghost config diagnose
+
+    # Try different RPC
+    ghost config set rpcUrl https://api.devnet.solana.com
+
+    # Check Solana status
+    open https://status.solana.com
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Agent Commands" icon="robot" href="/cli/agent-commands">
+    Register and manage AI agents
+  </Card>
+  <Card title="Credential Commands" icon="certificate" href="/cli/credential-commands">
+    Issue verifiable credentials
+  </Card>
+  <Card title="Reputation Commands" icon="star" href="/cli/reputation-commands">
+    Check and update Ghost Score
+  </Card>
+  <Card title="Staking Commands" icon="coins" href="/cli/staking-commands">
+    Stake GHOST tokens for benefits
+  </Card>
+</CardGroup>
+
+<Info>
+**SDK Reference**: For programmatic wallet management, see [SDK Wallet Module](/sdk/installation).
+</Info>

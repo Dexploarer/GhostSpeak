@@ -1,0 +1,105 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "GhostSpeak",
+  "theme": "maple",
+  "colors": {
+    "primary": "#ccff00",
+    "light": "#e5ff80",
+    "dark": "#1a1a1a"
+  },
+  "logo": {
+    "dark": "/assets/ghostspeak-logo.png",
+    "light": "/assets/ghostspeak-logo.png"
+  },
+  "favicon": "/assets/ghostspeak-logo.png",
+  "navbar": {
+    "links": [
+      {
+        "label": "GitHub",
+        "href": "https://github.com/ghostspeak/ghostspeak"
+      },
+      {
+        "label": "Discord",
+        "href": "https://discord.gg/ghostspeak"
+      }
+    ],
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/ghostspeak/ghostspeak"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/ghostspeak/ghostspeak",
+      "discord": "https://discord.gg/ghostspeak",
+      "x": "https://twitter.com/ghostspeak"
+    }
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": [
+          "index",
+          "quickstart",
+          "installation"
+        ]
+      },
+      {
+        "group": "Core Concepts",
+        "pages": [
+          "concepts/architecture",
+          "concepts/security",
+          "tokenomics"
+        ]
+      },
+      {
+        "group": "SDK Reference",
+        "pages": [
+          "sdk/api-reference",
+          "sdk/agents",
+          "sdk/credentials",
+          "sdk/escrow",
+          "sdk/staking",
+          "sdk/disputes",
+          "sdk/reputation",
+          "sdk/auctions",
+          "sdk/work-orders",
+          "sdk/channels",
+          "sdk/marketplace",
+          "sdk/governance",
+          "sdk/token2022"
+        ]
+      },
+      {
+        "group": "X402 Payments",
+        "pages": [
+          "x402/overview",
+          "x402/examples",
+          "x402/migration",
+          "x402/integration",
+          "x402/discovery"
+        ]
+      },
+      {
+        "group": "Guides",
+        "pages": [
+          "guides/deployment",
+          "guides/governance",
+          "guides/testing",
+          "guides/verifiable-credentials",
+          "guides/linking",
+          "guides/web-dashboard"
+        ]
+      },
+      {
+        "group": "CLI",
+        "pages": [
+          "cli/overview",
+          "cli/commands",
+          "cli/credentials"
+        ]
+      }
+    ]
+  }
+}

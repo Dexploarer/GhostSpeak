@@ -1,0 +1,361 @@
+---
+title: 'Dashboard Overview'
+description: 'Complete guide to navigating the GhostSpeak web dashboard at ghostspeak.io/dashboard'
+---
+
+# Dashboard Overview
+
+The GhostSpeak web dashboard provides a complete interface for managing your AI agents, credentials, reputation, and payments. Built with Next.js 15 and powered by Solana blockchain, it offers real-time insights into your agent ecosystem.
+
+<img
+  className="rounded-xl border border-gray-800"
+  src="/assets/screenshots/dashboard-overview.png"
+  alt="Dashboard Overview Screenshot"
+  noZoom
+/>
+**Screenshot: Dashboard overview page showing agent stats and activity**
+
+## Authentication
+
+### Connecting Your Wallet
+
+The dashboard uses Privy for authentication with support for multiple wallet types:
+
+<Steps>
+  <Step title="Click 'Connect Wallet'">
+    Located in the top-right corner of the navigation bar
+  </Step>
+  <Step title="Choose Authentication Method">
+    Options include:
+    - Solana wallets (Phantom, Solflare, Backpack)
+    - Email login (creates embedded Solana wallet)
+    - Social login (Google, Twitter, Discord)
+  </Step>
+  <Step title="Approve Connection">
+    For wallet extensions, approve the connection request in your wallet popup
+  </Step>
+  <Step title="Access Dashboard">
+    You'll be redirected to `/dashboard` with your wallet address displayed
+  </Step>
+</Steps>
+
+<Info>
+**Devnet Mode**: The dashboard currently operates on Solana Devnet. Your wallet address is displayed with a green "Devnet" badge in the header.
+</Info>
+
+## Dashboard Layout
+
+### Desktop Navigation (Sidebar)
+
+The left sidebar provides access to all dashboard sections:
+
+| Section | Icon | Purpose |
+|---------|------|---------|
+| **Dashboard** | Grid | Main overview and agent stats |
+| **My Agents** | Robot | Register and manage agents |
+| **Credentials** | Fingerprint | View and sync verifiable credentials |
+| **Ghost Score** | Crown | Subscription and verification history |
+| **Privacy** | Shield | Configure reputation visibility |
+| **Staking** | Lock | Stake GHOST tokens for benefits |
+| **API Keys** | Key | Generate B2B API credentials |
+| **Analytics** | BarChart | Usage metrics and performance |
+| **Settings** | Gear | Account preferences |
+
+### Mobile Navigation
+
+On mobile devices (< 768px width):
+
+<Steps>
+  <Step title="Tap Hamburger Menu">
+    Three-line icon in top-left corner opens mobile sidebar
+  </Step>
+  <Step title="Select Destination">
+    Tap any section from the slide-out menu
+  </Step>
+  <Step title="Menu Auto-Closes">
+    Sidebar automatically closes when navigating to a new page
+  </Step>
+</Steps>
+
+## Main Dashboard Features
+
+### Header Section
+
+The dashboard header displays:
+
+- **Page Title**: "Agent Dashboard"
+- **Network Badge**: Green "Devnet" indicator
+- **Wallet Address**: Truncated address (e.g., `ABC...XYZ`)
+- **Quick Actions**:
+  - "My Credentials" button → Links to `/dashboard/credentials`
+  - "Register Agent" button → Links to `/dashboard/agents`
+
+### User Activity Stats Card
+
+Powered by Convex real-time database, this card shows:
+
+- **Conversations**: Total AI agent interactions
+- **Favorites**: Saved agents
+- **Payments**: USDC transactions
+- **Last Activity**: Timestamp of most recent action
+
+<CodeGroup>
+```typescript Component Location
+// File: packages/web/components/convex/UserStatsCard.tsx
+// Uses Convex queries for real-time data
+```
+
+```typescript Data Source
+import { useQuery } from 'convex/react'
+import { api } from '@/convex/_generated/api'
+
+const userStats = useQuery(api.users.getCurrentUserStats)
+```
+</CodeGroup>
+
+### Agent Statistics Grid
+
+Four key metrics displayed in glass-morphism cards:
+
+<CardGroup cols={2}>
+  <Card title="My Agents" icon="robot">
+    Total registered agents with "Active" or "No agents" status
+  </Card>
+  <Card title="Active Agents" icon="activity">
+    Agents with reputation score > 0 and recent activity
+  </Card>
+  <Card title="Avg Reputation" icon="trending-up">
+    Average reputation score across all your agents (0-100 scale)
+  </Card>
+  <Card title="Credentials" icon="award">
+    Total verifiable credentials issued (synced + pending)
+  </Card>
+</CardGroup>
+
+### Activity Chart
+
+**Location**: Center-left section, below stats grid
+
+The activity chart visualizes agent activity over time:
+
+- **Default View**: Last 24 hours (7 data points every 4 hours)
+- **Time Filters**:
+  - Last 24 Hours
+  - Last 7 Days
+  - Last 30 Days
+- **Data Visualization**: Area chart with gradient fill
+- **Future Integration**: Will display PayAI payment events when x402 marketplace goes live
+
+<Info>
+**Mock Data Notice**: Currently displays placeholder data. Real-time PayAI event tracking coming in Q1 2026.
+</Info>
+
+### My Agents Panel
+
+**Location**: Right sidebar on desktop, bottom section on mobile
+
+Displays your 3 most recent agents with:
+
+- **Agent Avatar**: Green circle if reputation > 50, gray otherwise
+- **Agent Name**: Displays "Unnamed Agent" if no name set
+- **Reputation Score**: Formatted to 1 decimal place
+- **Agent Address**: Truncated format (first 6 + last 4 characters)
+- **"View All Agents" Button**: Links to `/dashboard/agents`
+
+## Navigation Patterns
+
+### Internal Links
+
+The dashboard uses Next.js `<Link>` components for instant client-side navigation:
+
+```typescript
+import Link from 'next/link'
+
+<Link href="/dashboard/credentials">
+  <Button variant="outline">
+    My Credentials
+  </Button>
+</Link>
+```
+
+### Button Styles
+
+Two primary button variants:
+
+| Variant | Use Case | Example |
+|---------|----------|---------|
+| `outline` | Secondary actions | "My Credentials", "View All Agents" |
+| `default` (primary) | Primary CTA | "Register Agent", "Stake GHOST" |
+
+### Responsive Breakpoints
+
+The dashboard uses Tailwind CSS breakpoints:
+
+- **Mobile**: `< 640px` - Stacked layouts, full-width cards
+- **Tablet**: `640px - 1024px` - 2-column grids
+- **Desktop**: `> 1024px` - 3-4 column grids, sidebar navigation
+
+## Real-Time Data Updates
+
+### Convex Integration
+
+The dashboard uses Convex for real-time data synchronization:
+
+<Steps>
+  <Step title="User Connects Wallet">
+    Privy authentication triggers Convex user sync
+  </Step>
+  <Step title="Queries Subscribe to Changes">
+    React Query hooks (`useQuery`, `useMutation`) automatically refetch on updates
+  </Step>
+  <Step title="UI Updates Instantly">
+    No manual refresh needed - changes propagate automatically
+  </Step>
+</Steps>
+
+### Blockchain Data Sync
+
+Solana blockchain data is fetched via custom React Query hooks:
+
+```typescript
+// packages/web/lib/queries/agents.ts
+export function useAgents() {
+  return useQuery({
+    queryKey: ['agents'],
+    queryFn: async () => {
+      const rpc = createSolanaRpc(rpcUrl)
+      // Fetch agents from blockchain
+    }
+  })
+}
+```
+
+<Warning>
+**Loading States**: All data fetching includes loading skeletons and error boundaries. If data fails to load, check your RPC connection in browser console.
+</Warning>
+
+## Quick Start Checklist
+
+<Steps>
+  <Step title="Connect Wallet">
+    Use Privy to authenticate with Solana wallet or email
+  </Step>
+  <Step title="Explore Dashboard">
+    Review the overview page to understand your current stats
+  </Step>
+  <Step title="Register Your First Agent">
+    Click "Register Agent" and complete the agent creation form
+  </Step>
+  <Step title="View Credentials">
+    Navigate to Credentials page to see auto-issued agent identity credential
+  </Step>
+  <Step title="Configure Privacy">
+    Go to Privacy page to control what reputation data is public
+  </Step>
+  <Step title="Check Ghost Score">
+    Visit Ghost Score page to see subscription details and verification history
+  </Step>
+</Steps>
+
+## Common Tasks
+
+<AccordionGroup>
+  <Accordion title="How do I register a new agent?">
+    1. Click "Register Agent" button in dashboard header
+    2. Fill out agent name and capabilities
+    3. Approve Solana transaction in wallet popup
+    4. Agent appears in "My Agents" panel within seconds
+  </Accordion>
+
+  <Accordion title="Why don't I see my agents?">
+    Possible causes:
+    - Wallet not connected (check top-right corner)
+    - RPC connection issue (check browser console for errors)
+    - Wrong network (ensure you're on Devnet, not Mainnet)
+    - No agents registered yet (click "Register Agent" to create one)
+  </Accordion>
+
+  <Accordion title="How do I switch between accounts?">
+    1. Click wallet address in top-right corner
+    2. Select "Disconnect" from Privy modal
+    3. Click "Connect Wallet" again
+    4. Choose different wallet or authentication method
+  </Accordion>
+
+  <Accordion title="What data is stored off-chain vs on-chain?">
+    **On-chain (Solana blockchain)**:
+    - Agent registration
+    - Verifiable credentials
+    - Reputation scores
+    - Staking transactions
+
+    **Off-chain (Convex database)**:
+    - User preferences
+    - Conversation history
+    - Favorites
+    - API keys (hashed)
+    - Ghost Score subscription data
+  </Accordion>
+</AccordionGroup>
+
+## Keyboard Shortcuts
+
+The dashboard supports keyboard navigation:
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl/Cmd + K` | Open global search (coming soon) |
+| `Esc` | Close any open modal or dialog |
+| `Tab` | Navigate between interactive elements |
+| `Enter` | Activate focused button or link |
+
+## Troubleshooting
+
+### Dashboard Won't Load
+
+<Steps>
+  <Step title="Check Wallet Connection">
+    Ensure your wallet extension is unlocked and connected
+  </Step>
+  <Step title="Verify Network">
+    Confirm you're on Solana Devnet in wallet settings
+  </Step>
+  <Step title="Clear Browser Cache">
+    Hard refresh with `Ctrl+Shift+R` or `Cmd+Shift+R`
+  </Step>
+  <Step title="Check Console Logs">
+    Open browser DevTools (F12) and look for error messages
+  </Step>
+</Steps>
+
+### Stats Showing "..." or Loading Forever
+
+This indicates a data fetching issue:
+
+1. **Check RPC Status**: Visit [status.solana.com](https://status.solana.com) for Devnet health
+2. **Inspect Network Tab**: Look for failed API calls in DevTools → Network
+3. **Verify Wallet Balance**: Ensure you have devnet SOL for transaction fees ([Get Devnet SOL](https://solfaucet.com))
+4. **Contact Support**: Join [Discord](https://discord.gg/ghostspeak) if issue persists
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Manage Credentials" icon="fingerprint" href="/dashboard/credentials">
+    View and sync your W3C verifiable credentials
+  </Card>
+  <Card title="Configure Privacy" icon="shield" href="/dashboard/privacy">
+    Control who can see your reputation data
+  </Card>
+  <Card title="Stake GHOST Tokens" icon="lock" href="/dashboard/staking">
+    Earn rewards and boost your agent reputation
+  </Card>
+  <Card title="Generate API Keys" icon="key" href="/dashboard/api-keys">
+    Create B2B API credentials for programmatic access
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Pro Tip**: Bookmark specific dashboard pages (e.g., `/dashboard/agents`) for quick access to your most-used features.
+</Tip>

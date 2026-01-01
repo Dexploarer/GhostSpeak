@@ -1,0 +1,475 @@
+---
+title: 'GHOST Token Staking'
+description: 'Stake GHOST tokens for unlimited access and earn USDC revenue share from protocol fees'
+---
+
+# GHOST Token Staking
+
+Stake **GHOST tokens** to unlock unlimited verifications and earn **USDC revenue share** from GhostSpeak protocol fees. This is a crypto-native alternative to traditional subscriptions.
+
+<Warning>
+**Honest Disclosure**: APY is variable and depends on actual protocol revenue. We do not promise fixed returns. What you earn is what the protocol earns.
+</Warning>
+
+---
+
+## Why Stake GHOST?
+
+<CardGroup cols={2}>
+  <Card title="Unlimited Verifications" icon="infinity">
+    No pay-per-check fees while staked
+  </Card>
+  <Card title="USDC Revenue Share" icon="dollar-sign">
+    Earn 10% of B2C fees + 100% of B2B overage
+  </Card>
+  <Card title="Multiplier Bonuses" icon="chart-line">
+    Stake more to earn higher revenue multipliers
+  </Card>
+  <Card title="No Lockup" icon="unlock">
+    Unstake anytime (lose access but keep rewards)
+  </Card>
+</CardGroup>
+
+---
+
+## Staking Tiers
+
+| Tier | GHOST Required | Benefits | Revenue Multiplier |
+|------|----------------|----------|-------------------|
+| **Verified Staker** | 5,000 GHOST (~$0.28) | Unlimited verifications | 1.5x |
+| **Pro Staker** | 50,000 GHOST (~$2.85) | + 100K API calls/month | 2.0x |
+| **Whale Staker** | 500,000 GHOST (~$28.46) | + Unlimited API calls | 3.0x |
+
+*Prices based on current market price: $0.00005691/GHOST*
+
+### Example Monthly Earnings
+
+**Scenario**: Protocol generates $100K in B2C fees in a month
+
+```typescript
+// Revenue share pool
+const b2cPool = $100,000 × 0.10 = $10,000 USDC
+
+// Your stake: 50,000 GHOST (Pro Staker, 2x multiplier)
+// Total staked across all users: 10,000,000 GHOST
+// Your effective stake: 50,000 × 2.0 = 100,000
+
+// Your share calculation
+const yourShare = ($10,000 × 100,000) / (10,000,000 effective total)
+                = $100 USDC
+
+// Monthly earnings: $100 USDC
+// Annualized: $1,200 USDC
+// Stake value: 50,000 GHOST × $0.00005691 = $2.85
+// APY: ($1,200 / $2.85) × 100 = 42,105%
+```
+
+<Warning>
+**Why is APY so high?** At current GHOST prices ($0.00005691), the token is severely undervalued relative to protocol utility. As GHOST price appreciates, APY will normalize to sustainable levels (10-30%).
+
+This is intentional: **early stakers benefit from token appreciation + revenue share**.
+</Warning>
+
+---
+
+## How Revenue Share Works
+
+GhostSpeak protocol fees are distributed to stakers:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Protocol Revenue Sources                                    │
+├─────────────────────────────────────────────────────────────┤
+│  1. B2C Pay-Per-Check (1 USDC/verification)                 │
+│     └─> 10% → Staker rewards pool                           │
+│                                                              │
+│  2. B2B API Overage Fees (0.01 USDC/request over quota)     │
+│     └─> 100% → Staker rewards pool                          │
+│                                                              │
+│  3. GHOST Burn Fees (75 GHOST burned per verification)      │
+│     └─> Deflationary (no distribution)                      │
+└─────────────────────────────────────────────────────────────┘
+
+                              │
+                              ▼
+                    ┌─────────────────────┐
+                    │  Rewards Pool (USDC) │
+                    └─────────────────────┘
+                              │
+                              ▼
+          ┌───────────────────────────────────────┐
+          │  Distributed to Stakers (Proportional) │
+          │  Based on: Stake × Multiplier          │
+          └───────────────────────────────────────┘
+                              │
+          ┌───────────────────┴───────────────────┐
+          ▼                                       ▼
+   Verified Staker                          Whale Staker
+   (1.5x multiplier)                        (3.0x multiplier)
+   Stake: 5K GHOST                          Stake: 500K GHOST
+   Effective: 7.5K                          Effective: 1.5M
+```
+
+### Distribution Formula
+
+```typescript
+// Calculate your USDC earnings
+function calculateRewards(
+  yourStake: number,        // GHOST tokens you staked
+  yourMultiplier: number,   // 1.5x, 2.0x, or 3.0x
+  totalEffectiveStake: number, // Sum of all (stake × multiplier)
+  rewardsPool: number       // Total USDC in rewards pool
+): number {
+  const yourEffectiveStake = yourStake × yourMultiplier
+  const yourShare = yourEffectiveStake / totalEffectiveStake
+  return rewardsPool × yourShare
+}
+
+// Example
+const rewards = calculateRewards(
+  50_000,      // Your stake
+  2.0,         // Pro Staker multiplier
+  10_000_000,  // Total effective stake
+  10_000       // $10K rewards pool
+)
+console.log('Monthly earnings:', rewards) // $100 USDC
+```
+
+---
+
+## Staking Instructions
+
+<Tabs>
+  <Tab title="Web Dashboard (Recommended)">
+    **Easiest method** - Stake via the GhostSpeak web interface:
+
+    <Steps>
+      <Step title="Connect Wallet">
+        Visit [ghostspeak.io/dashboard/staking](https://ghostspeak.io/dashboard/staking) and connect your Solana wallet
+      </Step>
+      <Step title="Buy GHOST (if needed)">
+        Purchase GHOST on [PumpSwap](https://pumpswap.io) or [DEXScreener](https://dexscreener.com/solana/e44xj7jyjxyermlqqwrpu4nekcphawfjf3ppn2uokgdb)
+      </Step>
+      <Step title="Choose Tier">
+        Select Verified (5K), Pro (50K), or Whale (500K) tier
+      </Step>
+      <Step title="Confirm Transaction">
+        Approve the transaction in your wallet (~0.0005 SOL fee)
+      </Step>
+      <Step title="Start Earning">
+        Rewards accrue daily, claim anytime
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="TypeScript SDK">
+    **Programmatic staking** for developers:
+
+    ```typescript
+    import { GhostSpeakClient } from '@ghostspeak/sdk'
+    import { createKeyPairSignerFromBytes } from '@solana/signers'
+    import fs from 'fs'
+
+    async function stakeGHOST() {
+      // Load wallet
+      const keypairBytes = JSON.parse(
+        fs.readFileSync(process.env.WALLET_PATH, 'utf-8')
+      )
+      const wallet = await createKeyPairSignerFromBytes(
+        new Uint8Array(keypairBytes)
+      )
+
+      // Initialize client
+      const client = new GhostSpeakClient({
+        cluster: 'devnet',
+        commitment: 'confirmed'
+      })
+
+      // Stake 5,000 GHOST (Verified Staker tier)
+      const result = await client.staking.stake({
+        amount: 5_000_000_000n, // 5K GHOST (6 decimals)
+      })
+
+      console.log('✅ Staked successfully!')
+      console.log('Transaction:', result.signature)
+      console.log('Tier:', result.tier) // "Verified Staker"
+      console.log('Multiplier:', result.multiplier) // 1.5x
+    }
+
+    stakeGHOST().catch(console.error)
+    ```
+  </Tab>
+  <Tab title="CLI">
+    **Command-line staking** for power users:
+
+    ```bash
+    # Install CLI
+    bun add -g @ghostspeak/cli
+
+    # Authenticate
+    ghostspeak auth --wallet ~/.config/solana/id.json
+
+    # Stake GHOST
+    ghostspeak staking stake --amount 5000 --network devnet
+
+    # Check staking status
+    ghostspeak staking status
+
+    # Claim rewards
+    ghostspeak staking claim
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Claiming Rewards
+
+Rewards accrue **daily** and can be claimed **anytime**:
+
+<CodeGroup>
+
+```typescript TypeScript SDK
+// Check pending rewards
+const rewards = await client.staking.getRewards()
+
+console.log('Pending USDC:', rewards.pending)
+console.log('Estimated monthly:', rewards.estimatedMonthly)
+console.log('Estimated APY:', `${rewards.estimatedAPY}%`)
+
+// Claim rewards
+const result = await client.staking.claimRewards()
+
+console.log('✅ Claimed:', result.usdcAmount, 'USDC')
+console.log('Transaction:', result.signature)
+```
+
+```bash CLI
+# Check rewards
+ghostspeak staking rewards
+
+# Output:
+# Pending Rewards: 12.45 USDC
+# Estimated Monthly: 98.32 USDC
+# Estimated APY: 41,250%
+#
+# Last Claim: 5 days ago
+
+# Claim rewards
+ghostspeak staking claim
+
+# Output:
+# ✅ Claimed 12.45 USDC
+# Transaction: 3Jx9...vT1w
+# Remaining Stake: 5,000 GHOST
+```
+
+</CodeGroup>
+
+<Tip>
+**Gas-Free Claims**: Reward claims cost ~0.0005 SOL in transaction fees. Claim regularly to avoid accumulating too much pending balance.
+</Tip>
+
+---
+
+## Unstaking
+
+Unstake **anytime** with no lockup period:
+
+```typescript
+// Unstake all GHOST
+const result = await client.staking.unstake({
+  amount: 'all' // Or specify amount: 1_000_000_000n for 1K GHOST
+})
+
+console.log('✅ Unstaked:', result.amountGHOST, 'GHOST')
+console.log('Transaction:', result.signature)
+
+// Consequences:
+// - Lose unlimited verification access
+// - Stop earning revenue share
+// - Keep all previously claimed USDC rewards
+// - GHOST tokens returned to wallet immediately
+```
+
+<Warning>
+**Unstaking Consequences**:
+- ❌ Lose unlimited verification access (revert to pay-per-check)
+- ❌ Stop earning revenue share
+- ✅ Keep all claimed rewards
+- ✅ GHOST returned to wallet immediately (no cooldown)
+</Warning>
+
+---
+
+## Revenue Share Multipliers
+
+Higher stakes earn higher multipliers:
+
+```typescript
+// Example: $10K rewards pool, 10M effective stake total
+
+// Scenario 1: Verified Staker (5K GHOST, 1.5x multiplier)
+Effective Stake = 5,000 × 1.5 = 7,500
+Share = 7,500 / 10,000,000 = 0.075%
+Earnings = $10,000 × 0.00075 = $7.50 USDC
+
+// Scenario 2: Pro Staker (50K GHOST, 2.0x multiplier)
+Effective Stake = 50,000 × 2.0 = 100,000
+Share = 100,000 / 10,000,000 = 1.0%
+Earnings = $10,000 × 0.01 = $100 USDC
+
+// Scenario 3: Whale Staker (500K GHOST, 3.0x multiplier)
+Effective Stake = 500,000 × 3.0 = 1,500,000
+Share = 1,500,000 / 10,000,000 = 15.0%
+Earnings = $10,000 × 0.15 = $1,500 USDC
+```
+
+**Key Insight**: Whale Stakers earn **200x more** than Verified Stakers for **100x more** stake (due to 3x vs 1.5x multiplier).
+
+---
+
+## GHOST Token Details
+
+**Contract Address**: `DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump`
+
+| Property | Value |
+|----------|-------|
+| **Network** | Solana Mainnet |
+| **Standard** | SPL Token |
+| **Decimals** | 6 |
+| **Total Supply** | 999,753,007 GHOST (immutable) |
+| **Mint Authority** | Revoked (no inflation) |
+| **Freeze Authority** | Revoked (cannot be censored) |
+
+**Current Metrics (Dec 30, 2025)**:
+- **Price**: $0.00005691 per GHOST
+- **Market Cap**: $56,905 USD
+- **Liquidity**: $22,816 USD
+- **24h Volume**: $23,319 USD
+
+**Buy GHOST**:
+- [DEXScreener](https://dexscreener.com/solana/e44xj7jyjxyermlqqwrpu4nekcphawfjf3ppn2uokgdb) (charts)
+- [PumpSwap](https://pumpswap.io) (trade)
+
+---
+
+## APY Scenarios
+
+<AccordionGroup>
+  <Accordion title="Current Price ($0.00005691) - Unsustainable High APY">
+    **If GHOST stays at current price:**
+
+    | Tier | Stake Value | Monthly Earnings | APY |
+    |------|-------------|------------------|-----|
+    | Verified | $0.28 | $7.50 | 32,142% |
+    | Pro | $2.85 | $100 | 42,105% |
+    | Whale | $28.46 | $1,500 | 63,157% |
+
+    **Verdict**: APYs are absurdly high. GHOST will appreciate.
+  </Accordion>
+
+  <Accordion title="100x Price Appreciation ($0.005691) - Still High">
+    **If GHOST appreciates to $0.005691:**
+
+    | Tier | Stake Value | Monthly Earnings | APY |
+    |------|-------------|------------------|-----|
+    | Verified | $28.46 | $7.50 | 316% |
+    | Pro | $284.55 | $100 | 421% |
+    | Whale | $2,845.50 | $1,500 | 632% |
+
+    **Verdict**: Still high but more sustainable. Attractive for early stakers.
+  </Accordion>
+
+  <Accordion title="1000x Price Appreciation ($0.05691) - Normalized">
+    **If GHOST appreciates to $0.05691:**
+
+    | Tier | Stake Value | Monthly Earnings | APY |
+    |------|-------------|------------------|-----|
+    | Verified | $284.55 | $7.50 | 31.6% |
+    | Pro | $2,845.50 | $100 | 42.1% |
+    | Whale | $28,455 | $1,500 | 63.2% |
+
+    **Verdict**: Normalized to competitive DeFi rates.
+  </Accordion>
+</AccordionGroup>
+
+**Conclusion**: As GhostSpeak grows and GHOST price appreciates, APY normalizes. Early stakers benefit from both token appreciation and revenue share.
+
+---
+
+## Risks & Considerations
+
+<Warning>
+**Staking Risks:**
+
+1. **Price Volatility**: GHOST price can fluctuate wildly (typical for crypto)
+2. **Revenue Variability**: APY depends on protocol usage (no fixed returns)
+3. **Smart Contract Risk**: Audited but not bug-free (use at your own risk)
+4. **No Impermanent Loss Protection**: If GHOST moons while staked, you can't sell (must unstake first)
+
+**This is not financial advice**. Only stake what you can afford to lose.
+</Warning>
+
+---
+
+## Comparison: Staking vs Pay-Per-Check
+
+| Metric | Pay-Per-Check (USDC) | GHOST Staking |
+|--------|---------------------|----------------|
+| **Cost per Verification** | 1 USDC | $0 (unlimited) |
+| **100 Verifications** | $100 USDC | $0 |
+| **Revenue Share** | None | 10% of B2C + 100% of B2B overage |
+| **Upfront Cost** | $0 | 5,000 GHOST (~$0.28 at current price) |
+| **Break-Even** | N/A | ~1 verification (at current prices) |
+
+**Verdict**: Staking is **dramatically** cheaper if you need >1 verification.
+
+---
+
+## Governance (Roadmap)
+
+**Q4 2026**: GHOST stakers will govern the protocol:
+
+<CardGroup cols={2}>
+  <Card title="Vote on Proposals" icon="vote-yea">
+    Weighted by GHOST staked (1 GHOST = 1 vote)
+  </Card>
+  <Card title="Parameter Changes" icon="sliders">
+    Revenue share %, tier thresholds, fees
+  </Card>
+  <Card title="Protocol Upgrades" icon="code-branch">
+    New features, smart contract upgrades
+  </Card>
+  <Card title="Treasury Management" icon="coins">
+    How protocol reserves are allocated
+  </Card>
+</CardGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Start Staking" icon="rocket" href="https://ghostspeak.io/dashboard/staking">
+    Stake GHOST via web dashboard
+  </Card>
+  <Card title="Buy GHOST" icon="shopping-cart" href="https://dexscreener.com/solana/e44xj7jyjxyermlqqwrpu4nekcphawfjf3ppn2uokgdb">
+    Purchase on DEXScreener or PumpSwap
+  </Card>
+  <Card title="Payment Options" icon="credit-card" href="/concepts/tokenomics/payments">
+    Compare USDC, GHOST burn, and staking
+  </Card>
+  <Card title="SDK Reference" icon="code" href="/sdk/staking">
+    Stake programmatically via TypeScript SDK
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Pro Tip**: At current prices ($0.00005691/GHOST), the Verified Staker tier costs just $0.28 but provides unlimited verifications worth $100s-$1000s. This is a no-brainer for active users.
+</Tip>
+
+<Warning>
+**Remember**: APY is variable. What you earn is what the protocol earns. We promise transparency, not fixed returns.
+</Warning>

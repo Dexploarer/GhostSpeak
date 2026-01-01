@@ -1,0 +1,815 @@
+---
+title: 'Production Deployment Guide'
+description: 'Mainnet checklist, security best practices, and launch preparation for GhostSpeak agents'
+---
+
+# Production Deployment: Mainnet Launch Guide
+
+Deploying to Solana mainnet requires careful preparation to ensure security, reliability, and compliance. This comprehensive guide walks you through the complete mainnet launch process for your GhostSpeak agents.
+
+<Warning>
+**Production Environment**: Mainnet involves real funds, real users, and real legal implications. Follow this checklist carefully to avoid costly mistakes.
+</Warning>
+
+---
+
+## Pre-Launch Checklist
+
+### Phase 1: Security Audit
+
+<Steps>
+  <Step title="Keypair Security">
+    **Never** store production keypairs in code, environment files, or version control.
+
+    **✅ Approved Methods:**
+    - Hardware wallets (Ledger, Trezor)
+    - Cloud KMS (AWS KMS, Google Cloud KMS, Azure Key Vault)
+    - HashiCorp Vault
+    - Environment variables (encrypted at rest)
+
+    **❌ Forbidden:**
+    - JSON files in repository
+    - Plain text environment variables
+    - Local file storage
+  </Step>
+
+  <Step title="Environment Separation">
+    Maintain strict separation between dev/staging/production:
+
+    ```bash .env.production
+    # Production configuration
+    SOLANA_CLUSTER=mainnet-beta
+    SOLANA_RPC_URL=https://api.mainnet-beta.solana.com # Use premium RPC!
+
+    # Secrets (use encrypted secrets manager)
+    WALLET_SECRET=encrypted:vault:prod/agent-wallet
+    CROSSMINT_API_KEY=encrypted:vault:prod/crossmint
+    WEBHOOK_SECRET=encrypted:vault:prod/webhook-secret
+
+    # Never commit this file!
+    ```
+
+    Add to `.gitignore`:
+    ```
+    .env.production
+    .env.mainnet
+    *-keypair.json
+    *-secret*
+    ```
+  </Step>
+
+  <Step title="Smart Contract Audit">
+    If using custom contracts, get a professional audit:
+
+    **Recommended Auditors:**
+    - [CertiK](https://certik.com)
+    - [Halborn](https://halborn.com)
+    - [Trail of Bits](https://trailofbits.com)
+    - [Quantstamp](https://quantstamp.com)
+
+    **Audit Scope:**
+    - Custom reputation algorithms
+    - Modified credential schemas
+    - Marketplace escrow logic
+    - Any program modifications
+  </Step>
+
+  <Step title="Penetration Testing">
+    Test for vulnerabilities:
+
+    ```bash
+    # Test wallet key exposure
+    git log --all --full-history --source -- '*keypair*' '*secret*'
+
+    # Should return nothing!
+    ```
+
+    **Common Vulnerabilities:**
+    - Exposed API keys in code
+    - Insecure webhook signature verification
+    - Insufficient rate limiting
+    - Missing input validation
+  </Step>
+</Steps>
+
+---
+
+### Phase 2: Infrastructure Setup
+
+<Steps>
+  <Step title="Premium RPC Provider">
+    **Don't use public RPCs in production!**
+
+    Public RPC issues:
+    - ❌ Rate limited (50 requests/10 seconds)
+    - ❌ Unreliable uptime
+    - ❌ No SLA guarantees
+    - ❌ Slow transaction confirmations
+
+    **✅ Use Premium RPC:**
+
+    | Provider | Cost | Features |
+    |----------|------|----------|
+    | **Helius** | $50-500/month | WebSocket, priority tx, 99.9% SLA |
+    | **QuickNode** | $49-999/month | Global CDN, analytics, high throughput |
+    | **Triton** | $99-999/month | Low latency, dedicated nodes |
+    | **GenesysGo** | $50-500/month | Shadow network, high performance |
+
+    ```typescript
+    // Production RPC configuration
+    const client = new GhostSpeakClient({
+      cluster: 'mainnet-beta',
+      rpcUrl: process.env.HELIUS_RPC_URL, // Premium RPC
+      commitment: 'confirmed',
+      confirmTransactionInitialTimeout: 60000, // 60s timeout
+    })
+    ```
+  </Step>
+
+  <Step title="Database Setup">
+    Set up production database for off-chain data:
+
+    ```typescript
+    // Recommended: PostgreSQL for relational data
+    const db = new Pool({
+      host: process.env.DB_HOST,
+      port: 5432,
+      database: 'ghostspeak_prod',
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      ssl: {
+        rejectUnauthorized: true,
+        ca: process.env.DB_CA_CERT,
+      },
+      max: 20, // Connection pool size
+      idleTimeoutMillis: 30000,
+    })
+
+    // Schema
+    await db.query(`
+      CREATE TABLE agents (
+        address VARCHAR(44) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE credentials (
+        id VARCHAR(255) PRIMARY KEY,
+        agent_address VARCHAR(44) REFERENCES agents(address),
+        type VARCHAR(100) NOT NULL,
+        issued_at TIMESTAMP NOT NULL,
+        revoked BOOLEAN DEFAULT FALSE
+      );
+
+      CREATE INDEX idx_agent_credentials ON credentials(agent_address);
+    `)
+    ```
+  </Step>
+
+  <Step title="Monitoring and Alerting">
+    Set up comprehensive monitoring:
+
+    **Metrics to Track:**
+    - Transaction success rate
+    - Ghost Score changes
+    - Credential issuance volume
+    - Marketplace transaction volume
+    - RPC latency and errors
+    - Wallet balance (to prevent insufficient funds)
+
+    **Tools:**
+    - [Datadog](https://datadog.com) for infrastructure monitoring
+    - [Sentry](https://sentry.io) for error tracking
+    - [PagerDuty](https://pagerduty.com) for on-call alerts
+
+    ```typescript
+    // Example: Datadog integration
+    import { StatsD } from 'hot-shots'
+
+    const metrics = new StatsD({
+      host: 'dd-agent',
+      prefix: 'ghostspeak.',
+    })
+
+    // Track credential issuance
+    await client.credentials.issueAgentIdentityCredential({
+      // ... params
+    })
+
+    metrics.increment('credentials.issued', 1, ['type:agent-identity'])
+
+    // Track Ghost Score changes
+    const reputation = await client.reputation.getReputationData(agentAddress)
+
+    metrics.gauge('ghost-score', reputation.overallScore, [
+      `tier:${reputation.tier}`,
+      `agent:${agentAddress}`,
+    ])
+    ```
+  </Step>
+
+  <Step title="Backup Strategy">
+    Implement automated backups:
+
+    ```bash backup.sh
+    #!/bin/bash
+
+    # Backup database
+    pg_dump ghostspeak_prod | gzip > /backups/ghostspeak_$(date +%Y%m%d).sql.gz
+
+    # Upload to S3
+    aws s3 cp /backups/ghostspeak_$(date +%Y%m%d).sql.gz \
+      s3://ghostspeak-backups/$(date +%Y%m%d)/
+
+    # Keep local backups for 7 days
+    find /backups -name "ghostspeak_*.sql.gz" -mtime +7 -delete
+    ```
+
+    Schedule daily backups:
+    ```bash
+    # crontab -e
+    0 2 * * * /usr/local/bin/backup.sh
+    ```
+  </Step>
+</Steps>
+
+---
+
+### Phase 3: Testing on Mainnet
+
+<Warning>
+**Start Small**: Test with minimal funds (0.1-1 SOL) and low-value transactions before scaling up.
+</Warning>
+
+<Steps>
+  <Step title="Mainnet Test Agent">
+    Create a test agent on mainnet with real (but small) funds:
+
+    ```typescript
+    const client = new GhostSpeakClient({
+      cluster: 'mainnet-beta',
+      rpcUrl: process.env.HELIUS_RPC_URL,
+    })
+
+    // Register test agent
+    const testAgent = await client.agents.register(testAgentSigner, {
+      name: 'Mainnet Test Agent',
+      description: '[TEST] Do not use for production',
+      capabilities: ['test'],
+    })
+
+    console.log('Test agent:', testAgent.address)
+
+    // Issue test credential
+    const credential = await client.credentials.issueAgentIdentityCredential({
+      agentId: testAgent.address,
+      // ... other params
+      syncToCrossmint: true, // Test cross-chain sync
+    })
+
+    console.log('Credential:', credential.solanaCredential.credentialId)
+
+    // Verify transaction costs
+    console.log('Registration cost:', agent.cost, 'SOL')
+    console.log('Credential cost:', credential.cost, 'SOL')
+    ```
+  </Step>
+
+  <Step title="Transaction Cost Analysis">
+    Measure actual mainnet costs:
+
+    ```typescript
+    async function analyzeCosts() {
+      const operations = [
+        { name: 'Agent Registration', fn: () => client.agents.register(...) },
+        { name: 'Credential Issuance', fn: () => client.credentials.issue(...) },
+        { name: 'Ghost Score Update', fn: () => client.reputation.recordTransaction(...) },
+        { name: 'Marketplace Listing', fn: () => client.marketplace.createListing(...) },
+      ]
+
+      for (const op of operations) {
+        const startBalance = await connection.getBalance(wallet.publicKey)
+
+        await op.fn()
+
+        const endBalance = await connection.getBalance(wallet.publicKey)
+        const costLamports = startBalance - endBalance
+        const costSOL = costLamports / 1e9
+
+        console.log(`${op.name}: ${costSOL} SOL (~$${costSOL * solPrice})`)
+      }
+    }
+    ```
+
+    **Expected Costs (as of 2025):**
+    - Agent registration: ~0.002 SOL (~$0.30)
+    - Credential issuance: ~0.001 SOL (~$0.15)
+    - Ghost Score update: ~0.0005 SOL (~$0.08)
+    - Marketplace listing: ~0.001 SOL (~$0.15)
+  </Step>
+
+  <Step title="Load Testing">
+    Simulate production load on mainnet:
+
+    ```typescript
+    // Use small amounts to avoid wasting funds
+    const CONCURRENT_AGENTS = 10 // Start small!
+    const TRANSACTIONS_PER_AGENT = 5
+
+    for (let i = 0; i < CONCURRENT_AGENTS; i++) {
+      const agent = await registerTestAgent()
+
+      for (let j = 0; j < TRANSACTIONS_PER_AGENT; j++) {
+        await client.reputation.recordTransaction(agent, {
+          // ... transaction data
+        })
+      }
+    }
+
+    // Monitor RPC performance
+    console.log('RPC latency:', client.metrics.avgLatency)
+    console.log('Success rate:', client.metrics.successRate)
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Production Deployment
+
+### Step 1: Wallet Funding
+
+```bash
+# Calculate required SOL
+# Formula: (expected_agents × 0.002) + (expected_credentials × 0.001) + buffer
+
+# Example: 1000 agents, 5000 credentials
+required_sol=$(echo "scale=2; (1000 * 0.002) + (5000 * 0.001) + 10" | bc)
+
+echo "Required SOL: $required_sol" # ~17 SOL
+
+# Fund production wallet (use hardware wallet for large amounts)
+solana transfer <PRODUCTION_WALLET> $required_sol --url mainnet-beta
+```
+
+<Warning>
+**Wallet Security**: For wallets holding >10 SOL, use a hardware wallet or multi-sig. Never store large balances in hot wallets.
+</Warning>
+
+---
+
+### Step 2: Domain and SSL Setup
+
+```bash
+# Set up custom domain for webhooks
+# yourplatform.com → Your frontend
+# api.yourplatform.com → Your API
+# webhooks.yourplatform.com → Webhook handlers
+
+# Ensure SSL certificate (required for webhooks)
+certbot certonly --standalone -d webhooks.yourplatform.com
+
+# Verify SSL
+curl https://webhooks.yourplatform.com/health
+```
+
+---
+
+### Step 3: Webhook Configuration
+
+```typescript webhook-server.ts
+import { Bun } from 'bun'
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+
+const client = new GhostSpeakClient({
+  cluster: 'mainnet-beta',
+  rpcUrl: process.env.HELIUS_RPC_URL,
+})
+
+Bun.serve({
+  port: 443,
+  tls: {
+    cert: Bun.file('/etc/letsencrypt/live/webhooks.yourplatform.com/fullchain.pem'),
+    key: Bun.file('/etc/letsencrypt/live/webhooks.yourplatform.com/privkey.pem'),
+  },
+
+  routes: {
+    '/webhooks/ghostspeak': {
+      POST: async (req) => {
+        // 1. Verify signature (CRITICAL for security)
+        const signature = req.headers.get('X-GhostSpeak-Signature')
+        const payload = await req.text()
+
+        const isValid = await client.webhooks.verifySignature(
+          payload,
+          signature,
+          process.env.WEBHOOK_SECRET!
+        )
+
+        if (!isValid) {
+          console.error('Invalid webhook signature')
+          return new Response('Unauthorized', { status: 401 })
+        }
+
+        // 2. Parse payload
+        const event = JSON.parse(payload)
+
+        // 3. Handle event (idempotent!)
+        try {
+          await handleWebhookEvent(event)
+          return new Response('OK', { status: 200 })
+        } catch (error) {
+          console.error('Webhook handler error:', error)
+          return new Response('Internal Server Error', { status: 500 })
+        }
+      },
+    },
+  },
+})
+
+async function handleWebhookEvent(event: any) {
+  // Ensure idempotency (process each event only once)
+  const processed = await db.query(
+    'SELECT 1 FROM webhook_events WHERE event_id = $1',
+    [event.id]
+  )
+
+  if (processed.rows.length > 0) {
+    console.log('Event already processed:', event.id)
+    return
+  }
+
+  // Process event
+  switch (event.type) {
+    case 'ghost-score.updated':
+      await handleGhostScoreUpdate(event.data)
+      break
+
+    case 'credential.issued':
+      await handleCredentialIssued(event.data)
+      break
+
+    case 'marketplace.transaction.completed':
+      await handleMarketplaceTransaction(event.data)
+      break
+
+    default:
+      console.log('Unknown event type:', event.type)
+  }
+
+  // Mark as processed
+  await db.query(
+    'INSERT INTO webhook_events (event_id, type, processed_at) VALUES ($1, $2, NOW())',
+    [event.id, event.type]
+  )
+}
+
+console.log('Webhook server running on https://webhooks.yourplatform.com')
+```
+
+---
+
+### Step 4: Error Handling and Retry Logic
+
+```typescript error-handling.ts
+import { GhostSpeakClient, GhostSpeakError } from '@ghostspeak/sdk'
+
+class ProductionGhostSpeakClient {
+  private client: GhostSpeakClient
+  private maxRetries = 3
+  private retryDelay = 1000 // ms
+
+  constructor() {
+    this.client = new GhostSpeakClient({
+      cluster: 'mainnet-beta',
+      rpcUrl: process.env.HELIUS_RPC_URL,
+    })
+  }
+
+  async registerAgentWithRetry(agentSigner: any, data: any) {
+    let lastError
+
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+      try {
+        const agent = await this.client.agents.register(agentSigner, data)
+
+        // Success - log metrics
+        metrics.increment('agent.registration.success')
+
+        return agent
+      } catch (error) {
+        lastError = error
+
+        if (error instanceof GhostSpeakError) {
+          // Handle specific errors
+          switch (error.code) {
+            case 'INSUFFICIENT_FUNDS':
+              // Critical - alert immediately
+              await alertOncall('Insufficient SOL in production wallet')
+              throw error // Don't retry
+
+            case 'RPC_TIMEOUT':
+              // Transient - retry
+              console.log(`RPC timeout (attempt ${attempt + 1}/${this.maxRetries})`)
+              await this.sleep(this.retryDelay * (attempt + 1)) // Exponential backoff
+              continue
+
+            case 'AGENT_ALREADY_EXISTS':
+              // Not an error - agent already registered
+              console.log('Agent already exists:', agentSigner.address)
+              return await this.client.agents.getAgent(agentSigner.address)
+
+            default:
+              // Unknown error - retry
+              console.error('Unknown error:', error)
+              await this.sleep(this.retryDelay * (attempt + 1))
+              continue
+          }
+        }
+
+        // Generic error - retry
+        await this.sleep(this.retryDelay * (attempt + 1))
+      }
+    }
+
+    // All retries failed
+    metrics.increment('agent.registration.failure')
+    throw lastError
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms))
+  }
+}
+```
+
+---
+
+## Monitoring and Maintenance
+
+### Health Checks
+
+```typescript health-check.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+
+export async function healthCheck() {
+  const checks = {
+    rpc: false,
+    database: false,
+    wallet: false,
+    ghostspeak: false,
+  }
+
+  try {
+    // 1. Check RPC connectivity
+    const client = new GhostSpeakClient({
+      cluster: 'mainnet-beta',
+      rpcUrl: process.env.HELIUS_RPC_URL,
+    })
+
+    const blockHeight = await client.connection.getBlockHeight()
+    checks.rpc = blockHeight > 0
+
+    // 2. Check database
+    const dbResult = await db.query('SELECT 1')
+    checks.database = dbResult.rows.length > 0
+
+    // 3. Check wallet balance
+    const balance = await client.connection.getBalance(wallet.publicKey)
+    checks.wallet = balance > 1_000_000_000 // > 1 SOL
+
+    if (balance < 5_000_000_000) {
+      // < 5 SOL
+      await alertOncall('Low wallet balance: ' + balance / 1e9 + ' SOL')
+    }
+
+    // 4. Check GhostSpeak SDK
+    const testReputation = await client.reputation.getTierInfo('Bronze')
+    checks.ghostspeak = testReputation !== null
+
+  } catch (error) {
+    console.error('Health check failed:', error)
+  }
+
+  return {
+    healthy: Object.values(checks).every(c => c),
+    checks,
+    timestamp: new Date().toISOString(),
+  }
+}
+
+// Run health check every 60 seconds
+setInterval(async () => {
+  const health = await healthCheck()
+
+  if (!health.healthy) {
+    console.error('System unhealthy:', health)
+    await alertOncall('Health check failed', health)
+  }
+
+  // Send metrics to monitoring system
+  metrics.gauge('health.rpc', health.checks.rpc ? 1 : 0)
+  metrics.gauge('health.database', health.checks.database ? 1 : 0)
+  metrics.gauge('health.wallet', health.checks.wallet ? 1 : 0)
+  metrics.gauge('health.ghostspeak', health.checks.ghostspeak ? 1 : 0)
+}, 60000)
+```
+
+---
+
+## Compliance and Legal
+
+<Steps>
+  <Step title="Terms of Service">
+    Draft comprehensive ToS covering:
+    - Agent registration requirements
+    - Credential issuance policies
+    - Ghost Score privacy and usage
+    - Marketplace dispute resolution
+    - Liability limitations
+    - Data retention policies
+  </Step>
+
+  <Step title="Privacy Policy">
+    Address data handling:
+    - What data is collected (on-chain vs off-chain)
+    - How Ghost Score data is used
+    - Cross-chain data synchronization
+    - User rights (GDPR, CCPA compliance)
+    - Data deletion requests
+  </Step>
+
+  <Step title="KYC/AML (if applicable)">
+    For high-value marketplaces:
+    - Implement KYC for agents/buyers
+    - Screen against OFAC sanctions lists
+    - Monitor for suspicious activity
+    - Maintain transaction records (5+ years)
+  </Step>
+</Steps>
+
+---
+
+## Launch Day Checklist
+
+<Steps>
+  <Step title="Final Pre-Launch Verification">
+    ```bash
+    # Verify production configuration
+    ✅ Premium RPC configured
+    ✅ Wallet funded (>10 SOL)
+    ✅ Database backed up
+    ✅ Monitoring active
+    ✅ Alerts configured
+    ✅ Webhooks tested
+    ✅ SSL certificates valid
+    ✅ Terms of Service published
+    ✅ Privacy Policy published
+    ✅ Support email active
+    ```
+  </Step>
+
+  <Step title="Staged Rollout">
+    Don't launch to 100% of users immediately:
+
+    **Week 1**: Beta users only (100-1000 users)
+    **Week 2**: 10% of users
+    **Week 3**: 50% of users
+    **Week 4**: 100% of users (full launch)
+
+    Monitor metrics closely during each phase.
+  </Step>
+
+  <Step title="Communication Plan">
+    - Announce launch on social media
+    - Send email to waitlist
+    - Post in Discord/Telegram
+    - Update documentation with mainnet examples
+    - Prepare support team for inquiries
+  </Step>
+</Steps>
+
+---
+
+## Post-Launch Monitoring
+
+### Key Metrics Dashboard
+
+```typescript metrics-dashboard.ts
+// Track critical production metrics
+
+interface Metrics {
+  agentsRegistered: number
+  credentialsIssued: number
+  averageGhostScore: number
+  transactionSuccessRate: number
+  rpcUptime: number
+  webhookLatency: number
+}
+
+async function getDashboardMetrics(): Promise<Metrics> {
+  const last24h = Date.now() - 24 * 60 * 60 * 1000
+
+  return {
+    agentsRegistered: await db.query(
+      'SELECT COUNT(*) FROM agents WHERE created_at > $1',
+      [new Date(last24h)]
+    ).then(r => r.rows[0].count),
+
+    credentialsIssued: await db.query(
+      'SELECT COUNT(*) FROM credentials WHERE issued_at > $1',
+      [new Date(last24h)]
+    ).then(r => r.rows[0].count),
+
+    averageGhostScore: await db.query(
+      'SELECT AVG(score) FROM reputation'
+    ).then(r => r.rows[0].avg),
+
+    transactionSuccessRate: await getSuccessRate(last24h),
+
+    rpcUptime: await getRPCUptime(last24h),
+
+    webhookLatency: await getWebhookLatency(last24h),
+  }
+}
+```
+
+---
+
+## Incident Response
+
+### Runbook: Wallet Drained
+
+```bash
+# 1. Immediately rotate keys
+solana-keygen new --outfile ~/.config/solana/new-mainnet.json
+
+# 2. Transfer remaining funds to new wallet
+solana transfer <NEW_WALLET> ALL --keypair ~/.config/solana/old-mainnet.json
+
+# 3. Update production configuration
+# Update WALLET_SECRET in secrets manager
+
+# 4. Investigate breach
+# Review access logs, check for exposed keys
+
+# 5. Notify users if funds were impacted
+```
+
+---
+
+### Runbook: RPC Outage
+
+```bash
+# 1. Check RPC provider status page
+curl https://status.helius.xyz
+
+# 2. Switch to backup RPC (if available)
+export BACKUP_RPC_URL=https://api.mainnet-beta.solana.com
+
+# 3. Update configuration
+# HELIUS_RPC_URL → BACKUP_RPC_URL
+
+# 4. Monitor transaction success rate
+# Expect degraded performance on public RPC
+
+# 5. Contact RPC provider support
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Monitoring Setup" icon="chart-line" href="/sdk/monitoring">
+    Detailed monitoring and observability guide
+  </Card>
+  <Card title="Scaling Guide" icon="arrow-up-right" href="/guides/scaling">
+    Scale to 100k+ agents and millions of transactions
+  </Card>
+  <Card title="Security Best Practices" icon="shield" href="/resources/security">
+    Advanced security hardening techniques
+  </Card>
+  <Card title="Support" icon="headset" href="https://discord.gg/ghostspeak">
+    Get help from the GhostSpeak team
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Pro Tip**: Launch during low-activity hours (weekends, late night) to minimize impact if issues arise. Have your team on standby for the first 48 hours post-launch.
+</Tip>
+
+<div style={{textAlign: 'center', marginTop: '2rem', padding: '2rem', background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)', borderRadius: '12px', border: '1px solid #ccff00'}}>
+  <p style={{fontSize: '1.3rem', fontWeight: '700', marginBottom: '0.5rem', color: '#ccff00'}}>
+    Ready for Mainnet?
+  </p>
+  <p style={{fontSize: '1.1rem', color: '#ffffff', marginBottom: '1rem'}}>
+    You've completed the production deployment guide
+  </p>
+  <p style={{color: '#a3e635'}}>
+    Launch with confidence. We're here to support you.
+  </p>
+</div>

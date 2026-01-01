@@ -1,0 +1,631 @@
+---
+title: 'Error Codes Reference'
+description: 'Comprehensive SDK error codes, smart contract errors, and troubleshooting guide'
+---
+
+# Error Codes Reference
+
+Complete reference for all error codes in the GhostSpeak SDK and smart contracts, with troubleshooting steps and recovery strategies.
+
+---
+
+## Error Categories
+
+GhostSpeak errors are organized into categories for easier debugging:
+
+| Category | Code Prefix | Description |
+|----------|-------------|-------------|
+| **Network** | `NETWORK_*` | RPC connection, timeout, rate limiting |
+| **Transaction** | `TRANSACTION_*` | Transaction failures, simulation errors |
+| **Validation** | `VALIDATION_*` | Input validation, data format errors |
+| **Authorization** | `UNAUTHORIZED_*` | Permission denied, access control |
+| **Program** | `PROGRAM_ERROR_*` | Smart contract execution errors |
+| **Account** | `ACCOUNT_*` | Account not found, invalid account state |
+| **System** | `UNKNOWN_*` | Unexpected errors, system failures |
+
+---
+
+## SDK Error Codes
+
+### Network Errors
+
+<AccordionGroup>
+  <Accordion title="NETWORK_ERROR">
+    **Code**: `NETWORK_ERROR`
+
+    **Cause**: RPC connection failure, network timeout, or connectivity issues.
+
+    **Message**: "Network connection failed"
+
+    **Retryable**: Yes (automatic retry with exponential backoff)
+
+    **Troubleshooting:**
+    1. Check internet connection
+    2. Verify RPC endpoint is accessible
+    3. Try alternative RPC provider (Helius, QuickNode)
+    4. Check [Solana Status](https://status.solana.com)
+
+    **Example:**
+    ```typescript
+    try {
+      const agent = await client.agents.getAgent(agentId)
+    } catch (error) {
+      if (error.code === 'NETWORK_ERROR') {
+        console.log('Retrying with backup RPC...')
+        // SDK automatically retries
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="TIMEOUT_ERROR">
+    **Code**: `TIMEOUT_ERROR`
+
+    **Cause**: Operation exceeded timeout duration (default 30 seconds).
+
+    **Message**: "Operation timed out"
+
+    **Retryable**: Yes
+
+    **Troubleshooting:**
+    1. Increase timeout in client configuration
+    2. Use faster RPC endpoint
+    3. Reduce transaction complexity (fewer instructions)
+    4. Check network congestion
+
+    **Example:**
+    ```typescript
+    const client = new GhostSpeakClient({
+      cluster: 'devnet',
+      rpcConfig: {
+        confirmTransactionInitialTimeout: 90000, // 90 seconds
+      },
+    })
+    ```
+  </Accordion>
+
+  <Accordion title="RATE_LIMIT_EXCEEDED">
+    **Code**: `RATE_LIMIT_EXCEEDED`
+
+    **Cause**: Too many requests to RPC endpoint (429 status).
+
+    **Message**: "Rate limit exceeded. Please wait X seconds before trying again."
+
+    **Retryable**: Yes (after delay)
+
+    **Troubleshooting:**
+    1. Implement request batching
+    2. Use paid RPC provider with higher limits
+    3. Enable SDK caching
+    4. Reduce request frequency
+
+    **Example:**
+    ```typescript
+    const client = new GhostSpeakClient({
+      cluster: 'devnet',
+      cache: { enabled: true, ttl: 60000 }, // Cache for 60s
+    })
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+### Transaction Errors
+
+<AccordionGroup>
+  <Accordion title="TRANSACTION_ERROR">
+    **Code**: `TRANSACTION_ERROR`
+
+    **Cause**: Generic transaction execution failure.
+
+    **Message**: "Transaction failed to execute. Please check the details and try again."
+
+    **Retryable**: Sometimes (depends on cause)
+
+    **Troubleshooting:**
+    1. Check transaction logs for specific error
+    2. Verify all accounts are correct
+    3. Ensure sufficient SOL for transaction fees
+    4. Validate instruction data format
+
+    **Example:**
+    ```typescript
+    try {
+      const tx = await client.agents.register(signer, { name: 'Agent' })
+    } catch (error) {
+      console.error('Transaction failed:', error.logs)
+      console.error('Signature:', error.signature)
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="INSUFFICIENT_FUNDS">
+    **Code**: `INSUFFICIENT_FUNDS`
+
+    **Cause**: Wallet doesn't have enough SOL for transaction + rent.
+
+    **Message**: "Insufficient funds to complete the transaction. Please add more funds and try again."
+
+    **Retryable**: No (requires funding wallet)
+
+    **Troubleshooting:**
+    1. Check wallet balance: `solana balance YOUR_ADDRESS --url devnet`
+    2. Request devnet SOL from faucet
+    3. For mainnet: transfer SOL to wallet
+    4. Reduce transaction size if possible
+
+    **Example:**
+    ```typescript
+    // Check balance before transaction
+    const balance = await rpc.getBalance(walletAddress).send()
+    const requiredLamports = 5_000_000 // 0.005 SOL
+
+    if (balance < requiredLamports) {
+      throw new Error(`Need ${requiredLamports} lamports, have ${balance}`)
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="SIGNATURE_VERIFICATION_FAILED">
+    **Code**: `TRANSACTION_ERROR` (subtype)
+
+    **Cause**: Invalid transaction signature or signer mismatch.
+
+    **Message**: "Invalid transaction signature"
+
+    **Retryable**: No (signature issue)
+
+    **Troubleshooting:**
+    1. Verify correct signer is used
+    2. Check signer has authority over account
+    3. Ensure signer matches expected public key
+    4. Regenerate signature if needed
+
+    **Example:**
+    ```typescript
+    // Ensure signer matches expected authority
+    const agentAccount = await client.agents.getAgent(agentId)
+    if (agentAccount.owner !== signer.address) {
+      throw new Error('Signer is not agent owner')
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="BLOCKHASH_NOT_FOUND">
+    **Code**: `TRANSACTION_ERROR` (blockhash expired)
+
+    **Cause**: Transaction blockhash expired (>60 seconds old).
+
+    **Message**: "Transaction blockhash expired"
+
+    **Retryable**: Yes (fetch new blockhash)
+
+    **Troubleshooting:**
+    1. SDK automatically fetches fresh blockhash on retry
+    2. Reduce time between signing and sending
+    3. Use `getLatestBlockhash` immediately before sending
+
+    **Example:**
+    ```typescript
+    // SDK handles blockhash expiry automatically
+    // Manual handling:
+    const { blockhash } = await rpc.getLatestBlockhash().send()
+    // Sign and send immediately
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+### Validation Errors
+
+<AccordionGroup>
+  <Accordion title="VALIDATION_ERROR">
+    **Code**: `VALIDATION_ERROR`
+
+    **Cause**: Invalid input data or format.
+
+    **Message**: "Invalid {field}. {expectedFormat}"
+
+    **Retryable**: No (fix input)
+
+    **Troubleshooting:**
+    1. Check field format requirements
+    2. Validate against schema
+    3. Review error message for specific field
+    4. Check SDK documentation for expected format
+
+    **Example:**
+    ```typescript
+    // Error: Invalid agent name (exceeds 64 bytes)
+    const tooLongName = 'A'.repeat(100)
+    await client.agents.register(signer, { name: tooLongName })
+    // Fix: Limit to 64 bytes
+    const validName = 'My Agent Name' // < 64 bytes
+    ```
+  </Accordion>
+
+  <Accordion title="INVALID_INSTRUCTION_ERROR">
+    **Code**: `VALIDATION_ERROR` (instruction subtype)
+
+    **Cause**: Malformed instruction data.
+
+    **Message**: "Invalid instruction data"
+
+    **Retryable**: No
+
+    **Troubleshooting:**
+    1. Verify instruction accounts match IDL
+    2. Check data serialization format
+    3. Ensure all required fields are provided
+    4. Update SDK if using outdated version
+
+    **Example:**
+    ```typescript
+    // Missing required field
+    await client.agents.register(signer, {
+      name: 'Agent',
+      // Missing: capabilities, model
+    })
+    // Error: capabilities and model are required
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+### Account Errors
+
+<AccordionGroup>
+  <Accordion title="ACCOUNT_NOT_FOUND">
+    **Code**: `ACCOUNT_NOT_FOUND`
+
+    **Cause**: Account doesn't exist at the specified address.
+
+    **Message**: "The {accountType} account was not found. Please verify the address."
+
+    **Retryable**: No (account missing)
+
+    **Troubleshooting:**
+    1. Verify address is correct
+    2. Ensure account was created
+    3. Check if using correct network (devnet vs mainnet)
+    4. For PDAs, verify derivation seeds are correct
+
+    **Example:**
+    ```typescript
+    // Verify agent exists before fetching
+    const agentAddress = await client.agents.deriveAgentAddress(owner, seed)
+    const exists = await client.agents.accountExists(agentAddress)
+
+    if (!exists) {
+      console.log('Agent not found, creating...')
+      await client.agents.register(signer, { name: 'Agent' })
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="UNAUTHORIZED_ACCESS">
+    **Code**: `UNAUTHORIZED_ACCESS`
+
+    **Cause**: Signer doesn't have permission for operation.
+
+    **Message**: "Access denied. Please ensure you have the necessary permissions."
+
+    **Retryable**: No (permission issue)
+
+    **Troubleshooting:**
+    1. Verify signer is account owner
+    2. Check RBAC permissions if applicable
+    3. Ensure multisig approval if required
+    4. Use correct authority signer
+
+    **Example:**
+    ```typescript
+    // Only agent owner can update agent
+    const agent = await client.agents.getAgent(agentId)
+    if (agent.owner !== signer.address) {
+      throw new UnauthorizedError('Only owner can update agent')
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Smart Contract Error Codes
+
+### DID Module Errors (6000-6009)
+
+| Code | Hex | Name | Description | Solution |
+|------|-----|------|-------------|----------|
+| **6000** | `0x1770` | `AlreadyDeactivated` | DID document is already deactivated | Cannot reactivate, create new DID |
+| **6001** | `0x1771` | `TooManyVerificationMethods` | Maximum 10 verification methods reached | Remove unused methods before adding new |
+| **6002** | `0x1772` | `TooManyServiceEndpoints` | Maximum 20 service endpoints reached | Remove unused endpoints before adding new |
+| **6003** | `0x1773` | `DuplicateMethodId` | Verification method ID already exists | Use unique method IDs |
+| **6004** | `0x1774` | `DuplicateServiceId` | Service endpoint ID already exists | Use unique service IDs |
+| **6005** | `0x1775` | `MethodNotFound` | Verification method not found | Verify method ID exists in DID document |
+| **6006** | `0x1776` | `ServiceNotFound` | Service endpoint not found | Verify service ID exists in DID document |
+| **6007** | `0x1777` | `InvalidDidFormat` | DID format is invalid | Use format: `did:sol:{network}:{address}` |
+| **6008** | `0x1778` | `UnauthorizedDidOperation` | Unauthorized DID operation | Use DID controller or authorized key |
+| **6009** | `0x1779` | `DidDeactivated` | DID is deactivated | Cannot use deactivated DID |
+
+---
+
+### Common Program Errors
+
+<AccordionGroup>
+  <Accordion title="AlreadyDeactivated (6000)">
+    **When**: Attempting to deactivate an already deactivated DID.
+
+    **Example Error:**
+    ```
+    Program error: custom program error: 0x1770
+    Error: DID document is already deactivated
+    ```
+
+    **Fix:**
+    ```typescript
+    const did = await client.did.getDidDocument(agentId)
+    if (did.deactivated) {
+      console.log('DID already deactivated')
+    } else {
+      await client.did.deactivateDidDocument(agentId, controller)
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="TooManyVerificationMethods (6001)">
+    **When**: Adding more than 10 verification methods to DID.
+
+    **Fix:**
+    ```typescript
+    // Remove old methods before adding new
+    await client.did.removeVerificationMethod(agentId, 'old-method-id')
+    await client.did.addVerificationMethod(agentId, {
+      id: 'new-method-id',
+      type: 'Ed25519VerificationKey2020',
+      publicKeyMultibase: 'z...'
+    })
+    ```
+  </Accordion>
+
+  <Accordion title="UnauthorizedDidOperation (6008)">
+    **When**: Non-controller attempts to modify DID document.
+
+    **Fix:**
+    ```typescript
+    // Ensure controller signer is used
+    const did = await client.did.getDidDocument(agentId)
+    console.log('Controller:', did.controller)
+
+    // Use controller as signer
+    await client.did.updateDidDocument(agentId, controllerSigner, updates)
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Error Handling Best Practices
+
+### Retry Logic
+
+```typescript
+import { isRetryableError, getRetryDelay } from '@ghostspeak/sdk/errors'
+
+async function retryOperation<T>(
+  operation: () => Promise<T>,
+  maxRetries = 3
+): Promise<T> {
+  let lastError: Error | null = null
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await operation()
+    } catch (error) {
+      lastError = error as Error
+
+      if (!isRetryableError(lastError)) {
+        throw lastError // Don't retry non-retryable errors
+      }
+
+      if (attempt < maxRetries - 1) {
+        const delay = getRetryDelay(lastError, attempt)
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+  }
+
+  throw lastError
+}
+
+// Usage
+const agent = await retryOperation(() =>
+  client.agents.getAgent(agentId)
+)
+```
+
+---
+
+### Error Logging
+
+```typescript
+import { GhostSpeakError, logError, createErrorSummary } from '@ghostspeak/sdk/errors'
+
+try {
+  await client.agents.register(signer, { name: 'Agent' })
+} catch (error) {
+  if (error instanceof GhostSpeakError) {
+    // Development: Full error with stack trace
+    logError(error, true)
+
+    // Production: Send to monitoring service
+    const summary = createErrorSummary(error)
+    await analytics.trackError(summary)
+
+    // User-facing message
+    console.error(error.userFriendlyMessage)
+  } else {
+    // Unexpected error
+    console.error('Unexpected error:', error)
+  }
+}
+```
+
+---
+
+### User-Friendly Error Messages
+
+```typescript
+import { formatErrorForUser } from '@ghostspeak/sdk/errors'
+
+try {
+  await performOperation()
+} catch (error) {
+  if (error instanceof GhostSpeakError) {
+    // Show user-friendly message in UI
+    toast.error(formatErrorForUser(error))
+  } else {
+    toast.error('An unexpected error occurred. Please try again.')
+  }
+}
+```
+
+---
+
+## Debugging Tools
+
+### Transaction Inspector
+
+```typescript
+// Get detailed transaction logs
+try {
+  const tx = await client.agents.register(signer, { name: 'Agent' })
+} catch (error) {
+  if (error instanceof TransactionError) {
+    console.log('Signature:', error.signature)
+    console.log('Instruction Index:', error.instructionIndex)
+    console.log('Logs:', error.logs)
+
+    // View on explorer
+    const explorerUrl = `https://solscan.io/tx/${error.signature}?cluster=devnet`
+    console.log('View on Solscan:', explorerUrl)
+  }
+}
+```
+
+---
+
+### Account Diagnostics
+
+```typescript
+import { diagnoseAccountIssue } from '@ghostspeak/sdk/utils'
+
+const diagnosis = await diagnoseAccountIssue(rpc, agentAddress)
+
+console.log('Account Status:', diagnosis.status)
+// Output: 'not_found' | 'invalid_data' | 'rent_exempt' | 'ok'
+
+console.log('Issues:', diagnosis.issues)
+// Output: ['Account not initialized', 'Insufficient rent']
+
+console.log('Suggestions:', diagnosis.suggestions)
+// Output: ['Create account first', 'Add 0.002 SOL for rent']
+```
+
+---
+
+## Common Error Scenarios
+
+<Tabs>
+  <Tab title="Agent Not Found">
+    **Scenario**: Fetching non-existent agent
+
+    **Error**: `ACCOUNT_NOT_FOUND`
+
+    **Solution:**
+    ```typescript
+    const agentAddress = client.agents.deriveAgentAddress(owner, seed)
+    const agent = await client.agents.getAgent(agentAddress).catch(error => {
+      if (error.code === 'ACCOUNT_NOT_FOUND') {
+        console.log('Agent does not exist, create it first')
+        return null
+      }
+      throw error
+    })
+    ```
+  </Tab>
+
+  <Tab title="Insufficient SOL">
+    **Scenario**: Wallet has no SOL for transaction
+
+    **Error**: `INSUFFICIENT_FUNDS`
+
+    **Solution:**
+    ```bash
+    # Get devnet SOL from faucet
+    solana airdrop 2 YOUR_WALLET --url devnet
+    ```
+  </Tab>
+
+  <Tab title="Rate Limited">
+    **Scenario**: Too many RPC requests
+
+    **Error**: `RATE_LIMIT_EXCEEDED`
+
+    **Solution:**
+    ```typescript
+    // Use paid RPC or enable caching
+    const client = new GhostSpeakClient({
+      cluster: 'devnet',
+      rpcUrl: 'https://devnet.helius-rpc.com/?api-key=YOUR_KEY',
+      cache: { enabled: true },
+    })
+    ```
+  </Tab>
+
+  <Tab title="Wrong Network">
+    **Scenario**: Agent exists on devnet, fetching from mainnet
+
+    **Error**: `ACCOUNT_NOT_FOUND`
+
+    **Solution:**
+    ```typescript
+    // Verify cluster configuration
+    const client = new GhostSpeakClient({ cluster: 'devnet' })
+    console.log('Using network:', client.cluster) // Should match where agent was created
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Support Resources
+
+<CardGroup cols={2}>
+  <Card title="Discord Support" icon="discord" href="https://discord.gg/ghostspeak">
+    Get help from community and GhostSpeak team
+  </Card>
+  <Card title="GitHub Issues" icon="github" href="https://github.com/ghostspeak/sdk/issues">
+    Report bugs and request features
+  </Card>
+  <Card title="Troubleshooting Guide" icon="wrench" href="/resources/troubleshooting">
+    Step-by-step debugging guide
+  </Card>
+  <Card title="Network Status" icon="heart-pulse" href="https://status.solana.com">
+    Check Solana network health
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Quick Debug Checklist:**
+1. ✅ Check network (devnet vs mainnet)
+2. ✅ Verify sufficient SOL balance
+3. ✅ Confirm RPC endpoint is accessible
+4. ✅ Validate account addresses are correct
+5. ✅ Review transaction logs on explorer
+</Tip>

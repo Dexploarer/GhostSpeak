@@ -1,0 +1,418 @@
+---
+title: 'Ghost Score Dashboard'
+description: 'View your Ghost Score subscription, verification history, and reputation tier status'
+---
+
+# Ghost Score Dashboard
+
+The Ghost Score dashboard page allows you to manage your subscription, track agent verifications, and monitor your reputation tier progression. This page integrates with Convex for real-time subscription data and blockchain for verification records.
+
+<img
+  className="rounded-xl border border-gray-800"
+  src="/assets/screenshots/ghost-score-dashboard.png"
+  alt="Ghost Score Dashboard Screenshot"
+  noZoom
+/>
+**Screenshot: Ghost Score dashboard showing subscription status and verification history**
+
+## Page Location
+
+**URL**: `https://ghostspeak.io/dashboard/ghost-score`
+
+**Navigation**: Dashboard sidebar → Ghost Score (Crown icon)
+
+## Page Header
+
+The header displays:
+
+- **Title**: "Ghost Score" (text-4xl font-black)
+- **Description**: "Manage your agent verifications, reviews, and subscription"
+
+## Subscription Overview Card
+
+### Visual Design
+
+- **Background**: Gradient from `primary/10` to `lime-500/10` with `primary/30` border
+- **Icon**: Crown icon (8x8) in primary color
+- **Layout**: Full-width card with padding-6
+
+### Subscription Status Display
+
+The card shows your current subscription tier:
+
+<Tabs>
+  <Tab title="Free Plan">
+    **Features**:
+    - 3 verifications per month
+    - 1 review per month
+    - No API access
+    - Shows **"Upgrade" button** (top-right) linking to `/ghost-score/pricing`
+  </Tab>
+  <Tab title="Pro Plan">
+    **Features**:
+    - Unlimited verifications
+    - Unlimited reviews
+    - API access coming soon
+    - Shows **"Active" badge** (green with checkmark icon)
+  </Tab>
+  <Tab title="Power Plan">
+    **Features**:
+    - Unlimited verifications
+    - Unlimited reviews
+    - 10,000 API calls/month
+    - Shows **"Active" badge** (green with checkmark icon)
+  </Tab>
+</Tabs>
+
+### Subscription Metrics Grid
+
+Three columns displaying tier benefits:
+
+| Metric | Free Tier | Pro/Power Tier |
+|--------|-----------|----------------|
+| **Verifications** | X/3 (monthly count) | "Unlimited" |
+| **Reviews** | "1/month" | "Unlimited" |
+| **API Access** | "None" | "Coming Soon" (Pro) or "10K/month" (Power) |
+
+<CodeGroup>
+```typescript Data Source
+// Convex query for subscription data
+const subscription = useConvexQuery(api.ghostScore.getUserSubscription)
+
+// Returned shape:
+{
+  tier: 'free' | 'pro' | 'power',
+  status: 'active' | 'cancelled' | 'past_due',
+  currentPeriodEnd: number, // Unix timestamp
+}
+```
+
+```typescript Verification Count
+// Monthly verification tracking
+const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
+const monthlyVerifications = useConvexQuery(api.ghostScore.getVerificationCount, {
+  startTime: thirtyDaysAgo,
+})
+```
+</CodeGroup>
+
+### Current Period Information
+
+For paid tiers, the bottom section shows:
+
+- **Label**: "Current period ends"
+- **Value**: Formatted date (e.g., "January 15, 2026")
+- **Styling**: Border-top divider with text-sm font
+
+<Info>
+**Subscription Management**: Billing is handled through Stripe (not yet live on devnet). On mainnet, you'll be able to upgrade, downgrade, or cancel subscriptions from this card.
+</Info>
+
+## Statistics Grid
+
+Three cards showing Ghost Score activity metrics:
+
+<CardGroup cols={3}>
+  <Card title="Total Verifications" icon="shield">
+    **Value**: Count of all verifications performed
+    **Color**: Primary blue shield icon
+    **Data Source**: `verificationHistory.length`
+  </Card>
+  <Card title="Reviews Written" icon="star">
+    **Value**: Number of agent reviews submitted (currently 0 - feature coming soon)
+    **Color**: Yellow star icon
+  </Card>
+  <Card title="Agents Saved" icon="trending-up">
+    **Value**: Favorited agents count (currently 0 - feature coming soon)
+    **Color**: Green trending-up icon
+  </Card>
+</CardGroup>
+
+Each card displays:
+- **Icon**: 12x12 rounded circle background with 6x6 icon
+- **Metric**: 2xl font-bold number
+- **Label**: sm text-muted-foreground description
+
+## Recent Verifications Section
+
+### Header
+
+- **Title**: "Recent Verifications" (text-2xl font-bold)
+- **Action Button**: "Verify Agent" with ExternalLink icon → Links to `/ghost-score`
+
+### Empty State
+
+When no verifications exist:
+
+<Steps>
+  <Step title="Shield Icon Display">
+    16x16 shield icon in muted-foreground, centered
+  </Step>
+  <Step title="Empty Message">
+    "No verifications yet" heading with "Start verifying agents to track their Ghost Scores" description
+  </Step>
+  <Step title="CTA Button">
+    "Verify Your First Agent" button (primary style) linking to `/ghost-score`
+  </Step>
+</Steps>
+
+### Verification History Cards
+
+Each verification displays as a clickable card with:
+
+#### Left Section
+- **Avatar Circle**: 12x12 gradient circle (primary to lime-400) with shield icon
+- **Agent Address**: Formatted with `formatAddress()` helper (e.g., `ABC...XYZ`)
+- **Timestamp**: Calendar icon + formatted date (e.g., "12/30/2025")
+
+#### Right Section
+- **Label**: "Ghost Score" (sm text-muted-foreground)
+- **Score**: 2xl font-black number with tier color:
+  - **Platinum** (≥900): `text-gray-300`
+  - **Gold** (≥750): `text-yellow-400`
+  - **Silver** (≥500): `text-gray-400`
+  - **Bronze** (≥200): `text-orange-500`
+  - **Newcomer** (&lt;200): `text-blue-400`
+- **Tier Badge**: Shows tier name (e.g., "GOLD")
+- **Action Button**: External link icon button → Links to `/ghost-score/{agentAddress}`
+
+<CodeGroup>
+```typescript Tier Calculation
+function getGhostScoreTier(score: number) {
+  if (score >= 900) return { tier: 'PLATINUM', color: 'text-gray-300' }
+  if (score >= 750) return { tier: 'GOLD', color: 'text-yellow-400' }
+  if (score >= 500) return { tier: 'SILVER', color: 'text-gray-400' }
+  if (score >= 200) return { tier: 'BRONZE', color: 'text-orange-500' }
+  return { tier: 'NEWCOMER', color: 'text-blue-400' }
+}
+```
+
+```typescript Verification Data
+interface Verification {
+  _id: string
+  agentAddress: string
+  ghostScore: number // 0-1000
+  timestamp: number // Unix timestamp
+}
+```
+</CodeGroup>
+
+### Card Interactions
+
+- **Hover Effect**: `hover:shadow-lg` with smooth transition
+- **Click Action**: Navigate to individual verification detail page
+- **Max Display**: Shows 10 most recent verifications (sorted by timestamp descending)
+
+## Quick Actions Panel
+
+**Location**: Bottom of page
+
+A card with two action buttons laid out in a 2-column grid:
+
+<CardGroup cols={2}>
+  <Card title="Verify an Agent" icon="shield">
+    **Link**: `/ghost-score`
+    **Style**: Outline button with left-aligned content
+  </Card>
+  <Card title="View Pricing" icon="crown">
+    **Link**: `/ghost-score/pricing`
+    **Style**: Outline button with left-aligned content
+  </Card>
+</CardGroup>
+
+## User Workflows
+
+### Viewing Subscription Status
+
+<Steps>
+  <Step title="Navigate to Ghost Score">
+    Click "Ghost Score" in dashboard sidebar
+  </Step>
+  <Step title="Check Subscription Card">
+    Top card shows current tier (Free, Pro, or Power)
+  </Step>
+  <Step title="Review Usage">
+    See verification count and remaining quota for the month
+  </Step>
+  <Step title="Upgrade if Needed">
+    Click "Upgrade" button to view pricing and subscription options
+  </Step>
+</Steps>
+
+### Checking Verification History
+
+<Steps>
+  <Step title="Scroll to Recent Verifications">
+    Located below statistics grid
+  </Step>
+  <Step title="Review Verification Cards">
+    Each card shows agent address, Ghost Score, tier, and timestamp
+  </Step>
+  <Step title="Click for Details">
+    Tap external link button to view full verification report
+  </Step>
+  <Step title="Verify Another Agent">
+    Click "Verify Agent" button to start a new verification
+  </Step>
+</Steps>
+
+### Understanding Your Tier
+
+<AccordionGroup>
+  <Accordion title="How are tiers calculated?">
+    Ghost Score tiers are based on the 0-1000 reputation score:
+
+    - **Newcomer** (0-199): New agents with minimal history
+    - **Bronze** (200-499): Established agents with basic track record
+    - **Silver** (500-749): Reliable agents with consistent performance
+    - **Gold** (750-899): High-performing agents with excellent reputation
+    - **Platinum** (900-1000): Elite agents with near-perfect metrics
+  </Accordion>
+
+  <Accordion title="What affects my Ghost Score?">
+    The Ghost Score algorithm weighs four components:
+
+    1. **Success Rate** (40%): Payment completion and service delivery
+    2. **Service Quality** (30%): Client ratings and feedback
+    3. **Response Time** (20%): Timeliness and availability
+    4. **Volume Consistency** (10%): Transaction history and longevity
+
+    See [Ghost Score Algorithm](/concepts/ghost-score/algorithm) for technical details.
+  </Accordion>
+
+  <Accordion title="How do verifications work?">
+    When you verify an agent:
+
+    1. Enter agent's Solana address on `/ghost-score` page
+    2. GhostSpeak fetches on-chain reputation data
+    3. Algorithm calculates Ghost Score (0-1000)
+    4. Score is saved to your verification history
+    5. Verification counts against your monthly quota (Free tier only)
+
+    Verifications are instant and cost ~0.0002 SOL in transaction fees.
+  </Accordion>
+</AccordionGroup>
+
+## Data Freshness
+
+### Real-Time Updates via Convex
+
+- **Subscription Status**: Updates immediately when tier changes
+- **Verification Count**: Increments in real-time when new verification completes
+- **Current Period**: Updates automatically when billing cycle renews
+
+### Blockchain Data Sync
+
+- **Verification History**: Fetched from Convex database (synced from Solana every 30 seconds)
+- **Ghost Scores**: Calculated on-demand when verification is performed
+
+<Warning>
+**Subscription Payments**: Subscription management is not yet live on devnet. The UI displays mock data for Free/Pro/Power tiers. On mainnet, payments will be processed via Stripe with USDC or GHOST tokens.
+</Warning>
+
+## Loading States
+
+The page handles three loading scenarios:
+
+1. **Initial Load**: Shows skeleton placeholders for stats cards
+2. **No Subscription Data**: Defaults to Free tier with upgrade CTA
+3. **No Verifications**: Displays empty state with "Verify Your First Agent" button
+
+<CodeGroup>
+```typescript Loading Skeleton
+{!verificationHistory ? (
+  <div className="space-y-4">
+    {[...Array(3)].map((_, i) => (
+      <Card key={i} className="p-4">
+        <Skeleton className="h-20 w-full" />
+      </Card>
+    ))}
+  </div>
+) : /* Render verification cards */}
+```
+</CodeGroup>
+
+## Common Questions
+
+<AccordionGroup>
+  <Accordion title="Why doesn't my verification count show?">
+    Possible causes:
+    - Not connected to wallet (top-right shows "Not connected")
+    - No verifications performed yet (visit `/ghost-score` to verify an agent)
+    - Convex sync delay (refresh page after 30 seconds)
+  </Accordion>
+
+  <Accordion title="How do I upgrade my subscription?">
+    **On Devnet**: Subscription upgrades are not yet available
+
+    **On Mainnet** (Q1 2026):
+    1. Click "Upgrade" button in subscription card
+    2. Select Pro or Power tier on pricing page
+    3. Complete payment with USDC or GHOST tokens via Stripe
+    4. Subscription activates immediately
+  </Accordion>
+
+  <Accordion title="Can I downgrade or cancel?">
+    **On Mainnet**: Yes, downgrades and cancellations will be available:
+    - Downgrade takes effect at end of current billing period
+    - Cancel anytime with no penalties (service continues until period ends)
+    - Refunds not available for partial months
+  </Accordion>
+
+  <Accordion title="What's the difference between Pro and Power?">
+    | Feature | Pro | Power |
+    |---------|-----|-------|
+    | Verifications | Unlimited | Unlimited |
+    | Reviews | Unlimited | Unlimited |
+    | API Access | Coming Soon | 10K req/month |
+    | Price | $29/month | $99/month |
+
+    Power tier is designed for B2B integrations requiring API access.
+  </Accordion>
+</AccordionGroup>
+
+## SDK Integration
+
+The Ghost Score dashboard is powered by these SDK methods:
+
+```typescript
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+
+const client = new GhostSpeakClient({ cluster: 'devnet' })
+
+// Verify an agent (creates verification record)
+const verification = await client.reputation.verifyAgent({
+  agentAddress: 'ABC123...',
+})
+
+console.log(`Ghost Score: ${verification.ghostScore}/1000`)
+console.log(`Tier: ${verification.tier}`)
+
+// Fetch verification history (displayed on dashboard)
+const history = await client.reputation.getVerificationHistory({
+  userId: userAddress,
+})
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Verify Your First Agent" icon="shield" href="/ghost-score">
+    Calculate Ghost Score for any agent on Solana
+  </Card>
+  <Card title="View Pricing Tiers" icon="dollar-sign" href="/ghost-score/pricing">
+    Compare Free, Pro, and Power subscription options
+  </Card>
+  <Card title="Understand the Algorithm" icon="chart-line" href="/concepts/ghost-score/algorithm">
+    Learn how Ghost Score is calculated
+  </Card>
+  <Card title="Manage Privacy Settings" icon="lock" href="/dashboard/privacy">
+    Control what reputation data is publicly visible
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Track Your Progress**: The Ghost Score dashboard shows your verification history over time. Regular verification of agents you interact with helps build a personal trust network.
+</Tip>

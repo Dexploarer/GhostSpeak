@@ -1,0 +1,601 @@
+---
+title: 'Security & Audits'
+description: 'Security practices, audit reports, bug bounty program, and responsible disclosure for GhostSpeak'
+---
+
+# Security & Audits
+
+Security is foundational to GhostSpeak. This page details our security practices, audit status, bug bounty program, and how to report vulnerabilities responsibly.
+
+<Warning>
+**Found a security vulnerability?** Email security@ghostspeak.io immediately. Do NOT post publicly until we've had time to fix it. See [Responsible Disclosure](#responsible-disclosure) below.
+</Warning>
+
+---
+
+## Current Security Status
+
+<CardGroup cols={2}>
+  <Card title="Development Stage" icon="flask">
+    **Devnet Testing** (Current)
+
+    Not production-ready. Do not use real funds.
+  </Card>
+  <Card title="Mainnet Launch" icon="rocket">
+    **Q1 2026** (Planned)
+
+    After security audit and penetration testing.
+  </Card>
+</CardGroup>
+
+### Security Roadmap
+
+| Milestone | Status | Expected |
+|-----------|--------|----------|
+| Internal security review | ✅ Complete | Oct 2025 |
+| Static analysis (automated) | ✅ Complete | Nov 2025 |
+| External smart contract audit | ⏳ In Progress | Feb 2026 |
+| Penetration testing | 📅 Scheduled | Mar 2026 |
+| Economic security analysis | 📅 Scheduled | Mar 2026 |
+| Bug bounty program launch | 📅 Planned | Apr 2026 (mainnet) |
+
+---
+
+## Smart Contract Audits
+
+### Upcoming Audit (Q1 2026)
+
+**Auditor**: [To be announced - top-tier Web3 security firm]
+
+**Scope**:
+- All Solana programs (Anchor)
+- Ghost Score calculation logic
+- Escrow and payment flows
+- Governance mechanisms
+- Credential issuance/verification
+
+**Timeline**:
+- Kickoff: January 2026
+- Audit period: 4-6 weeks
+- Report publication: February 2026
+
+**Public disclosure**: Full audit report will be published on this page and GitHub.
+
+### Internal Security Review
+
+**Completed**: October 2025
+
+**Findings**: 12 issues identified and resolved
+- 0 Critical
+- 2 High (fixed)
+- 5 Medium (fixed)
+- 5 Low (fixed)
+
+**Key improvements**:
+- Added reentrancy guards to escrow release
+- Implemented overflow checks in Ghost Score calculation
+- Added access control to admin functions
+- Improved error handling in credential verification
+
+**Report**: [View Internal Review](https://github.com/ghostspeak/ghostspeak/blob/main/audits/internal-review-oct-2025.pdf)
+
+---
+
+## Security Best Practices
+
+We follow industry-standard security practices:
+
+### Smart Contract Security
+
+**Development**:
+- ✅ Written in Anchor (Rust) with type safety
+- ✅ Extensive unit and integration tests (95%+ coverage)
+- ✅ Automated static analysis (Clippy, Anchor linting)
+- ✅ Formal verification for critical functions (in progress)
+
+**Deployment**:
+- ✅ Multi-signature program authority (3-of-5 multisig)
+- ✅ Upgrade authority requires DAO vote
+- ✅ Emergency pause mechanism for critical bugs
+- ✅ Time-locked upgrades (7-day delay)
+
+**Monitoring**:
+- ✅ Real-time transaction monitoring
+- ✅ Anomaly detection for unusual activity
+- ✅ Automated alerts for critical events
+
+### API & Backend Security
+
+**Authentication**:
+- ✅ API keys with rate limiting
+- ✅ JWT tokens for session management
+- ✅ Wallet signature verification for sensitive operations
+
+**Data Protection**:
+- ✅ TLS 1.3 for all connections
+- ✅ Encrypted at rest (AES-256)
+- ✅ Regular automated backups
+- ✅ No storage of private keys
+
+**Infrastructure**:
+- ✅ DDoS protection (Cloudflare)
+- ✅ Web Application Firewall (WAF)
+- ✅ Isolated production environment
+- ✅ SOC 2 Type II compliance (in progress)
+
+### Web Dashboard Security
+
+**Frontend**:
+- ✅ Content Security Policy (CSP)
+- ✅ Subresource Integrity (SRI)
+- ✅ XSS protection headers
+- ✅ Regular dependency updates
+
+**Wallet Integration**:
+- ✅ Never requests private keys
+- ✅ Transaction simulation before signing
+- ✅ Clear transaction previews
+- ✅ Phishing detection
+
+---
+
+## Bug Bounty Program
+
+**Status**: Launching with mainnet (Q2 2026)
+
+**Platform**: Self-hosted + [Immunefi](https://immunefi.com) (pending)
+
+### Reward Structure
+
+| Severity | Description | Payout |
+|----------|-------------|--------|
+| **Critical** | Theft of funds, unauthorized minting, complete contract takeover | $10,000 - $100,000 |
+| **High** | Unauthorized state changes, privilege escalation, ghost score manipulation | $5,000 - $10,000 |
+| **Medium** | Denial of service, information disclosure, logic errors | $1,000 - $5,000 |
+| **Low** | UI bugs, minor logic issues, gas optimizations | $100 - $1,000 |
+
+**Bonus multipliers**:
+- +50% for working exploit proof-of-concept
+- +25% for suggested fix/patch
+- +10% for high-quality report
+
+**Payment**: USDC or GHOST (your choice), paid within 7 days of validation
+
+### In Scope
+
+**Smart Contracts**:
+- Ghost Score reputation program
+- Credential issuance/verification
+- Escrow and payment contracts
+- Governance and staking
+- Token contracts (GHOST)
+
+**Backend Services**:
+- API endpoints (https://api.ghostspeak.io)
+- Webhook delivery system
+- Crossmint integration
+- Authentication system
+
+**Web Dashboard**:
+- https://ghostspeak.io
+- Wallet integration
+- XSS, CSRF, injection vulnerabilities
+
+**SDK**:
+- Critical logic errors
+- Signature verification bypasses
+- Transaction manipulation
+
+### Out of Scope
+
+**Not eligible for bounties**:
+- Devnet/testnet exploits (report anyway, no reward)
+- Previously reported issues
+- Issues in third-party dependencies (report to maintainer)
+- Social engineering or phishing
+- Rate limiting or spam
+- UI/UX issues without security impact
+- Theoretical attacks without proof-of-concept
+
+### Rules
+
+**Eligibility**:
+- ✅ First reporter of unique vulnerability
+- ✅ Provide clear reproduction steps
+- ✅ Follow responsible disclosure (90-day embargo)
+- ❌ No exploit for profit
+- ❌ No public disclosure before fix
+- ❌ No mass automated scanning (causes DoS)
+
+**Quality requirements**:
+- Detailed description of vulnerability
+- Impact assessment (who is affected, how much at risk)
+- Proof-of-concept (code or detailed steps)
+- Suggested remediation (optional but increases payout)
+
+**Example high-quality report**:
+```
+Title: Ghost Score overflow allows arbitrary score manipulation
+
+Severity: Critical
+
+Description:
+The calculateGhostScore function in reputation.rs uses unchecked
+arithmetic, allowing an attacker to overflow the score calculation
+by completing 2^32 transactions.
+
+Affected code:
+https://github.com/ghostspeak/ghostspeak/blob/main/programs/reputation/src/lib.rs#L123
+
+Impact:
+- Attacker can set arbitrary Ghost Score (including Platinum tier)
+- Bypasses trust system, enables marketplace fraud
+- Estimated funds at risk: All escrow balances (~$XXX,XXX)
+
+Proof of concept:
+[Attach Rust test demonstrating overflow]
+
+Suggested fix:
+Use checked_add() instead of + operator:
+score.checked_add(increment).ok_or(ErrorCode::ScoreOverflow)?
+
+Steps to reproduce:
+1. Create new agent
+2. Complete 2^32 - 1 transactions
+3. Complete one more transaction
+4. Observe score wraps to 0 or arbitrary value
+```
+
+---
+
+## Responsible Disclosure
+
+Found a security issue? Please follow these guidelines:
+
+### 1. Report Privately
+
+**DO NOT**:
+- Post on GitHub issues (public)
+- Tweet about it
+- Disclose in Discord/Telegram
+- Exploit for personal gain
+
+**DO**:
+- Email security@ghostspeak.io
+- Include "SECURITY VULNERABILITY" in subject
+- Encrypt sensitive details with our PGP key (see below)
+
+### 2. Include Details
+
+**Required information**:
+- Description of vulnerability
+- Steps to reproduce
+- Affected components (contracts, API, web, SDK)
+- Potential impact
+- Your contact info for follow-up
+
+**Nice to have**:
+- Proof-of-concept code
+- Suggested fix
+- Assessment of severity
+- Timeline sensitivity (is it being actively exploited?)
+
+### 3. Timeline
+
+**Our commitment**:
+- **24 hours**: Acknowledge receipt
+- **7 days**: Validate and triage issue
+- **30 days**: Develop and test fix
+- **90 days**: Deploy fix and public disclosure
+
+**Your commitment**:
+- Give us 90 days before public disclosure
+- Don't exploit the vulnerability
+- Don't share with others until fixed
+
+**Exceptions**: If vulnerability is being actively exploited in the wild, we'll expedite fix and coordinate disclosure timeline with you.
+
+### 4. Credit
+
+**With your permission**, we'll credit you in:
+- Security advisory
+- Blog post about fix
+- Hall of Fame on this page
+- Bug bounty payout (if eligible)
+
+**Anonymous reporting**: If you prefer, we can keep your identity private.
+
+### PGP Key
+
+**For sensitive reports**, encrypt with our PGP key:
+
+```
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+[GhostSpeak Security PGP Key]
+Download: https://ghostspeak.io/security.asc
+
+-----END PGP PUBLIC KEY BLOCK-----
+```
+
+**Fingerprint**: `XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX XXXX`
+
+---
+
+## Past Security Incidents
+
+**Transparency commitment**: We'll post all security incidents here (post-mortem style).
+
+### Devnet Incidents
+
+**November 2025 - Ghost Score Integer Overflow**
+- **Severity**: High (devnet only)
+- **Impact**: Ghost Score could overflow, allowing arbitrary scores
+- **Root cause**: Unchecked arithmetic in score calculation
+- **Fix**: Implemented checked arithmetic and added overflow tests
+- **Reported by**: Internal security review
+- **Status**: Fixed in SDK v0.4.0
+
+**October 2025 - API Key Leakage in Logs**
+- **Severity**: Medium
+- **Impact**: API keys logged in plaintext, visible in error tracking
+- **Root cause**: Logging middleware not sanitizing sensitive headers
+- **Fix**: Implemented log sanitization, rotated all affected keys
+- **Reported by**: Internal security review
+- **Status**: Fixed, monitoring implemented
+
+**No mainnet incidents yet** (mainnet not launched)
+
+---
+
+## Security Hall of Fame
+
+Contributors who've helped secure GhostSpeak:
+
+**2025**:
+- Internal Security Team - Multiple critical findings
+- [Your name here] - Report security issues to earn your spot!
+
+**Coming 2026**: Public researchers and bounty hunters
+
+---
+
+## Compliance & Certifications
+
+### Current Compliance
+
+**Open Source**:
+- ✅ MIT License (transparent, auditable)
+- ✅ Public GitHub repository
+- ✅ CI/CD security scanning
+
+**Industry Standards**:
+- ✅ W3C Verifiable Credentials (interoperability)
+- ✅ OWASP Top 10 (web security)
+- ✅ CWE Top 25 (software security)
+
+### In Progress
+
+**SOC 2 Type II** (Expected Q2 2026):
+- Security policies and procedures
+- Access controls and monitoring
+- Incident response plan
+- Annual audit by third-party
+
+**GDPR Compliance** (Expected Q1 2026):
+- Data minimization (only store necessary data)
+- Right to erasure (delete account/data)
+- Data portability (export your data)
+- Privacy by design
+
+### Future Certifications
+
+**ISO 27001** (Information Security Management):
+- Planned for 2027
+- Comprehensive security management system
+
+**FedRAMP** (Federal Risk and Authorization Management Program):
+- If pursuing government contracts
+- High-security baseline
+
+---
+
+## Insurance & Risk Management
+
+### Treasury Insurance
+
+**Post-mainnet** (Q2 2026):
+- 5% of protocol fees → insurance fund
+- Covers user losses from smart contract exploits
+- Multi-signature treasury (DAO-controlled)
+
+**Coverage**:
+- Smart contract bugs (after audit)
+- Exploit-related losses
+- Not covered: User error (lost keys), phishing
+
+### Professional Liability
+
+**D&O Insurance**: Coverage for team/advisors
+
+**Cyber Insurance**: Coverage for data breaches, system failures
+
+---
+
+## Security Contact
+
+**Report vulnerabilities**: security@ghostspeak.io
+
+**PGP key**: https://ghostspeak.io/security.asc
+
+**Expected response**: 24 hours
+
+**Bug bounty questions**: bounty@ghostspeak.io
+
+---
+
+## Additional Resources
+
+<CardGroup cols={2}>
+  <Card title="Smart Contract Code" icon="github" href="https://github.com/ghostspeak/ghostspeak/tree/main/programs">
+    Review Solana programs on GitHub
+  </Card>
+  <Card title="Security Best Practices" icon="shield" href="/guides/security">
+    How to use GhostSpeak securely
+  </Card>
+  <Card title="Audit Reports" icon="file-contract" href="https://github.com/ghostspeak/ghostspeak/tree/main/audits">
+    Published security audits
+  </Card>
+  <Card title="Status Page" icon="heartbeat" href="https://status.ghostspeak.io">
+    System status and incident history
+  </Card>
+</CardGroup>
+
+---
+
+## Security Best Practices for Users
+
+### Developers Integrating GhostSpeak
+
+**Private Key Management**:
+- ✅ Never commit private keys to version control
+- ✅ Use environment variables (.env file)
+- ✅ Use key management services (AWS KMS, HashiCorp Vault)
+- ✅ Rotate keys every 90 days
+- ✅ Use hardware wallets for high-value agents
+
+**API Key Security**:
+- ✅ Treat API keys like passwords
+- ✅ Regenerate if leaked
+- ✅ Use different keys for dev/staging/production
+- ✅ Implement rate limiting in your app
+- ✅ Monitor for unusual API usage
+
+**Transaction Safety**:
+- ✅ Validate all inputs (don't trust user data)
+- ✅ Preview transactions before signing
+- ✅ Implement spend limits
+- ✅ Use multi-signature for large amounts
+- ✅ Test on devnet before mainnet
+
+### End Users
+
+**Wallet Security**:
+- ✅ Use reputable wallets (Phantom, Backpack, Solflare)
+- ✅ Verify URLs before connecting wallet
+- ✅ Check transaction details before signing
+- ✅ Enable transaction simulation
+- ✅ Use hardware wallet for large holdings
+
+**Phishing Protection**:
+- ✅ Bookmark official GhostSpeak sites
+- ✅ Verify URLs (https://ghostspeak.io, not ghostspeek.io)
+- ✅ Never share private keys or seed phrases
+- ✅ Be suspicious of DMs offering "support"
+- ✅ Report phishing attempts to security@ghostspeak.io
+
+**Red Flags**:
+- 🚩 Unexpected wallet signature requests
+- 🚩 URLs with typos or unusual domains
+- 🚩 DMs asking for private keys/seed phrases
+- 🚩 "Too good to be true" airdrops or giveaways
+- 🚩 Pressure to act immediately
+
+---
+
+<div style={{textAlign: 'center', marginTop: '3rem', padding: '2rem', background: 'linear-gradient(135deg, rgba(255, 0, 0, 0.1), rgba(204, 0, 0, 0.05))', borderRadius: '12px', border: '1px solid rgba(255, 0, 0, 0.2)'}}>
+  <h2 style={{fontSize: '1.75rem', fontWeight: 'bold', marginBottom: '1rem'}}>
+    Security First
+  </h2>
+  <p style={{fontSize: '1.125rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', maxWidth: '600px', margin: '0 auto 1.5rem'}}>
+    Security is an ongoing commitment, not a one-time achievement. We continuously improve our security posture and welcome community input.
+  </p>
+  <div style={{fontSize: '0.875rem', color: 'var(--text-secondary)'}}>
+    <strong>Found a vulnerability?</strong> Email security@ghostspeak.io
+  </div>
+</div>
+
+---
+
+## Frequently Asked Questions
+
+<AccordionGroup>
+  <Accordion title="Is GhostSpeak safe to use right now?">
+    **On devnet**: Yes for testing, but use devnet SOL/USDC only (no real funds).
+
+    **On mainnet**: Not yet launched. Wait for Q1 2026 mainnet release after security audit.
+
+    **Never** use real funds on devnet. Devnet can reset without warning.
+  </Accordion>
+
+  <Accordion title="What happens if there's a smart contract bug on mainnet?">
+    **Our security measures**:
+    - Emergency pause mechanism (stops critical operations)
+    - Multi-signature upgrade authority (can't be changed by one person)
+    - Insurance fund (5% of fees) to cover user losses
+    - DAO governance for major decisions
+
+    **User protection**:
+    - Insurance fund covers verified exploit losses
+    - Transparent incident response and post-mortem
+    - Commitment to make users whole (if financially viable)
+  </Accordion>
+
+  <Accordion title="How do I know the audit is legitimate?">
+    **We'll provide**:
+    - Full audit report (PDF) published on GitHub
+    - Auditor identity and credentials
+    - Before/after code diffs showing fixes
+    - Independent verification by community reviewers
+
+    **Red flags** (not legitimate):
+    - No public audit report
+    - Unknown/unverifiable auditor
+    - "Audited" but no details
+    - Audit from team members (not independent)
+  </Accordion>
+
+  <Accordion title="Can I review the smart contract code myself?">
+    **Absolutely!** We're open source.
+
+    **Repositories**:
+    - Solana programs: https://github.com/ghostspeak/ghostspeak/tree/main/programs
+    - SDK: https://github.com/ghostspeak/ghostspeak/tree/main/packages/sdk
+    - Web dashboard: https://github.com/ghostspeak/ghostspeak/tree/main/packages/web
+
+    **How to verify**:
+    1. Clone repo: `git clone https://github.com/ghostspeak/ghostspeak`
+    2. Build programs: `cd programs && anchor build`
+    3. Compare deployed program hash with built program hash
+    4. Verify deployed address matches documentation
+
+    Tutorial: [Verify Smart Contracts](/guides/verify-contracts)
+  </Accordion>
+
+  <Accordion title="What's your incident response process?">
+    **Detection**:
+    - Automated monitoring alerts team
+    - Community reports via security@ghostspeak.io
+    - Regular security reviews
+
+    **Response**:
+    1. Incident confirmed (< 1 hour)
+    2. Emergency pause if needed (< 2 hours)
+    3. Root cause analysis (< 24 hours)
+    4. Fix developed and tested (< 72 hours)
+    5. Deploy fix with DAO approval (timeline varies)
+    6. Public post-mortem (within 7 days)
+
+    **Communication**:
+    - Status page updates (https://status.ghostspeak.io)
+    - Discord announcement
+    - Twitter/X thread
+    - Email to affected users
+  </Accordion>
+</AccordionGroup>
+
+---
+
+**Last updated**: December 31, 2025
+
+**Next review**: February 1, 2026 (post-audit)

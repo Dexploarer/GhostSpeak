@@ -1,0 +1,562 @@
+---
+title: 'Rate Limits'
+description: 'API rate limits, pricing tiers, and overage handling for GhostSpeak B2B API'
+---
+
+# Rate Limits
+
+GhostSpeak API implements **per-API-key rate limiting** to ensure fair usage and system stability. Rate limits are based on your pricing tier and reset every hour.
+
+<Info>
+**Rate Limit Headers**: Every API response includes headers showing your current rate limit status. See [Rate Limit Headers](#rate-limit-headers) below.
+</Info>
+
+## Pricing Tiers
+
+GhostSpeak offers three B2B API tiers with different rate limits and features:
+
+<Tabs>
+  <Tab title="Starter">
+    ### Starter Plan - $99/month
+
+    Perfect for small integrations and MVPs.
+
+    **Rate Limits**:
+    - **100 requests/hour** per API key
+    - **2,000 requests/month** included
+    - **$0.05/request** overage pricing
+
+    **Features**:
+    - ✅ All API endpoints
+    - ✅ Bearer token authentication
+    - ✅ Up to 3 API keys
+    - ✅ Community support (Discord)
+    - ❌ No IP whitelisting
+    - ❌ No webhook signatures
+    - ❌ No SLA guarantee
+
+    **Best For**: Prototypes, personal projects, small startups
+  </Tab>
+
+  <Tab title="Growth">
+    ### Growth Plan - $299/month
+
+    Built for growing businesses and production integrations.
+
+    **Rate Limits**:
+    - **500 requests/hour** per API key
+    - **10,000 requests/month** included
+    - **$0.03/request** overage pricing
+
+    **Features**:
+    - ✅ All API endpoints
+    - ✅ Bearer token authentication
+    - ✅ Up to 10 API keys
+    - ✅ Priority email support (24h response)
+    - ✅ Webhook signature verification
+    - ✅ 99.5% uptime SLA
+    - ❌ No IP whitelisting
+    - ❌ No dedicated account manager
+
+    **Best For**: Production applications, AI marketplaces, growing startups
+  </Tab>
+
+  <Tab title="Scale">
+    ### Scale Plan - $999/month
+
+    Enterprise-grade API access with premium support.
+
+    **Rate Limits**:
+    - **2,000 requests/hour** per API key
+    - **50,000 requests/month** included
+    - **$0.02/request** overage pricing
+
+    **Features**:
+    - ✅ All API endpoints
+    - ✅ Bearer token authentication
+    - ✅ Unlimited API keys
+    - ✅ Priority email + Slack support (4h response)
+    - ✅ Webhook signature verification
+    - ✅ IP whitelisting
+    - ✅ 99.9% uptime SLA
+    - ✅ Dedicated account manager
+    - ✅ Custom contract terms available
+
+    **Best For**: Large-scale integrations, enterprise customers, white-label solutions
+  </Tab>
+
+  <Tab title="Enterprise">
+    ### Enterprise Plan - Custom Pricing
+
+    For organizations with unique requirements.
+
+    **Rate Limits**:
+    - **Custom limits** negotiated based on usage
+    - **Dedicated infrastructure** option available
+    - **Volume discounts** on overage
+
+    **Features**:
+    - ✅ Everything in Scale
+    - ✅ Custom rate limits
+    - ✅ Dedicated infrastructure option
+    - ✅ On-premise deployment option
+    - ✅ White-label branding
+    - ✅ Custom SLA terms
+    - ✅ 24/7 phone support
+
+    **Contact**: sales@ghostspeak.io for custom pricing
+  </Tab>
+</Tabs>
+
+## Rate Limit Headers
+
+Every API response includes these headers to help you track usage:
+
+```http
+X-RateLimit-Limit: 500
+X-RateLimit-Remaining: 487
+X-RateLimit-Reset: 1735689600
+X-RateLimit-Tier: growth
+```
+
+| Header | Description | Example |
+|--------|-------------|---------|
+| `X-RateLimit-Limit` | Maximum requests per hour for your tier | `500` |
+| `X-RateLimit-Remaining` | Requests remaining in current window | `487` |
+| `X-RateLimit-Reset` | Unix timestamp when limit resets | `1735689600` |
+| `X-RateLimit-Tier` | Your current pricing tier | `growth` |
+
+### Parsing Rate Limit Headers
+
+<CodeGroup>
+```javascript JavaScript
+const response = await fetch('https://api.ghostspeak.io/v1/agents/search?query=test', {
+  headers: {
+    'Authorization': `Bearer ${apiKey}`,
+  },
+});
+
+const limit = parseInt(response.headers.get('X-RateLimit-Limit'));
+const remaining = parseInt(response.headers.get('X-RateLimit-Remaining'));
+const resetTimestamp = parseInt(response.headers.get('X-RateLimit-Reset'));
+const tier = response.headers.get('X-RateLimit-Tier');
+
+console.log(`${remaining}/${limit} requests remaining`);
+console.log(`Resets at: ${new Date(resetTimestamp * 1000).toISOString()}`);
+
+// Warn if approaching limit
+if (remaining < limit * 0.1) {
+  console.warn(`WARNING: Only ${remaining} requests remaining!`);
+}
+```
+
+```python Python
+import requests
+from datetime import datetime
+
+response = requests.get(
+    'https://api.ghostspeak.io/v1/agents/search',
+    params={'query': 'test'},
+    headers={'Authorization': f'Bearer {api_key}'}
+)
+
+limit = int(response.headers.get('X-RateLimit-Limit'))
+remaining = int(response.headers.get('X-RateLimit-Remaining'))
+reset_timestamp = int(response.headers.get('X-RateLimit-Reset'))
+tier = response.headers.get('X-RateLimit-Tier')
+
+print(f"{remaining}/{limit} requests remaining")
+print(f"Resets at: {datetime.fromtimestamp(reset_timestamp).isoformat()}")
+
+# Warn if approaching limit
+if remaining < limit * 0.1:
+    print(f"WARNING: Only {remaining} requests remaining!")
+```
+
+```typescript TypeScript
+interface RateLimitInfo {
+  limit: number;
+  remaining: number;
+  resetAt: Date;
+  tier: string;
+}
+
+async function checkRateLimit(apiKey: string): Promise<RateLimitInfo> {
+  const response = await fetch('https://api.ghostspeak.io/v1/agents/search?query=test', {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+    },
+  });
+
+  const limit = parseInt(response.headers.get('X-RateLimit-Limit') || '0');
+  const remaining = parseInt(response.headers.get('X-RateLimit-Remaining') || '0');
+  const resetTimestamp = parseInt(response.headers.get('X-RateLimit-Reset') || '0');
+  const tier = response.headers.get('X-RateLimit-Tier') || 'unknown';
+
+  return {
+    limit,
+    remaining,
+    resetAt: new Date(resetTimestamp * 1000),
+    tier,
+  };
+}
+
+const rateLimitInfo = await checkRateLimit(process.env.GHOSTSPEAK_API_KEY!);
+console.log(`${rateLimitInfo.remaining}/${rateLimitInfo.limit} requests remaining`);
+```
+</CodeGroup>
+
+## Rate Limit Exceeded Response
+
+When you exceed your rate limit, the API returns a `429 Too Many Requests` response:
+
+```json
+{
+  "error": {
+    "code": "rate_limit_exceeded",
+    "message": "API rate limit exceeded. Please wait before making more requests.",
+    "statusCode": 429,
+    "details": {
+      "limit": 500,
+      "remaining": 0,
+      "resetAt": "2025-12-31T23:00:00Z",
+      "retryAfter": 1800
+    }
+  }
+}
+```
+
+**Response Headers**:
+```http
+HTTP/1.1 429 Too Many Requests
+X-RateLimit-Limit: 500
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1735689600
+Retry-After: 1800
+```
+
+<Warning>
+**Retry-After Header**: Always respect the `Retry-After` header (in seconds) before making additional requests. Ignoring this may result in temporary API key suspension.
+</Warning>
+
+## Handling Rate Limits
+
+### Exponential Backoff
+
+Implement exponential backoff when you hit rate limits:
+
+<CodeGroup>
+```typescript TypeScript
+async function fetchWithRetry(
+  url: string,
+  apiKey: string,
+  maxRetries = 3
+): Promise<Response> {
+  let retries = 0;
+
+  while (retries < maxRetries) {
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // Success
+    if (response.ok) {
+      return response;
+    }
+
+    // Rate limit exceeded
+    if (response.status === 429) {
+      const retryAfter = parseInt(response.headers.get('Retry-After') || '60');
+      const backoffMs = Math.min(retryAfter * 1000, 60000); // Max 60s
+
+      console.warn(`Rate limit hit. Retrying after ${backoffMs}ms...`);
+      await new Promise(resolve => setTimeout(resolve, backoffMs));
+      retries++;
+      continue;
+    }
+
+    // Other error
+    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+  }
+
+  throw new Error('Max retries exceeded');
+}
+
+// Usage
+const response = await fetchWithRetry(
+  'https://api.ghostspeak.io/v1/agents/search?query=test',
+  process.env.GHOSTSPEAK_API_KEY!
+);
+```
+
+```javascript JavaScript
+async function fetchWithRetry(url, apiKey, maxRetries = 3) {
+  let retries = 0;
+
+  while (retries < maxRetries) {
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      return response;
+    }
+
+    if (response.status === 429) {
+      const retryAfter = parseInt(response.headers.get('Retry-After') || '60');
+      const backoffMs = Math.min(retryAfter * 1000, 60000);
+
+      console.warn(`Rate limit hit. Retrying after ${backoffMs}ms...`);
+      await new Promise(resolve => setTimeout(resolve, backoffMs));
+      retries++;
+      continue;
+    }
+
+    throw new Error(`API request failed: ${response.status}`);
+  }
+
+  throw new Error('Max retries exceeded');
+}
+```
+</CodeGroup>
+
+### Request Queuing
+
+For high-volume applications, implement a request queue:
+
+```typescript
+class RateLimitedQueue {
+  private queue: Array<() => Promise<any>> = [];
+  private processing = false;
+  private requestsThisHour = 0;
+  private hourlyLimit: number;
+
+  constructor(hourlyLimit: number) {
+    this.hourlyLimit = hourlyLimit;
+    // Reset counter every hour
+    setInterval(() => { this.requestsThisHour = 0; }, 3600000);
+  }
+
+  async enqueue<T>(request: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      this.queue.push(async () => {
+        try {
+          const result = await request();
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      });
+
+      this.processQueue();
+    });
+  }
+
+  private async processQueue() {
+    if (this.processing || this.queue.length === 0) return;
+    if (this.requestsThisHour >= this.hourlyLimit) {
+      console.warn('Hourly limit reached. Waiting for next hour...');
+      return;
+    }
+
+    this.processing = true;
+    const request = this.queue.shift();
+
+    if (request) {
+      this.requestsThisHour++;
+      await request();
+    }
+
+    this.processing = false;
+    this.processQueue(); // Process next item
+  }
+}
+
+// Usage
+const queue = new RateLimitedQueue(500); // Growth tier limit
+
+const agent = await queue.enqueue(() =>
+  fetch('https://api.ghostspeak.io/v1/agents/agent_123', {
+    headers: { 'Authorization': `Bearer ${apiKey}` },
+  }).then(r => r.json())
+);
+```
+
+## Overage Pricing
+
+When you exceed your monthly included requests, overage charges apply automatically:
+
+| Tier | Included Requests | Overage Price |
+|------|-------------------|---------------|
+| Starter | 2,000/month | $0.05/request |
+| Growth | 10,000/month | $0.03/request |
+| Scale | 50,000/month | $0.02/request |
+| Enterprise | Custom | Negotiated |
+
+### Overage Example
+
+**Growth Plan** ($299/month, 10,000 included requests):
+
+- Month 1: **12,500 requests**
+  - Included: 10,000 requests (covered by subscription)
+  - Overage: 2,500 requests × $0.03 = **$75.00**
+  - **Total bill: $374.00**
+
+- Month 2: **8,000 requests**
+  - Included: 8,000 requests (under limit)
+  - Overage: $0.00
+  - **Total bill: $299.00**
+
+<Tip>
+**Overage Alerts**: Set up billing alerts in your dashboard to get notified when you reach 80% and 100% of your included requests.
+</Tip>
+
+### Monitoring Usage
+
+Track your API usage in the [API Usage Dashboard](/dashboard/api-usage):
+
+```bash
+# Current Month Stats
+Total Requests: 8,247 / 10,000 (82.47%)
+Overage: $0.00
+Projected End-of-Month: 9,500 requests (within limit)
+
+# By API Key
+key_abc123 (Production):    6,120 requests (74.2%)
+key_def456 (Staging):       1,890 requests (22.9%)
+key_ghi789 (Analytics):       237 requests (2.9%)
+```
+
+## Tier Comparison
+
+| Feature | Starter | Growth | Scale | Enterprise |
+|---------|---------|--------|-------|------------|
+| **Price** | $99/mo | $299/mo | $999/mo | Custom |
+| **Hourly Limit** | 100 req/hr | 500 req/hr | 2,000 req/hr | Custom |
+| **Included Requests** | 2,000/mo | 10,000/mo | 50,000/mo | Custom |
+| **Overage Price** | $0.05/req | $0.03/req | $0.02/req | Negotiated |
+| **API Keys** | 3 | 10 | Unlimited | Unlimited |
+| **Webhook Signatures** | ❌ | ✅ | ✅ | ✅ |
+| **IP Whitelisting** | ❌ | ❌ | ✅ | ✅ |
+| **SLA** | None | 99.5% | 99.9% | Custom |
+| **Support** | Discord | Email (24h) | Email+Slack (4h) | 24/7 Phone |
+
+## Upgrading Your Tier
+
+To upgrade your pricing tier:
+
+<Steps>
+  <Step title="Visit Billing Settings">
+    Navigate to [ghostspeak.io/dashboard/billing](https://ghostspeak.io/dashboard/billing)
+  </Step>
+  <Step title="Select New Tier">
+    Choose Starter, Growth, or Scale based on your usage needs
+  </Step>
+  <Step title="Confirm Upgrade">
+    Review pricing and confirm the change
+  </Step>
+  <Step title="Automatic Prorating">
+    Your first bill will be prorated based on remaining days in the billing cycle
+  </Step>
+</Steps>
+
+<Info>
+**Instant Upgrade**: Rate limit increases take effect immediately after upgrading. No API key changes required.
+</Info>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Monitor Rate Limit Headers">
+    Always check `X-RateLimit-Remaining` and `X-RateLimit-Reset` headers to avoid hitting limits unexpectedly.
+  </Accordion>
+
+  <Accordion title="Implement Request Caching">
+    Cache API responses locally to reduce redundant requests:
+
+    ```typescript
+    const cache = new Map<string, { data: any; expiresAt: number }>();
+
+    async function cachedFetch(url: string, apiKey: string, ttlMs = 60000) {
+      const cached = cache.get(url);
+      if (cached && Date.now() < cached.expiresAt) {
+        return cached.data;
+      }
+
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+      });
+      const data = await response.json();
+
+      cache.set(url, { data, expiresAt: Date.now() + ttlMs });
+      return data;
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Use Bulk Endpoints">
+    When querying multiple resources, use bulk endpoints to reduce request count:
+
+    - **Instead of**: 100 requests to `/agents/:id`
+    - **Use**: 1 request to `/agents/bulk` with 100 IDs
+  </Accordion>
+
+  <Accordion title="Set Up Billing Alerts">
+    Configure alerts at 80%, 90%, and 100% of your monthly limit to avoid unexpected overage charges.
+  </Accordion>
+</AccordionGroup>
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="What happens if I exceed my hourly limit?">
+    You'll receive a `429 Too Many Requests` response. Your rate limit resets at the top of every hour (e.g., 10:00, 11:00, 12:00).
+  </Accordion>
+
+  <Accordion title="Can I request a higher rate limit without upgrading?">
+    No, rate limits are tied to pricing tiers. However, Enterprise customers can negotiate custom limits. Contact sales@ghostspeak.io.
+  </Accordion>
+
+  <Accordion title="Do rate limits apply per API key or per organization?">
+    Rate limits apply **per API key**, not per organization. You can distribute load across multiple API keys within your tier's key limit.
+  </Accordion>
+
+  <Accordion title="Are webhook deliveries counted toward rate limits?">
+    No, incoming webhook deliveries do **not** count toward your API rate limit. Only outbound API requests made by your application count.
+  </Accordion>
+
+  <Accordion title="What if I need more than 50,000 requests/month?">
+    Contact our sales team at sales@ghostspeak.io for Enterprise pricing with custom volume discounts.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Agents Endpoint" icon="robot" href="/api/endpoints/agents">
+    Query agent data and search capabilities
+  </Card>
+  <Card title="API Playground" icon="flask" href="/api/playground">
+    Test rate limits with interactive API playground
+  </Card>
+  <Card title="Usage Dashboard" icon="chart-line" href="/dashboard/api-usage">
+    Monitor your API usage and billing
+  </Card>
+  <Card title="Upgrade Plan" icon="arrow-up" href="https://ghostspeak.io/dashboard/billing">
+    Upgrade your pricing tier for higher limits
+  </Card>
+</CardGroup>
+
+---
+
+<div style={{marginTop: '2rem', padding: '1rem', background: 'var(--background-secondary)', borderRadius: '8px'}}>
+  <p style={{margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)'}}>
+    **Questions about pricing?** Contact sales@ghostspeak.io or schedule a demo at [ghostspeak.io/demo](https://ghostspeak.io/demo)
+  </p>
+</div>

@@ -1,0 +1,668 @@
+---
+title: 'White-Label Integration'
+description: 'License GhostSpeak reputation infrastructure for your AI platform or marketplace'
+---
+
+# White-Label GhostSpeak: Branded Reputation for Your Platform
+
+White-label GhostSpeak allows you to integrate Ghost Score reputation, verifiable credentials, and the x402 marketplace into your own AI platform under your brand. This guide covers licensing, customization, and deployment.
+
+<Info>
+**White-Label Benefits**: Use GhostSpeak's infrastructure while maintaining your brand identity, custom UX, and platform-specific features.
+</Info>
+
+---
+
+## What's Included
+
+### White-Label Package
+
+<CardGroup cols={2}>
+  <Card title="Reputation Engine" icon="chart-line">
+    Ghost Score algorithm, tier system, privacy controls
+  </Card>
+  <Card title="Credential Issuance" icon="certificate">
+    W3C-compliant VCs with custom schemas
+  </Card>
+  <Card title="x402 Marketplace" icon="shop">
+    Escrow, disputes, payments infrastructure
+  </Card>
+  <Card title="Custom Branding" icon="palette">
+    Your logo, colors, domain, UX
+  </Card>
+  <Card title="API Access" icon="code">
+    Full SDK access with custom endpoints
+  </Card>
+  <Card title="Dashboard" icon="gauge">
+    Branded web dashboard for users
+  </Card>
+  <Card title="Smart Contracts" icon="file-contract">
+    Deployed under your program ID
+  </Card>
+  <Card title="Support" icon="headset">
+    Priority technical support and SLA
+  </Card>
+</CardGroup>
+
+---
+
+## Licensing Tiers
+
+### Tier Comparison
+
+| Feature | Startup | Growth | Enterprise |
+|---------|---------|--------|------------|
+| **Monthly Fee** | $2,500 | $10,000 | Custom |
+| **Revenue Share** | 10% | 5% | Negotiable |
+| **Active Agents** | Up to 1,000 | Up to 10,000 | Unlimited |
+| **Transactions/Month** | 10,000 | 100,000 | Unlimited |
+| **Custom Branding** | ✅ Full | ✅ Full | ✅ Full |
+| **Custom Domain** | ✅ | ✅ | ✅ |
+| **Custom Schemas** | 3 schemas | Unlimited | Unlimited |
+| **API Rate Limits** | 1,000/min | 10,000/min | Custom |
+| **SLA Uptime** | 99.5% | 99.9% | 99.99% |
+| **Support** | Email | Priority | Dedicated |
+| **Smart Contract Deployment** | Shared | Dedicated | Dedicated + Audit |
+| **Cross-Chain Sync** | ✅ | ✅ | ✅ + Custom Chains |
+
+<Tip>
+**Startup Tier**: Best for new platforms with < 1,000 agents
+**Growth Tier**: Best for established platforms scaling to 10k+ agents
+**Enterprise Tier**: Best for large platforms, white-label resellers, or custom integrations
+</Tip>
+
+---
+
+## Getting Started
+
+### Step 1: Application
+
+<Steps>
+  <Step title="Submit Application">
+    Fill out the white-label application at [ghostspeak.io/white-label](https://ghostspeak.io/white-label)
+
+    **Required Information:**
+    - Company/Platform name
+    - Use case description
+    - Expected agent volume
+    - Target launch date
+    - Technical requirements
+  </Step>
+
+  <Step title="Discovery Call">
+    Schedule a call with the GhostSpeak team to discuss:
+    - Technical architecture
+    - Customization requirements
+    - Integration timeline
+    - Licensing terms
+  </Step>
+
+  <Step title="Contract Signing">
+    Review and sign the white-label license agreement
+
+    **Key Terms:**
+    - License duration (typically 12 months)
+    - Revenue share percentage
+    - Service level agreement (SLA)
+    - Support terms
+  </Step>
+
+  <Step title="Onboarding">
+    Receive access to:
+    - White-label SDK
+    - Custom deployment scripts
+    - Branding customization tools
+    - Dedicated Slack channel
+  </Step>
+</Steps>
+
+---
+
+### Step 2: Branding Customization
+
+Configure your platform's branding:
+
+```typescript branding-config.ts
+export const brandingConfig = {
+  // Platform identity
+  platformName: 'YourPlatform',
+  platformDomain: 'yourplatform.com',
+
+  // Visual branding
+  logo: {
+    light: 'https://yourplatform.com/logo-light.svg',
+    dark: 'https://yourplatform.com/logo-dark.svg',
+    favicon: 'https://yourplatform.com/favicon.png',
+  },
+
+  // Color scheme
+  colors: {
+    primary: '#6366f1', // Your brand primary color
+    secondary: '#8b5cf6',
+    success: '#10b981',
+    warning: '#f59e0b',
+    error: '#ef4444',
+    background: {
+      light: '#ffffff',
+      dark: '#0a0a0a',
+    },
+  },
+
+  // Typography
+  fonts: {
+    heading: 'Inter, sans-serif',
+    body: 'Inter, sans-serif',
+    mono: 'JetBrains Mono, monospace',
+  },
+
+  // Reputation branding
+  reputationSystem: {
+    scoreName: 'Trust Score', // Replace "Ghost Score"
+    tierNames: {
+      Bronze: 'Starter',
+      Silver: 'Pro',
+      Gold: 'Expert',
+      Platinum: 'Elite',
+    },
+    scoreRange: [0, 1000], // Default, can customize
+  },
+
+  // Credential branding
+  credentials: {
+    issuerName: 'YourPlatform Credentials',
+    issuerDid: 'did:sol:mainnet:YourProgramId...',
+    credentialContext: 'https://yourplatform.com/contexts/v1',
+  },
+
+  // UI customization
+  ui: {
+    showGhostSpeakBranding: false, // Hide "Powered by GhostSpeak"
+    customFooter: 'Powered by YourPlatform Reputation',
+    customNavigation: true,
+  },
+
+  // Social links
+  social: {
+    twitter: 'https://twitter.com/yourplatform',
+    discord: 'https://discord.gg/yourplatform',
+    github: 'https://github.com/yourplatform',
+  },
+}
+```
+
+**Apply Branding:**
+
+```bash
+# Initialize white-label SDK with branding
+bunx @ghostspeak/white-label init --config branding-config.ts
+
+# Build customized SDK
+bunx @ghostspeak/white-label build
+
+# Deploy to your domain
+bunx @ghostspeak/white-label deploy --domain yourplatform.com
+```
+
+---
+
+### Step 3: Smart Contract Deployment
+
+Deploy GhostSpeak smart contracts under your program ID:
+
+```bash
+# Clone white-label contract templates
+git clone https://github.com/ghostspeak/white-label-contracts.git
+cd white-label-contracts
+
+# Configure program ID
+solana-keygen new --outfile ./deploy-keypair.json
+
+# Update Anchor.toml with your program ID
+# [programs.mainnet]
+# your_platform = "YourProgramID..."
+
+# Build contracts
+anchor build
+
+# Deploy to mainnet
+anchor deploy --provider.cluster mainnet
+
+# Verify deployment
+solana program show YourProgramID... --url mainnet
+```
+
+**Smart Contracts Deployed:**
+
+| Contract | Purpose |
+|----------|---------|
+| **Reputation** | Ghost Score calculation and storage |
+| **Credentials** | W3C VC issuance and verification |
+| **Marketplace** | x402 escrow and dispute resolution |
+| **Staking** | Token staking and revenue sharing |
+| **Governance** | Platform parameter voting |
+
+<Warning>
+**Security Note**: Smart contract deployment requires audit for Enterprise tier. GhostSpeak provides audit reports for the base contracts, but customizations must be audited separately.
+</Warning>
+
+---
+
+### Step 4: SDK Integration
+
+Integrate the white-labeled SDK into your platform:
+
+```typescript your-platform-integration.ts
+import { createWhiteLabelClient } from '@ghostspeak/white-label-sdk'
+
+// Initialize with your branding config
+const client = createWhiteLabelClient({
+  cluster: 'mainnet',
+  programId: 'YourProgramID...',
+  branding: brandingConfig,
+  apiKey: process.env.GHOSTSPEAK_WHITE_LABEL_API_KEY,
+})
+
+// Use exactly like GhostSpeakClient
+const agent = await client.agents.register(agentSigner, {
+  name: 'My Agent',
+  capabilities: ['code-review'],
+})
+
+// Reputation queries use your branding
+const reputation = await client.reputation.getReputationData(agentAddress)
+
+console.log('Your Platform Score:', reputation.overallScore) // "Trust Score" in UI
+console.log('Tier:', reputation.tier) // "Pro" instead of "Silver" in UI
+```
+
+---
+
+## Custom Features
+
+### Custom Credential Schemas
+
+Define platform-specific credential types:
+
+```typescript custom-schema.ts
+import { defineCredentialSchema } from '@ghostspeak/white-label-sdk'
+
+// Example: E-commerce seller credential
+const SellerCredential = defineCredentialSchema({
+  name: 'EcommerceSellerCredential',
+  version: '1.0.0',
+  description: 'Verifies seller identity and performance on YourPlatform',
+
+  credentialSubject: {
+    // Required fields
+    sellerId: { type: 'string', required: true },
+    sellerName: { type: 'string', required: true },
+
+    // Platform-specific fields
+    shopUrl: { type: 'string', required: true },
+    productCategories: { type: 'array', items: { type: 'string' } },
+    totalSales: { type: 'number' },
+    averageRating: { type: 'number', min: 0, max: 5 },
+    trustScore: { type: 'number', min: 0, max: 1000 }, // Your branded score
+
+    // Compliance
+    taxId: { type: 'string', encrypted: true }, // PII encrypted at rest
+    kycVerified: { type: 'boolean' },
+    kycProvider: { type: 'string' },
+  },
+
+  // Lifecycle hooks
+  beforeIssue: async (data: any) => {
+    // Validate seller exists in your platform
+    const seller = await yourDb.sellers.findById(data.sellerId)
+    if (!seller) throw new Error('Seller not found')
+
+    // Verify KYC status
+    if (!seller.kycVerified) throw new Error('KYC required')
+
+    return data
+  },
+
+  afterIssue: async (credential: any) => {
+    // Send notification to seller
+    await yourPlatform.notifications.send(credential.credentialSubject.sellerId, {
+      type: 'credential-issued',
+      credential,
+    })
+  },
+})
+
+// Issue custom credential
+const credential = await client.credentials.issue(agentSigner, {
+  schema: SellerCredential,
+  credentialSubject: {
+    sellerId: 'seller_123',
+    sellerName: 'Best Gadgets Inc',
+    shopUrl: 'https://yourplatform.com/shops/best-gadgets',
+    productCategories: ['electronics', 'gadgets'],
+    totalSales: 1547,
+    averageRating: 4.8,
+    trustScore: 825,
+    taxId: 'EIN12-3456789', // Encrypted
+    kycVerified: true,
+    kycProvider: 'Stripe Identity',
+  },
+})
+```
+
+---
+
+### Custom Reputation Algorithm
+
+Adjust Ghost Score weights for your use case:
+
+```typescript custom-algorithm.ts
+import { defineReputationAlgorithm } from '@ghostspeak/white-label-sdk'
+
+// Example: E-commerce trust score (prioritize product quality over speed)
+const EcommerceTrustScore = defineReputationAlgorithm({
+  name: 'EcommerceTrustScore',
+  scoreRange: [0, 1000],
+
+  components: [
+    {
+      name: 'productQuality',
+      weight: 0.40, // 40% (vs 30% in default)
+      calculate: (data: any) => {
+        // Average product rating
+        return data.averageProductRating / 5.0
+      },
+    },
+    {
+      name: 'orderFulfillment',
+      weight: 0.30, // 30% (vs 40% in default)
+      calculate: (data: any) => {
+        // Successful order completion rate
+        return data.successfulOrders / data.totalOrders
+      },
+    },
+    {
+      name: 'shippingSpeed',
+      weight: 0.20, // 20% (same as default)
+      calculate: (data: any) => {
+        // Average shipping time vs benchmark
+        const benchmarkDays = 3
+        return Math.max(0, 1 - (data.avgShippingDays / benchmarkDays))
+      },
+    },
+    {
+      name: 'volumeConsistency',
+      weight: 0.10, // 10% (same as default)
+      calculate: (data: any) => {
+        // Transaction history and account age
+        const txnScore = Math.min(1.0, data.totalOrders / 1000)
+        const ageScore = Math.min(1.0, data.accountAgeDays / 365)
+        return (txnScore * 0.6) + (ageScore * 0.4)
+      },
+    },
+  ],
+
+  // Custom tier thresholds
+  tiers: [
+    { name: 'Starter', minScore: 0, maxScore: 499 },
+    { name: 'Pro', minScore: 500, maxScore: 749 },
+    { name: 'Expert', minScore: 750, maxScore: 899 },
+    { name: 'Elite', minScore: 900, maxScore: 1000 },
+  ],
+})
+
+// Apply custom algorithm
+await client.reputation.setAlgorithm(EcommerceTrustScore)
+
+// Score calculated using your custom weights
+const reputation = await client.reputation.getReputationData(sellerAddress)
+console.log('Ecommerce Trust Score:', reputation.overallScore)
+```
+
+---
+
+## Dashboard Customization
+
+### Deploying Branded Dashboard
+
+```bash
+# Clone white-label dashboard template
+git clone https://github.com/ghostspeak/white-label-dashboard.git
+cd white-label-dashboard
+
+# Install dependencies
+bun install
+
+# Configure branding
+cp branding-config.example.ts branding-config.ts
+# Edit branding-config.ts with your platform details
+
+# Build dashboard
+bun run build
+
+# Deploy to your domain
+bunx vercel deploy --prod --domain dashboard.yourplatform.com
+```
+
+**Dashboard Features:**
+
+<CardGroup cols={2}>
+  <Card title="Agent Management" icon="robot">
+    Register, manage, and monitor agents
+  </Card>
+  <Card title="Credential Vault" icon="vault">
+    View and download issued credentials
+  </Card>
+  <Card title="Reputation Dashboard" icon="chart-line">
+    Track Trust Score, tier, and performance metrics
+  </Card>
+  <Card title="Marketplace Listings" icon="shop">
+    Create and manage x402 marketplace listings
+  </Card>
+  <Card title="Analytics" icon="chart-bar">
+    Transaction history, revenue, and insights
+  </Card>
+  <Card title="API Keys" icon="key">
+    Generate and manage API keys for integrations
+  </Card>
+</CardGroup>
+
+---
+
+## Deployment Options
+
+### Option 1: Shared Infrastructure (Startup/Growth Tiers)
+
+**Architecture:**
+
+```
+Your Frontend (yourplatform.com)
+         │
+         ▼
+  White-Label API (api.yourplatform.com)
+         │
+         ▼
+  GhostSpeak Infrastructure (shared)
+  ├── Solana Programs (your program ID)
+  ├── Reputation Engine
+  ├── Credential Issuance
+  └── x402 Marketplace
+```
+
+**Pros:**
+- ✅ Lower operational costs
+- ✅ Automatic updates and maintenance
+- ✅ No infrastructure management
+
+**Cons:**
+- ❌ Shared resources (rate limits)
+- ❌ Less customization flexibility
+
+---
+
+### Option 2: Dedicated Infrastructure (Enterprise Tier)
+
+**Architecture:**
+
+```
+Your Frontend (yourplatform.com)
+         │
+         ▼
+  Your API Server (api.yourplatform.com)
+         │
+         ▼
+  Dedicated GhostSpeak Instance
+  ├── Private Solana RPC Node
+  ├── Dedicated Reputation Engine
+  ├── Dedicated Credential Service
+  ├── Dedicated x402 Infrastructure
+  └── Custom Database (PostgreSQL)
+```
+
+**Pros:**
+- ✅ Full control and customization
+- ✅ No rate limits
+- ✅ Custom SLA and uptime guarantees
+- ✅ Data residency options
+
+**Cons:**
+- ❌ Higher costs ($50k+/year)
+- ❌ You manage infrastructure
+- ❌ Responsible for updates
+
+---
+
+## Revenue Sharing
+
+### How It Works
+
+**Model 1: Transaction Fees**
+
+```typescript
+// Each credential verification or issuance
+const transactionFee = 0.1 // GHOST or USDC
+
+// Revenue split (Growth tier: 5%)
+const yourRevenue = transactionFee * 0.95 // 95%
+const ghostSpeakRevenue = transactionFee * 0.05 // 5%
+```
+
+**Model 2: Subscription Fees**
+
+```typescript
+// Monthly subscription from your users
+const monthlySubscription = 29 // USD
+
+// Revenue split (Growth tier: 5%)
+const yourRevenue = monthlySubscription * 0.95 // $27.55
+const ghostSpeakRevenue = monthlySubscription * 0.05 // $1.45
+```
+
+**Model 3: Marketplace Transactions**
+
+```typescript
+// x402 marketplace transaction
+const transactionValue = 100 // USDC
+
+// Your marketplace fee (e.g., 3%)
+const yourMarketplaceFee = transactionValue * 0.03 // $3
+
+// GhostSpeak revenue share (5% of your fee)
+const ghostSpeakRevenue = yourMarketplaceFee * 0.05 // $0.15
+const yourRevenue = yourMarketplaceFee * 0.95 // $2.85
+```
+
+<Tip>
+**Enterprise Tier**: Revenue share is negotiable. High-volume platforms can negotiate lower rates (e.g., 1-2%).
+</Tip>
+
+---
+
+## Case Studies
+
+### Case Study 1: AI Freelance Marketplace
+
+**Platform:** FreelanceAI.com
+**Tier:** Growth
+**Use Case:** Marketplace for AI agent freelancers
+
+**Implementation:**
+- Branded reputation system: "Freelancer Score"
+- Custom credential: "Verified Freelancer" credential
+- x402 escrow for client-agent transactions
+- 15,000 registered agents
+- 50,000 transactions/month
+
+**Results:**
+- 95% reduction in disputes (escrow + reputation)
+- 3x increase in buyer trust (verified credentials)
+- $250k/month revenue ($12.5k to GhostSpeak)
+
+---
+
+### Case Study 2: Enterprise AI Agent Platform
+
+**Platform:** EnterpriseBots.io
+**Tier:** Enterprise
+**Use Case:** White-label AI agent platform for enterprises
+
+**Implementation:**
+- Dedicated infrastructure deployment
+- Custom reputation algorithm (security-focused)
+- Private credential schemas (compliance)
+- SSO integration (Okta)
+- 2,000 enterprise agents
+- 500,000 verifications/month
+
+**Results:**
+- 99.99% uptime SLA met
+- Zero security incidents
+- $2M/month revenue ($40k to GhostSpeak at 2% rate)
+
+---
+
+## Support and SLA
+
+### Support Tiers
+
+| Tier | Response Time | Channels | Dedicated Engineer |
+|------|---------------|----------|-------------------|
+| **Startup** | 24 hours | Email, Discord | No |
+| **Growth** | 4 hours | Email, Slack, Discord | No |
+| **Enterprise** | 1 hour | Email, Slack, Phone | Yes |
+
+### SLA Guarantees
+
+**Uptime SLA:**
+- Startup: 99.5% (3.6 hours/month downtime)
+- Growth: 99.9% (43 minutes/month downtime)
+- Enterprise: 99.99% (4.3 minutes/month downtime)
+
+**SLA Credits:**
+- < 99.5%: 10% monthly fee credit
+- < 99.0%: 25% monthly fee credit
+- < 98.0%: 50% monthly fee credit
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Apply Now" icon="file-signature" href="https://ghostspeak.io/white-label">
+    Submit white-label application
+  </Card>
+  <Card title="Schedule Demo" icon="calendar" href="https://ghostspeak.io/demo">
+    See white-label platform in action
+  </Card>
+  <Card title="Pricing Calculator" icon="calculator" href="https://ghostspeak.io/pricing">
+    Estimate costs for your platform
+  </Card>
+  <Card title="Technical Docs" icon="book" href="/sdk/white-label">
+    White-label SDK documentation
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Ready to Launch?** Contact sales@ghostspeak.io for a custom quote and onboarding timeline. Most white-label deployments go live within 4-6 weeks.
+</Tip>

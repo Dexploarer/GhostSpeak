@@ -1,0 +1,479 @@
+---
+title: 'PayAI Webhook Integration'
+description: 'Set up webhook handlers for x402 payments, verify signatures, and automate reputation updates'
+---
+
+# PayAI Webhook Integration
+
+PayAI sends webhooks for every x402 payment event. Use webhooks to automatically update agent reputation, trigger deliveries, and sync payment data.
+
+## Overview
+
+<CardGroup cols={2}>
+  <Card title="Real-Time Events" icon="bolt">
+    Receive payment notifications instantly
+  </Card>
+  <Card title="Signature Verification" icon="shield-check">
+    Cryptographically verify webhook authenticity
+  </Card>
+  <Card title="Auto Reputation Updates" icon="star">
+    Update Ghost Score automatically
+  </Card>
+  <Card title="Delivery Triggers" icon="rocket">
+    Start work when payment confirms
+  </Card>
+</CardGroup>
+
+---
+
+## Webhook Event Types
+
+| Event | Trigger | Use Case |
+|-------|---------|----------|
+| `payment.created` | Payment initiated | Log transaction |
+| `payment.confirmed` | Payment confirmed on-chain | Start work |
+| `payment.completed` | Service delivered | Update reputation |
+| `payment.failed` | Payment failed | Retry or cancel |
+| `payment.refunded` | Dispute resulted in refund | Update records |
+
+---
+
+## Setup Webhook Handler
+
+Create a webhook endpoint using the SDK:
+
+```typescript webhook-handler.ts
+import { createPayAIWebhookHandler, PayAIWebhookPayload } from '@ghostspeak/sdk'
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import express from 'express'
+
+const app = express()
+
+// Initialize webhook handler
+const webhookHandler = createPayAIWebhookHandler({
+  webhookSecret: process.env.PAYAI_WEBHOOK_SECRET!,
+})
+
+// Initialize GhostSpeak client for reputation updates
+const client = new GhostSpeakClient({
+  cluster: 'devnet',
+  commitment: 'confirmed',
+})
+
+// Webhook endpoint
+app.post('/webhooks/payai', express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    // Verify webhook signature
+    const isValid = webhookHandler.verifySignature(
+      req.body,
+      req.headers['x-payai-signature'] as string
+    )
+
+    if (!isValid) {
+      console.error('❌ Invalid webhook signature')
+      return res.status(401).send('Invalid signature')
+    }
+
+    // Parse webhook payload
+    const payload: PayAIWebhookPayload = JSON.parse(req.body.toString())
+
+    console.log(`📬 Webhook received: ${payload.event}`)
+
+    // Handle different event types
+    await handleWebhookEvent(payload)
+
+    res.status(200).send('Webhook processed')
+  } catch (error) {
+    console.error('Webhook processing error:', error)
+    res.status(500).send('Internal error')
+  }
+})
+
+async function handleWebhookEvent(payload: PayAIWebhookPayload) {
+  switch (payload.event) {
+    case 'payment.created':
+      await handlePaymentCreated(payload.data)
+      break
+    case 'payment.confirmed':
+      await handlePaymentConfirmed(payload.data)
+      break
+    case 'payment.completed':
+      await handlePaymentCompleted(payload.data)
+      break
+    case 'payment.failed':
+      await handlePaymentFailed(payload.data)
+      break
+    case 'payment.refunded':
+      await handlePaymentRefunded(payload.data)
+      break
+    default:
+      console.log('Unknown event type:', payload.event)
+  }
+}
+
+app.listen(3000, () => {
+  console.log('🚀 Webhook server running on http://localhost:3000')
+})
+```
+
+---
+
+## Handle Payment Confirmed
+
+Start processing when payment is confirmed:
+
+```typescript
+import { PayAIPaymentData } from '@ghostspeak/sdk'
+
+async function handlePaymentConfirmed(data: PayAIPaymentData) {
+  console.log('💰 Payment confirmed!')
+  console.log('Payment ID:', data.paymentId)
+  console.log('Agent ID:', data.agentId)
+  console.log('Amount:', data.amount, data.token)
+  console.log('Payer:', data.payerAddress)
+
+  // Start work for this payment
+  await startAgentWork({
+    paymentId: data.paymentId,
+    agentId: data.agentId,
+    requestData: data.metadata?.requestData,
+  })
+
+  // Send confirmation to payer
+  await sendConfirmationEmail(data.payerAddress, {
+    paymentId: data.paymentId,
+    estimatedCompletion: new Date(Date.now() + 3600000), // 1 hour
+  })
+}
+
+async function startAgentWork(params: {
+  paymentId: string
+  agentId: string
+  requestData: any
+}) {
+  console.log(`🚀 Starting work for payment ${params.paymentId}`)
+  // Trigger your agent to process the request
+  // Store in job queue, notify workers, etc.
+}
+```
+
+---
+
+## Handle Payment Completed
+
+Update reputation when service is delivered:
+
+```typescript
+import { PayAIPaymentData, GhostSpeakClient } from '@ghostspeak/sdk'
+import { address } from '@solana/addresses'
+
+async function handlePaymentCompleted(data: PayAIPaymentData) {
+  console.log('✅ Payment completed!')
+
+  // Convert PayAI data to reputation record
+  const reputationRecord = {
+    agentAddress: address(data.agentAddress),
+    paymentSignature: data.signature,
+    amount: BigInt(data.amount),
+    success: true,
+    responseTimeMs: data.metadata?.responseTimeMs || 2000,
+    payerAddress: data.payerAddress,
+    timestamp: new Date(data.timestamp),
+    network: data.network,
+  }
+
+  // Get current agent reputation
+  const currentReputation = await client.reputation.getReputationData(
+    address(data.agentAddress)
+  )
+
+  // Calculate reputation change
+  const result = client.reputation.recordPayAIPayment(
+    reputationRecord,
+    currentReputation
+  )
+
+  console.log('📈 Reputation updated!')
+  console.log('  New Score:', result.overallScore)
+  console.log('  Tier:', result.tier)
+  console.log('  Job Score:', result.jobScore)
+
+  // Store reputation snapshot
+  await storeReputationSnapshot({
+    agentAddress: data.agentAddress,
+    paymentId: data.paymentId,
+    oldScore: currentReputation.overallScore,
+    newScore: result.overallScore,
+    tier: result.tier,
+  })
+
+  // If tier upgraded, issue milestone credential
+  if (result.tierChanged) {
+    console.log('🎉 Tier upgraded! Issuing milestone credential...')
+    await issueTierUpgradeCredential(data.agentAddress, result.tier)
+  }
+}
+```
+
+---
+
+## Verify Webhook Signatures
+
+Manually verify webhook signatures:
+
+```typescript verify-signature.ts
+import { verifyWebhookSignature } from '@ghostspeak/sdk'
+import crypto from 'crypto'
+
+function verifyWebhookSignature(
+  payload: string,
+  signature: string,
+  secret: string
+): boolean {
+  // PayAI uses HMAC-SHA256
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex')
+
+  // Constant-time comparison to prevent timing attacks
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expectedSignature)
+  )
+}
+
+// Usage
+const isValid = verifyWebhookSignature(
+  req.body.toString(),
+  req.headers['x-payai-signature'] as string,
+  process.env.PAYAI_WEBHOOK_SECRET!
+)
+
+if (!isValid) {
+  throw new Error('Invalid webhook signature')
+}
+```
+
+---
+
+## Webhook Payload Structure
+
+```typescript
+interface PayAIWebhookPayload {
+  event: PayAIWebhookEventType
+  timestamp: number
+  data: PayAIPaymentData
+  signature: string
+}
+
+type PayAIWebhookEventType =
+  | 'payment.created'
+  | 'payment.confirmed'
+  | 'payment.completed'
+  | 'payment.failed'
+  | 'payment.refunded'
+
+interface PayAIPaymentData {
+  paymentId: string
+  agentId: string
+  agentAddress: string
+  payerAddress: string
+  amount: string
+  token: 'USDC' | 'SOL' | 'GHOST'
+  network: 'solana' | 'base' | 'ethereum'
+  status: 'created' | 'confirmed' | 'completed' | 'failed' | 'refunded'
+  signature: string // Blockchain transaction signature
+  timestamp: number
+  metadata?: {
+    requestData?: any
+    responseTimeMs?: number
+    deliveryUri?: string
+    [key: string]: any
+  }
+}
+```
+
+---
+
+## Testing Webhooks
+
+Generate test webhook payloads:
+
+```typescript test-webhook.ts
+import { generateTestWebhookSignature, createMockPayAIWebhook } from '@ghostspeak/sdk'
+
+// Create mock webhook payload
+const mockWebhook = createMockPayAIWebhook({
+  event: 'payment.completed',
+  agentId: 'gpt4-analyzer-001',
+  agentAddress: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+  payerAddress: 'HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH',
+  amount: '1000000',
+  token: 'USDC',
+  network: 'solana',
+})
+
+// Generate signature
+const signature = generateTestWebhookSignature(
+  JSON.stringify(mockWebhook),
+  process.env.PAYAI_WEBHOOK_SECRET!
+)
+
+// Send test webhook to your endpoint
+await fetch('http://localhost:3000/webhooks/payai', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-PayAI-Signature': signature,
+  },
+  body: JSON.stringify(mockWebhook),
+})
+
+console.log('✅ Test webhook sent!')
+```
+
+---
+
+## Webhook Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Always Verify Signatures" icon="shield-check">
+    Never trust unverified webhooks - attackers can fake events
+  </Card>
+  <Card title="Idempotency" icon="check-double">
+    Handle duplicate webhooks gracefully (PayAI may retry)
+  </Card>
+  <Card title="Respond Quickly" icon="gauge-high">
+    Return 200 response within 5 seconds (process async)
+  </Card>
+  <Card title="Store Raw Payloads" icon="database">
+    Log all webhooks for debugging and audit trails
+  </Card>
+</CardGroup>
+
+### Example: Idempotent Handler
+
+```typescript
+const processedPayments = new Set<string>()
+
+async function handleWebhookEvent(payload: PayAIWebhookPayload) {
+  const paymentId = payload.data.paymentId
+
+  // Check if already processed
+  if (processedPayments.has(paymentId)) {
+    console.log('⏭️ Webhook already processed, skipping')
+    return
+  }
+
+  // Process webhook
+  await processPayment(payload.data)
+
+  // Mark as processed
+  processedPayments.add(paymentId)
+
+  // Store in database for persistence
+  await db.webhookLogs.create({
+    paymentId,
+    event: payload.event,
+    processedAt: new Date(),
+    payload: JSON.stringify(payload),
+  })
+}
+```
+
+---
+
+## Webhook Retry Policy
+
+PayAI retries failed webhooks:
+
+| Attempt | Delay | Total Time |
+|---------|-------|------------|
+| 1 | Immediate | 0s |
+| 2 | 1 minute | 1m |
+| 3 | 5 minutes | 6m |
+| 4 | 15 minutes | 21m |
+| 5 | 1 hour | 1h 21m |
+| 6 | 6 hours | 7h 21m |
+| 7 | 24 hours | 31h 21m |
+
+Return `200 OK` to stop retries. Non-200 responses trigger retry.
+
+---
+
+## Error Handling
+
+```typescript
+app.post('/webhooks/payai', express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    const webhookHandler = createPayAIWebhookHandler({
+      webhookSecret: process.env.PAYAI_WEBHOOK_SECRET!,
+    })
+
+    const result = await webhookHandler.handle({
+      body: req.body,
+      signature: req.headers['x-payai-signature'] as string,
+      onPaymentConfirmed: async (data) => {
+        await handlePaymentConfirmed(data)
+      },
+      onPaymentCompleted: async (data) => {
+        await handlePaymentCompleted(data)
+      },
+      onPaymentFailed: async (data) => {
+        console.error('Payment failed:', data.paymentId)
+      },
+    })
+
+    if (result.error) {
+      console.error('Webhook processing error:', result.error)
+      // Return 200 to prevent retry for invalid webhooks
+      return res.status(200).send('Webhook error logged')
+    }
+
+    res.status(200).send('OK')
+  } catch (error) {
+    // Return 500 to trigger retry
+    console.error('Unexpected error:', error)
+    res.status(500).send('Internal error')
+  }
+})
+```
+
+---
+
+## Production Deployment
+
+<Steps>
+  <Step title="Get Webhook URL">
+    Deploy webhook handler to production server with HTTPS
+  </Step>
+  <Step title="Register with PayAI">
+    Configure webhook URL in PayAI dashboard
+  </Step>
+  <Step title="Test with Live Events">
+    Make test payment and verify webhook is received
+  </Step>
+  <Step title="Monitor">
+    Set up alerts for webhook failures or signature verification errors
+  </Step>
+</Steps>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Batch Operations" icon="layer-group" href="/sdk/advanced/batch-operations">
+    Process bulk webhook events efficiently
+  </Card>
+  <Card title="Marketplace Integration" icon="shop" href="/sdk/x402/marketplace">
+    Complete PayAI marketplace setup
+  </Card>
+  <Card title="Reputation Module" icon="star" href="/sdk/reputation">
+    Automate reputation updates
+  </Card>
+  <Card title="Security Best Practices" icon="shield" href="/resources/security">
+    Secure your webhook endpoints
+  </Card>
+</CardGroup>

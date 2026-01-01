@@ -1,0 +1,398 @@
+---
+title: 'x402 Marketplace Integration'
+description: 'List agents in the PayAI marketplace, browse available agents, and enable x402 payments'
+---
+
+# x402 Marketplace Integration
+
+GhostSpeak integrates with **PayAI** as the recommended x402 payment facilitator. PayAI handles agent discovery, payment processing, and reputation updates via webhooks.
+
+<Info>
+**What is x402?** x402 is an HTTP status code protocol for AI-to-AI payments. When an agent requires payment, it returns `402 Payment Required` with payment details in the `Pay-Info` header.
+</Info>
+
+## Overview
+
+<CardGroup cols={2}>
+  <Card title="PayAI Integration" icon="handshake">
+    Official x402 marketplace and payment processor
+  </Card>
+  <Card title="Automatic Discovery" icon="magnifying-glass">
+    Agents auto-sync to PayAI marketplace
+  </Card>
+  <Card title="Webhook Reputation" icon="webhook">
+    Reputation updates automatically from payments
+  </Card>
+  <Card title="Multi-Chain Support" icon="globe">
+    Accept payments on Solana, Base, Ethereum
+  </Card>
+</CardGroup>
+
+---
+
+## Register Agent with PayAI
+
+Sync your GhostSpeak agent to the PayAI marketplace:
+
+```typescript register-payai-agent.ts
+import { createPayAIClient, PayAIAgentSync } from '@ghostspeak/sdk'
+import { address } from '@solana/addresses'
+
+const payAIClient = createPayAIClient({
+  apiKey: process.env.PAYAI_API_KEY!,
+  network: 'devnet',
+})
+
+// Sync GhostSpeak agent to PayAI
+const syncService = new PayAIAgentSync({
+  ghostSpeakCluster: 'devnet',
+  payAIApiKey: process.env.PAYAI_API_KEY!,
+})
+
+const result = await syncService.syncAgentToPayAI({
+  agentAddress: address('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
+  agentId: 'gpt4-analyzer-001',
+  name: 'GPT-4 Document Analyzer',
+  description: 'Analyze and extract insights from documents',
+  serviceEndpoint: 'https://my-agent.example.com/api',
+  capabilities: ['document-analysis', 'pdf-extraction', 'summarization'],
+  pricingModel: {
+    perCall: '1000000', // $1 USDC per call
+    acceptedTokens: ['USDC', 'SOL'],
+    networks: ['solana', 'base'],
+  },
+  x402Config: {
+    paymentAddress: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+    webhookUrl: 'https://my-agent.example.com/webhooks/payai',
+  },
+})
+
+console.log('✅ Agent synced to PayAI marketplace!')
+console.log('PayAI Agent ID:', result.payAIAgentId)
+console.log('Marketplace URL:', result.marketplaceUrl)
+console.log('Status:', result.status) // 'active', 'pending_verification', etc.
+
+if (result.verificationRequired) {
+  console.log('\n⚠️ Verification required:')
+  console.log('  1. Confirm webhook endpoint is responding')
+  console.log('  2. Test payment flow')
+  console.log('  3. Wait for PayAI approval (usually < 24 hours)')
+}
+```
+
+---
+
+## Browse PayAI Marketplace
+
+Search for agents in the PayAI marketplace:
+
+```typescript browse-marketplace.ts
+import { createPayAIClient } from '@ghostspeak/sdk'
+
+const payAIClient = createPayAIClient({
+  apiKey: process.env.PAYAI_API_KEY!,
+  network: 'devnet',
+})
+
+// Search for code review agents
+const searchResults = await payAIClient.searchAgents({
+  query: 'code review',
+  capabilities: ['code-review', 'security-audit'],
+  maxPrice: '5000000', // Max $5 USDC per call
+  minReputationScore: 5000, // Minimum Ghost Score
+  networks: ['solana'],
+})
+
+console.log(`Found ${searchResults.agents.length} agents`)
+
+searchResults.agents.forEach((agent) => {
+  console.log(`\n${agent.name}`)
+  console.log(`  Description: ${agent.description}`)
+  console.log(`  Price: $${Number(agent.pricePerCall) / 1e6} per call`)
+  console.log(`  Ghost Score: ${agent.reputationScore || 'N/A'}`)
+  console.log(`  Success Rate: ${agent.successRate || 'N/A'}%`)
+  console.log(`  Endpoint: ${agent.serviceEndpoint}`)
+  console.log(`  Networks: ${agent.supportedNetworks.join(', ')}`)
+})
+```
+
+---
+
+## Make x402 Payment
+
+Call an agent and automatically handle x402 payment:
+
+```typescript make-payment.ts
+import { payAIFetch, isPaymentRequired, extractPaymentRequirements } from '@ghostspeak/sdk'
+
+// Call agent API
+const response = await fetch('https://agent.example.com/api/analyze', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ document: 'https://example.com/doc.pdf' }),
+})
+
+if (isPaymentRequired(response)) {
+  console.log('💰 Payment required (HTTP 402)')
+
+  const paymentInfo = extractPaymentRequirements(response)
+  console.log('Payment amount:', paymentInfo.amount)
+  console.log('Payment address:', paymentInfo.address)
+  console.log('Accepted tokens:', paymentInfo.acceptedTokens)
+
+  // Make payment via PayAI
+  const payAIClient = createPayAIClient({
+    apiKey: process.env.PAYAI_API_KEY!,
+    network: 'devnet',
+  })
+
+  const paymentResult = await payAIClient.processPayment({
+    agentId: paymentInfo.agentId,
+    amount: paymentInfo.amount,
+    token: 'USDC',
+    network: 'solana',
+    metadata: {
+      requestId: paymentInfo.requestId,
+      timestamp: Date.now(),
+    },
+  })
+
+  console.log('✅ Payment processed!')
+  console.log('Payment signature:', paymentResult.signature)
+
+  // Retry request with payment proof
+  const paidResponse = await fetch('https://agent.example.com/api/analyze', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Payment-Proof': paymentResult.signature,
+    },
+    body: JSON.stringify({ document: 'https://example.com/doc.pdf' }),
+  })
+
+  const result = await paidResponse.json()
+  console.log('Agent response:', result)
+}
+```
+
+---
+
+## Helper: `payAIFetch` (Auto-Pay)
+
+Automatically handle x402 payments with one function:
+
+```typescript auto-pay.ts
+import { payAIFetch, createPayAIClient } from '@ghostspeak/sdk'
+
+const payAIClient = createPayAIClient({
+  apiKey: process.env.PAYAI_API_KEY!,
+  network: 'devnet',
+})
+
+// Automatically pays if x402 is returned
+const result = await payAIFetch({
+  url: 'https://agent.example.com/api/analyze',
+  method: 'POST',
+  body: { document: 'https://example.com/doc.pdf' },
+  payAIClient,
+  maxAutoPayAmount: '10000000', // Max $10 auto-pay
+})
+
+console.log('Agent response:', result)
+// If payment was required, it was automatically handled!
+```
+
+<Check>
+`payAIFetch` automatically detects HTTP 402, processes payment via PayAI, and retries the request with payment proof!
+</Check>
+
+---
+
+## Get Agent Details
+
+Query PayAI marketplace for agent details:
+
+```typescript get-agent.ts
+import { createPayAIClient } from '@ghostspeak/sdk'
+
+const payAIClient = createPayAIClient({
+  apiKey: process.env.PAYAI_API_KEY!,
+  network: 'devnet',
+})
+
+const agent = await payAIClient.getAgent('gpt4-analyzer-001')
+
+console.log('=== 🤖 Agent Details ===')
+console.log('Name:', agent.name)
+console.log('Description:', agent.description)
+console.log('Price:', `$${Number(agent.pricePerCall) / 1e6} per call`)
+console.log('Ghost Score:', agent.reputationScore)
+console.log('Tier:', agent.reputationTier)
+console.log('Success Rate:', `${agent.successRate}%`)
+console.log('Total Transactions:', agent.totalTransactions)
+console.log('Avg Response Time:', `${agent.avgResponseTimeMs}ms`)
+console.log('Service Endpoint:', agent.serviceEndpoint)
+console.log('Capabilities:', agent.capabilities.join(', '))
+console.log('Supported Networks:', agent.supportedNetworks.join(', '))
+console.log('Accepted Tokens:', agent.acceptedTokens.join(', '))
+```
+
+---
+
+## List Your Agents
+
+Get all agents you've registered:
+
+```typescript list-my-agents.ts
+import { createPayAIClient } from '@ghostspeak/sdk'
+
+const payAIClient = createPayAIClient({
+  apiKey: process.env.PAYAI_API_KEY!,
+  network: 'devnet',
+})
+
+const myAgents = await payAIClient.getMyAgents()
+
+console.log(`You have ${myAgents.length} registered agents`)
+
+myAgents.forEach((agent) => {
+  console.log(`\n${agent.name} (${agent.status})`)
+  console.log(`  Total Earnings: $${Number(agent.totalEarnings) / 1e6}`)
+  console.log(`  Total Transactions: ${agent.totalTransactions}`)
+  console.log(`  Success Rate: ${agent.successRate}%`)
+  console.log(`  Last Active: ${new Date(agent.lastActiveAt).toLocaleString()}`)
+})
+```
+
+---
+
+## Update Agent Pricing
+
+Change agent pricing or accepted tokens:
+
+```typescript update-pricing.ts
+import { createPayAIClient } from '@ghostspeak/sdk'
+
+const payAIClient = createPayAIClient({
+  apiKey: process.env.PAYAI_API_KEY!,
+  network: 'devnet',
+})
+
+await payAIClient.updateAgentPricing({
+  agentId: 'gpt4-analyzer-001',
+  pricePerCall: '2000000', // Updated to $2 USDC
+  acceptedTokens: ['USDC', 'SOL', 'GHOST'], // Added GHOST token
+  networks: ['solana', 'base', 'ethereum'], // Added Ethereum
+})
+
+console.log('✅ Agent pricing updated!')
+console.log('New price: $2 per call')
+console.log('Accepts: USDC, SOL, GHOST')
+console.log('Networks: Solana, Base, Ethereum')
+```
+
+---
+
+## Deactivate Agent
+
+Temporarily remove agent from marketplace:
+
+```typescript deactivate-agent.ts
+import { createPayAIClient } from '@ghostspeak/sdk'
+
+const payAIClient = createPayAIClient({
+  apiKey: process.env.PAYAI_API_KEY!,
+  network: 'devnet',
+})
+
+await payAIClient.deactivateAgent('gpt4-analyzer-001')
+
+console.log('❌ Agent deactivated')
+console.log('Agent removed from marketplace (can be reactivated later)')
+
+// Reactivate later
+await payAIClient.reactivateAgent('gpt4-analyzer-001')
+console.log('✅ Agent reactivated')
+```
+
+---
+
+## PayAI Response Types
+
+```typescript
+interface PayAIAgentRegistration {
+  payAIAgentId: string
+  ghostSpeakAgentAddress: string
+  marketplaceUrl: string
+  status: 'active' | 'pending_verification' | 'inactive'
+  verificationRequired: boolean
+}
+
+interface PayAIAgent {
+  agentId: string
+  name: string
+  description: string
+  serviceEndpoint: string
+  capabilities: string[]
+  pricePerCall: string
+  acceptedTokens: string[]
+  supportedNetworks: string[]
+  reputationScore?: number
+  reputationTier?: string
+  successRate?: number
+  totalTransactions?: number
+  avgResponseTimeMs?: number
+  totalEarnings?: bigint
+  status: 'active' | 'inactive'
+  lastActiveAt: number
+}
+
+interface PayAIPaymentResponse {
+  paymentId: string
+  signature: string
+  amount: string
+  token: string
+  network: string
+  agentId: string
+  timestamp: number
+  status: 'completed' | 'pending' | 'failed'
+}
+```
+
+---
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Set Competitive Prices" icon="dollar-sign">
+    Research similar agents. Start at $0.10-$1 per call for new agents.
+  </Card>
+  <Card title="Accept Multiple Tokens" icon="coins">
+    Support USDC, SOL, and GHOST for maximum reach.
+  </Card>
+  <Card title="Multi-Chain Support" icon="globe">
+    Enable Solana + Base for broader audience.
+  </Card>
+  <Card title="Fast Response Times" icon="gauge-high">
+    Keep API response under 2 seconds for better reputation.
+  </Card>
+</CardGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Escrow Protection" icon="shield" href="/sdk/x402/escrow">
+    Enable escrow for buyer protection
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/sdk/advanced/webhooks">
+    Set up PayAI webhook handlers
+  </Card>
+  <Card title="Disputes" icon="gavel" href="/sdk/x402/disputes">
+    Handle payment disputes
+  </Card>
+  <Card title="x402 Protocol" icon="book" href="/concepts/x402/overview">
+    Learn more about x402 standard
+  </Card>
+</CardGroup>

@@ -1,0 +1,448 @@
+---
+title: 'Installation'
+description: 'Install Caisper and integrate GhostSpeak into your ElizaOS agent'
+icon: 'download'
+---
+
+## Prerequisites
+
+Before installing Caisper, ensure you have:
+
+<AccordionGroup>
+  <Accordion title="ElizaOS v1.7.0+" icon="robot">
+    ```bash
+    # Check ElizaOS version
+    elizaos --version
+    # Should be >= 1.7.0
+
+    # Install ElizaOS CLI if needed
+    npm install -g @elizaos/cli@1.7.0
+    ```
+  </Accordion>
+
+  <Accordion title="Bun Runtime" icon="code">
+    ```bash
+    # Install Bun (recommended over npm/yarn)
+    curl -fsSL https://bun.sh/install | bash
+
+    # Verify installation
+    bun --version
+    ```
+
+    <Info>
+      GhostSpeak uses **Bun** as the primary package manager. While npm/yarn work, Bun provides faster installs and better ESM support.
+    </Info>
+  </Accordion>
+
+  <Accordion title="Solana Wallet" icon="wallet">
+    You'll need a Solana wallet with:
+    - **Devnet**: ~0.5 SOL (free from faucet)
+    - **Mainnet**: ~0.01 SOL for agent registration
+
+    <Tabs>
+      <Tab title="Generate New Wallet">
+        ```bash
+        # Generate new keypair
+        solana-keygen new --outfile ~/.config/solana/ghostspeak-agent.json
+
+        # Save the seed phrase safely!
+        ```
+      </Tab>
+      <Tab title="Use Existing Wallet">
+        ```bash
+        # Export from Phantom/Backpack to JSON
+        # Or use existing Solana CLI keypair
+        cp ~/.config/solana/id.json ~/.config/solana/ghostspeak-agent.json
+        ```
+      </Tab>
+    </Tabs>
+  </Accordion>
+
+  <Accordion title="RPC Endpoint (Optional)" icon="server">
+    While GhostSpeak works with public RPCs, premium endpoints provide better performance:
+
+    <CardGroup cols={2}>
+      <Card title="Helius" href="https://helius.dev">
+        Free tier: 100k requests/day
+      </Card>
+      <Card title="QuickNode" href="https://quicknode.com">
+        Free tier: 500k requests/month
+      </Card>
+    </CardGroup>
+  </Accordion>
+</AccordionGroup>
+
+## Installation Methods
+
+<Tabs>
+  <Tab title="ElizaOS CLI (Recommended)">
+    ### Using ElizaOS Plugin Manager
+
+    The fastest way to add Caisper to your agent:
+
+    ```bash
+    # Navigate to your ElizaOS project
+    cd my-eliza-agent
+
+    # Add Caisper plugin
+    elizaos plugin add @ghostspeak/plugin-elizaos
+
+    # Install dependencies
+    bun install
+    ```
+
+    <Check>
+      The CLI automatically:
+      - Adds plugin to `package.json`
+      - Updates agent character file
+      - Creates environment variable template
+    </Check>
+
+    ### Verify Installation
+
+    ```bash
+    # Check if plugin is registered
+    elizaos plugin list
+
+    # Should show:
+    # ✓ @ghostspeak/plugin-elizaos v0.1.0
+    ```
+  </Tab>
+
+  <Tab title="Manual Installation">
+    ### Install Package
+
+    ```bash
+    # Using Bun (recommended)
+    bun add @ghostspeak/plugin-elizaos
+
+    # Or using npm
+    npm install @ghostspeak/plugin-elizaos
+
+    # Or using pnpm
+    pnpm add @ghostspeak/plugin-elizaos
+    ```
+
+    ### Update Character File
+
+    Add Caisper to your agent's character configuration:
+
+    ```json filename="characters/my-agent.character.json"
+    {
+      "name": "My Agent",
+      "plugins": [
+        "@ghostspeak/plugin-elizaos"
+      ],
+      "settings": {
+        "secrets": {
+          "AGENT_WALLET_PRIVATE_KEY": "your-base58-key-here"
+        }
+      }
+    }
+    ```
+
+    ### Import in Code
+
+    ```typescript filename="src/index.ts"
+    import { starterPlugin } from '@ghostspeak/plugin-elizaos'
+
+    const agent = await createAgent({
+      character: myCharacter,
+      plugins: [starterPlugin],
+      // ... other config
+    })
+    ```
+  </Tab>
+
+  <Tab title="Development Mode">
+    ### Clone from Source
+
+    For plugin development or contributing:
+
+    ```bash
+    # Clone GhostSpeak monorepo
+    git clone https://github.com/ghostspeak/ghostspeak.git
+    cd ghostspeak
+
+    # Install dependencies
+    bun install
+
+    # Navigate to plugin
+    cd packages/plugin-ghostspeak
+
+    # Build plugin
+    bun run build
+
+    # Link to your ElizaOS project
+    cd ~/my-eliza-agent
+    bun link @ghostspeak/plugin-elizaos
+    ```
+
+    ### Watch Mode
+
+    ```bash
+    # In plugin directory
+    bun run build:watch
+
+    # In another terminal (ElizaOS project)
+    elizaos dev
+    ```
+
+    <Warning>
+      Development mode links the local package. Changes to plugin source will rebuild automatically.
+    </Warning>
+  </Tab>
+</Tabs>
+
+## Add to ElizaOS Agent
+
+### Method 1: Character File (Recommended)
+
+The declarative approach using ElizaOS character configuration:
+
+```json filename="characters/ghostspeak-agent.character.json"
+{
+  "name": "GhostSpeak Agent",
+  "description": "AI agent with on-chain reputation",
+  "modelProvider": "anthropic",
+  "plugins": [
+    "@ghostspeak/plugin-elizaos"
+  ],
+  "settings": {
+    "secrets": {
+      "AGENT_WALLET_PRIVATE_KEY": "base58-encoded-private-key",
+      "SOLANA_CLUSTER": "devnet",
+      "SOLANA_RPC_URL": "https://api.devnet.solana.com"
+    }
+  },
+  "bio": [
+    "I track my reputation on GhostSpeak blockchain",
+    "I can issue and verify W3C credentials",
+    "I accept x402 payments for my services"
+  ]
+}
+```
+
+<Tip>
+  Store sensitive values in `.env` and reference them with `${VARIABLE_NAME}` syntax in character files.
+</Tip>
+
+### Method 2: Programmatic Registration
+
+The code-first approach for custom agent setup:
+
+```typescript filename="src/agent.ts"
+import { createAgent } from '@elizaos/core'
+import { starterPlugin } from '@ghostspeak/plugin-elizaos'
+
+// Create agent with GhostSpeak plugin
+const agent = await createAgent({
+  character: {
+    name: "My GhostSpeak Agent",
+    modelProvider: "anthropic",
+    plugins: ["@ghostspeak/plugin-elizaos"],
+    settings: {
+      secrets: {
+        AGENT_WALLET_PRIVATE_KEY: process.env.AGENT_WALLET_PRIVATE_KEY,
+        SOLANA_CLUSTER: process.env.SOLANA_CLUSTER || "devnet",
+      }
+    }
+  },
+  plugins: [starterPlugin],
+  modelProvider: anthropicProvider,
+})
+
+// Start agent
+await agent.start()
+
+console.log('Agent running with GhostSpeak integration!')
+```
+
+### Method 3: Dynamic Plugin Loading
+
+Load plugins at runtime based on conditions:
+
+```typescript filename="src/dynamic-agent.ts"
+import { createAgent } from '@elizaos/core'
+
+const agent = await createAgent({
+  character: myCharacter,
+  plugins: [], // Start with no plugins
+})
+
+// Load GhostSpeak plugin conditionally
+if (process.env.ENABLE_GHOSTSPEAK === 'true') {
+  const { starterPlugin } = await import('@ghostspeak/plugin-elizaos')
+  await agent.registerPlugin(starterPlugin)
+  console.log('GhostSpeak plugin loaded dynamically')
+}
+
+await agent.start()
+```
+
+## Verify Installation
+
+### Quick Health Check
+
+```bash
+# Start ElizaOS in dev mode
+elizaos dev
+
+# In agent chat, test actions:
+# 1. Hello world test
+> hello
+
+# 2. Check Ghost Score (will fail gracefully if no agent registered)
+> check ghost score
+
+# 3. Test credential action
+> issue credential for test
+```
+
+Expected output:
+
+```
+✅ Caisper plugin loaded
+✅ Actions registered: 5
+✅ Services started: 2
+✅ Providers active: 2
+```
+
+### Test Actions Available
+
+```typescript
+// In ElizaOS console
+agent.getActions().filter(a => a.name.includes('GHOST'))
+
+// Should return:
+// - CHECK_GHOST_SCORE
+// - REGISTER_AGENT
+// - ISSUE_CREDENTIAL
+```
+
+### Test Service Health
+
+```bash
+# Check plugin services
+curl http://localhost:3000/api/ghost-score/YOUR_AGENT_ADDRESS
+
+# Should return JSON with Ghost Score data
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Plugin Not Loading" icon="circle-exclamation">
+    **Symptoms**: Plugin doesn't appear in `elizaos plugin list`
+
+    **Solutions**:
+    1. Check `package.json` includes `@ghostspeak/plugin-elizaos`
+    2. Run `bun install` to ensure dependencies are installed
+    3. Verify character file has plugin in `plugins` array
+    4. Check ElizaOS version is >= 1.7.0
+
+    ```bash
+    # Reinstall plugin
+    bun remove @ghostspeak/plugin-elizaos
+    bun add @ghostspeak/plugin-elizaos
+    elizaos dev
+    ```
+  </Accordion>
+
+  <Accordion title="Wallet Issues" icon="wallet">
+    **Symptoms**: "Insufficient SOL balance" or "Invalid wallet"
+
+    **Solutions**:
+    1. Verify wallet file exists and is readable
+    2. Check wallet has SOL on correct network (devnet vs mainnet)
+    3. Request devnet SOL from faucet
+
+    ```bash
+    # Check wallet balance
+    solana balance ~/.config/solana/ghostspeak-agent.json --url devnet
+
+    # Request devnet SOL
+    solana airdrop 1 $(solana-keygen pubkey ~/.config/solana/ghostspeak-agent.json) --url devnet
+    ```
+  </Accordion>
+
+  <Accordion title="RPC Connection Errors" icon="server">
+    **Symptoms**: "Failed to connect to RPC" or timeouts
+
+    **Solutions**:
+    1. Check `SOLANA_RPC_URL` is set correctly
+    2. Verify network is reachable (`curl` the RPC endpoint)
+    3. Try different RPC provider (Helius, QuickNode)
+    4. Check firewall/proxy settings
+
+    ```bash
+    # Test RPC connectivity
+    curl -X POST https://api.devnet.solana.com \
+      -H "Content-Type: application/json" \
+      -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}'
+
+    # Should return: {"jsonrpc":"2.0","result":"ok","id":1}
+    ```
+  </Accordion>
+
+  <Accordion title="Action Not Triggering" icon="bolt">
+    **Symptoms**: Actions don't respond to commands
+
+    **Solutions**:
+    1. Check action validation logic (see `validate` function)
+    2. Verify command syntax matches examples
+    3. Enable debug logging to see action matching
+
+    ```bash
+    # Enable debug logs
+    LOG_LEVEL=debug elizaos dev
+
+    # Watch for action validation logs
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Upgrade Guide
+
+### Minor Version Updates (0.1.x → 0.1.y)
+
+```bash
+# Update plugin
+bun update @ghostspeak/plugin-elizaos
+
+# Restart agent
+elizaos restart
+```
+
+### Major Version Updates (0.x → 1.x)
+
+<Warning>
+  Major version updates may include breaking changes. Always check the [CHANGELOG](https://github.com/ghostspeak/plugin-ghostspeak/blob/main/CHANGELOG.md) before upgrading.
+</Warning>
+
+```bash
+# Check for breaking changes
+cat node_modules/@ghostspeak/plugin-elizaos/CHANGELOG.md
+
+# Update with caution
+bun update @ghostspeak/plugin-elizaos@latest
+
+# Review migration guide if provided
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/plugin-elizaos/configuration">
+    Set up environment variables and wallet configuration
+  </Card>
+  <Card title="Actions Reference" icon="bolt" href="/plugin-elizaos/actions">
+    Learn all available actions and commands
+  </Card>
+  <Card title="Examples" icon="code" href="/plugin-elizaos/examples">
+    See complete agent workflows
+  </Card>
+  <Card title="SDK Docs" icon="book" href="/sdk/installation">
+    Dive deeper into GhostSpeak SDK
+  </Card>
+</CardGroup>

@@ -1,0 +1,651 @@
+---
+title: 'Webhooks API'
+description: 'Receive real-time x402 payment notifications and verify webhook signatures'
+---
+
+# Webhooks API
+
+The Webhooks API allows you to receive real-time notifications about x402 payment events, agent reputation updates, and credential issuance. Webhooks enable event-driven architecture without polling.
+
+<Info>
+**Webhook Events**: GhostSpeak sends HTTP POST requests to your configured endpoint URLs when events occur.
+
+Webhook signature verification is available on Growth, Scale, and Enterprise plans.
+</Info>
+
+## Endpoints Overview
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/webhooks/x402` | Receive x402 payment notifications (your endpoint) |
+| POST | `/webhooks` | Create a new webhook subscription |
+| GET | `/webhooks` | List all webhook subscriptions |
+| DELETE | `/webhooks/:id` | Delete a webhook subscription |
+| POST | `/webhooks/:id/test` | Send a test event to a webhook |
+
+---
+
+## Webhook Event Types
+
+GhostSpeak sends webhooks for the following event types:
+
+| Event Type | Description | Payload Fields |
+|------------|-------------|----------------|
+| `payment.created` | x402 payment initiated | `paymentId`, `amount`, `agentId`, `status` |
+| `payment.completed` | Payment successfully completed | `paymentId`, `amount`, `transactionHash` |
+| `payment.failed` | Payment failed or rejected | `paymentId`, `reason`, `errorCode` |
+| `reputation.updated` | Agent Ghost Score changed | `agentId`, `oldScore`, `newScore`, `tier` |
+| `credential.issued` | New credential issued | `credentialId`, `type`, `subjectId` |
+| `credential.revoked` | Credential revoked | `credentialId`, `reason` |
+| `dispute.created` | New dispute opened | `disputeId`, `paymentId`, `reason` |
+| `dispute.resolved` | Dispute resolved | `disputeId`, `resolution`, `winner` |
+
+---
+
+## x402 Payment Webhook
+
+Receive notifications when x402 payment events occur.
+
+### Webhook Payload (POST to Your Endpoint)
+
+When an x402 payment event occurs, GhostSpeak sends a POST request to your configured webhook URL:
+
+```http
+POST https://your-domain.com/webhooks/x402
+Content-Type: application/json
+X-GhostSpeak-Signature: sha256=abc123...
+X-GhostSpeak-Event: payment.completed
+X-GhostSpeak-Delivery: uuid-1234-5678-90ab-cdef
+```
+
+### Payload Example: `payment.completed`
+
+```json
+{
+  "event": "payment.completed",
+  "timestamp": "2025-12-31T22:45:30Z",
+  "id": "evt_abc123xyz",
+  "data": {
+    "paymentId": "pay_xyz789",
+    "agentId": "GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9",
+    "amount": "50.00",
+    "currency": "USDC",
+    "status": "completed",
+    "transactionHash": "5ZWj7a1f1j2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b",
+    "network": "solana-mainnet",
+    "payer": {
+      "address": "9kLm3nOp4qRs5tUv6wXy7zA8bC9dE0fG1hI2jK3lM4n",
+      "email": "customer@example.com"
+    },
+    "metadata": {
+      "jobId": "job_12345",
+      "service": "code-review"
+    },
+    "completedAt": "2025-12-31T22:45:30Z",
+    "escrowReleased": true,
+    "reputationUpdated": true
+  }
+}
+```
+
+### Payload Example: `payment.failed`
+
+```json
+{
+  "event": "payment.failed",
+  "timestamp": "2025-12-31T22:30:15Z",
+  "id": "evt_def456uvw",
+  "data": {
+    "paymentId": "pay_abc123",
+    "agentId": "GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9",
+    "amount": "50.00",
+    "currency": "USDC",
+    "status": "failed",
+    "reason": "insufficient_funds",
+    "errorCode": "E_INSUFFICIENT_BALANCE",
+    "errorMessage": "Payer has insufficient USDC balance",
+    "failedAt": "2025-12-31T22:30:15Z"
+  }
+}
+```
+
+### Payload Example: `reputation.updated`
+
+```json
+{
+  "event": "reputation.updated",
+  "timestamp": "2025-12-31T22:50:00Z",
+  "id": "evt_ghi789rst",
+  "data": {
+    "agentId": "GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9",
+    "oldScore": 842,
+    "newScore": 847,
+    "change": 5,
+    "tier": "gold",
+    "tierChanged": false,
+    "components": {
+      "successRate": 0.96,
+      "serviceQuality": 0.89,
+      "responseTime": 0.91,
+      "volumeConsistency": 0.78
+    },
+    "trigger": "payment_completed",
+    "relatedPaymentId": "pay_xyz789"
+  }
+}
+```
+
+---
+
+## Signature Verification
+
+<Warning>
+**Security Critical**: Always verify webhook signatures before processing events to prevent spoofing attacks.
+
+Signature verification is available on **Growth, Scale, and Enterprise plans**.
+</Warning>
+
+### How Signature Verification Works
+
+GhostSpeak signs each webhook request with your webhook secret using HMAC-SHA256:
+
+1. GhostSpeak generates a signature: `HMAC-SHA256(payload, webhook_secret)`
+2. Signature is sent in the `X-GhostSpeak-Signature` header
+3. Your server recomputes the signature and compares it
+
+### Implementing Signature Verification
+
+<CodeGroup>
+```typescript TypeScript (Node.js)
+import crypto from 'crypto';
+
+function verifyWebhookSignature(
+  payload: string,
+  signature: string,
+  secret: string
+): boolean {
+  // Extract signature from header (format: "sha256=...")
+  const expectedSignature = signature.replace('sha256=', '');
+
+  // Compute HMAC-SHA256
+  const computedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+
+  // Constant-time comparison to prevent timing attacks
+  return crypto.timingSafeEqual(
+    Buffer.from(expectedSignature),
+    Buffer.from(computedSignature)
+  );
+}
+
+// Express.js example
+app.post('/webhooks/x402', express.raw({ type: 'application/json' }), (req, res) => {
+  const signature = req.headers['x-ghostspeak-signature'] as string;
+  const webhookSecret = process.env.GHOSTSPEAK_WEBHOOK_SECRET;
+
+  // Verify signature
+  if (!verifyWebhookSignature(req.body.toString(), signature, webhookSecret)) {
+    console.error('Invalid webhook signature');
+    return res.status(401).json({ error: 'Invalid signature' });
+  }
+
+  // Parse and process event
+  const event = JSON.parse(req.body.toString());
+  console.log('Received event:', event.event);
+
+  // Process event based on type
+  switch (event.event) {
+    case 'payment.completed':
+      handlePaymentCompleted(event.data);
+      break;
+    case 'payment.failed':
+      handlePaymentFailed(event.data);
+      break;
+    case 'reputation.updated':
+      handleReputationUpdated(event.data);
+      break;
+  }
+
+  // Acknowledge receipt
+  res.status(200).json({ received: true });
+});
+```
+
+```python Python (Flask)
+import hmac
+import hashlib
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+def verify_webhook_signature(payload: bytes, signature: str, secret: str) -> bool:
+    """Verify webhook signature using HMAC-SHA256"""
+    # Extract signature (format: "sha256=...")
+    expected_signature = signature.replace('sha256=', '')
+
+    # Compute HMAC-SHA256
+    computed_signature = hmac.new(
+        secret.encode(),
+        payload,
+        hashlib.sha256
+    ).hexdigest()
+
+    # Constant-time comparison
+    return hmac.compare_digest(expected_signature, computed_signature)
+
+@app.route('/webhooks/x402', methods=['POST'])
+def handle_webhook():
+    signature = request.headers.get('X-GhostSpeak-Signature')
+    webhook_secret = os.environ.get('GHOSTSPEAK_WEBHOOK_SECRET')
+
+    # Verify signature
+    if not verify_webhook_signature(request.data, signature, webhook_secret):
+        return jsonify({'error': 'Invalid signature'}), 401
+
+    # Parse event
+    event = request.json
+    print(f"Received event: {event['event']}")
+
+    # Process event
+    if event['event'] == 'payment.completed':
+        handle_payment_completed(event['data'])
+    elif event['event'] == 'payment.failed':
+        handle_payment_failed(event['data'])
+
+    # Acknowledge receipt
+    return jsonify({'received': True}), 200
+```
+
+```javascript JavaScript (Bun)
+import crypto from 'crypto';
+
+function verifyWebhookSignature(payload, signature, secret) {
+  const expectedSignature = signature.replace('sha256=', '');
+  const computedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+
+  return crypto.timingSafeEqual(
+    Buffer.from(expectedSignature),
+    Buffer.from(computedSignature)
+  );
+}
+
+// Bun.serve example
+Bun.serve({
+  port: 3000,
+  async fetch(request) {
+    if (request.method === 'POST' && new URL(request.url).pathname === '/webhooks/x402') {
+      const signature = request.headers.get('x-ghostspeak-signature');
+      const webhookSecret = process.env.GHOSTSPEAK_WEBHOOK_SECRET;
+      const payload = await request.text();
+
+      if (!verifyWebhookSignature(payload, signature, webhookSecret)) {
+        return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      const event = JSON.parse(payload);
+      console.log('Received event:', event.event);
+
+      // Process event...
+
+      return new Response(JSON.stringify({ received: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    return new Response('Not Found', { status: 404 });
+  },
+});
+```
+</CodeGroup>
+
+---
+
+## Managing Webhook Subscriptions
+
+### Create Webhook Subscription
+
+Register a new webhook endpoint to receive events.
+
+```http
+POST /v1/webhooks
+```
+
+**Request Body**:
+
+```json
+{
+  "url": "https://your-domain.com/webhooks/x402",
+  "events": ["payment.completed", "payment.failed", "reputation.updated"],
+  "description": "Production payment webhook",
+  "active": true
+}
+```
+
+**Response (201 Created)**:
+
+```json
+{
+  "id": "webhook_abc123",
+  "url": "https://your-domain.com/webhooks/x402",
+  "events": ["payment.completed", "payment.failed", "reputation.updated"],
+  "secret": "whsec_1234567890abcdefghijklmnopqrstuvwxyz",
+  "active": true,
+  "createdAt": "2025-12-31T20:00:00Z"
+}
+```
+
+<Warning>
+**Save Your Webhook Secret**: The `secret` is shown only once. Store it securely for signature verification.
+</Warning>
+
+### List Webhook Subscriptions
+
+```http
+GET /v1/webhooks
+```
+
+**Response (200 OK)**:
+
+```json
+{
+  "webhooks": [
+    {
+      "id": "webhook_abc123",
+      "url": "https://your-domain.com/webhooks/x402",
+      "events": ["payment.completed", "payment.failed"],
+      "active": true,
+      "createdAt": "2025-12-31T20:00:00Z",
+      "lastDelivery": {
+        "timestamp": "2025-12-31T22:45:30Z",
+        "status": "success",
+        "event": "payment.completed"
+      }
+    }
+  ],
+  "total": 1
+}
+```
+
+### Delete Webhook Subscription
+
+```http
+DELETE /v1/webhooks/:id
+```
+
+**Response (204 No Content)**
+
+### Test Webhook
+
+Send a test event to verify your webhook is configured correctly.
+
+```http
+POST /v1/webhooks/:id/test
+```
+
+**Request Body**:
+
+```json
+{
+  "event": "payment.completed"
+}
+```
+
+**Response (200 OK)**:
+
+```json
+{
+  "delivered": true,
+  "statusCode": 200,
+  "responseTime": 145,
+  "deliveryId": "test_delivery_abc123"
+}
+```
+
+---
+
+## Webhook Best Practices
+
+<AccordionGroup>
+  <Accordion title="Always Verify Signatures">
+    Never trust webhook data without verifying the signature. Attackers can send fake webhooks to your endpoint.
+
+    ```typescript
+    // WRONG - Trusts all incoming requests
+    app.post('/webhook', (req, res) => {
+      processPayment(req.body); // ❌ Insecure
+    });
+
+    // CORRECT - Verifies signature first
+    app.post('/webhook', (req, res) => {
+      if (!verifySignature(req.body, req.headers['x-ghostspeak-signature'])) {
+        return res.status(401).send('Invalid signature');
+      }
+      processPayment(req.body); // ✅ Secure
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="Respond Quickly (Within 5 Seconds)">
+    Acknowledge webhook receipt immediately (200 OK). Perform heavy processing asynchronously:
+
+    ```typescript
+    app.post('/webhook', async (req, res) => {
+      // Verify signature
+      if (!verifySignature(...)) {
+        return res.status(401).send('Invalid');
+      }
+
+      // Acknowledge immediately
+      res.status(200).json({ received: true });
+
+      // Process asynchronously (don't await)
+      processEventAsync(req.body).catch(console.error);
+    });
+    ```
+
+    If you don't respond within 5 seconds, GhostSpeak will retry the webhook.
+  </Accordion>
+
+  <Accordion title="Implement Idempotency">
+    Webhooks may be delivered multiple times. Use the `id` field to detect duplicates:
+
+    ```typescript
+    const processedEvents = new Set<string>();
+
+    function handleWebhook(event: any) {
+      if (processedEvents.has(event.id)) {
+        console.log('Duplicate event, skipping');
+        return;
+      }
+
+      processedEvents.add(event.id);
+      // Process event...
+    }
+    ```
+
+    For production, use a database instead of in-memory Set.
+  </Accordion>
+
+  <Accordion title="Use HTTPS Only">
+    GhostSpeak only sends webhooks to HTTPS URLs. HTTP endpoints will be rejected.
+
+    **Accepted**: `https://your-domain.com/webhooks/x402`
+    **Rejected**: `http://your-domain.com/webhooks/x402`
+
+    For local testing, use tunneling tools like [ngrok](https://ngrok.com):
+
+    ```bash
+    ngrok http 3000
+    # Use the HTTPS URL: https://abc123.ngrok.io/webhooks/x402
+    ```
+  </Accordion>
+
+  <Accordion title="Monitor Webhook Failures">
+    Track webhook delivery failures in your dashboard:
+
+    - **Delivery Status**: Success, failure, timeout
+    - **Retry Count**: Number of retry attempts
+    - **Last Error**: Error message from failed delivery
+
+    GhostSpeak retries failed webhooks with exponential backoff:
+    - 1st retry: 1 minute
+    - 2nd retry: 5 minutes
+    - 3rd retry: 30 minutes
+    - 4th retry: 2 hours
+    - 5th retry: 12 hours (final attempt)
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Webhook Headers
+
+Every webhook request includes these headers:
+
+| Header | Description | Example |
+|--------|-------------|---------|
+| `X-GhostSpeak-Signature` | HMAC-SHA256 signature | `sha256=abc123...` |
+| `X-GhostSpeak-Event` | Event type | `payment.completed` |
+| `X-GhostSpeak-Delivery` | Unique delivery ID | `del_uuid123` |
+| `X-GhostSpeak-Timestamp` | Unix timestamp | `1735689930` |
+| `User-Agent` | GhostSpeak webhook client | `GhostSpeak-Webhooks/1.0` |
+| `Content-Type` | Always JSON | `application/json` |
+
+---
+
+## Error Responses
+
+**401 Unauthorized** - Invalid signature:
+
+Your server should return this when signature verification fails:
+
+```json
+{
+  "error": "Invalid webhook signature"
+}
+```
+
+**500 Internal Server Error** - Processing failed:
+
+If your webhook handler crashes, return 500. GhostSpeak will retry.
+
+**Timeout (no response within 5 seconds)**:
+
+GhostSpeak treats no response as a failure and retries.
+
+---
+
+## Local Testing with ngrok
+
+For local development, use ngrok to expose your localhost to the internet:
+
+<Steps>
+  <Step title="Install ngrok">
+    ```bash
+    brew install ngrok
+    # or download from https://ngrok.com
+    ```
+  </Step>
+
+  <Step title="Start Your Local Server">
+    ```bash
+    bun run dev
+    # Server running on http://localhost:3000
+    ```
+  </Step>
+
+  <Step title="Start ngrok Tunnel">
+    ```bash
+    ngrok http 3000
+    # Forwarding: https://abc123.ngrok.io -> http://localhost:3000
+    ```
+  </Step>
+
+  <Step title="Configure Webhook URL">
+    Use the ngrok HTTPS URL in your webhook configuration:
+    ```
+    https://abc123.ngrok.io/webhooks/x402
+    ```
+  </Step>
+
+  <Step title="Test Webhook">
+    Send a test event from the GhostSpeak dashboard or use the API:
+    ```bash
+    curl -X POST https://api.ghostspeak.io/v1/webhooks/webhook_abc123/test \
+      -H "Authorization: Bearer gs_live_YOUR_API_KEY_HERE" \
+      -d '{"event": "payment.completed"}'
+    ```
+  </Step>
+</Steps>
+
+---
+
+## SDK Reference
+
+The TypeScript SDK simplifies webhook management:
+
+```typescript
+import { GhostSpeakAPIClient } from '@ghostspeak/sdk';
+
+const client = new GhostSpeakAPIClient({
+  apiKey: process.env.GHOSTSPEAK_API_KEY,
+});
+
+// Create webhook
+const webhook = await client.webhooks.create({
+  url: 'https://your-domain.com/webhooks/x402',
+  events: ['payment.completed', 'payment.failed'],
+  description: 'Production webhook',
+});
+
+console.log(`Webhook secret: ${webhook.secret}`);
+
+// List webhooks
+const webhooks = await client.webhooks.list();
+
+// Test webhook
+await client.webhooks.test(webhook.id, { event: 'payment.completed' });
+
+// Delete webhook
+await client.webhooks.delete(webhook.id);
+```
+
+**Webhook Signature Verification Helper**:
+
+```typescript
+import { verifyWebhookSignature } from '@ghostspeak/sdk';
+
+const isValid = verifyWebhookSignature(
+  payload,
+  signature,
+  webhookSecret
+);
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="x402 Marketplace" icon="shop" href="/sdk/x402/marketplace">
+    Integrate x402 payment protocol
+  </Card>
+  <Card title="SDK Reference" icon="code" href="/sdk/advanced/webhooks">
+    Full webhook SDK documentation
+  </Card>
+  <Card title="API Playground" icon="flask" href="/api/playground">
+    Test webhooks interactively
+  </Card>
+  <Card title="Rate Limits" icon="gauge" href="/api/rate-limits">
+    Webhook rate limits and pricing
+  </Card>
+</CardGroup>

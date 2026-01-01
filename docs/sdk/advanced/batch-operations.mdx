@@ -1,0 +1,489 @@
+---
+title: 'Batch Operations'
+description: 'Efficiently process bulk credential issuance, batch reputation updates, and multi-agent operations'
+---
+
+# Batch Operations
+
+The GhostSpeak SDK provides optimized batch utilities for bulk operations. Process hundreds of agents, credentials, or reputation updates with minimal RPC calls.
+
+## Overview
+
+<CardGroup cols={2}>
+  <Card title="Intelligent Batching" icon="layer-group">
+    Auto-batches requests (100 per RPC call)
+  </Card>
+  <Card title="Progress Callbacks" icon="chart-line">
+    Track progress in real-time
+  </Card>
+  <Card title="Error Recovery" icon="rotate-right">
+    Automatic retry with exponential backoff
+  </Card>
+  <Card title="Caching" icon="database">
+    Smart caching to avoid duplicate fetches
+  </Card>
+</CardGroup>
+
+---
+
+## Batch Fetch Agents
+
+Fetch multiple agent accounts efficiently:
+
+```typescript batch-fetch-agents.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { address } from '@solana/addresses'
+
+const client = new GhostSpeakClient({
+  cluster: 'devnet',
+  commitment: 'confirmed',
+})
+
+// Fetch 500 agents in parallel (auto-batches in groups of 100)
+const addresses = [
+  address('4Hc7mK2pXyZqNjT8vU9wRfE3sL1aG6bY2cD5hF7iJ8kM'),
+  address('9Xw3pL5mN2aR8tY6vU1oF4hE7cK9bD3sG2qJ5nM8xP7w'),
+  // ... 498 more addresses
+]
+
+const agents = await client.agents.batchGetAgents(
+  addresses,
+  (completed, total) => {
+    console.log(`Progress: ${completed}/${total} (${Math.round(completed / total * 100)}%)`)
+  }
+)
+
+console.log(`Fetched ${agents.filter(a => a !== null).length} existing agents`)
+
+// Alternative: Get only existing agents (filters out nulls)
+const existingAgents = await client.agents.batchGetExistingAgents(addresses)
+console.log(`${existingAgents.length} agents exist on-chain`)
+
+// Map to custom format
+interface AgentSummary {
+  address: string
+  name: string
+  type: number
+  active: boolean
+  ghostScore?: number
+}
+
+const summaries = await client.agents.batchGetAndMapAgents<AgentSummary | null>(
+  addresses,
+  (agent, addr) => {
+    if (!agent) return null
+    return {
+      address: addr,
+      name: agent.name,
+      type: agent.agentType,
+      active: agent.isActive,
+      // Fetch Ghost Score in a second batch
+    }
+  }
+)
+```
+
+<Check>
+Batch operations are **100x faster** than sequential fetching! 1000 agents = ~2 seconds instead of 200+ seconds.
+</Check>
+
+---
+
+## Bulk Credential Issuance
+
+Issue credentials for multiple agents:
+
+```typescript bulk-credentials.ts
+import { CredentialModule, CredentialKind } from '@ghostspeak/sdk'
+import { address } from '@solana/addresses'
+
+const credentialModule = new CredentialModule(
+  address('GHosT3wqDfNq9bKz8dNEQ1F5mLuN7bKdNYx3Z1111111')
+)
+
+const agentAddresses = [
+  'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+  '9Xw3pL5mN2aR8tY6vU1oF4hE7cK9bD3sG2qJ5nM8xP7w',
+  // ... more addresses
+]
+
+const credentials = await Promise.all(
+  agentAddresses.map(async (agentAddress) => {
+    return credentialModule.issueX402AgentCredential({
+      agentAddress,
+      agentId: `agent-${agentAddress.slice(0, 8)}`,
+      owner: 'HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH',
+      name: `Agent ${agentAddress.slice(0, 8)}`,
+      serviceEndpoint: `https://agent-${agentAddress.slice(0, 8)}.example.com`,
+      frameworkOrigin: 'ghostspeak-sdk',
+      x402PaymentAddress: agentAddress,
+      x402AcceptedTokens: ['EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'],
+      x402PricePerCall: '1000000',
+      capabilities: ['code-review'],
+      network: 'devnet',
+    })
+  })
+)
+
+console.log(`✅ Issued ${credentials.length} credentials`)
+
+// Export all as W3C JSON
+const w3cCredentials = credentials.map((cred) =>
+  JSON.stringify(cred.w3cCredential, null, 2)
+)
+
+// Save to files
+import fs from 'fs'
+w3cCredentials.forEach((json, idx) => {
+  fs.writeFileSync(`credentials/credential-${idx}.json`, json)
+})
+
+console.log('📁 Saved to credentials/ directory')
+```
+
+---
+
+## Batch Reputation Updates
+
+Update reputation for multiple agents from PayAI webhook events:
+
+```typescript batch-reputation-updates.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { address } from '@solana/addresses'
+
+const client = new GhostSpeakClient({
+  cluster: 'devnet',
+  commitment: 'confirmed',
+})
+
+// Mock: Get pending reputation updates from database
+const pendingUpdates = await db.reputationUpdates.findMany({
+  where: { status: 'pending' },
+  take: 100,
+})
+
+console.log(`Processing ${pendingUpdates.length} reputation updates...`)
+
+let successCount = 0
+let errorCount = 0
+
+// Process in batches of 10 concurrent updates
+const batchSize = 10
+for (let i = 0; i < pendingUpdates.length; i += batchSize) {
+  const batch = pendingUpdates.slice(i, i + batchSize)
+
+  const results = await Promise.allSettled(
+    batch.map(async (update) => {
+      // Get current reputation
+      const currentReputation = await client.reputation.getReputationData(
+        address(update.agentAddress)
+      )
+
+      // Calculate reputation change from PayAI record
+      const result = client.reputation.recordPayAIPayment(
+        {
+          agentAddress: address(update.agentAddress),
+          paymentSignature: update.paymentSignature,
+          amount: BigInt(update.amount),
+          success: update.success,
+          responseTimeMs: update.responseTimeMs,
+          payerAddress: update.payerAddress,
+          timestamp: new Date(update.timestamp),
+          network: update.network,
+        },
+        currentReputation
+      )
+
+      // Save updated reputation
+      await db.agentReputation.upsert({
+        where: { agentAddress: update.agentAddress },
+        create: {
+          agentAddress: update.agentAddress,
+          overallScore: result.overallScore,
+          tier: result.tier,
+        },
+        update: {
+          overallScore: result.overallScore,
+          tier: result.tier,
+          lastUpdated: new Date(),
+        },
+      })
+
+      // Mark update as processed
+      await db.reputationUpdates.update({
+        where: { id: update.id },
+        data: { status: 'completed' },
+      })
+
+      return { agentAddress: update.agentAddress, newScore: result.overallScore }
+    })
+  )
+
+  results.forEach((result, idx) => {
+    if (result.status === 'fulfilled') {
+      successCount++
+      console.log(`✅ Updated ${result.value.agentAddress}: ${result.value.newScore}`)
+    } else {
+      errorCount++
+      console.error(`❌ Failed ${batch[idx].agentAddress}:`, result.reason)
+    }
+  })
+
+  console.log(`Batch ${i / batchSize + 1} complete. Progress: ${i + batchSize}/${pendingUpdates.length}`)
+}
+
+console.log(`\n✅ Success: ${successCount}`)
+console.log(`❌ Errors: ${errorCount}`)
+```
+
+---
+
+## Parallel Tag Calculations
+
+Calculate reputation tags for multiple agents in parallel:
+
+```typescript batch-tag-calculation.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { address } from '@solana/addresses'
+
+const client = new GhostSpeakClient({
+  cluster: 'devnet',
+  commitment: 'confirmed',
+})
+
+const agentAddresses = [
+  address('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
+  address('9Xw3pL5mN2aR8tY6vU1oF4hE7cK9bD3sG2qJ5nM8xP7w'),
+  // ... more addresses
+]
+
+// Fetch all on-chain metrics in parallel
+const metricsPromises = agentAddresses.map(async (addr) => {
+  // Mock: fetch from on-chain ReputationMetrics account
+  const onChainMetrics = await client.getReputationMetrics(addr)
+  return {
+    address: addr,
+    metrics: client.reputation.convertMetricsForTagging(onChainMetrics),
+  }
+})
+
+const allMetrics = await Promise.all(metricsPromises)
+
+// Calculate tags for all agents in parallel
+const tagPromises = allMetrics.map(async ({ address, metrics }) => {
+  const tags = await client.reputation.calculateTagsForAgent(metrics)
+  return { address, tags }
+})
+
+const allTags = await Promise.all(tagPromises)
+
+console.log(`✅ Calculated tags for ${allTags.length} agents`)
+
+// Categorize and display
+allTags.forEach(({ address, tags }) => {
+  const categorized = client.reputation.categorizeTags(tags)
+  console.log(`\n${address}:`)
+  console.log('  Skills:', categorized.skillTags.map((t) => t.tagName).join(', '))
+  console.log('  Behaviors:', categorized.behaviorTags.map((t) => t.tagName).join(', '))
+  console.log('  Compliance:', categorized.complianceTags.map((t) => t.tagName).join(', '))
+})
+```
+
+---
+
+## Custom Batch Fetcher
+
+Create custom batch operations:
+
+```typescript custom-batch.ts
+import { batchGetAccounts, batchGetExistingAccounts } from '@ghostspeak/sdk'
+import { createSolanaRpc } from '@solana/rpc'
+import { address } from '@solana/addresses'
+
+const rpc = createSolanaRpc('https://api.devnet.solana.com')
+
+const addresses = [
+  address('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
+  address('9Xw3pL5mN2aR8tY6vU1oF4hE7cK9bD3sG2qJ5nM8xP7w'),
+  // ... more addresses
+]
+
+// Fetch raw accounts (returns null for non-existent)
+const accounts = await batchGetAccounts(rpc, addresses, {
+  onProgress: (completed, total) => {
+    console.log(`Fetched ${completed}/${total}`)
+  },
+  commitment: 'confirmed',
+  batchSize: 100, // Customize batch size
+})
+
+console.log(`Fetched ${accounts.filter(a => a !== null).length} accounts`)
+
+// Fetch only existing accounts
+const existingAccounts = await batchGetExistingAccounts(rpc, addresses)
+console.log(`${existingAccounts.length} accounts exist`)
+
+// Custom mapping
+import { batchGetAndMap } from '@ghostspeak/sdk'
+
+interface CustomResult {
+  address: string
+  balance: number
+}
+
+const results = await batchGetAndMap<any, CustomResult>(
+  rpc,
+  addresses,
+  (account, addr) => {
+    if (!account) return null
+    return {
+      address: addr,
+      balance: account.lamports,
+    }
+  }
+)
+```
+
+---
+
+## Batch Configuration
+
+Configure batch behavior:
+
+```typescript batch-config.ts
+import { createBatchFetcher } from '@ghostspeak/sdk'
+import { createSolanaRpc } from '@solana/rpc'
+
+const rpc = createSolanaRpc('https://api.devnet.solana.com')
+
+const fetcher = createBatchFetcher({
+  rpc,
+  batchSize: 50, // Smaller batches for rate-limited RPCs
+  maxRetries: 5, // Retry failed batches
+  retryDelay: 1000, // 1 second between retries
+  concurrency: 3, // Max 3 parallel batch requests
+  onProgress: (completed, total) => {
+    console.log(`[${new Date().toISOString()}] ${completed}/${total}`)
+  },
+  onError: (error, batchIndex) => {
+    console.error(`Batch ${batchIndex} failed:`, error)
+  },
+})
+
+const addresses = [/* ... */]
+const results = await fetcher.fetchAccounts(addresses)
+```
+
+---
+
+## Error Handling
+
+Handle batch operation errors gracefully:
+
+```typescript error-handling.ts
+import { batchGetAccounts } from '@ghostspeak/sdk'
+import { createSolanaRpc } from '@solana/rpc'
+
+const rpc = createSolanaRpc('https://api.devnet.solana.com')
+const addresses = [/* ... */]
+
+try {
+  const results = await batchGetAccounts(rpc, addresses, {
+    onProgress: (completed, total) => {
+      console.log(`Progress: ${completed}/${total}`)
+    },
+    onError: (error, batchIndex) => {
+      // Log but continue processing other batches
+      console.error(`Batch ${batchIndex} failed:`, error)
+      // Optionally: Store failed addresses for retry
+    },
+  })
+
+  // Check for failures
+  const successCount = results.filter(r => r !== null).length
+  const failCount = results.filter(r => r === null).length
+
+  console.log(`Success: ${successCount}, Failed: ${failCount}`)
+
+  if (failCount > 0) {
+    // Retry failed addresses
+    const failedAddresses = addresses.filter((_, idx) => results[idx] === null)
+    console.log(`Retrying ${failedAddresses.length} failed addresses...`)
+
+    const retryResults = await batchGetAccounts(rpc, failedAddresses)
+    // Merge results...
+  }
+} catch (error) {
+  console.error('Batch operation failed completely:', error)
+  // Fallback: fetch sequentially
+}
+```
+
+---
+
+## Performance Tips
+
+<CardGroup cols={2}>
+  <Card title="Use Batch Methods" icon="gauge-high">
+    Always prefer batch methods over loops for 100x speed improvement
+  </Card>
+  <Card title="Tune Batch Size" icon="sliders">
+    Smaller batches (50-100) for rate-limited RPCs, larger (200+) for dedicated nodes
+  </Card>
+  <Card title="Parallel Processing" icon="arrows-split-up-and-left">
+    Use Promise.all() for independent operations, await for dependent ones
+  </Card>
+  <Card title="Cache Results" icon="database">
+    Cache batch results for 5-10 minutes to reduce redundant RPC calls
+  </Card>
+</CardGroup>
+
+---
+
+## Best Practices
+
+```typescript
+// ✅ GOOD: Batch fetching with progress tracking
+const agents = await client.agents.batchGetAgents(
+  addresses,
+  (completed, total) => console.log(`${completed}/${total}`)
+)
+
+// ❌ BAD: Sequential fetching in a loop
+const agents = []
+for (const addr of addresses) {
+  const agent = await client.agents.getAgentAccount(addr) // SLOW!
+  agents.push(agent)
+}
+
+// ✅ GOOD: Parallel independent operations
+await Promise.all([
+  client.agents.batchGetAgents(agentAddresses),
+  client.reputation.batchGetReputation(agentAddresses),
+  client.credentials.batchGetCredentials(credentialIds),
+])
+
+// ❌ BAD: Sequential awaits
+const agents = await client.agents.batchGetAgents(agentAddresses)
+const reputation = await client.reputation.batchGetReputation(agentAddresses)
+const credentials = await client.credentials.batchGetCredentials(credentialIds)
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Webhooks" icon="webhook" href="/sdk/advanced/webhooks">
+    Automate batch operations from webhook events
+  </Card>
+  <Card title="Agent Management" icon="robot" href="/sdk/agents">
+    Batch agent registration and updates
+  </Card>
+  <Card title="Reputation Module" icon="star" href="/sdk/reputation">
+    Bulk reputation calculations
+  </Card>
+  <Card title="Performance Guide" icon="rocket" href="/guides/performance">
+    Optimize SDK performance
+  </Card>
+</CardGroup>

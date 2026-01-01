@@ -1,151 +1,312 @@
 ---
-title: 'Staking'
-description: 'Stake $GHOST tokens to earn rewards and participate in governance'
+title: 'GHOST Token Staking'
+description: 'Stake GHOST tokens for unlimited verifications, revenue share, and APY boosts'
 ---
+
+# GHOST Token Staking
+
+Stake GHOST tokens to earn rewards, get unlimited Ghost Score verifications, and boost your staking APY based on reputation.
 
 ## Overview
 
-The staking system allows users to lock their $GHOST tokens to earn APY rewards, boost their reputation, and gain voting power in protocol governance.
+<CardGroup cols={2}>
+  <Card title="Unlimited Verifications" icon="infinity">
+    No pay-per-verification fees
+  </Card>
+  <Card title="Revenue Share" icon="hand-holding-dollar">
+    Earn from protocol fees
+  </Card>
+  <Card title="APY Boosts" icon="arrow-trend-up">
+    Higher reputation = higher APY
+  </Card>
+  <Card title="Governance Rights" icon="landmark">
+    Vote on protocol upgrades
+  </Card>
+</CardGroup>
 
-## Browser-Safe Import
+---
 
-```typescript
-import {
-  StakingModule,
-  LockupTier,
-} from '@ghostspeak/sdk/browser';
+## Stake GHOST Tokens
+
+```typescript stake-ghost.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import fs from 'fs'
+
+async function stakeGhost() {
+  const keypairBytes = JSON.parse(fs.readFileSync(process.env.WALLET_PATH!, 'utf-8'))
+  const wallet = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  // Stake 1000 GHOST tokens
+  const amountLamports = BigInt(1000 * 1e9) // GHOST has 9 decimals
+
+  const signature = await client.staking.stakeGhost(wallet, {
+    amount: amountLamports,
+  })
+
+  console.log('✅ Staked 1000 GHOST tokens!')
+  console.log('Transaction:', `https://solscan.io/tx/${signature}?cluster=devnet`)
+  console.log('\n🎁 Benefits unlocked:')
+  console.log('  - Unlimited Ghost Score verifications')
+  console.log('  - 8% base APY')
+  console.log('  - Revenue share from verification fees')
+  console.log('  - Governance voting rights')
+}
+
+stakeGhost().catch(console.error)
 ```
 
-## Creating a Staking Account
+---
 
-```typescript
-import { StakingModule } from '@ghostspeak/sdk/browser';
+## Unstake Tokens
 
-const stakingModule = new StakingModule({
-  programId: GHOSTSPEAK_PROGRAM_ID,
-  rpcEndpoint: 'https://api.devnet.solana.com',
-});
+```typescript unstake-ghost.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import fs from 'fs'
 
-const result = await stakingModule.createStakingAccount({
-  signer: wallet,
-});
+async function unstakeGhost() {
+  const keypairBytes = JSON.parse(fs.readFileSync(process.env.WALLET_PATH!, 'utf-8'))
+  const wallet = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
 
-console.log('Staking account created:', result);
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  // Unstake 500 GHOST tokens
+  const amountLamports = BigInt(500 * 1e9)
+
+  const signature = await client.staking.unstakeGhost(wallet, {
+    amount: amountLamports,
+  })
+
+  console.log('✅ Unstaked 500 GHOST tokens!')
+  console.log('Transaction:', `https://solscan.io/tx/${signature}?cluster=devnet`)
+  console.log('\n⏳ Tokens will be available after 7-day cooldown period')
+}
+
+unstakeGhost().catch(console.error)
 ```
 
-## Lockup Tiers
+<Warning>
+**Unstaking Cooldown**: Tokens are locked for 7 days after unstaking before you can withdraw them.
+</Warning>
 
-Longer lockups earn higher APY bonuses:
+---
 
-| Tier | Duration | Bonus APY |
-|------|----------|-----------|
-| None | 0 days | +0% |
-| OneMonth | 30 days | +1% |
-| ThreeMonths | 90 days | +3% |
-| SixMonths | 180 days | +5% |
-| OneYear | 365 days | +10% |
-| TwoYears | 730 days | +20% |
+## Claim Staking Rewards
 
-```typescript
-import { LockupTier } from '@ghostspeak/sdk/browser';
+```typescript claim-rewards.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import fs from 'fs'
 
-// Available tiers
-LockupTier.None        // No lockup
-LockupTier.OneMonth    // 1 month
-LockupTier.ThreeMonths // 3 months
-LockupTier.SixMonths   // 6 months
-LockupTier.OneYear     // 1 year
-LockupTier.TwoYears    // 2 years
+async function claimRewards() {
+  const keypairBytes = JSON.parse(fs.readFileSync(process.env.WALLET_PATH!, 'utf-8'))
+  const wallet = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  // Claim all pending rewards
+  const signature = await client.staking.claimRewards(wallet)
+
+  console.log('✅ Claimed staking rewards!')
+  console.log('Transaction:', `https://solscan.io/tx/${signature}?cluster=devnet`)
+
+  // Query new balance
+  const stakingAccount = await client.staking.getStakingAccount(wallet.address)
+
+  if (stakingAccount) {
+    console.log('\n💰 Staking Summary:')
+    console.log('  Staked:', Number(stakingAccount.stakedAmount) / 1e9, 'GHOST')
+    console.log('  Pending Rewards:', Number(stakingAccount.pendingRewards) / 1e9, 'GHOST')
+    console.log('  Total Claimed:', Number(stakingAccount.totalClaimed) / 1e9, 'GHOST')
+  }
+}
+
+claimRewards().catch(console.error)
 ```
 
-## Claiming Rewards
+---
 
-```typescript
-const tx = await stakingModule.claimRewards({
-  signer: wallet,
-  ghostMint: GHOST_TOKEN_MINT,
-  userTokenAccount: userGhostTokenAccount,
-  rewardsTreasury: REWARDS_TREASURY,
-});
+## Query Staking Account
 
-console.log('Rewards claimed:', tx);
+```typescript query-staking.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { address } from '@solana/addresses'
+
+const client = new GhostSpeakClient({
+  cluster: 'devnet',
+  commitment: 'confirmed',
+})
+
+const userAddress = address('HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH')
+const stakingAccount = await client.staking.getStakingAccount(userAddress)
+
+if (stakingAccount) {
+  console.log('=== 💎 Staking Account ===')
+  console.log('Staked:', Number(stakingAccount.stakedAmount) / 1e9, 'GHOST')
+  console.log('Pending Rewards:', Number(stakingAccount.pendingRewards) / 1e9, 'GHOST')
+  console.log('Total Claimed:', Number(stakingAccount.totalClaimed) / 1e9, 'GHOST')
+  console.log('Stake Start:', new Date(stakingAccount.stakeStartTime * 1000))
+  console.log('Last Claim:', new Date(stakingAccount.lastClaimTime * 1000))
+
+  // Calculate current APY (includes reputation boost)
+  const daysStaked = (Date.now() / 1000 - stakingAccount.stakeStartTime) / 86400
+  const earnedAmount = Number(stakingAccount.totalClaimed + stakingAccount.pendingRewards)
+  const stakedAmount = Number(stakingAccount.stakedAmount) / 1e9
+  const apy = (earnedAmount / stakedAmount) * (365 / daysStaked) * 100
+
+  console.log('\n📊 Calculated APY:', apy.toFixed(2), '%')
+} else {
+  console.log('No staking account found')
+}
 ```
 
-## Querying Staking Data
+---
 
-### Get Staking Config
+## Staking Tiers & APY Boosts
 
-```typescript
-const config = await stakingModule.getStakingConfig();
+| Staked Amount | Base APY | + Reputation Boost | Total APY |
+|---------------|----------|-------------------|-----------|
+| 100 - 999 GHOST | 5% | +0-2% | 5-7% |
+| 1,000 - 9,999 GHOST | 8% | +0-3% | 8-11% |
+| 10,000 - 99,999 GHOST | 12% | +0-5% | 12-17% |
+| 100,000+ GHOST | 15% | +0-7% | 15-22% |
 
-console.log('Base APY:', config.baseApy);
-console.log('Total Staked:', config.totalStaked);
-console.log('Tier bonuses:', config.tierBonusApy);
-```
-
-### Get User's Staking Account
-
-```typescript
-const account = await stakingModule.getStakingAccount(ownerAddress);
-
-console.log('Staked amount:', account.stakedAmount);
-console.log('Lockup tier:', account.lockupTier);
-console.log('Auto-compound:', account.autoCompound);
-console.log('Rewards claimed:', account.rewardsClaimed);
-```
-
-### Get All Staking Accounts
+**Reputation Boost Formula:**
 
 ```typescript
-const allAccounts = await stakingModule.getAllStakingAccounts();
-
-console.log(`${allAccounts.length} stakers total`);
+const reputationBoost = Math.floor(ghostScore / 1000) * 0.5 // 0.5% per 1000 points
 ```
 
-## Utility Methods
+Example: Agent with 8000 Ghost Score staking 10,000 GHOST:
+- Base APY: 12%
+- Reputation Boost: (8000 / 1000) * 0.5 = 4%
+- **Total APY: 16%**
 
-### Calculate Pending Rewards
+---
+
+## Initialize Staking Config (Admin Only)
+
+```typescript init-staking.ts
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
+import fs from 'fs'
+
+async function initializeStakingConfig() {
+  const keypairBytes = JSON.parse(fs.readFileSync(process.env.ADMIN_WALLET_PATH!, 'utf-8'))
+  const admin = await createKeyPairSignerFromBytes(new Uint8Array(keypairBytes))
+
+  const client = new GhostSpeakClient({
+    cluster: 'devnet',
+    commitment: 'confirmed',
+  })
+
+  const signature = await client.staking.initializeStakingConfig(admin, {
+    baseApy: 800, // 8% (basis points)
+    unstakeCooldownDays: 7,
+    minStakeAmount: BigInt(100 * 1e9), // 100 GHOST minimum
+  })
+
+  console.log('✅ Staking config initialized!')
+  console.log('Transaction:', `https://solscan.io/tx/${signature}?cluster=devnet`)
+}
+
+initializeStakingConfig().catch(console.error)
+```
+
+<Info>
+Only the GhostSpeak protocol admin can initialize staking configuration.
+</Info>
+
+---
+
+## Staking Response Types
 
 ```typescript
-const pending = stakingModule.calculatePendingRewards(stakingAccount, config);
-console.log('Pending rewards:', pending);
+interface StakingAccount {
+  owner: Address
+  stakedAmount: bigint
+  pendingRewards: bigint
+  totalClaimed: bigint
+  stakeStartTime: number // Unix timestamp
+  lastClaimTime: number // Unix timestamp
+  unstakeAmount: bigint // Amount pending unstake
+  unstakeRequestTime?: number // When unstake was requested
+}
+
+interface StakingConfig {
+  admin: Address
+  baseApy: number // Basis points (800 = 8%)
+  unstakeCooldownDays: number // Days before unstaked tokens are available
+  minStakeAmount: bigint
+  isActive: boolean
+}
 ```
 
-### Check Lockup Status
+---
 
-```typescript
-const isLocked = stakingModule.isLocked(stakingAccount);
-const timeRemaining = stakingModule.getLockupTimeRemaining(stakingAccount);
+## Staking Benefits
 
-console.log('Locked:', isLocked);
-console.log('Time remaining (seconds):', timeRemaining);
-```
+<CardGroup cols={2}>
+  <Card title="Unlimited Verifications" icon="check-double">
+    No per-verification fees. Verify Ghost Score as often as needed.
+  </Card>
+  <Card title="Protocol Revenue Share" icon="chart-pie">
+    Earn from verification fees paid by non-stakers (distributed weekly).
+  </Card>
+  <Card title="Reputation-Linked APY" icon="rocket">
+    Higher Ghost Score = higher staking APY (up to 7% boost).
+  </Card>
+  <Card title="Governance Voting" icon="square-poll-vertical">
+    Vote on protocol upgrades, fee changes, and new features.
+  </Card>
+</CardGroup>
 
-### Get APY for Tier
-
-```typescript
-const totalApy = stakingModule.getTotalApy(config, LockupTier.OneYear);
-console.log('Total APY with 1-year lockup:', totalApy);
-```
+---
 
 ## Best Practices
 
-<Steps>
-  <Step title="Choose Appropriate Lockup">
-    Match your lockup period to your investment horizon for maximum rewards
-  </Step>
-  <Step title="Enable Auto-Compound">
-    Auto-compound reinvests rewards for compounding gains
-  </Step>
-  <Step title="Monitor Rewards">
-    Check pending rewards regularly and claim when gas-efficient
-  </Step>
-  <Step title="Consider Governance">
-    Staked tokens give you voting power in protocol governance
-  </Step>
-</Steps>
+<CardGroup cols={2}>
+  <Card title="Stake for Long Term" icon="calendar">
+    APY compounds over time. Stake for 6+ months for maximum returns.
+  </Card>
+  <Card title="Claim Rewards Regularly" icon="hand-holding-dollar">
+    Claim every 30 days to re-stake rewards and compound earnings.
+  </Card>
+  <Card title="Build Reputation First" icon="star">
+    Get to Gold/Platinum tier before staking for maximum APY boost.
+  </Card>
+  <Card title="Start with 1,000 GHOST" icon="coins">
+    Sweet spot: 1,000-10,000 GHOST for 8-11% APY.
+  </Card>
+</CardGroup>
 
-<Note>
-  Staking rewards are calculated every Solana epoch (~2-3 days). Auto-compound 
-  automatically reinvests rewards into your staked balance.
-</Note>
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Governance" icon="landmark" href="/concepts/tokenomics/staking">
+    Vote on protocol proposals
+  </Card>
+  <Card title="Tokenomics Overview" icon="chart-line" href="/concepts/tokenomics/overview">
+    Understand GHOST token economics
+  </Card>
+  <Card title="Reputation Module" icon="star" href="/sdk/reputation">
+    Build Ghost Score for APY boosts
+  </Card>
+  <Card title="Staking Strategy" icon="brain" href="/guides/staking-strategy">
+    Optimize your staking approach
+  </Card>
+</CardGroup>

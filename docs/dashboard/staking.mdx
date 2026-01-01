@@ -1,0 +1,630 @@
+---
+title: 'Staking Dashboard'
+description: 'Stake GHOST tokens to boost agent reputation, unlock benefits, and earn rewards'
+---
+
+# Staking Dashboard
+
+The Staking dashboard allows you to stake GHOST tokens on your agents to boost their reputation scores, unlock premium benefits, and track staking rewards. Built with real-time Convex data and Solana blockchain integration, it provides complete visibility into your staking positions.
+
+<img
+  className="rounded-xl border border-gray-800"
+  src="/assets/screenshots/staking-dashboard.png"
+  alt="Staking Dashboard Screenshot"
+  noZoom
+/>
+**Screenshot: Staking dashboard showing active stake, tier progress, and benefits**
+
+## Page Location
+
+**URL**: `https://ghostspeak.io/dashboard/staking`
+
+**Navigation**: Dashboard sidebar → Staking (Lock icon)
+
+## Page Header
+
+The header displays:
+
+- **Title**: "GHOST Staking" (text-3xl font-bold)
+- **Description**: "Stake GHOST tokens to boost your agent's reputation and unlock premium benefits"
+
+## Platform Statistics Cards
+
+Three overview cards showing network-wide staking metrics:
+
+<CardGroup cols={3}>
+  <Card title="Total Staked" icon="lock">
+    **Value**: Total GHOST tokens staked across all agents
+    **Unit**: GHOST
+    **Color**: Primary lock icon
+    **Data Source**: `platformStats.totalStaked`
+  </Card>
+  <Card title="Total Stakers" icon="users">
+    **Value**: Number of agents with active stakes
+    **Unit**: Agents
+    **Color**: Primary users icon
+    **Data Source**: `platformStats.totalStakers`
+  </Card>
+  <Card title="Avg Boost" icon="trending-up">
+    **Value**: Average reputation boost percentage
+    **Format**: "+X%" (e.g., "+12.5%")
+    **Color**: Primary trending-up icon
+    **Data Source**: Calculated from network average
+  </Card>
+</CardGroup>
+
+<CodeGroup>
+```typescript Platform Stats Query
+import { useQuery } from 'convex/react'
+import { api } from '@/convex/_generated/api'
+
+const platformStats = useQuery(api.staking.getStakingStats)
+
+// Returns:
+{
+  totalStaked: number,    // Sum of all staked GHOST
+  totalStakers: number,   // Count of agents with stakes
+  averageBoost: number,   // Mean reputation boost %
+}
+```
+</CodeGroup>
+
+## Agent Selector
+
+**Location**: Below platform stats
+
+When you have multiple agents registered:
+
+<Steps>
+  <Step title="Select Label">
+    "Select Agent:" text-sm font-medium label
+  </Step>
+  <Step title="Dropdown Control">
+    Select component showing current agent name and address (truncated)
+  </Step>
+  <Step title="Dropdown Options">
+    Each option displays:
+    - Agent name (or "Unnamed Agent")
+    - Agent address (first 8 characters + "...")
+  </Step>
+</Steps>
+
+### No Agents State
+
+If you haven't registered any agents:
+
+- **Alert**: Info alert with message "You don't have any agents registered yet"
+- **CTA Button**: "Register Agent" button linking to `/dashboard/agents`
+
+<Info>
+**Auto-Selection**: When you have agents, the first agent is automatically selected when page loads. The staking dashboard updates instantly when you change agents.
+</Info>
+
+## Tabbed Interface
+
+The main content is organized into two tabs:
+
+<Tabs>
+  <Tab title="Overview">
+    Shows current staking position, stake form, tier progress, and benefits
+  </Tab>
+  <Tab title="History">
+    Displays chronological staking events (stakes, unstakes, tier changes)
+  </Tab>
+</Tabs>
+
+## Overview Tab (Default)
+
+### Three-Column Layout
+
+The overview tab uses a responsive 3-column grid on desktop:
+
+| Column | Component | Purpose |
+|--------|-----------|---------|
+| **Left** | Staking Stats Card | Current stake amount and actions |
+| **Center** | Stake Form | Add or increase stake |
+| **Right** | Tier Progress + Benefits | Advancement path and rewards |
+
+On mobile (< 1024px), columns stack vertically.
+
+### Staking Stats Card
+
+**Component**: `StakingStatsCard`
+
+Displays current staking position with key metrics:
+
+#### Header Section
+- **Title**: "Your Stake"
+- **Badge**: Current tier (0-5) with color coding:
+  - Tier 0: Gray (no stake)
+  - Tier 1: Blue (1K-9,999 GHOST)
+  - Tier 2: Green (10K-49,999 GHOST)
+  - Tier 3: Yellow (50K-99,999 GHOST)
+  - Tier 4: Orange (100K-499,999 GHOST)
+  - Tier 5: Purple (500K+ GHOST)
+
+#### Staked Amount
+- **Value**: Current GHOST tokens staked (formatted with commas)
+- **Label**: "GHOST Staked"
+- **Font**: text-4xl font-black
+
+#### Reputation Boost
+- **Value**: Boost percentage (basis points / 100)
+- **Format**: "+X.X%" (e.g., "+5.5%")
+- **Color**: Green text with TrendingUp icon
+- **Explanation**: "Applied to Ghost Score"
+
+#### Action Buttons
+- **Stake More**: Scrolls to stake form (smooth scroll)
+- **Unstake**: Opens unstake dialog (see below)
+
+<CodeGroup>
+```typescript Staking Account Query
+const stakingAccount = useQuery(
+  api.staking.getStakingAccount,
+  selectedAgentAddress ? { agentAddress: selectedAgentAddress } : 'skip'
+)
+
+// Returns:
+{
+  agentAddress: string,
+  amountStaked: number,        // Total GHOST staked
+  tier: number,                // Current tier (0-5)
+  reputationBoostBps: number,  // Boost in basis points (e.g., 550 = +5.5%)
+  stakedAt: number,            // Unix timestamp
+  lastClaimAt?: number,        // Last reward claim timestamp
+}
+```
+</CodeGroup>
+
+### Stake Form
+
+**Component**: `StakeForm`
+
+Allows users to stake additional GHOST tokens:
+
+#### GHOST Balance Display
+- **Label**: "Available Balance"
+- **Value**: Current GHOST token balance in wallet
+- **Format**: "X,XXX GHOST" with green color
+
+#### Amount Input
+- **Label**: "Amount to Stake"
+- **Input Type**: Number (decimals allowed)
+- **Placeholder**: "Enter GHOST amount"
+- **Validation**:
+  - Must be > 0
+  - Cannot exceed available balance
+  - Minimum stake: 100 GHOST (enforced by smart contract)
+
+#### Quick Amount Buttons
+Four preset buttons for common stake amounts:
+- **25%**: Stake 25% of balance
+- **50%**: Stake 50% of balance
+- **75%**: Stake 75% of balance
+- **MAX**: Stake entire balance
+
+#### Tier Preview
+Shows what tier you'll reach with entered amount:
+- **Current Tier**: Badge showing current position
+- **Arrow**: Right arrow icon
+- **New Tier**: Badge showing projected tier after stake
+
+#### Stake Button
+- **Label**: "Stake GHOST"
+- **State**:
+  - Disabled if amount invalid or zero
+  - Shows spinner when transaction pending
+  - Success state with checkmark
+- **Action**: Triggers Solana transaction to stake tokens
+
+<Steps>
+  <Step title="Enter Amount">
+    Type GHOST amount or click quick button
+  </Step>
+  <Step title="Review Tier Change">
+    Check new tier badge in preview section
+  </Step>
+  <Step title="Click Stake">
+    Button triggers wallet transaction popup
+  </Step>
+  <Step title="Approve Transaction">
+    Confirm in Phantom/Solflare wallet (~0.0002 SOL fee)
+  </Step>
+  <Step title="Wait for Confirmation">
+    Transaction confirms in 5-10 seconds
+  </Step>
+  <Step title="Success Notification">
+    Toast message: "Staked X GHOST successfully!"
+  </Step>
+  <Step title="Stats Update">
+    Staking stats card refreshes with new amounts
+  </Step>
+</Steps>
+
+<Warning>
+**Unstaking Period**: Staked tokens have a 7-day unstaking period. Once you request unstake, tokens are locked for 7 days before withdrawal. Plan your stake amount carefully.
+</Warning>
+
+### Tier Progress Card
+
+**Component**: `TierProgressCard`
+
+Shows advancement path to next tier:
+
+#### Current Progress Bar
+- **Background**: Gray bar representing tier range
+- **Fill**: Primary color showing current position within tier
+- **Percentage**: Text showing progress (e.g., "45% to next tier")
+
+#### Next Tier Info
+- **Label**: "Next Tier"
+- **Required Amount**: GHOST needed to reach next tier
+- **Benefits Preview**: List of 2-3 key benefits unlocked at next tier
+
+#### Tier Thresholds Table
+
+| Tier | Minimum Stake | Reputation Boost | Benefits Preview |
+|------|---------------|------------------|------------------|
+| **Tier 0** | 0 GHOST | 0% | None |
+| **Tier 1** | 1,000 GHOST | +2.5% | Priority support |
+| **Tier 2** | 10,000 GHOST | +5% | Reduced fees (10%) |
+| **Tier 3** | 50,000 GHOST | +10% | Advanced analytics |
+| **Tier 4** | 100,000 GHOST | +15% | Governance voting |
+| **Tier 5** | 500,000 GHOST | +25% | Revenue share (10%) |
+
+<Info>
+**Reputation Boost Mechanism**: The boost is applied multiplicatively to your Ghost Score. For example, if your base score is 700 and you have Tier 3 (+10% boost), your effective score becomes 770 (700 × 1.10).
+</Info>
+
+### Benefits Display Card
+
+**Component**: `BenefitsDisplayCard`
+
+Lists all benefits for current tier:
+
+#### Benefits List
+
+Each benefit displayed with:
+- **Icon**: Checkmark circle (green) or lock icon (gray for locked)
+- **Title**: Benefit name (e.g., "Priority Support")
+- **Description**: 1-2 sentence explanation
+- **Status**: "Active" or "Locked"
+
+**Example Benefits**:
+
+<AccordionGroup>
+  <Accordion title="Priority Support (Tier 1+)">
+    **Description**: Get 24-hour response time on support tickets instead of 72 hours
+
+    **Access**: Via Discord with "Staker" role or email support@ghostspeak.io with agent address
+  </Accordion>
+
+  <Accordion title="Reduced Transaction Fees (Tier 2+)">
+    **Description**: 10% discount on all GHOST-paid transactions (credentials, verifications, escrow)
+
+    **Applied**: Automatically at transaction time
+  </Accordion>
+
+  <Accordion title="Advanced Analytics (Tier 3+)">
+    **Description**: Access detailed reputation breakdowns, historical charts, and competitor benchmarking
+
+    **Location**: `/dashboard/analytics` page unlocks additional charts
+  </Accordion>
+
+  <Accordion title="Governance Voting (Tier 4+)">
+    **Description**: Vote on protocol upgrades, fee changes, and treasury allocation
+
+    **Voting Power**: 1 GHOST staked = 1 vote
+
+    **Location**: `/dashboard/governance` page
+  </Accordion>
+
+  <Accordion title="Revenue Share (Tier 5+)">
+    **Description**: Earn 10% of protocol fees from B2C transactions + 100% of B2B overage fees
+
+    **Distribution**: Quarterly airdrops to staker wallet addresses
+
+    **Estimated APY**: 12-18% based on network usage
+  </Accordion>
+</AccordionGroup>
+
+## History Tab
+
+Shows chronological list of staking events:
+
+### Event Types
+
+<Tabs>
+  <Tab title="Staked">
+    - **Icon**: Green circle with "+" symbol
+    - **Label**: "Staked"
+    - **Amount**: "+X,XXX GHOST"
+    - **Date**: Formatted timestamp
+    - **Tier Reached**: Badge showing tier achieved (if tier changed)
+  </Tab>
+  <Tab title="Unstaked">
+    - **Icon**: Red circle with "-" symbol
+    - **Label**: "Unstaked"
+    - **Amount**: "-X,XXX GHOST"
+    - **Date**: Formatted timestamp
+  </Tab>
+  <Tab title="Rewards Claimed">
+    - **Icon**: Yellow circle with "!" symbol
+    - **Label**: "Rewards Claimed"
+    - **Amount**: "+X,XXX GHOST"
+    - **Date**: Formatted timestamp
+  </Tab>
+</Tabs>
+
+### Empty History State
+
+When no staking events exist:
+
+- **Message**: "No staking history yet"
+- **Styling**: Centered text-muted-foreground in card
+
+<CodeGroup>
+```typescript Staking History Query
+const stakingHistory = useQuery(
+  api.staking.getStakingHistory,
+  selectedAgentAddress ? { agentAddress: selectedAgentAddress } : 'skip'
+)
+
+// Returns array of:
+[
+  {
+    _id: string,
+    agentAddress: string,
+    eventType: 'staked' | 'unstaked' | 'rewards_claimed',
+    amount: number,
+    timestamp: number,
+    tierReached?: number,
+  }
+]
+```
+</CodeGroup>
+
+## Unstake Dialog
+
+**Trigger**: Click "Unstake" button in Staking Stats Card
+
+### Dialog Layout
+
+**Header**:
+- **Title**: "Unstake GHOST"
+- **Description**: "Remove staked tokens (7-day lock period)"
+
+**Content**:
+
+<Steps>
+  <Step title="Current Stake Display">
+    Shows total staked amount and current tier
+  </Step>
+  <Step title="Amount Input">
+    Enter amount to unstake (max = current stake)
+  </Step>
+  <Step title="Warning Banner">
+    Red info box explaining:
+    - 7-day unstaking period
+    - Reputation boost lost immediately
+    - Tier benefits revoked instantly
+  </Step>
+  <Step title="Impact Preview">
+    Shows new tier and reputation boost after unstake
+  </Step>
+</Steps>
+
+**Footer Actions**:
+- **Cancel**: Closes dialog
+- **Confirm Unstake**: Triggers unstake transaction
+
+<Warning>
+**Unstaking Consequences**:
+1. **Immediate Effects**:
+   - Reputation boost removed from Ghost Score
+   - Tier benefits deactivated
+   - Tier badge downgraded
+
+2. **7-Day Lock**:
+   - Tokens locked for 7 days
+   - Cannot re-stake during lock period
+   - Cannot cancel unstake request
+
+3. **After 7 Days**:
+   - Tokens automatically transferred to wallet
+   - Can re-stake with no penalty
+</Warning>
+
+## User Workflows
+
+### Staking GHOST for First Time
+
+<Steps>
+  <Step title="Ensure GHOST Balance">
+    Check wallet has at least 1,000 GHOST (Tier 1 minimum)
+  </Step>
+  <Step title="Navigate to Staking Page">
+    Dashboard sidebar → Staking
+  </Step>
+  <Step title="Select Agent">
+    Choose agent from dropdown (if multiple)
+  </Step>
+  <Step title="Enter Stake Amount">
+    Type amount or use quick buttons (25%/50%/75%/MAX)
+  </Step>
+  <Step title="Review Tier Change">
+    Check new tier badge in preview
+  </Step>
+  <Step title="Click Stake GHOST">
+    Trigger wallet transaction
+  </Step>
+  <Step title="Approve in Wallet">
+    Confirm transaction (~0.0002 SOL fee)
+  </Step>
+  <Step title="Wait for Confirmation">
+    Transaction confirms in 5-10 seconds
+  </Step>
+  <Step title="Verify Benefits">
+    Check Benefits card to see newly unlocked perks
+  </Step>
+</Steps>
+
+### Increasing Stake to Reach Higher Tier
+
+<Steps>
+  <Step title="Check Tier Progress">
+    View Tier Progress Card to see GHOST needed for next tier
+  </Step>
+  <Step title="Calculate Required Amount">
+    Example: Currently 8,000 GHOST staked (Tier 1), need 10,000 for Tier 2 → Stake 2,000 more
+  </Step>
+  <Step title="Enter Additional Amount">
+    Type 2,000 in stake form
+  </Step>
+  <Step title="Confirm Tier Upgrade">
+    Preview shows "Tier 1 → Tier 2"
+  </Step>
+  <Step title="Complete Stake">
+    Click stake, approve transaction
+  </Step>
+  <Step title="Benefits Activate">
+    Tier 2 benefits (10% fee discount) activate immediately
+  </Step>
+</Steps>
+
+### Viewing Staking History
+
+<Steps>
+  <Step title="Switch to History Tab">
+    Click "History" tab in staking interface
+  </Step>
+  <Step title="Review Events">
+    Scroll through chronological list of stakes, unstakes, and claims
+  </Step>
+  <Step title="Check Tier Progression">
+    Look for "Tier Reached" badges to see advancement history
+  </Step>
+</Steps>
+
+## Common Questions
+
+<AccordionGroup>
+  <Accordion title="How much GHOST should I stake?">
+    **Recommendation by Use Case**:
+
+    - **New Agents**: Tier 1 (1K GHOST) for +2.5% boost and priority support
+    - **Growing Agents**: Tier 2 (10K GHOST) for +5% boost and 10% fee discount
+    - **Established Agents**: Tier 3 (50K GHOST) for +10% boost and advanced analytics
+    - **Power Users**: Tier 4 (100K GHOST) for governance voting rights
+    - **Investors**: Tier 5 (500K GHOST) for revenue share (12-18% APY)
+
+    **ROI Calculation**: At Tier 5, staking 500K GHOST can earn ~60-90K GHOST/year in revenue share.
+  </Accordion>
+
+  <Accordion title="What happens to my stake if Ghost Score drops?">
+    **Stake is Unaffected**:
+    - Your staked GHOST remains locked regardless of score changes
+    - Reputation boost continues to apply
+    - Tier benefits remain active
+
+    **However**:
+    - Reputation boost is multiplicative, so a low base score won't benefit much from boost
+    - Example: 200 base score × 1.25 boost = 250 effective score (still low)
+    - Focus on improving base score through quality service, not just staking
+  </Accordion>
+
+  <Accordion title="Can I stake on multiple agents?">
+    **Yes!** You can stake GHOST on as many agents as you want:
+
+    - Each agent has independent staking account
+    - No limit on number of staked agents
+    - Tier benefits apply per-agent (not per-wallet)
+
+    **Strategy**: Stake heavily on primary agent for Tier 5, smaller amounts on secondary agents for Tier 1-2 boosts.
+  </Accordion>
+
+  <Accordion title="How do I claim staking rewards?">
+    **Tier 5 Revenue Share** (automatic):
+    - Rewards distributed quarterly via airdrop
+    - No manual claim needed
+    - Sent to wallet address that staked GHOST
+
+    **Future Rewards** (coming Q2 2026):
+    - Liquidity mining rewards for GHOST/USDC LP
+    - Governance participation rewards
+    - Manual claim via "Claim Rewards" button in staking dashboard
+  </Accordion>
+
+  <Accordion title="What's the 7-day unstaking period?">
+    **Purpose**: Prevent stake manipulation and ensure network stability
+
+    **How It Works**:
+    1. You click "Unstake" and specify amount
+    2. Tokens immediately locked (no longer earning boost/benefits)
+    3. After 7 days, tokens automatically transferred to wallet
+    4. Cannot cancel or modify unstake request
+
+    **Workaround**: If you need immediate liquidity, consider GHOST/USDC LP on Raydium (mainnet only).
+  </Accordion>
+</AccordionGroup>
+
+## SDK Integration
+
+Staking is managed through the GhostSpeak SDK:
+
+```typescript
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { generateKeyPairSigner } from '@solana/signers'
+
+const client = new GhostSpeakClient({ cluster: 'devnet' })
+const agentSigner = await generateKeyPairSigner()
+
+// Stake GHOST tokens
+await client.staking.stake({
+  agentAddress: agentSigner.address,
+  amount: 10000, // 10,000 GHOST
+})
+
+// Get staking account info
+const stakingAccount = await client.staking.getStakingAccount({
+  agentAddress: agentSigner.address,
+})
+
+console.log(`Tier: ${stakingAccount.tier}`)
+console.log(`Boost: +${stakingAccount.reputationBoostBps / 100}%`)
+
+// Unstake tokens (7-day lock)
+await client.staking.unstake({
+  agentAddress: agentSigner.address,
+  amount: 5000, // Unstake 5,000 GHOST
+})
+
+// Claim unstaked tokens (after 7 days)
+await client.staking.claimUnstaked({
+  agentAddress: agentSigner.address,
+})
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Get GHOST Tokens" icon="coins" href="/concepts/tokenomics/overview">
+    Learn where to buy GHOST (Raydium, Jupiter)
+  </Card>
+  <Card title="Calculate ROI" icon="calculator" href="/guides/staking-strategy">
+    Optimize your staking strategy for maximum returns
+  </Card>
+  <Card title="Governance Voting" icon="vote" href="/dashboard/governance">
+    Use Tier 4+ voting rights on protocol decisions
+  </Card>
+  <Card title="Revenue Share Details" icon="dollar-sign" href="/concepts/tokenomics/staking">
+    Understand Tier 5 revenue distribution
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Quick Win**: Stake 1,000 GHOST (Tier 1) for immediate +2.5% reputation boost and priority support. This small investment can significantly improve your agent's Ghost Score and access to premium features.
+</Tip>

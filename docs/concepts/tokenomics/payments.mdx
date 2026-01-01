@@ -1,0 +1,638 @@
+---
+title: 'Payment Options'
+description: 'Compare USDC pay-per-check, GHOST burn, and staking to find the best verification payment method'
+---
+
+# Payment Options
+
+GhostSpeak offers **three ways** to pay for AI agent verifications. Each has different pricing, benefits, and ideal use cases.
+
+<CardGroup cols={3}>
+  <Card title="USDC Pay-Per-Check" icon="dollar-sign">
+    1 USDC per verification
+  </Card>
+  <Card title="GHOST Burn" icon="fire">
+    75 GHOST per verification (25% discount)
+  </Card>
+  <Card title="GHOST Staking" icon="infinity">
+    Unlimited verifications (5K+ GHOST staked)
+  </Card>
+</CardGroup>
+
+---
+
+## Quick Comparison
+
+| Payment Method | Cost per Verification | Upfront Cost | Best For | Revenue Share |
+|----------------|----------------------|--------------|----------|---------------|
+| **USDC** | 1 USDC | $0 | 1-10 verifications | None |
+| **GHOST Burn** | 75 GHOST (~$0.0043) | $0 | 10-100 verifications | None |
+| **GHOST Staking** | $0 (unlimited) | 5K GHOST (~$0.28) | 100+ verifications | 10% B2C + 100% B2B overage |
+
+**Verdict at current prices** ($0.00005691/GHOST):
+- **1-10 verifications**: Use USDC (simplest)
+- **10-100 verifications**: Use GHOST burn (25% discount)
+- **100+ verifications**: Stake GHOST (unlimited + revenue share)
+
+---
+
+## Option 1: USDC Pay-Per-Check
+
+**Pay 1 USDC per verification** - the default, no-commitment option.
+
+### How It Works
+
+```
+User requests verification
+        │
+        ▼
+GhostSpeak checks USDC balance
+        │
+        ▼
+Deduct 1 USDC from wallet
+        │
+        ▼
+Perform verification
+        │
+        ▼
+Return results
+```
+
+### Pricing
+
+| Quantity | Total Cost (USDC) | Cost per Verification |
+|----------|-------------------|----------------------|
+| 1 | $1 | $1.00 |
+| 10 | $10 | $1.00 |
+| 100 | $100 | $1.00 |
+| 1,000 | $1,000 | $1.00 |
+
+**No volume discounts** for USDC payment.
+
+### Code Example
+
+```typescript
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+
+const client = new GhostSpeakClient({ cluster: 'mainnet' })
+
+// Pay with USDC (default)
+const verification = await client.verifications.create({
+  agentId: agentAddress,
+  paymentMethod: 'USDC', // Explicitly specify USDC
+})
+
+console.log('✅ Verified! Cost: 1 USDC')
+console.log('Verification ID:', verification.id)
+console.log('Ghost Score:', verification.ghostScore)
+```
+
+### Pros & Cons
+
+<AccordionGroup>
+  <Accordion title="Pros">
+    ✅ **No upfront cost** - pay only when you verify
+    ✅ **Stable pricing** - USDC is pegged to $1 USD
+    ✅ **No token management** - don't need to buy/hold GHOST
+    ✅ **Predictable budget** - 1 verification = $1, simple math
+  </Accordion>
+
+  <Accordion title="Cons">
+    ❌ **No discounts** - pay full price every time
+    ❌ **No revenue share** - don't earn from protocol growth
+    ❌ **Expensive at scale** - 1000 verifications = $1000
+    ❌ **Missed opportunity** - don't benefit from GHOST price appreciation
+  </Accordion>
+</AccordionGroup>
+
+### Best For
+
+- **Casual users** verifying &lt;10 agents per month
+- **New users** testing GhostSpeak without commitment
+- **USDC holders** who don't want token exposure
+- **Price-sensitive** users who value stable pricing
+
+---
+
+## Option 2: GHOST Burn
+
+**Burn 75 GHOST per verification** - get a 25% discount vs USDC.
+
+### How It Works
+
+```
+User requests verification
+        │
+        ▼
+GhostSpeak checks GHOST balance
+        │
+        ▼
+Burn 75 GHOST (send to burn address)
+        │
+        ▼
+Perform verification
+        │
+        ▼
+Return results
+```
+
+**Burned GHOST is permanently removed from circulation** - sent to Solana's burn address (`1nc1nerator11111111111111111111111111111111`).
+
+### Pricing
+
+| Quantity | Total Cost (GHOST) | USDC Equivalent | Savings vs USDC |
+|----------|-------------------|-----------------|-----------------|
+| 1 | 75 GHOST | $0.0043 | $0.9957 (99.6%) |
+| 10 | 750 GHOST | $0.043 | $9.957 (99.6%) |
+| 100 | 7,500 GHOST | $0.43 | $99.57 (99.6%) |
+| 1,000 | 75,000 GHOST | $4.27 | $995.73 (99.6%) |
+
+**At current price** ($0.00005691/GHOST):
+- GHOST burn = $0.0043 per verification
+- USDC payment = $1.00 per verification
+- **Savings: 99.6%** (due to extremely low GHOST price)
+
+<Warning>
+**Price Volatility**: GHOST burn cost fluctuates with token price. If GHOST appreciates 100x, burn cost becomes $0.43/verification (still 57% cheaper than USDC).
+
+At GHOST = $0.01333/token, burn cost equals USDC cost (1 USDC = 75 GHOST).
+</Warning>
+
+### Code Example
+
+```typescript
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+
+const client = new GhostSpeakClient({ cluster: 'mainnet' })
+
+// Pay with GHOST burn
+const verification = await client.verifications.create({
+  agentId: agentAddress,
+  paymentMethod: 'GHOST_BURN', // Burns 75 GHOST
+})
+
+console.log('✅ Verified! Burned 75 GHOST')
+console.log('USDC equivalent saved:', 1 - (75 * 0.00005691))
+console.log('Verification ID:', verification.id)
+
+// Check burn transaction
+console.log('Burn TX:', verification.burnSignature)
+// Verify on Solscan: https://solscan.io/tx/{burnSignature}
+```
+
+### Batch Burn (Recommended)
+
+```typescript
+// Verify multiple agents with GHOST burn
+const agents = [agent1, agent2, agent3, /* ... 100 agents */]
+
+const results = await client.verifications.batchCreate({
+  agentIds: agents.map(a => a.address),
+  paymentMethod: 'GHOST_BURN',
+})
+
+console.log(`✅ Verified ${results.length} agents`)
+console.log(`Burned ${results.length * 75} GHOST total`)
+console.log(`USDC equivalent saved: $${results.length - (results.length * 75 * 0.00005691)}`)
+```
+
+### Pros & Cons
+
+<AccordionGroup>
+  <Accordion title="Pros">
+    ✅ **25% discount** - designed to be cheaper than USDC (at parity pricing)
+    ✅ **99.6% savings** at current GHOST price ($0.00005691)
+    ✅ **Deflationary** - burns reduce supply, supporting price
+    ✅ **No commitment** - pay-as-you-go like USDC
+    ✅ **Tax efficiency** - burning may be tax-deductible (consult accountant)
+  </Accordion>
+
+  <Accordion title="Cons">
+    ❌ **Volatile pricing** - cost changes with GHOST price
+    ❌ **No revenue share** - don't earn from protocol growth
+    ❌ **Token management** - need to buy and hold GHOST
+    ❌ **Irreversible** - burned GHOST can't be recovered
+  </Accordion>
+</AccordionGroup>
+
+### Best For
+
+- **Medium-volume users** verifying 10-100 agents per month
+- **GHOST believers** who want to support token price
+- **Discount seekers** maximizing savings vs USDC
+- **Tax optimizers** (burning may offset gains)
+
+---
+
+## Option 3: GHOST Staking
+
+**Stake 5,000+ GHOST** for unlimited verifications + USDC revenue share.
+
+### How It Works
+
+```
+User stakes GHOST tokens
+        │
+        ▼
+Unlock unlimited verifications
+        │
+        ▼
+Verify as many agents as needed ($0/verification)
+        │
+        ▼
+Earn USDC revenue share daily
+        │
+        ▼
+Claim rewards anytime
+        │
+        ▼
+Unstake to exit (keep all rewards)
+```
+
+### Staking Tiers
+
+| Tier | GHOST Required | Cost at $0.00005691 | Benefits | Revenue Multiplier |
+|------|----------------|--------------------|-----------|--------------------|
+| **Verified** | 5,000 | $0.28 | Unlimited verifications | 1.5x |
+| **Pro** | 50,000 | $2.85 | + 100K API calls/month | 2.0x |
+| **Whale** | 500,000 | $28.46 | + Unlimited API calls | 3.0x |
+
+### Pricing
+
+**Upfront Cost:**
+- Verified: 5,000 GHOST × $0.00005691 = **$0.28**
+- Pro: 50,000 GHOST × $0.00005691 = **$2.85**
+- Whale: 500,000 GHOST × $0.00005691 = **$28.46**
+
+**Cost per Verification:**
+- All tiers: **$0** (unlimited)
+
+**Revenue Share (USDC):**
+
+Assuming $10K monthly rewards pool, 10M effective stake total:
+
+| Tier | Your Effective Stake | Pool Share | Monthly Earnings | Annualized |
+|------|---------------------|-----------|------------------|------------|
+| Verified | 7,500 (5K × 1.5x) | 0.075% | $7.50 | $90 |
+| Pro | 100,000 (50K × 2.0x) | 1.0% | $100 | $1,200 |
+| Whale | 1,500,000 (500K × 3.0x) | 15.0% | $1,500 | $18,000 |
+
+### Code Example
+
+```typescript
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+
+const client = new GhostSpeakClient({ cluster: 'mainnet' })
+
+// Stake 5K GHOST (Verified tier)
+const stake = await client.staking.stake({
+  amount: 5_000_000_000n, // 5K GHOST (6 decimals)
+})
+
+console.log('✅ Staked successfully!')
+console.log('Tier:', stake.tier) // "Verified Staker"
+console.log('Revenue Multiplier:', stake.multiplier) // 1.5x
+
+// Verify agents (unlimited, $0 cost)
+const verification1 = await client.verifications.create({ agentId: agent1 })
+const verification2 = await client.verifications.create({ agentId: agent2 })
+const verification3 = await client.verifications.create({ agentId: agent3 })
+// ... verify 1000 more agents for $0 ...
+
+// Check pending rewards
+const rewards = await client.staking.getRewards()
+console.log('Pending USDC:', rewards.pending)
+console.log('Estimated monthly:', rewards.estimatedMonthly)
+console.log('Estimated APY:', `${rewards.estimatedAPY}%`)
+
+// Claim rewards
+const claim = await client.staking.claimRewards()
+console.log('✅ Claimed', claim.usdcAmount, 'USDC')
+```
+
+### Pros & Cons
+
+<AccordionGroup>
+  <Accordion title="Pros">
+    ✅ **Unlimited verifications** - no per-check cost
+    ✅ **USDC revenue share** - earn 10% B2C + 100% B2B overage fees
+    ✅ **High APY** - 32,000%+ at current GHOST price (normalizes as price rises)
+    ✅ **No lockup** - unstake anytime, keep rewards
+    ✅ **Price upside** - benefit from GHOST appreciation
+    ✅ **Multiplier bonuses** - higher tiers earn more per GHOST staked
+  </Accordion>
+
+  <Accordion title="Cons">
+    ❌ **Upfront capital** - need to buy 5K+ GHOST
+    ❌ **Price risk** - GHOST may depreciate while staked
+    ❌ **Variable APY** - earnings depend on protocol revenue
+    ❌ **Smart contract risk** - staking contract may have bugs
+    ❌ **Opportunity cost** - GHOST locked in staking can't be traded
+  </Accordion>
+</AccordionGroup>
+
+### Best For
+
+- **Power users** verifying 100+ agents per month
+- **Long-term holders** bullish on GhostSpeak growth
+- **Revenue seekers** wanting USDC passive income
+- **Early adopters** maximizing APY while GHOST is cheap
+
+---
+
+## Break-Even Analysis
+
+**At what verification count does each option become optimal?**
+
+### Current Prices ($0.00005691/GHOST)
+
+```typescript
+// Assumptions
+const USDC_COST = 1.00                    // $1 per verification
+const GHOST_BURN_COST = 75 * 0.00005691   // $0.0043 per verification
+const VERIFIED_STAKE_COST = 5000 * 0.00005691  // $0.28 upfront
+
+// Break-even calculations
+const breakEvenBurnVsUSDC = VERIFIED_STAKE_COST / (USDC_COST - GHOST_BURN_COST)
+// = $0.28 / ($1.00 - $0.0043) = 0.28 verifications
+
+const breakEvenStakingVsUSDC = VERIFIED_STAKE_COST / USDC_COST
+// = $0.28 / $1.00 = 0.28 verifications
+
+const breakEvenStakingVsBurn = VERIFIED_STAKE_COST / GHOST_BURN_COST
+// = $0.28 / $0.0043 = 65 verifications
+```
+
+**Results:**
+- **USDC vs GHOST Burn**: Burn is cheaper after just **1 verification** (at current prices)
+- **USDC vs Staking**: Staking is cheaper after just **1 verification** (at current prices)
+- **GHOST Burn vs Staking**: Staking is cheaper after **65 verifications**
+
+<Warning>
+**These break-even numbers assume current GHOST price**. If GHOST appreciates 100x:
+- USDC = $1/verification (unchanged)
+- GHOST Burn = $0.43/verification (75 GHOST × $0.005691)
+- Staking upfront = $28.46 (5K GHOST × $0.005691)
+
+New break-evens:
+- Staking vs USDC: 28 verifications
+- Staking vs Burn: 66 verifications (nearly identical)
+</Warning>
+
+### Realistic Pricing Scenario ($0.01333/GHOST = Parity)
+
+**If GHOST reaches $0.01333** (234x from current):
+- USDC = $1/verification
+- GHOST Burn = $1/verification (75 × $0.01333 = 25% discount no longer applies due to pricing)
+- Staking upfront = $66.65 (5K × $0.01333)
+
+Break-evens:
+- **Staking vs USDC**: 67 verifications
+- **Staking vs Burn**: 67 verifications
+
+**Conclusion**: At parity pricing, staking breaks even around **60-70 verifications**.
+
+---
+
+## Total Cost Comparison
+
+**How much do you spend at different usage levels?**
+
+| Verifications | USDC Cost | GHOST Burn Cost* | Staking Cost** | Best Option |
+|---------------|-----------|------------------|----------------|-------------|
+| 1 | $1 | $0.0043 | $0.28 | GHOST Burn |
+| 10 | $10 | $0.043 | $0.28 | Staking |
+| 100 | $100 | $0.43 | $0.28 | Staking |
+| 1,000 | $1,000 | $4.27 | $0.28 | Staking |
+| 10,000 | $10,000 | $42.68 | $0.28 | Staking |
+
+*At $0.00005691/GHOST
+**Verified tier (5K GHOST), not including revenue share earnings
+
+**With revenue share** (assuming $7.50/month):
+- **10 verifications**: Staking cost = $0.28 - $7.50 = -$7.22 (you're paid to verify!)
+- **100 verifications**: Staking cost = $0.28 - $7.50 = -$7.22 (still profitable)
+- **1,000 verifications**: Staking cost = $0.28 - $7.50 = -$7.22 (maximize earnings)
+
+<Tip>
+**At current prices, staking is profitable after just 1 day** due to revenue share exceeding upfront stake cost.
+</Tip>
+
+---
+
+## Pricing Examples
+
+### Example 1: Casual User (10 verifications/month)
+
+**USDC:**
+- Monthly cost: 10 × $1 = **$10**
+- Annual cost: $120
+
+**GHOST Burn:**
+- Monthly cost: 10 × 75 × $0.00005691 = **$0.043**
+- Annual cost: $0.52
+
+**Staking:**
+- Upfront: 5K × $0.00005691 = **$0.28**
+- Monthly revenue share: **$7.50**
+- Annual profit: $90 - $0.28 = **$89.72**
+
+**Best Option**: **Staking** ($89.72 profit vs $10 cost for USDC)
+
+---
+
+### Example 2: Power User (1,000 verifications/month)
+
+**USDC:**
+- Monthly cost: 1,000 × $1 = **$1,000**
+- Annual cost: $12,000
+
+**GHOST Burn:**
+- Monthly cost: 1,000 × 75 × $0.00005691 = **$4.27**
+- Annual cost: $51.24
+
+**Staking:**
+- Upfront: 5K × $0.00005691 = **$0.28**
+- Monthly revenue share: **$7.50**
+- Annual profit: $90 - $0.28 = **$89.72**
+
+**Best Option**: **Staking** ($89.72 profit vs $1,000 cost for USDC)
+
+Even GHOST burn ($51.24/year) is 99.6% cheaper than USDC ($12,000/year).
+
+---
+
+### Example 3: Enterprise (100K verifications/month)
+
+**USDC:**
+- Monthly cost: 100,000 × $1 = **$100,000**
+- Annual cost: $1,200,000
+
+**GHOST Burn:**
+- Monthly cost: 100,000 × 75 × $0.00005691 = **$427.35**
+- Annual cost: $5,128.20
+
+**Staking (Pro Tier):**
+- Upfront: 50K × $0.00005691 = **$2.85**
+- Monthly revenue share: **$100**
+- Annual profit: $1,200 - $2.85 = **$1,197.15**
+
+**Best Option**: **Staking Pro Tier** ($1,197 profit vs $100K cost for USDC)
+
+GHOST burn is also viable ($5,128/year vs $1.2M/year).
+
+---
+
+## Decision Tree
+
+Use this flowchart to pick the right payment option:
+
+```
+Start: How many verifications do you need?
+    │
+    ├─ 1-10 verifications
+    │   └─> Are you bullish on GHOST price?
+    │       ├─ Yes → GHOST Burn (99.6% savings + deflationary support)
+    │       └─ No → USDC (simple, stable pricing)
+    │
+    ├─ 10-100 verifications
+    │   └─> Do you want revenue share?
+    │       ├─ Yes → Stake GHOST (unlimited + $7.50/month USDC)
+    │       └─ No → GHOST Burn (still 99.6% savings)
+    │
+    └─ 100+ verifications
+        └─> ALWAYS stake GHOST
+            │
+            ├─ 100+ verifications → Verified Tier (5K GHOST)
+            ├─ Need API access → Pro Tier (50K GHOST)
+            └─ Unlimited API → Whale Tier (500K GHOST)
+```
+
+---
+
+## Payment Method Migration
+
+**Can you switch payment methods later?**
+
+Yes! You can change payment methods at any time:
+
+```typescript
+// Switch from USDC to GHOST burn
+const verification = await client.verifications.create({
+  agentId: agentAddress,
+  paymentMethod: 'GHOST_BURN', // Changed from default USDC
+})
+
+// Switch to staking (stake GHOST first)
+await client.staking.stake({ amount: 5_000_000_000n })
+
+// Now all verifications are free (unlimited)
+const verification2 = await client.verifications.create({
+  agentId: agentAddress,
+  // No paymentMethod needed - staking automatically used
+})
+
+// Unstake anytime to revert to pay-per-check
+await client.staking.unstake({ amount: 'all' })
+```
+
+**No penalties for switching** - choose the optimal method at any time.
+
+---
+
+## Frequently Asked Questions
+
+<AccordionGroup>
+  <Accordion title="Why is GHOST burn cheaper than USDC?">
+    By design, GHOST burn is **25% cheaper** than USDC at parity pricing ($0.01333/GHOST).
+
+    Formula: `USDC_COST = GHOST_BURN_COST × 1.33`
+
+    At current prices ($0.00005691), GHOST is **99.6% cheaper** due to severe undervaluation.
+
+    As GHOST appreciates, the discount normalizes to the designed 25%.
+  </Accordion>
+
+  <Accordion title="What happens to burned GHOST?">
+    Burned GHOST is sent to Solana's official burn address: `1nc1nerator11111111111111111111111111111111`
+
+    This address has no private key - tokens sent there are **permanently removed** from circulation.
+
+    You can verify burns on [Solscan](https://solscan.io/account/1nc1nerator11111111111111111111111111111111).
+  </Accordion>
+
+  <Accordion title="Can I unstake without penalty?">
+    Yes! **No lockup period** for staking.
+
+    You can unstake anytime and receive your GHOST back immediately. You keep all claimed rewards but stop earning new revenue share.
+
+    Unstaking does NOT penalize you - you just lose future unlimited verifications.
+  </Accordion>
+
+  <Accordion title="Which payment method is best for taxes?">
+    **This is not tax advice** (consult a tax professional), but general considerations:
+
+    - **USDC**: Simple business expense deduction
+    - **GHOST Burn**: May offset capital gains (burning = disposal event)
+    - **Staking**: Revenue share is taxable income, unstaking may trigger capital gains
+
+    Most tax-efficient option depends on your jurisdiction and tax situation.
+  </Accordion>
+
+  <Accordion title="Can I combine payment methods?">
+    Yes! You can use different methods for different verifications:
+
+    ```typescript
+    // Verify agent 1 with USDC
+    await client.verifications.create({
+      agentId: agent1,
+      paymentMethod: 'USDC'
+    })
+
+    // Verify agent 2 with GHOST burn
+    await client.verifications.create({
+      agentId: agent2,
+      paymentMethod: 'GHOST_BURN'
+    })
+
+    // Stake GHOST for unlimited verifications going forward
+    await client.staking.stake({ amount: 5_000_000_000n })
+
+    // All future verifications are free
+    await client.verifications.create({ agentId: agent3 })
+    ```
+
+    Mix and match as needed!
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Start Staking" icon="rocket" href="/concepts/tokenomics/staking">
+    Unlock unlimited verifications + revenue share
+  </Card>
+  <Card title="GHOST Token Overview" icon="coins" href="/concepts/tokenomics/overview">
+    Learn about GHOST supply, utility, and tokenomics
+  </Card>
+  <Card title="Buy GHOST" icon="shopping-cart" href="https://dexscreener.com/solana/e44xj7jyjxyermlqqwrpu4nekcphawfjf3ppn2uokgdb">
+    Purchase GHOST on DEXScreener
+  </Card>
+  <Card title="SDK Reference" icon="code" href="/sdk/staking">
+    Implement payments programmatically
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Current Recommendation**: At $0.00005691/GHOST, staking is the clear winner for any usage level >1 verification. The upfront cost ($0.28) is recovered in revenue share within 1 day.
+
+If you verify even 1 agent per month, staking is more profitable than USDC payment.
+</Tip>
+
+<Warning>
+**Price Volatility**: GHOST price can change dramatically. These comparisons assume current pricing and may not reflect future costs. Always verify current prices before committing.
+</Warning>

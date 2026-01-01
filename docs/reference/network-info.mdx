@@ -1,0 +1,451 @@
+---
+title: 'Network Information'
+description: 'RPC endpoints, blockchain explorers, faucets, and network configuration'
+---
+
+# Network Information
+
+Complete network configuration reference for GhostSpeak on Solana devnet and upcoming mainnet deployment.
+
+---
+
+## Current Network: Solana Devnet
+
+<Warning>
+**Production Status**: GhostSpeak is currently **devnet-only**. Do not use real funds or production agents. Mainnet launch planned for Q1 2026.
+</Warning>
+
+### Devnet Configuration
+
+```typescript
+const config = {
+  cluster: 'devnet',
+  programId: '4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB',
+  rpcUrl: 'https://api.devnet.solana.com',
+  commitment: 'confirmed',
+}
+```
+
+---
+
+## RPC Endpoints
+
+### Public RPC Endpoints (Devnet)
+
+<Tabs>
+  <Tab title="Solana Foundation">
+    **Official Solana Devnet RPC**
+
+    ```
+    https://api.devnet.solana.com
+    ```
+
+    - **Rate Limit**: ~100 requests/second (shared)
+    - **Reliability**: High
+    - **Cost**: Free
+    - **Best For**: Testing, development
+  </Tab>
+
+  <Tab title="Helius">
+    **Helius Devnet RPC**
+
+    ```
+    https://devnet.helius-rpc.com/?api-key=YOUR_API_KEY
+    ```
+
+    - **Rate Limit**: 50 requests/second (free tier)
+    - **Reliability**: Very High
+    - **Cost**: Free tier available, paid plans for higher limits
+    - **Best For**: Production-grade testing, high throughput
+    - **Signup**: [https://helius.dev](https://helius.dev)
+  </Tab>
+
+  <Tab title="QuickNode">
+    **QuickNode Devnet RPC**
+
+    ```
+    https://YOUR_ENDPOINT.solana-devnet.quiknode.pro/YOUR_TOKEN/
+    ```
+
+    - **Rate Limit**: 25 requests/second (free tier)
+    - **Reliability**: Very High
+    - **Cost**: Free tier available, paid plans starting at $9/month
+    - **Best For**: Development with analytics
+    - **Signup**: [https://quicknode.com](https://quicknode.com)
+  </Tab>
+
+  <Tab title="Triton One">
+    **Triton One Devnet RPC**
+
+    ```
+    https://devnet.rpc.triton.one/?api-key=YOUR_API_KEY
+    ```
+
+    - **Rate Limit**: 100 requests/second (free tier)
+    - **Reliability**: High
+    - **Cost**: Free tier available
+    - **Best For**: High-performance testing
+    - **Signup**: [https://triton.one](https://triton.one)
+  </Tab>
+</Tabs>
+
+<Info>
+**Recommendation**: Use Helius or QuickNode for production-grade testing with higher reliability and better rate limits.
+</Info>
+
+---
+
+### SDK RPC Configuration
+
+```typescript
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+
+// Option 1: Use default public RPC
+const client = new GhostSpeakClient({
+  cluster: 'devnet',
+})
+
+// Option 2: Custom RPC endpoint
+const client = new GhostSpeakClient({
+  cluster: 'devnet',
+  rpcUrl: 'https://devnet.helius-rpc.com/?api-key=YOUR_KEY',
+})
+
+// Option 3: Advanced configuration
+const client = new GhostSpeakClient({
+  cluster: 'devnet',
+  rpcUrl: 'https://api.devnet.solana.com',
+  rpcConfig: {
+    commitment: 'confirmed',
+    confirmTransactionInitialTimeout: 60000, // 60 seconds
+  },
+})
+```
+
+---
+
+## Blockchain Explorers
+
+### Devnet Explorers
+
+<CardGroup cols={2}>
+  <Card title="Solscan" icon="magnifying-glass" href="https://solscan.io?cluster=devnet">
+    **Best for**: Account details, token balances
+
+    - View program: [`4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB`](https://solscan.io/account/4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB?cluster=devnet)
+    - Clean UI, fast updates
+    - Token analytics
+  </Card>
+
+  <Card title="Solana Explorer" icon="magnifying-glass" href="https://explorer.solana.com?cluster=devnet">
+    **Best for**: Transaction logs, instruction details
+
+    - View program: [`4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB`](https://explorer.solana.com/address/4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB?cluster=devnet)
+    - Official Solana explorer
+    - Detailed transaction logs
+  </Card>
+
+  <Card title="SolanaFM" icon="magnifying-glass" href="https://solana.fm?cluster=devnet">
+    **Best for**: Advanced analytics, debugging
+
+    - Program analytics
+    - Instruction decoder
+    - Multi-signature tracking
+  </Card>
+
+  <Card title="XRAY" icon="magnifying-glass" href="https://xray.helius.xyz">
+    **Best for**: Transaction visualization
+
+    - Visual transaction breakdown
+    - Token flow diagrams
+    - Human-readable tx summaries
+  </Card>
+</CardGroup>
+
+---
+
+### Mainnet Explorers (GHOST Token)
+
+<CardGroup cols={2}>
+  <Card title="Solscan (GHOST)" icon="coins" href="https://solscan.io/token/DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump">
+    View GHOST token on mainnet
+  </Card>
+
+  <Card title="DEX Screener" icon="chart-line" href="https://dexscreener.com/solana/e44xj7jyjxyermlqqwrpu4nekcphawfjf3ppn2uokgdb">
+    View GHOST trading charts
+  </Card>
+</CardGroup>
+
+---
+
+## Faucets (Get Devnet SOL)
+
+<Steps>
+  <Step title="Solana CLI Faucet">
+    **Fastest method via command line:**
+
+    ```bash
+    solana airdrop 2 YOUR_WALLET_ADDRESS --url devnet
+    ```
+
+    - **Limit**: 2 SOL per request
+    - **Cooldown**: 24 hours between requests
+    - **Requires**: Solana CLI installed
+  </Step>
+
+  <Step title="Web Faucet (Solana)">
+    **Official web faucet:**
+
+    Visit: [https://faucet.solana.com](https://faucet.solana.com)
+
+    - **Limit**: 1-2 SOL per request
+    - **Cooldown**: 24 hours
+    - **No signup required**
+  </Step>
+
+  <Step title="QuickNode Faucet">
+    **Multi-token faucet:**
+
+    Visit: [https://faucet.quicknode.com/solana/devnet](https://faucet.quicknode.com/solana/devnet)
+
+    - **Limit**: 0.1 SOL per request
+    - **Cooldown**: 1 hour
+    - **Also provides**: USDC, USDT devnet tokens
+  </Step>
+
+  <Step title="Discord Faucet">
+    **Community faucet:**
+
+    Join [Solana Discord](https://discord.gg/solana) and use:
+
+    ```
+    !faucet YOUR_WALLET_ADDRESS
+    ```
+
+    - **Limit**: 1 SOL per request
+    - **Cooldown**: 24 hours
+    - **Community support available**
+  </Step>
+</Steps>
+
+<Tip>
+**Pro Tip**: If you need more devnet SOL, create multiple devnet wallets and aggregate the airdrops.
+</Tip>
+
+---
+
+## Network Parameters
+
+### Transaction Costs (Devnet)
+
+| Operation | Estimated Cost | Notes |
+|-----------|----------------|-------|
+| **Agent Registration** | ~0.003 SOL | Includes PDA creation + account rent |
+| **Issue Credential (cNFT)** | ~0.0002 SOL | Compressed NFT (5000x cheaper) |
+| **Update Reputation** | ~0.00001 SOL | Account write operation |
+| **Stake GHOST** | ~0.0005 SOL | Token account + staking account |
+| **Create DID** | ~0.002 SOL | DID document account creation |
+
+<Info>
+**Rent-Exempt Minimum**: All accounts are rent-exempt (permanent). Costs include both transaction fees and rent deposit.
+</Info>
+
+---
+
+### Transaction Limits
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| **Max Transaction Size** | 1232 bytes | Total serialized transaction size |
+| **Max Instructions** | 64 | Instructions per transaction |
+| **Max Accounts** | 64 | Accounts per transaction |
+| **Compute Units** | 200,000 default | Can request up to 1.4M with priority fees |
+| **Max Retry Time** | 60 seconds | BlockhashExpired after this |
+
+---
+
+## Commitment Levels
+
+Choose the right commitment level for your use case:
+
+<Tabs>
+  <Tab title="Processed">
+    **Fastest (not recommended for production)**
+
+    ```typescript
+    { commitment: 'processed' }
+    ```
+
+    - Transaction validated by leader
+    - Not guaranteed to be finalized
+    - Latency: ~400ms
+    - Use for: Immediate UI feedback
+  </Tab>
+
+  <Tab title="Confirmed">
+    **Recommended for most operations**
+
+    ```typescript
+    { commitment: 'confirmed' }
+    ```
+
+    - Supermajority of cluster confirmed
+    - Low rollback risk (~0.01%)
+    - Latency: ~1-2 seconds
+    - Use for: Standard transactions
+  </Tab>
+
+  <Tab title="Finalized">
+    **Safest (use for high-value operations)**
+
+    ```typescript
+    { commitment: 'finalized' }
+    ```
+
+    - Cluster finality achieved
+    - Zero rollback risk
+    - Latency: ~13 seconds (32 slots)
+    - Use for: Credential issuance, staking
+  </Tab>
+</Tabs>
+
+<Warning>
+**GhostSpeak Default**: We use `confirmed` commitment for best balance of speed and safety.
+</Warning>
+
+---
+
+## Mainnet Configuration (Q1 2026)
+
+<Note>
+**Coming Soon**: Mainnet deployment planned for Q1 2026. Configuration details will be updated closer to launch.
+</Note>
+
+**Expected Mainnet Configuration:**
+
+```typescript
+const mainnetConfig = {
+  cluster: 'mainnet-beta',
+  programId: 'TBD', // Will be announced at launch
+  rpcUrl: 'https://api.mainnet-beta.solana.com',
+  commitment: 'confirmed',
+}
+```
+
+**Migration Path:**
+
+1. SDK v2.1.0 will support both devnet and mainnet
+2. Simple `cluster: 'mainnet-beta'` switch
+3. No code changes required beyond configuration
+4. Full backward compatibility maintained
+
+---
+
+## Network Health Monitoring
+
+<CardGroup cols={2}>
+  <Card title="Solana Status" icon="heart-pulse" href="https://status.solana.com">
+    Official Solana network status
+  </Card>
+  <Card title="Solana Beach" icon="chart-line" href="https://solanabeach.io">
+    Network validators and performance metrics
+  </Card>
+  <Card title="Validators App" icon="server" href="https://www.validators.app">
+    Validator rankings and stake distribution
+  </Card>
+  <Card title="Solscan Analytics" icon="chart-mixed" href="https://analytics.solscan.io">
+    Real-time network analytics
+  </Card>
+</CardGroup>
+
+---
+
+## WebSocket Endpoints
+
+For real-time updates (account changes, transaction confirmations):
+
+```typescript
+import { createSolanaRpc, createSolanaRpcSubscriptions } from '@solana/rpc'
+
+// HTTP RPC
+const rpc = createSolanaRpc('https://api.devnet.solana.com')
+
+// WebSocket RPC
+const rpcSubscriptions = createSolanaRpcSubscriptions('wss://api.devnet.solana.com')
+
+// Subscribe to account changes
+const subscription = await rpcSubscriptions
+  .accountNotifications(agentAddress, { commitment: 'confirmed' })
+  .subscribe(async (notification) => {
+    console.log('Agent account updated:', notification)
+  })
+```
+
+**WebSocket Endpoints:**
+
+- **Devnet**: `wss://api.devnet.solana.com`
+- **Mainnet**: `wss://api.mainnet-beta.solana.com`
+
+---
+
+## Rate Limiting Best Practices
+
+<AccordionGroup>
+  <Accordion title="Implement Exponential Backoff">
+    ```typescript
+    async function retryRpcCall<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          return await fn()
+        } catch (error) {
+          if (i === maxRetries - 1) throw error
+          await new Promise(resolve => setTimeout(resolve, 2 ** i * 1000))
+        }
+      }
+      throw new Error('Max retries exceeded')
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Batch Requests">
+    ```typescript
+    // Instead of multiple getProgramAccounts calls
+    const agents = await client.agents.getAllAgents({
+      filters: { owner: walletAddress }
+    })
+
+    // Use batch fetch for multiple accounts
+    const accounts = await rpc.getMultipleAccounts([addr1, addr2, addr3]).send()
+    ```
+  </Accordion>
+
+  <Accordion title="Use Caching">
+    ```typescript
+    const client = new GhostSpeakClient({
+      cluster: 'devnet',
+      cache: {
+        enabled: true,
+        ttl: 60000, // 60 seconds
+      },
+    })
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Troubleshooting Network Issues
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| **429 Too Many Requests** | Rate limit exceeded | Use paid RPC provider or implement backoff |
+| **Connection timeout** | RPC overloaded | Switch to alternative RPC endpoint |
+| **Blockhash not found** | Transaction too old | Fetch fresh blockhash before signing |
+| **Account not found** | Wrong network | Verify `cluster` configuration |
+| **Signature verification failed** | Network mismatch | Ensure signer network matches RPC network |
+
+---
+
+<Tip>
+**Need Help?** Join our [Discord](https://discord.gg/ghostspeak) for network troubleshooting and RPC recommendations.
+</Tip>

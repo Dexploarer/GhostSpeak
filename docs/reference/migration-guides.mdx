@@ -1,0 +1,580 @@
+---
+title: 'Migration Guides'
+description: 'Step-by-step guides for upgrading between GhostSpeak SDK versions'
+---
+
+# Migration Guides
+
+Comprehensive upgrade instructions for migrating between major versions of the GhostSpeak SDK, including code examples and troubleshooting tips.
+
+---
+
+## Quick Migration Reference
+
+| From | To | Difficulty | Breaking Changes | Time Estimate |
+|------|-----|-----------|------------------|---------------|
+| **1.x → 2.x** | [Guide](#v1-to-v2) | Medium | Yes (5 changes) | 2-4 hours |
+| **2.0 → 2.1** | [Guide](#v2-0-to-v2-1) | Low | No | 30 minutes |
+| **Devnet → Mainnet** | [Guide](#devnet-to-mainnet) | Low | Config only | 15 minutes |
+
+---
+
+## v1.x to v2.x Migration
+
+<Warning>
+**Breaking Changes**: v2.0 introduces several breaking changes. Review this guide carefully before upgrading.
+</Warning>
+
+### Overview
+
+**Major Changes:**
+1. Required `cluster` parameter in client constructor
+2. Changed return types for agent operations
+3. New error handling system
+4. Solana Web3.js v2 migration (modular packages)
+5. Deprecated `ConnectionManager` class
+
+**Timeline**: Allow 2-4 hours for migration and testing.
+
+---
+
+### Step 1: Update Dependencies
+
+```bash
+# Remove old version
+bun remove @ghostspeak/sdk
+
+# Install new version
+bun add @ghostspeak/sdk@latest
+
+# Update peer dependencies
+bun add @solana/kit@latest @solana/rpc@latest @solana/addresses@latest
+```
+
+**Check package.json:**
+
+```json
+{
+  "dependencies": {
+    "@ghostspeak/sdk": "^2.0.7",
+    "@solana/kit": "^5.1.0",
+    "@solana/rpc": "^5.1.0",
+    "@solana/addresses": "^5.1.0",
+    "@solana/signers": "^5.1.0"
+  }
+}
+```
+
+---
+
+### Step 2: Update Client Initialization
+
+**Before (v1.x):**
+```typescript
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+
+// Cluster was optional, defaulted to devnet
+const client = new GhostSpeakClient()
+
+// Or with custom RPC
+const client = new GhostSpeakClient({
+  rpcUrl: 'https://api.devnet.solana.com'
+})
+```
+
+**After (v2.x):**
+```typescript
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+
+// Cluster is now required
+const client = new GhostSpeakClient({
+  cluster: 'devnet', // Required: 'devnet' or 'mainnet-beta'
+})
+
+// With custom RPC
+const client = new GhostSpeakClient({
+  cluster: 'devnet',
+  rpcUrl: 'https://devnet.helius-rpc.com/?api-key=YOUR_KEY',
+})
+```
+
+**Migration Checklist:**
+- ✅ Add `cluster: 'devnet'` to all `GhostSpeakClient` constructors
+- ✅ Replace `cluster: 'localnet'` with `cluster: 'devnet'`
+- ✅ Update test fixtures to include `cluster` parameter
+
+---
+
+### Step 3: Update Return Types
+
+**Before (v1.x):**
+```typescript
+// Agent registration returned just the address
+const agentId: string = await client.agents.register(signer, {
+  name: 'My Agent',
+  capabilities: ['chat'],
+  model: 'gpt-4',
+})
+
+console.log('Agent ID:', agentId)
+```
+
+**After (v2.x):**
+```typescript
+// Agent registration returns full transaction result
+const result = await client.agents.register(signer, {
+  name: 'My Agent',
+  capabilities: ['chat'],
+  model: 'gpt-4',
+})
+
+console.log('Agent Address:', result.address)
+console.log('Transaction Signature:', result.signature)
+console.log('Explorer:', `https://solscan.io/tx/${result.signature}?cluster=devnet`)
+```
+
+**Migration Pattern:**
+```typescript
+// Find all instances of:
+const agentId = await client.agents.register(...)
+
+// Replace with:
+const { address: agentId, signature } = await client.agents.register(...)
+```
+
+---
+
+### Step 4: Migrate to New Error Handling
+
+**Before (v1.x):**
+```typescript
+try {
+  const agent = await client.agents.getAgent(agentId)
+} catch (error) {
+  // String matching and generic error handling
+  if (error.message.includes('not found')) {
+    console.log('Agent not found')
+  } else if (error.message.includes('network')) {
+    console.log('Network error')
+  } else {
+    console.error('Unknown error:', error)
+  }
+}
+```
+
+**After (v2.x):**
+```typescript
+import {
+  AccountNotFoundError,
+  NetworkError,
+  GhostSpeakError,
+  formatErrorForUser,
+} from '@ghostspeak/sdk/errors'
+
+try {
+  const agent = await client.agents.getAgent(agentId)
+} catch (error) {
+  // Typed error handling with rich context
+  if (error instanceof AccountNotFoundError) {
+    console.log('Agent not found:', error.address)
+    console.log('Account Type:', error.accountType)
+  } else if (error instanceof NetworkError) {
+    console.log('Network error (will retry automatically)')
+  } else if (error instanceof GhostSpeakError) {
+    // All SDK errors have user-friendly messages
+    console.error(formatErrorForUser(error))
+  } else {
+    console.error('Unexpected error:', error)
+  }
+}
+```
+
+**Benefits:**
+- Type-safe error handling
+- Automatic retry for retryable errors
+- User-friendly error messages
+- Structured error logging
+
+---
+
+### Step 5: Migrate Solana Web3.js Imports
+
+**Before (v1.x):**
+```typescript
+import {
+  Connection,
+  PublicKey,
+  Keypair,
+  Transaction,
+} from '@solana/web3.js'
+
+const connection = new Connection('https://api.devnet.solana.com')
+const pubkey = new PublicKey('4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB')
+const keypair = Keypair.generate()
+```
+
+**After (v2.x):**
+```typescript
+import { createSolanaRpc } from '@solana/rpc'
+import { address } from '@solana/addresses'
+import { generateKeyPairSigner } from '@solana/signers'
+
+const rpc = createSolanaRpc('https://api.devnet.solana.com')
+const programAddress = address('4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB')
+const signer = await generateKeyPairSigner()
+```
+
+**Migration Table:**
+
+| v1.x API | v2.x API |
+|----------|----------|
+| `new Connection(url)` | `createSolanaRpc(url)` |
+| `new PublicKey(addr)` | `address(addr)` |
+| `Keypair.generate()` | `await generateKeyPairSigner()` |
+| `connection.getAccountInfo()` | `rpc.getAccountInfo().send()` |
+| `connection.getLatestBlockhash()` | `rpc.getLatestBlockhash().send()` |
+
+**Find & Replace:**
+
+```bash
+# Find all PublicKey usage
+grep -r "PublicKey" src/
+
+# Find all Connection usage
+grep -r "new Connection" src/
+
+# Find all Keypair usage
+grep -r "Keypair" src/
+```
+
+---
+
+### Step 6: Remove Deprecated APIs
+
+**Deprecated:** `ConnectionManager` class
+
+**Before (v1.x):**
+```typescript
+import { ConnectionManager } from '@ghostspeak/sdk'
+
+const manager = new ConnectionManager({
+  cluster: 'devnet',
+  poolSize: 5,
+})
+
+const connection = manager.getConnection()
+```
+
+**After (v2.x):**
+```typescript
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+
+// GhostSpeakClient manages connections internally
+const client = new GhostSpeakClient({
+  cluster: 'devnet',
+  // Connection pooling is automatic
+})
+
+// Access RPC client if needed
+const rpc = client.rpc
+```
+
+---
+
+### Step 7: Update Tests
+
+**Test Configuration Changes:**
+
+```typescript
+// tests/setup.ts
+
+// Before (v1.x)
+const client = new GhostSpeakClient()
+
+// After (v2.x)
+const client = new GhostSpeakClient({ cluster: 'devnet' })
+```
+
+**Mock Updates:**
+
+```typescript
+// Before (v1.x)
+vi.mock('@solana/web3.js', () => ({
+  Connection: vi.fn(),
+  PublicKey: vi.fn(),
+}))
+
+// After (v2.x)
+vi.mock('@solana/rpc', () => ({
+  createSolanaRpc: vi.fn(),
+}))
+
+vi.mock('@solana/addresses', () => ({
+  address: vi.fn((addr: string) => addr),
+}))
+```
+
+---
+
+### Step 8: Verification Checklist
+
+<Steps>
+  <Step title="Build Succeeds">
+    ```bash
+    bun run build
+    # Should complete without errors
+    ```
+  </Step>
+
+  <Step title="Tests Pass">
+    ```bash
+    bun test
+    # All tests should pass
+    ```
+  </Step>
+
+  <Step title="Type Check Passes">
+    ```bash
+    bun run type-check
+    # No TypeScript errors
+    ```
+  </Step>
+
+  <Step title="Runtime Testing">
+    Test key flows in devnet:
+    - Agent registration
+    - Credential issuance
+    - Reputation updates
+  </Step>
+</Steps>
+
+---
+
+### Common Migration Issues
+
+<AccordionGroup>
+  <Accordion title="TypeError: cluster is not defined">
+    **Cause**: Missing `cluster` parameter in client constructor.
+
+    **Fix:**
+    ```typescript
+    const client = new GhostSpeakClient({ cluster: 'devnet' })
+    ```
+  </Accordion>
+
+  <Accordion title="Cannot destructure 'address' of result">
+    **Cause**: Expecting old return type (string) instead of new object.
+
+    **Fix:**
+    ```typescript
+    // Old
+    const agentId = await client.agents.register(...)
+
+    // New
+    const { address, signature } = await client.agents.register(...)
+    ```
+  </Accordion>
+
+  <Accordion title="Module '@solana/web3.js' not found">
+    **Cause**: Need to install new modular Solana packages.
+
+    **Fix:**
+    ```bash
+    bun add @solana/kit @solana/rpc @solana/addresses @solana/signers
+    ```
+  </Accordion>
+
+  <Accordion title="Error instanceof checks failing">
+    **Cause**: Import errors from old error module.
+
+    **Fix:**
+    ```typescript
+    import { AccountNotFoundError } from '@ghostspeak/sdk/errors'
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## v2.0 to v2.1 Migration
+
+<Info>
+**Status**: Planned for Q1 2026 (Mainnet launch)
+
+**Breaking Changes**: None (backward compatible)
+</Info>
+
+### Overview
+
+v2.1 will be backward compatible with v2.0. The main change is adding mainnet support.
+
+### Step 1: Update Dependencies
+
+```bash
+bun add @ghostspeak/sdk@2.1.0
+```
+
+### Step 2: Add Mainnet Configuration (Optional)
+
+```typescript
+// Devnet (existing, no changes needed)
+const devClient = new GhostSpeakClient({ cluster: 'devnet' })
+
+// Mainnet (new)
+const mainnetClient = new GhostSpeakClient({ cluster: 'mainnet-beta' })
+```
+
+**No code changes required** for existing devnet applications.
+
+---
+
+## Devnet to Mainnet Migration
+
+<Warning>
+**Coming Q1 2026**: Mainnet deployment is not yet available. This is a preview guide.
+</Warning>
+
+### Overview
+
+Migrating from devnet to mainnet requires only configuration changes, no code modifications.
+
+### Step 1: Environment Configuration
+
+**Before (Devnet):**
+```typescript
+// .env
+GHOSTSPEAK_CLUSTER=devnet
+SOLANA_RPC_URL=https://api.devnet.solana.com
+```
+
+**After (Mainnet):**
+```typescript
+// .env
+GHOSTSPEAK_CLUSTER=mainnet-beta
+SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+```
+
+### Step 2: Update Client Configuration
+
+```typescript
+const client = new GhostSpeakClient({
+  cluster: process.env.GHOSTSPEAK_CLUSTER as 'devnet' | 'mainnet-beta',
+  rpcUrl: process.env.SOLANA_RPC_URL,
+})
+```
+
+### Step 3: Pre-Migration Checklist
+
+<Steps>
+  <Step title="Test on Devnet">
+    Thoroughly test all functionality on devnet before mainnet migration
+  </Step>
+
+  <Step title="Fund Mainnet Wallet">
+    Ensure production wallet has sufficient SOL for operations
+  </Step>
+
+  <Step title="Update RPC Provider">
+    Use production-grade RPC (Helius, QuickNode) for reliability
+  </Step>
+
+  <Step title="Review Security">
+    - Secure private keys in production environment
+    - Enable monitoring and alerting
+    - Test error handling for mainnet conditions
+  </Step>
+
+  <Step title="Deploy Configuration">
+    Update deployment configuration to use mainnet cluster
+  </Step>
+</Steps>
+
+### Mainnet Considerations
+
+**Cost Differences:**
+- Devnet SOL is free (from faucets)
+- Mainnet SOL costs real money
+- Budget for transaction costs and rent
+
+**RPC Requirements:**
+- Free public RPCs have strict rate limits
+- Use paid RPC provider for production (Helius, QuickNode)
+
+**Monitoring:**
+- Set up transaction monitoring
+- Configure alerts for failures
+- Track SOL balance to prevent insufficient funds
+
+---
+
+## Deprecated Features Timeline
+
+### Current Deprecations (v2.x)
+
+| Feature | Deprecated In | Removal Target | Alternative |
+|---------|--------------|----------------|-------------|
+| `ConnectionManager` | v2.0.0 | v3.0.0 | `GhostSpeakClient` |
+| `cluster: 'localnet'` | v2.0.0 | v3.0.0 | `cluster: 'devnet'` |
+| Legacy error classes | v2.0.0 | v3.0.0 | `GhostSpeakError` hierarchy |
+| `@solana/web3.js` v1 | v2.0.0 | v3.0.0 | `@solana/kit` |
+
+### Deprecation Warning Example
+
+```typescript
+// This will show deprecation warning in v2.x
+const manager = new ConnectionManager({ cluster: 'devnet' })
+// Warning: ConnectionManager is deprecated. Use GhostSpeakClient instead.
+```
+
+---
+
+## Upcoming Features
+
+### v2.1.0 (Q1 2026)
+
+**Mainnet Support:**
+- Production program deployment
+- Mainnet GHOST token integration
+- Enhanced monitoring for production use
+
+**New Features:**
+- Additional credential types (Skill Badges, Compliance)
+- Advanced governance (Quadratic voting, Delegation)
+- Performance optimizations for high-throughput apps
+
+### v3.0.0 (Q2 2026)
+
+**Breaking Changes:**
+- Removal of all v2.0 deprecated features
+- New credential schema format
+- Enhanced privacy features with ZK proofs
+
+**New Features:**
+- Zero-knowledge credential verification
+- Multi-chain expansion (EVM L2s)
+- Advanced analytics and reporting
+
+---
+
+## Migration Support
+
+<CardGroup cols={2}>
+  <Card title="Discord Support" icon="discord" href="https://discord.gg/ghostspeak">
+    Get migration help from community
+  </Card>
+  <Card title="GitHub Discussions" icon="github" href="https://github.com/ghostspeak/sdk/discussions">
+    Ask migration questions
+  </Card>
+  <Card title="Example Migrations" icon="code-branch" href="https://github.com/ghostspeak/sdk/tree/main/examples/migrations">
+    View example migration PRs
+  </Card>
+  <Card title="Changelog" icon="clock-rotate-left" href="/reference/changelog">
+    Review full version history
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Migration Questions?** Join our [Discord](https://discord.gg/ghostspeak) `#migrations` channel for personalized help.
+</Tip>

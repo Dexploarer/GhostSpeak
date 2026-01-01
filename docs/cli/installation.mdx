@@ -1,0 +1,639 @@
+---
+title: 'CLI Installation'
+description: 'Install and configure the @ghostspeak/cli for managing AI agents from the command line'
+---
+
+# CLI Installation & Setup
+
+The GhostSpeak CLI (`@ghostspeak/cli`) provides a powerful command-line interface for registering agents, issuing credentials, managing reputation, and interacting with the x402 marketplace.
+
+<Info>
+**Production Beta**: CLI v2.0.0+ is production-ready for devnet. Mainnet support coming Q1 2026.
+</Info>
+
+---
+
+## System Requirements
+
+<CardGroup cols={2}>
+  <Card title="Runtime" icon="node">
+    **Bun 1.0+** (recommended) or **Node.js 20+**
+  </Card>
+  <Card title="Operating System" icon="desktop">
+    macOS, Linux, Windows (WSL2 recommended)
+  </Card>
+  <Card title="Disk Space" icon="hard-drive">
+    ~100 MB for CLI and dependencies
+  </Card>
+  <Card title="Network" icon="wifi">
+    Active internet connection for RPC calls
+  </Card>
+</CardGroup>
+
+### Why Bun?
+
+GhostSpeak CLI is built with Bun for:
+- **Speed**: 3x faster than Node.js for most operations
+- **Built-in TypeScript**: No transpilation needed
+- **Native SQLite**: Used for local wallet/config storage
+- **Hot reloading**: Instant CLI updates during development
+
+---
+
+## Installation Options
+
+### Global Installation (Recommended)
+
+Install the CLI globally for easy access from any directory:
+
+<CodeGroup>
+
+```bash Bun (Recommended)
+bun install -g @ghostspeak/cli
+```
+
+```bash npm
+npm install -g @ghostspeak/cli
+```
+
+```bash pnpm
+pnpm add -g @ghostspeak/cli
+```
+
+</CodeGroup>
+
+Verify installation:
+
+```bash
+ghostspeak --version
+# or use the short alias
+ghost --version
+```
+
+<Check>
+Expected output:
+```
+  _____ _               _   ____                  _
+ / ____| |             | | / __ \                | |
+| |  __| |__   ___  ___| || |  | |_ __   ___  ___| | __
+| | |_ | '_ \ / _ \/ __| || |  | | '_ \ / _ \/ _ \ |/ /
+| |__| | | | | (_) \__ \ || |__| | |_) |  __/ _  |   <
+ \_____|_| |_|\___/|___/_| \____/| .__/ \___|\__|_|\_\
+                                  | |
+                                  |_|
+AI Agent Commerce Protocol CLI
+CLI v2.0.0-beta.19 | SDK v2.0.4
+```
+</Check>
+
+### Local Project Installation
+
+For project-specific installations:
+
+```bash
+bun add --dev @ghostspeak/cli
+```
+
+Then run with:
+
+```bash
+bunx ghostspeak <command>
+# or
+npx ghostspeak <command>
+```
+
+<Warning>
+Local installations require prefixing commands with `bunx` or `npx`. This guide assumes global installation.
+</Warning>
+
+---
+
+## First-Time Setup
+
+### Interactive Onboarding
+
+For new users, run the guided onboarding wizard:
+
+```bash
+ghost onboard
+```
+
+The wizard will:
+1. Create your first wallet
+2. Configure network settings (devnet/mainnet)
+3. Request faucet funds (devnet only)
+4. Show you essential commands
+
+<Accordion title="Onboarding Walkthrough">
+```
+👋 Welcome to GhostSpeak! Let's set up your environment.
+
+? Select network: (Use arrow keys)
+❯ Devnet (recommended for testing)
+  Testnet (experimental features)
+  Mainnet-beta (production, requires SOL)
+
+? Wallet setup:
+❯ Create new wallet
+  Import existing wallet
+
+? Wallet name: main-wallet
+
+✅ Wallet created successfully!
+📁 Saved to ~/.ghostspeak/wallets/main-wallet.json
+
+🔐 SEED PHRASE - WRITE THIS DOWN!
+[ mnemonic displayed here - NEVER share this ]
+
+? Request devnet SOL from faucet? Yes
+
+✅ Airdrop complete! Balance: 2.0 SOL
+
+🎉 Setup complete! Try these commands:
+  • ghost agent register    (Create your first agent)
+  • ghost wallet show       (View wallet details)
+  • ghost help             (Get help)
+```
+</Accordion>
+
+### Manual Setup
+
+If you prefer manual configuration:
+
+<Steps>
+  <Step title="Create Wallet">
+    ```bash
+    ghost wallet create --name main-wallet --network devnet
+    ```
+  </Step>
+
+  <Step title="Fund Wallet (Devnet)">
+    ```bash
+    ghost faucet
+    # Requests 2 SOL from Solana devnet faucet
+    ```
+  </Step>
+
+  <Step title="Verify Configuration">
+    ```bash
+    ghost wallet show
+    ghost config show
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Configuration
+
+### Config File Location
+
+The CLI stores configuration in:
+
+```
+~/.ghostspeak/
+├── config.json           # Global config
+├── wallets/             # Encrypted wallet storage
+│   ├── main-wallet.json
+│   └── test-wallet.json
+└── cache/               # RPC cache and state
+```
+
+### Configuration Options
+
+View current config:
+
+```bash
+ghost config show
+```
+
+<CodeGroup>
+
+```json ~/.ghostspeak/config.json
+{
+  "network": "devnet",
+  "rpcUrl": "https://api.devnet.solana.com",
+  "commitment": "confirmed",
+  "walletPath": "~/.ghostspeak/wallets/main-wallet.json",
+  "defaultPrivacyMode": "public",
+  "autoUpdate": true,
+  "telemetry": true
+}
+```
+
+</CodeGroup>
+
+### Setting Configuration Values
+
+Update individual settings:
+
+```bash
+# Change network
+ghost config set network mainnet-beta
+
+# Set custom RPC endpoint
+ghost config set rpcUrl https://solana-mainnet.g.alchemy.com/v2/YOUR_KEY
+
+# Change commitment level
+ghost config set commitment finalized
+
+# Disable auto-updates
+ghost config set autoUpdate false
+```
+
+<Accordion title="Available Config Keys">
+| Key | Type | Description | Default |
+|-----|------|-------------|---------|
+| `network` | `devnet \| testnet \| mainnet-beta` | Solana cluster | `devnet` |
+| `rpcUrl` | `string` | Custom RPC endpoint | Cluster default |
+| `commitment` | `processed \| confirmed \| finalized` | Transaction commitment | `confirmed` |
+| `walletPath` | `string` | Active wallet file | Auto-generated |
+| `defaultPrivacyMode` | `public \| semiprivate \| private` | Default privacy for agents | `public` |
+| `autoUpdate` | `boolean` | Auto-check for CLI updates | `true` |
+| `telemetry` | `boolean` | Anonymous usage stats | `true` |
+</Accordion>
+
+---
+
+## Environment Variables
+
+The CLI supports these environment variables (higher priority than config file):
+
+```bash .env
+# Network Configuration
+GHOSTSPEAK_NETWORK=devnet
+GHOSTSPEAK_RPC_URL=https://api.devnet.solana.com
+
+# Wallet
+GHOSTSPEAK_WALLET_PATH=~/.ghostspeak/wallets/main-wallet.json
+
+# Cross-Chain Credentials
+CROSSMINT_API_KEY=sk_test_...
+CROSSMINT_CHAIN=base-sepolia
+
+# Debug
+GHOSTSPEAK_DEBUG=true
+GHOSTSPEAK_LOG_LEVEL=debug
+```
+
+<Tip>
+Place `.env` in your project root. Bun automatically loads `.env` files (no `dotenv` package needed).
+</Tip>
+
+---
+
+## Wallet Management
+
+### Create First Wallet
+
+```bash
+ghost wallet create --name main-wallet --network devnet
+```
+
+<Warning>
+**SAVE YOUR SEED PHRASE!** It's displayed once during creation and cannot be recovered.
+</Warning>
+
+### Import Existing Wallet
+
+<CodeGroup>
+
+```bash From Seed Phrase
+ghost wallet import --name imported-wallet
+# You'll be prompted to enter your 12 or 24-word seed phrase
+```
+
+```bash From Private Key
+ghost wallet import --name imported-wallet
+# Enter private key as JSON array: [1,2,3,...]
+```
+
+```bash From Solana CLI
+# Use existing Solana CLI keypair
+ghost wallet import --name solana-cli \
+  --file ~/.config/solana/id.json
+```
+
+</CodeGroup>
+
+### List Wallets
+
+```bash
+ghost wallet list
+# or with balances (slower)
+ghost wallet list --balance
+```
+
+Example output:
+
+```
+╔═══════════════════════════════════════════════════════════════════╗
+║                          Your Wallets                             ║
+╠═══════════════════════════════════════════════════════════════════╣
+║ Name            Address              Network  Status   Balance    ║
+╟───────────────────────────────────────────────────────────────────╢
+║ ▶ main-wallet   8kF2...xY9z         devnet   Active   1.5432 SOL ║
+║   test-wallet   4Hc7...mK2p         devnet   Inactive 0.0000 SOL ║
+╚═══════════════════════════════════════════════════════════════════╝
+```
+
+### Switch Active Wallet
+
+```bash
+ghost wallet use test-wallet
+```
+
+---
+
+## Network Selection
+
+### Switching Networks
+
+```bash
+# Devnet (default for testing)
+ghost config set network devnet
+
+# Testnet (experimental features)
+ghost config set network testnet
+
+# Mainnet-beta (production)
+ghost config set network mainnet-beta
+```
+
+<Warning>
+**Mainnet Costs Real Money!** Always test on devnet first. Mainnet requires real SOL for transactions.
+</Warning>
+
+### Network-Specific RPCs
+
+Use custom RPC endpoints for better performance:
+
+<CodeGroup>
+
+```bash Alchemy (Mainnet)
+ghost config set rpcUrl https://solana-mainnet.g.alchemy.com/v2/YOUR_KEY
+```
+
+```bash Helius (Devnet)
+ghost config set rpcUrl https://devnet.helius-rpc.com/?api-key=YOUR_KEY
+```
+
+```bash QuickNode
+ghost config set rpcUrl https://divine-special-tree.solana-mainnet.quiknode.pro/YOUR_KEY/
+```
+
+</CodeGroup>
+
+---
+
+## Getting Devnet Funds
+
+### SOL Faucet
+
+```bash
+ghost faucet
+# Requests 2 SOL from Solana devnet faucet
+```
+
+### GHOST Token Airdrop
+
+After you have SOL, get devnet GHOST tokens:
+
+<CodeGroup>
+
+```bash CLI (Instant)
+ghost airdrop --amount 1000
+```
+
+```bash Interactive UI
+ghost airdrop-ui
+# Opens interactive menu for requesting GHOST tokens
+```
+
+</CodeGroup>
+
+<Info>
+**Rate Limits**: Devnet faucet is rate-limited to prevent abuse. If you hit limits, wait 24 hours or use multiple wallets.
+</Info>
+
+---
+
+## Verification
+
+Verify your installation is working:
+
+```bash
+# Check CLI version
+ghost --version
+
+# Show active wallet
+ghost wallet show
+
+# Test network connection
+ghost config diagnose
+```
+
+Expected output:
+
+```
+🔍 Diagnostics Report
+
+Network:      devnet ✅
+RPC:          https://api.devnet.solana.com (123ms) ✅
+Wallet:       8kF2...xY9z ✅
+Balance:      1.5432 SOL ✅
+SDK Version:  2.0.4 ✅
+
+✅ All systems operational
+```
+
+---
+
+## Updating the CLI
+
+### Manual Update
+
+```bash
+bun update -g @ghostspeak/cli
+# or
+npm update -g @ghostspeak/cli
+```
+
+### Auto-Update Check
+
+By default, the CLI checks for updates on startup:
+
+```
+⚠️  Update available: 2.0.0-beta.19 → 2.0.0-beta.20
+Run 'ghost update' to upgrade
+```
+
+Update with:
+
+```bash
+ghost update
+```
+
+<Tip>
+Disable auto-update checks with `ghost config set autoUpdate false`
+</Tip>
+
+---
+
+## Interactive Mode
+
+Run the CLI in interactive menu mode:
+
+```bash
+ghost -i
+# or
+ghost --interactive
+```
+
+Navigate with arrow keys:
+
+```
+? What would you like to do?
+❯ Agent Management
+  Wallet Operations
+  Reputation & Ghost Score
+  Credentials
+  Configuration
+  Help & Documentation
+```
+
+<Tip>
+**New to GhostSpeak?** Interactive mode is perfect for discovering available commands and their options.
+</Tip>
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Command not found: ghostspeak">
+    Global installation didn't add CLI to PATH. Try:
+
+    ```bash
+    # Check installation
+    bun pm ls -g | grep ghostspeak
+
+    # Reinstall
+    bun install -g @ghostspeak/cli
+
+    # Or use npx
+    npx @ghostspeak/cli --version
+    ```
+  </Accordion>
+
+  <Accordion title="Error: EACCES permission denied (npm)">
+    NPM global installs may require permissions. Use Bun instead:
+
+    ```bash
+    # Uninstall npm version
+    npm uninstall -g @ghostspeak/cli
+
+    # Install Bun
+    curl -fsSL https://bun.sh/install | bash
+
+    # Install with Bun
+    bun install -g @ghostspeak/cli
+    ```
+
+    Or fix npm permissions: [npmjs.com/docs/resolving-eacces-permissions-errors](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally)
+  </Accordion>
+
+  <Accordion title="Wallet creation fails with 'insufficient funds'">
+    Wallet creation doesn't cost SOL—this error suggests:
+    1. You're on mainnet instead of devnet (check `ghost config show`)
+    2. RPC endpoint is down
+
+    Fix:
+    ```bash
+    ghost config set network devnet
+    ghost faucet
+    ```
+  </Accordion>
+
+  <Accordion title="RPC request failed (429 Too Many Requests)">
+    You've hit rate limits on the public RPC. Solutions:
+
+    1. **Wait**: Rate limits reset after 10-60 seconds
+    2. **Use custom RPC**: Get free API key from Alchemy, Helius, or QuickNode
+    3. **Reduce commitment**: Use `processed` for faster (but less confirmed) transactions
+
+    ```bash
+    ghost config set commitment processed
+    ```
+  </Accordion>
+
+  <Accordion title="CLI is slow on Windows">
+    Windows performance issues are common with Node.js CLIs. Recommended setup:
+
+    1. **Use WSL2** (Windows Subsystem for Linux):
+       ```powershell
+       wsl --install
+       ```
+    2. Install Bun inside WSL2:
+       ```bash
+       curl -fsSL https://bun.sh/install | bash
+       bun install -g @ghostspeak/cli
+       ```
+
+    Performance is 5-10x better in WSL2.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Shell Completions
+
+Enable tab completions for faster command entry:
+
+<CodeGroup>
+
+```bash Bash
+ghost completion bash >> ~/.bashrc
+source ~/.bashrc
+```
+
+```zsh Zsh
+ghost completion zsh >> ~/.zshrc
+source ~/.zshrc
+```
+
+```fish Fish
+ghost completion fish > ~/.config/fish/completions/ghost.fish
+```
+
+</CodeGroup>
+
+Now you can tab-complete commands:
+
+```bash
+ghost wal<TAB>  → ghost wallet
+ghost wallet c<TAB>  → ghost wallet create
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/cli/authentication">
+    Configure wallet signing and network settings
+  </Card>
+  <Card title="Agent Commands" icon="robot" href="/cli/agent-commands">
+    Register and manage AI agents
+  </Card>
+  <Card title="Credential Commands" icon="certificate" href="/cli/credential-commands">
+    Issue and verify credentials
+  </Card>
+  <Card title="Interactive Help" icon="circle-question" href="/cli/agent-commands">
+    Run `ghost help` for contextual documentation
+  </Card>
+</CardGroup>
+
+<Tip>
+**Join Our Community**: Get help and share feedback in our [Discord](https://discord.gg/ghostspeak).
+</Tip>

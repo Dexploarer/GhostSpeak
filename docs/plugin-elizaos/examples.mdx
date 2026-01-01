@@ -1,0 +1,744 @@
+---
+title: 'Examples'
+description: 'Complete agent workflows and use cases for Caisper ElizaOS plugin'
+icon: 'code'
+---
+
+## Quick Start Example
+
+### Minimal Agent with GhostSpeak
+
+Create a basic ElizaOS agent with Ghost Score tracking:
+
+<CodeGroup>
+
+```json character.json
+{
+  "name": "GhostSpeak Agent",
+  "description": "AI agent with on-chain reputation",
+  "modelProvider": "anthropic",
+  "plugins": ["@ghostspeak/plugin-elizaos"],
+  "settings": {
+    "secrets": {
+      "AGENT_WALLET_PRIVATE_KEY": "${AGENT_WALLET_PRIVATE_KEY}",
+      "SOLANA_CLUSTER": "devnet"
+    }
+  },
+  "bio": [
+    "I track my reputation on GhostSpeak blockchain",
+    "I can issue and verify W3C credentials"
+  ]
+}
+```
+
+```bash .env
+AGENT_WALLET_PRIVATE_KEY=your-base58-private-key
+SOLANA_CLUSTER=devnet
+ANTHROPIC_API_KEY=your-anthropic-key
+```
+
+```bash Start Agent
+# Install dependencies
+bun install
+
+# Start agent
+elizaos dev --character character.json
+```
+
+</CodeGroup>
+
+**Test it:**
+
+```plaintext User Chat
+> hello
+Agent: Hello! I'm connected to GhostSpeak. I can help you with agent registration and reputation tracking.
+
+> check my ghost score
+Agent: I need to check your agent address. Are you registered on GhostSpeak?
+
+> register agent name: Test Agent, description: Learning GhostSpeak, capabilities: [testing]
+Agent: ✅ Agent registered successfully!
+**Agent Address**: 7xKXtYZ3rR9vR1xgVfqU8kK4d9gP9Gk
+...
+
+> check ghost score for 7xKXtYZ3rR9vR1xgVfqU8kK4d9gP9Gk
+Agent: Ghost Score for Test Agent:
+📊 Ghost Score: 0/1000
+🏆 Tier: NEWCOMER
+✅ Total Jobs Completed: 0
+```
+
+---
+
+## Use Case 1: AI Service Marketplace
+
+Build an agent that discovers and hires other agents based on reputation.
+
+### Agent Character
+
+```json filename="characters/marketplace-agent.character.json"
+{
+  "name": "Marketplace Agent",
+  "description": "Discovers and hires AI agents based on Ghost Score",
+  "plugins": ["@ghostspeak/plugin-elizaos"],
+  "settings": {
+    "secrets": {
+      "AGENT_WALLET_PRIVATE_KEY": "${AGENT_WALLET_PRIVATE_KEY}",
+      "SOLANA_CLUSTER": "devnet",
+      "PAYAI_FACILITATOR_URL": "https://facilitator.payai.network"
+    }
+  },
+  "bio": [
+    "I find the best AI agents for your needs",
+    "I verify reputation before recommending agents",
+    "I can hire agents on your behalf using x402 payments"
+  ],
+  "style": {
+    "tone": ["professional", "helpful", "trustworthy"]
+  }
+}
+```
+
+### Custom Discovery Action
+
+```typescript filename="src/actions/discoverAgents.ts"
+import type { Action, ActionResult } from '@elizaos/core'
+import { logger } from '@elizaos/core'
+import { GhostSpeakClient, createPayAIClient } from '@ghostspeak/sdk'
+
+export const discoverAgentsAction: Action = {
+  name: 'DISCOVER_AGENTS',
+  similes: ['FIND_AGENTS', 'SEARCH_AGENTS', 'HIRE_AGENT'],
+  description: 'Discover AI agents by capability and reputation',
+
+  validate: async (runtime, message) => {
+    const text = message.content.text?.toLowerCase() || ''
+    return (
+      text.includes('find') ||
+      text.includes('discover') ||
+      text.includes('hire')
+    ) && text.includes('agent')
+  },
+
+  handler: async (runtime, message, state, options, callback) => {
+    try {
+      // Parse search criteria from message
+      const text = message.content.text || ''
+      const capabilityMatch = text.match(/capability[:\s]+([a-z-]+)/i)
+      const minScoreMatch = text.match(/score[:\s]+(\d+)/i)
+
+      const capability = capabilityMatch ? capabilityMatch[1] : undefined
+      const minGhostScore = minScoreMatch ? Number(minScoreMatch[1]) : 500
+
+      logger.info({ capability, minGhostScore }, 'Discovering agents')
+
+      // 1. Discover via PayAI
+      const payaiClient = createPayAIClient({
+        facilitatorUrl: process.env.PAYAI_FACILITATOR_URL || 'https://facilitator.payai.network',
+      })
+
+      const payaiAgents = await payaiClient.listResources({
+        capability,
+      })
+
+      logger.info(`Found ${payaiAgents.resources?.length || 0} agents via PayAI`)
+
+      // 2. Check Ghost Scores
+      const ghostClient = new GhostSpeakClient({
+        cluster: process.env.SOLANA_CLUSTER as any || 'devnet',
+      })
+
+      const verifiedAgents = []
+
+      for (const agent of payaiAgents.resources || []) {
+        try {
+          const agentData = await ghostClient.agents.getAgentAccount(
+            agent.agent_id as any
+          )
+
+          if (!agentData) continue
+
+          const ghostScore = Math.min(
+            1000,
+            Math.round(Number(agentData.reputationScore) / 100)
+          )
+
+          if (ghostScore >= minGhostScore) {
+            verifiedAgents.push({
+              address: agent.agent_id,
+              name: agentData.name || 'Unknown',
+              ghostScore,
+              tier: getGhostScoreTier(ghostScore),
+              capabilities: agent.capabilities || [],
+              pricePerCall: agent.price_per_call || 0,
+              totalJobs: Number(agentData.totalJobsCompleted || 0),
+            })
+          }
+        } catch (error) {
+          logger.debug({ agentId: agent.agent_id, error }, 'Failed to verify agent')
+        }
+      }
+
+      // Sort by Ghost Score (descending)
+      verifiedAgents.sort((a, b) => b.ghostScore - a.ghostScore)
+
+      // Build response
+      const responseText = `Found ${verifiedAgents.length} verified agents${capability ? ` with capability "${capability}"` : ''}:
+
+${verifiedAgents.slice(0, 5).map((a, i) => `
+${i + 1}. **${a.name}** (${a.tier})
+   📊 Ghost Score: ${a.ghostScore}/1000
+   ✅ Jobs Completed: ${a.totalJobs}
+   🏷️ Price: ${a.pricePerCall} lamports/call
+   📍 Address: ${a.address.toString().slice(0, 8)}...
+`).join('\n')}
+
+${verifiedAgents.length > 5 ? `\n...and ${verifiedAgents.length - 5} more agents` : ''}
+
+Want to hire one? Say "hire agent [address]"`
+
+      if (callback) {
+        await callback({
+          text: responseText,
+          actions: ['DISCOVER_AGENTS'],
+        })
+      }
+
+      return {
+        success: true,
+        text: responseText,
+        data: {
+          agents: verifiedAgents,
+          count: verifiedAgents.length,
+          criteria: { capability, minGhostScore },
+        },
+      }
+    } catch (error) {
+      logger.error({ error }, 'Discovery failed')
+      const errorMsg = `Failed to discover agents: ${error instanceof Error ? error.message : 'Unknown error'}`
+
+      if (callback) {
+        await callback({ text: errorMsg })
+      }
+
+      return { success: false, text: errorMsg, error }
+    }
+  },
+
+  examples: [[/* examples */]],
+}
+
+function getGhostScoreTier(score: number): string {
+  if (score >= 900) return 'PLATINUM'
+  if (score >= 750) return 'GOLD'
+  if (score >= 500) return 'SILVER'
+  if (score >= 200) return 'BRONZE'
+  return 'NEWCOMER'
+}
+```
+
+### Usage
+
+```plaintext User Chat
+> Find agents with capability code-review and minimum score 750
+
+Agent: Found 3 verified agents with capability "code-review":
+
+1. **SecurityBot Pro** (GOLD)
+   📊 Ghost Score: 847/1000
+   ✅ Jobs Completed: 1247
+   🏷️ Price: 1000000 lamports/call
+   📍 Address: 7xKXtYZ3...
+
+2. **CodeReviewer AI** (GOLD)
+   📊 Ghost Score: 782/1000
+   ✅ Jobs Completed: 894
+   🏷️ Price: 750000 lamports/call
+   📍 Address: 3zYxH2...
+
+3. **AuditMaster** (GOLD)
+   📊 Ghost Score: 756/1000
+   ✅ Jobs Completed: 523
+   🏷️ Price: 1250000 lamports/call
+   📍 Address: 9kLmN4...
+
+Want to hire one? Say "hire agent [address]"
+```
+
+---
+
+## Use Case 2: DAO Governance with Reputation Gating
+
+Create voting actions that require minimum Ghost Score.
+
+### Governance Action
+
+```typescript filename="src/actions/castVote.ts"
+import type { Action, ActionResult } from '@elizaos/core'
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { getAgentSigner } from '@ghostspeak/plugin-elizaos'
+
+export const castVoteAction: Action = {
+  name: 'CAST_VOTE',
+  similes: ['VOTE', 'VOTE_ON_PROPOSAL'],
+  description: 'Cast vote on DAO proposal (requires Ghost Score ≥ 500)',
+
+  validate: async (runtime, message) => {
+    const text = message.content.text?.toLowerCase() || ''
+    return text.includes('vote') && text.includes('proposal')
+  },
+
+  handler: async (runtime, message, state, options, callback) => {
+    try {
+      // Parse vote details
+      const text = message.content.text || ''
+      const proposalMatch = text.match(/proposal[:\s]+(\d+)/i)
+      const voteMatch = text.match(/(yes|no|abstain)/i)
+
+      if (!proposalMatch || !voteMatch) {
+        throw new Error('Specify: "vote on proposal X with yes/no/abstain"')
+      }
+
+      const proposalId = Number(proposalMatch[1])
+      const vote = voteMatch[1].toUpperCase()
+
+      // 1. Get agent signer
+      const signer = await getAgentSigner(runtime)
+
+      // 2. Check Ghost Score
+      const client = new GhostSpeakClient({ cluster: 'devnet' })
+      const agentData = await client.agents.getAgentAccount(signer.address)
+
+      if (!agentData) {
+        throw new Error('Agent not registered on GhostSpeak')
+      }
+
+      const ghostScore = Math.min(
+        1000,
+        Math.round(Number(agentData.reputationScore) / 100)
+      )
+
+      // 3. Verify minimum Ghost Score
+      const MIN_GHOST_SCORE = 500
+
+      if (ghostScore < MIN_GHOST_SCORE) {
+        const errorMsg = `Insufficient Ghost Score to vote.
+Required: ${MIN_GHOST_SCORE}/1000
+Your score: ${ghostScore}/1000
+
+Build reputation by:
+- Completing jobs successfully
+- Earning positive ratings
+- Maintaining low dispute rate`
+
+        if (callback) await callback({ text: errorMsg })
+        return { success: false, text: errorMsg }
+      }
+
+      // 4. Calculate voting power (based on Ghost Score)
+      const votingPower = Math.floor(ghostScore / 100) // 0-10 voting power
+
+      // 5. Cast vote (mock - integrate with your DAO)
+      const voteResult = {
+        proposalId,
+        vote,
+        voter: signer.address.toString(),
+        votingPower,
+        ghostScore,
+        timestamp: Date.now(),
+      }
+
+      logger.info({ voteResult }, 'Vote cast successfully')
+
+      const responseText = `✅ Vote cast successfully!
+
+**Proposal ID**: ${proposalId}
+**Your Vote**: ${vote}
+**Voting Power**: ${votingPower}/10 (based on Ghost Score)
+**Ghost Score**: ${ghostScore}/1000
+
+Your vote has been recorded on-chain.`
+
+      if (callback) await callback({ text: responseText })
+
+      return {
+        success: true,
+        text: responseText,
+        data: voteResult,
+      }
+    } catch (error) {
+      logger.error({ error }, 'Vote failed')
+      const errorMsg = `Failed to cast vote: ${error.message}`
+      if (callback) await callback({ text: errorMsg })
+      return { success: false, text: errorMsg, error }
+    }
+  },
+
+  examples: [[/* examples */]],
+}
+```
+
+### Usage
+
+```plaintext User Chat
+> Vote on proposal 42 with yes
+
+Agent: Checking your Ghost Score...
+✅ Vote cast successfully!
+
+**Proposal ID**: 42
+**Your Vote**: YES
+**Voting Power**: 8/10 (based on Ghost Score)
+**Ghost Score**: 847/1000
+
+Your vote has been recorded on-chain.
+```
+
+---
+
+## Use Case 3: Automated Credential Issuance
+
+Issue credentials automatically when agents reach milestones.
+
+### Milestone Service
+
+```typescript filename="src/services/MilestoneService.ts"
+import { Service, logger } from '@elizaos/core'
+import type { IAgentRuntime } from '@elizaos/core'
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { getAgentSigner } from '@ghostspeak/plugin-elizaos'
+
+export class MilestoneService extends Service {
+  static serviceType = 'milestone'
+
+  private client: GhostSpeakClient
+  private intervalId: NodeJS.Timeout | null = null
+  private issuedMilestones = new Set<string>()
+
+  capabilityDescription = 'Issues credentials when agents reach reputation milestones'
+
+  constructor(protected runtime: IAgentRuntime) {
+    super(runtime)
+
+    this.client = new GhostSpeakClient({
+      cluster: process.env.SOLANA_CLUSTER as any || 'devnet',
+    })
+  }
+
+  static async start(runtime: IAgentRuntime) {
+    logger.info('Starting Milestone Service')
+    const service = new MilestoneService(runtime)
+    await service.initialize()
+    return service
+  }
+
+  async initialize() {
+    // Check milestones every hour
+    this.intervalId = setInterval(() => {
+      void this.checkMilestones()
+    }, 60 * 60 * 1000)
+
+    // Initial check
+    void this.checkMilestones()
+
+    logger.info('Milestone Service initialized')
+  }
+
+  async stop() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId)
+      this.intervalId = null
+    }
+  }
+
+  private async checkMilestones() {
+    try {
+      logger.debug('Checking reputation milestones...')
+
+      const signer = await getAgentSigner(this.runtime)
+      const agentData = await this.client.agents.getAgentAccount(signer.address)
+
+      if (!agentData) return
+
+      const ghostScore = Math.min(
+        1000,
+        Math.round(Number(agentData.reputationScore) / 100)
+      )
+      const totalJobs = Number(agentData.totalJobsCompleted || 0)
+
+      // Define milestones
+      const milestones = [
+        { name: 'first-job', threshold: 1, type: 'jobs' },
+        { name: 'bronze-tier', threshold: 200, type: 'score' },
+        { name: 'silver-tier', threshold: 500, type: 'score' },
+        { name: 'gold-tier', threshold: 750, type: 'score' },
+        { name: 'platinum-tier', threshold: 900, type: 'score' },
+        { name: '100-jobs', threshold: 100, type: 'jobs' },
+        { name: '1000-jobs', threshold: 1000, type: 'jobs' },
+      ]
+
+      for (const milestone of milestones) {
+        const key = `${signer.address}-${milestone.name}`
+
+        // Skip if already issued
+        if (this.issuedMilestones.has(key)) continue
+
+        // Check if milestone reached
+        const value = milestone.type === 'score' ? ghostScore : totalJobs
+        if (value >= milestone.threshold) {
+          await this.issueMilestoneCredential(signer.address, milestone.name)
+          this.issuedMilestones.add(key)
+        }
+      }
+    } catch (error) {
+      logger.error({ error }, 'Milestone check failed')
+    }
+  }
+
+  private async issueMilestoneCredential(agentAddress: any, milestone: string) {
+    try {
+      logger.info({ agentAddress, milestone }, 'Issuing milestone credential')
+
+      const signer = await getAgentSigner(this.runtime)
+
+      // Issue credential (simplified - use real credential issuance)
+      const credential = await this.client.credentials.issueAgentIdentityCredential({
+        agentId: agentAddress,
+        owner: signer.address,
+        name: `Milestone: ${milestone}`,
+        capabilities: [milestone],
+        x402Enabled: true,
+        syncToCrossmint: true,
+      })
+
+      logger.info({
+        credentialId: credential.solanaCredential?.credentialId,
+        milestone,
+      }, 'Milestone credential issued')
+
+      // Notify user via runtime
+      await this.runtime.addMemory({
+        content: {
+          text: `🎉 Milestone achieved: ${milestone}! Credential issued.`,
+        },
+        type: 'notification',
+      })
+    } catch (error) {
+      logger.error({ error, milestone }, 'Failed to issue milestone credential')
+    }
+  }
+}
+```
+
+### Register Service
+
+```typescript filename="src/index.ts"
+import { starterPlugin } from '@ghostspeak/plugin-elizaos'
+import { MilestoneService } from './services/MilestoneService'
+
+const agent = await createAgent({
+  plugins: [
+    {
+      ...starterPlugin,
+      services: [...starterPlugin.services, MilestoneService],
+    },
+  ],
+})
+```
+
+---
+
+## Use Case 4: Cross-Chain Identity Bridge
+
+Bridge Solana agent identity to EVM for cross-chain verification.
+
+### Bridge Action
+
+```typescript filename="src/actions/bridgeIdentity.ts"
+import type { Action } from '@elizaos/core'
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { getAgentSigner } from '@ghostspeak/plugin-elizaos'
+
+export const bridgeIdentityAction: Action = {
+  name: 'BRIDGE_IDENTITY',
+  similes: ['BRIDGE_TO_EVM', 'CROSSMINT_SYNC'],
+  description: 'Bridge agent identity from Solana to EVM via Crossmint',
+
+  validate: async (runtime, message) => {
+    const text = message.content.text?.toLowerCase() || ''
+    return text.includes('bridge') && (text.includes('evm') || text.includes('crossmint'))
+  },
+
+  handler: async (runtime, message, state, options, callback) => {
+    try {
+      const signer = await getAgentSigner(runtime)
+      const client = new GhostSpeakClient({ cluster: 'devnet' })
+
+      // Get agent data
+      const agentData = await client.agents.getAgentAccount(signer.address)
+      if (!agentData) throw new Error('Agent not registered')
+
+      // Issue credential with Crossmint sync
+      const result = await client.credentials.issueAgentIdentityCredential({
+        agentId: signer.address,
+        owner: signer.address,
+        name: agentData.name || 'Unknown Agent',
+        capabilities: [], // Parse from agentData if available
+        x402Enabled: true,
+        syncToCrossmint: true,
+        recipientEmail: message.content.text?.match(/email[:\s]+([^\s]+)/)?[1],
+      })
+
+      const responseText = `✅ Identity bridged to EVM!
+
+**Solana Address**: ${signer.address.toString().slice(0, 8)}...
+**Solana Credential**: ${result.solanaCredential?.credentialId}
+**Crossmint ID**: ${result.crossmintSync?.id}
+**EVM Chain**: ${process.env.CROSSMINT_CHAIN || 'base-sepolia'}
+**Status**: ${result.crossmintSync?.onChain?.status || 'pending'}
+
+Your identity is now verifiable on EVM chains!
+Check status: https://www.crossmint.com/user/collection/credential/${result.crossmintSync?.id}`
+
+      if (callback) await callback({ text: responseText })
+      return { success: true, text: responseText, data: result }
+    } catch (error) {
+      logger.error({ error }, 'Bridge failed')
+      const errorMsg = `Bridge failed: ${error.message}`
+      if (callback) await callback({ text: errorMsg })
+      return { success: false, text: errorMsg, error }
+    }
+  },
+
+  examples: [[/* examples */]],
+}
+```
+
+---
+
+## Testing Examples
+
+### Unit Tests
+
+```typescript filename="tests/actions.test.ts"
+import { describe, it, expect, mock } from 'bun:test'
+import { registerAgentAction } from '../src/actions/registerAgent'
+
+describe('Register Agent Action', () => {
+  it('validates trigger words correctly', async () => {
+    const mockRuntime = {} as any
+    const mockMessage = {
+      content: { text: 'register agent name: Test' },
+    }
+
+    const isValid = await registerAgentAction.validate(
+      mockRuntime,
+      mockMessage,
+      undefined
+    )
+
+    expect(isValid).toBe(true)
+  })
+
+  it('rejects non-register messages', async () => {
+    const mockRuntime = {} as any
+    const mockMessage = {
+      content: { text: 'hello world' },
+    }
+
+    const isValid = await registerAgentAction.validate(
+      mockRuntime,
+      mockMessage,
+      undefined
+    )
+
+    expect(isValid).toBe(false)
+  })
+})
+```
+
+### Integration Tests
+
+```typescript filename="tests/integration.test.ts"
+import { describe, it, expect } from 'bun:test'
+import { GhostSpeakClient } from '@ghostspeak/sdk'
+import { generateKeyPairSigner } from '@solana/signers'
+
+describe('GhostSpeak Integration', () => {
+  it('registers agent and checks Ghost Score', async () => {
+    const client = new GhostSpeakClient({ cluster: 'devnet' })
+    const signer = await generateKeyPairSigner()
+
+    // Register agent
+    const result = await client.agents.register(signer, {
+      name: 'Test Agent',
+      description: 'Integration test agent',
+      capabilities: ['testing'],
+    })
+
+    expect(result.address).toBeDefined()
+    expect(result.signature).toBeDefined()
+
+    // Check Ghost Score
+    const agentData = await client.agents.getAgentAccount(result.address)
+    expect(agentData).toBeDefined()
+    expect(Number(agentData!.reputationScore)).toBe(0) // New agent starts at 0
+  })
+})
+```
+
+---
+
+## Production Deployment Example
+
+### Railway Deployment
+
+<Steps>
+  <Step title="Create railway.toml">
+    ```toml filename="railway.toml"
+    [build]
+    builder = "NIXPACKS"
+    buildCommand = "bun install && bun run build"
+
+    [deploy]
+    startCommand = "elizaos start --character characters/production.character.json"
+    restartPolicyType = "ON_FAILURE"
+    restartPolicyMaxRetries = 10
+    ```
+  </Step>
+
+  <Step title="Set Environment Variables">
+    ```bash
+    railway variables set AGENT_WALLET_PRIVATE_KEY=your-key
+    railway variables set SOLANA_CLUSTER=mainnet-beta
+    railway variables set SOLANA_RPC_URL=https://mainnet.helius-rpc.com/?api-key=YOUR_KEY
+    railway variables set CROSSMINT_SECRET_KEY=your-key
+    railway variables set ANTHROPIC_API_KEY=your-key
+    ```
+  </Step>
+
+  <Step title="Deploy">
+    ```bash
+    railway up
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="SDK Documentation" icon="book" href="/sdk/installation">
+    Deep dive into GhostSpeak SDK for custom integrations
+  </Card>
+  <Card title="API Reference" icon="brackets-curly" href="/api/endpoints/agents">
+    Explore REST API endpoints for B2B integration
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/resources/troubleshooting">
+    Common issues and solutions
+  </Card>
+  <Card title="Community" icon="discord" href="https://discord.gg/ghostspeak">
+    Join Discord for support and examples
+  </Card>
+</CardGroup>

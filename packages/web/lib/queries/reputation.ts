@@ -121,7 +121,10 @@ export function useAgentReputation(_agentAddress: string) {
         }
 
         // Calculate comprehensive reputation using real blockchain data
-        const reputationMetrics = await calculateComprehensiveReputation(_agentAddress, agentAccount)
+        const reputationMetrics = await calculateComprehensiveReputation(
+          _agentAddress,
+          agentAccount
+        )
 
         return reputationMetrics
       } catch (error) {

@@ -120,20 +120,11 @@ export async function POST(request: NextRequest) {
 
     // Record verification in Convex
     if (userId) {
-      // @ts-expect-error - subscriptions not in generated types, run `bunx convex dev` to regenerate
-      const subscription = await convex.query(api.subscriptions.getUserSubscription, {
-        userId,
-      })
-      const subscriptionTier =
-        subscription && subscription.status === 'active' ? subscription.tier : 'free'
-
-      // @ts-expect-error - recordVerification not in generated types, run `bunx convex dev` to regenerate
-      await convex.mutation(api.verifications.recordVerification, {
-        userId,
+      // TODO: Implement subscription system - verify limits based on tier
+      await convex.mutation(api.ghostScore.trackVerification, {
         agentAddress,
         ghostScore,
         tier,
-        subscriptionTier,
       })
     }
 

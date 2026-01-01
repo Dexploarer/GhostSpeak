@@ -8,14 +8,14 @@
  * - Fake reviews
  */
 
-import { query, internalMutation } from './_generated/server'
+import { query, internalMutation, internalQuery } from './_generated/server'
 import { internal } from './_generated/api'
 import { v } from 'convex/values'
 
 /**
  * Calculate fraud risk score for an agent
  */
-export const calculateFraudScore = query({
+export const calculateFraudScore = internalQuery({
   args: { agentAddress: v.string() },
   returns: v.object({
     fraudScore: v.number(), // 0-100 (0 = clean, 100 = highly suspicious)
@@ -190,14 +190,16 @@ export const calculateFraudScore = query({
 
     if (fraudScore >= 75) {
       riskLevel = 'critical'
-      recommendation = 'SUSPEND ACCOUNT - Multiple critical fraud indicators detected. Manual review required.'
+      recommendation =
+        'SUSPEND ACCOUNT - Multiple critical fraud indicators detected. Manual review required.'
     } else if (fraudScore >= 50) {
       riskLevel = 'high'
       recommendation =
         'FLAG FOR REVIEW - Significant suspicious activity detected. Monitor closely and investigate.'
     } else if (fraudScore >= 25) {
       riskLevel = 'medium'
-      recommendation = 'MONITOR - Some anomalous patterns detected. Continue monitoring for escalation.'
+      recommendation =
+        'MONITOR - Some anomalous patterns detected. Continue monitoring for escalation.'
     } else {
       riskLevel = 'low'
       recommendation = 'NORMAL - No significant fraud indicators detected.'

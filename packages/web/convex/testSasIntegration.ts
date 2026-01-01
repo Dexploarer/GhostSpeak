@@ -29,11 +29,17 @@ export const testIssueAgentIdentityCredential = action({
     signature: v.optional(v.string()),
     error: v.optional(v.string()),
   }),
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args
+  ): Promise<{ success: boolean; attestationPda?: string; signature?: string; error?: string }> => {
     console.log('[Test] Calling SAS action to issue agent identity credential...')
 
     // Call the internal SAS action
-    const result = await ctx.runAction(internal.sasCredentialsAction.issueAgentIdentityCredential, args)
+    const result = await ctx.runAction(
+      internal.sasCredentialsAction.issueAgentIdentityCredential,
+      args
+    )
 
     console.log('[Test] Result:', result)
 
@@ -59,10 +65,16 @@ export const testIssueReputationTierCredential = action({
     signature: v.optional(v.string()),
     error: v.optional(v.string()),
   }),
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args
+  ): Promise<{ success: boolean; attestationPda?: string; signature?: string; error?: string }> => {
     console.log('[Test] Calling SAS action to issue reputation tier credential...')
 
-    const result = await ctx.runAction(internal.sasCredentialsAction.issueReputationTierCredential, args)
+    const result = await ctx.runAction(
+      internal.sasCredentialsAction.issueReputationTierCredential,
+      args
+    )
 
     console.log('[Test] Result:', result)
 

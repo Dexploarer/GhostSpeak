@@ -15,6 +15,10 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, AlertTriangle, TrendingDown } from 'lucide-react'
 import { useUnstakeMutation } from '@/lib/hooks/useStakingMutations'
+import { useCrossmintSigner } from '@/lib/hooks/useCrossmintSigner'
+import { deriveUnstakingPdas } from '@/lib/staking-pdas'
+import { address } from '@solana/addresses'
+import { getCurrentNetwork } from '@/lib/ghostspeak/client'
 
 interface UnstakeDialogProps {
   open: boolean
@@ -34,23 +38,31 @@ export function UnstakeDialog({
   onSuccess,
 }: UnstakeDialogProps) {
   const unstakeMutation = useUnstakeMutation()
+  const signerHook = useCrossmintSigner()
   const [confirmed, setConfirmed] = useState(false)
 
   const handleUnstake = async () => {
     if (!confirmed) return
 
     try {
-      // TODO: Derive these PDAs from the agentAddress
-      // These should be derived using PDA derivation functions from the SDK
-      const stakingAccount = 'PLACEHOLDER_STAKING_ACCOUNT' // TODO: Derive staking account PDA
-      const agentTokenAccount = 'PLACEHOLDER_TOKEN_ACCOUNT' // TODO: Derive agent's GHOST token account
-      const stakingVault = 'PLACEHOLDER_STAKING_VAULT' // TODO: Derive staking vault PDA
+      // Check wallet connection
+      if (!signerHook.isConnected || !signerHook.address) {
+        throw new Error('Wallet not connected. Please connect your wallet first.')
+      }
+
+      // Derive all PDAs using the connected wallet address
+      const network = getCurrentNetwork() === 'testnet' ? 'devnet' : getCurrentNetwork()
+      const pdas = await deriveUnstakingPdas(
+        signerHook.address,
+        address(agentAddress),
+        network as 'mainnet' | 'devnet'
+      )
 
       await unstakeMutation.mutateAsync({
         agentAddress,
-        stakingAccount,
-        agentTokenAccount,
-        stakingVault,
+        stakingAccount: pdas.stakingAccount,
+        agentTokenAccount: pdas.agentTokenAccount,
+        stakingVault: pdas.stakingVault,
       })
 
       // Close dialog and reset state

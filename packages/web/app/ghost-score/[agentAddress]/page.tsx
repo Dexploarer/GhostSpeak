@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import { formatAddress, formatSol } from '@/lib/utils'
 import Link from 'next/link'
+import Image from 'next/image'
 
 function getGhostScoreTier(score: number): {
   tier: string
@@ -121,10 +122,13 @@ export default function AgentProfilePage() {
         <div className="max-w-6xl mx-auto p-8">
           <div className="flex items-start gap-6 mb-6">
             {agent.metadata.avatar ? (
-              <img
+              <Image
                 src={agent.metadata.avatar}
                 alt={agent.name}
+                width={96}
+                height={96}
                 className="w-24 h-24 rounded-2xl object-cover border-4 border-purple-500/30"
+                unoptimized
               />
             ) : (
               <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center border-4 border-purple-500/30">

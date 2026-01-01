@@ -53,7 +53,7 @@ export async function getServerWallet() {
   let privateKeyBytes: Uint8Array
   try {
     privateKeyBytes = bs58.decode(privateKeyBase58)
-  } catch (error) {
+  } catch (_error) {
     throw new Error(
       'Failed to decode PAYMENT_RECORDER_PRIVATE_KEY. ' +
         'Ensure it is a valid base58 encoded private key.'

@@ -78,7 +78,6 @@ export async function POST(request: NextRequest) {
 
       // Save to Convex if newly created
       if (created) {
-        // @ts-expect-error - updateTokenAccount not in generated types, run `bunx convex dev` to regenerate
         await convexClient.mutation(api.teams.updateTokenAccount, {
           teamId,
           usdcTokenAccount: tokenAccountAddress,

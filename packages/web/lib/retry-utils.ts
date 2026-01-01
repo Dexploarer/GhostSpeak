@@ -126,7 +126,7 @@ export class RetryQueue<T> {
       try {
         await retryWithBackoff(() => this.processor(entry.item), this.options)
         succeeded++
-      } catch (error) {
+      } catch (_error) {
         failed++
 
         // Re-add to queue if max retries not reached

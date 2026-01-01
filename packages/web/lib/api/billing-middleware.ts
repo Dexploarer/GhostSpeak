@@ -127,6 +127,13 @@ export async function withBillingEnforcement<T>(
         requiredAmount = await calculateGhostCost(costMicroUsdc, network)
 
         // Get GHOST balance
+        if (!paymentTokenAccount) {
+          return {
+            success: false,
+            error: 'Failed to parse GHOST token account address',
+            status: 500,
+          }
+        }
         const { balance } = await getGhostBalance(paymentTokenAccount)
         currentBalance = balance
       } else if (user.usdcTokenAccount) {
@@ -135,6 +142,13 @@ export async function withBillingEnforcement<T>(
         paymentTokenAccount = address(user.usdcTokenAccount)
 
         // Get USDC balance
+        if (!paymentTokenAccount) {
+          return {
+            success: false,
+            error: 'Failed to parse USDC token account address',
+            status: 500,
+          }
+        }
         const { balance } = await getTeamBalance(paymentTokenAccount)
         currentBalance = balance
       } else {
@@ -174,6 +188,13 @@ export async function withBillingEnforcement<T>(
       paymentTokenAccount = address(team.usdcTokenAccount)
 
       // Get team USDC balance
+      if (!paymentTokenAccount) {
+        return {
+          success: false,
+          error: 'Failed to parse team USDC token account address',
+          status: 500,
+        }
+      }
       const { balance } = await getTeamBalance(paymentTokenAccount)
       currentBalance = balance
     }

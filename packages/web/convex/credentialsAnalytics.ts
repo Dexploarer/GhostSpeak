@@ -209,7 +209,9 @@ export const getReputationDistribution = query({
     const sortedScores = allAgents.map((a) => a.ghostScore).sort((a, b) => a - b)
     const medianScore =
       sortedScores.length % 2 === 0
-        ? Math.round((sortedScores[sortedScores.length / 2 - 1] + sortedScores[sortedScores.length / 2]) / 2)
+        ? Math.round(
+            (sortedScores[sortedScores.length / 2 - 1] + sortedScores[sortedScores.length / 2]) / 2
+          )
         : sortedScores[Math.floor(sortedScores.length / 2)]
 
     // Get top 10 agents

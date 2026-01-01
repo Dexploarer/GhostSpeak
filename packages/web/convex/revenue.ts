@@ -129,8 +129,7 @@ export const recordRevenue = mutation({
       const updates: any = {}
 
       if (args.paymentToken === 'ghost') {
-        updates.ghostRevenueMicro =
-          (endpointStats.ghostRevenueMicro || 0) + args.amountMicroGhost!
+        updates.ghostRevenueMicro = (endpointStats.ghostRevenueMicro || 0) + args.amountMicroGhost!
       } else {
         updates.usdcRevenueMicro = (endpointStats.usdcRevenueMicro || 0) + args.amountMicroUsdc
       }
@@ -247,8 +246,7 @@ export const getRevenueStats = query({
       ghost: allRevenue.reduce((sum, r) => sum + (r.ghostRevenueMicro || 0), 0) / 1_000_000,
       usdcStakerPool:
         allRevenue.reduce((sum, r) => sum + (r.usdcStakerPoolMicro || 0), 0) / 1_000_000,
-      usdcProtocol:
-        allRevenue.reduce((sum, r) => sum + (r.usdcProtocolMicro || 0), 0) / 1_000_000,
+      usdcProtocol: allRevenue.reduce((sum, r) => sum + (r.usdcProtocolMicro || 0), 0) / 1_000_000,
       ghostStakerPool:
         allRevenue.reduce((sum, r) => sum + (r.ghostStakerPoolMicro || 0), 0) / 1_000_000,
       ghostProtocol:

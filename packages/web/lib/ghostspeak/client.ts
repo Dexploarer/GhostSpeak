@@ -11,8 +11,9 @@
  * Uses the browser-safe SDK entry point to avoid server-only dependencies.
  */
 
-import type { Address } from '@solana/addresses'
+import { address, type Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
+import { createSolanaRpc } from '@solana/rpc'
 
 // Import from browser-safe SDK entry point
 import {
@@ -31,6 +32,7 @@ interface GhostSpeakConfig {
   programId: Address
   rpcEndpoint: string
   cluster: 'mainnet-beta' | 'testnet' | 'devnet'
+  rpc: any
 }
 
 // Network configurations
@@ -82,18 +84,27 @@ export function createGhostSpeakClient(
     return clientCache.get(cacheKey)!
   }
 
+  const rpc = createSolanaRpc(rpcUrl)
+
   const config: GhostSpeakConfig = {
     programId: GHOSTSPEAK_PROGRAM_ID,
     rpcEndpoint: rpcUrl,
     cluster: network === 'mainnet' ? 'mainnet-beta' : network,
+    rpc,
   } as GhostSpeakConfig
+
+  // Convert program ID to Address type (SDK exports it as Address but TypeScript might need explicit typing)
+  const programIdAddress: Address =
+    typeof GHOSTSPEAK_PROGRAM_ID === 'string'
+      ? address(GHOSTSPEAK_PROGRAM_ID)
+      : (GHOSTSPEAK_PROGRAM_ID as Address)
 
   const client: GhostSpeakClient = {
     programId: GHOSTSPEAK_PROGRAM_ID,
     rpcUrl,
     // Core Pillars
     agents: new AgentModule(config),
-    credentials: new CredentialsModule(rpcUrl), // CredentialsModule expects rpcUrl string, not config
+    credentials: new CredentialsModule(programIdAddress), // CredentialsModule expects programId
     reputation: new ReputationModule(config),
     staking: new StakingModule(config),
     // Governance

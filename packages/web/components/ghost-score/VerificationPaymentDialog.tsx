@@ -49,7 +49,7 @@ export function VerificationPaymentDialog({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null)
   const [userEmail, setUserEmail] = useState('')
   const [loading, setLoading] = useState(false)
-  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null)
+  const [_checkoutUrl, setCheckoutUrl] = useState<string | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>(
     'idle'

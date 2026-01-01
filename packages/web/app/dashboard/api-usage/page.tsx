@@ -59,7 +59,7 @@ export default function ApiUsagePage() {
   // Format chart data
   const chartData = usageSummary?.daily
     ? Object.entries(usageSummary.daily)
-        .map(([date, data]) => ({
+        .map(([date, data]: [string, { count: number; cost: number }]) => ({
           date,
           requests: data.count,
           cost: data.cost / 100, // Convert cents to dollars
@@ -106,7 +106,7 @@ export default function ApiUsagePage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All API Keys</SelectItem>
-              {apiKeys.map((key) => (
+              {apiKeys.map((key: { _id: string; name?: string; keyPrefix: string }) => (
                 <SelectItem key={key._id} value={key._id}>
                   {key.name || key.keyPrefix}
                 </SelectItem>
@@ -210,7 +210,6 @@ export default function ApiUsagePage() {
       </Card>
 
       {/* Endpoint Breakdown */}
-      {/* @ts-expect-error - byEndpoint not in generated types, run `bunx convex dev` to regenerate */}
       {usageSummary?.byEndpoint && Object.keys(usageSummary.byEndpoint).length > 0 && (
         <Card>
           <CardHeader>
@@ -219,7 +218,6 @@ export default function ApiUsagePage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* @ts-expect-error - byEndpoint not in generated types, run `bunx convex dev` to regenerate */}
               {Object.entries(usageSummary.byEndpoint).map(([endpoint, data]: [string, any]) => (
                 <div key={endpoint} className="flex items-center justify-between">
                   <div className="space-y-1">

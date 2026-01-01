@@ -127,7 +127,18 @@ export default function TeamDashboardPage() {
     )
   }
 
-  const selectedTeam = teams.find((t) => t?._id === selectedTeamId)
+  const selectedTeam = teams.find(
+    (
+      t: {
+        _id: string
+        name: string
+        memberCount: number
+        maxMembers: number
+        plan: string
+        role: string
+      } | null
+    ) => t?._id === selectedTeamId
+  )
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl">
@@ -153,35 +164,45 @@ export default function TeamDashboardPage() {
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {teams.map((team) => {
-                if (!team) return null
-                return (
-                  <Card
-                    key={team._id}
-                    className={`cursor-pointer transition-all ${
-                      selectedTeamId === team._id
-                        ? 'border-primary ring-2 ring-primary/20'
-                        : 'hover:border-primary/50'
-                    }`}
-                    onClick={() => setSelectedTeamId(team._id)}
-                  >
-                    <CardHeader>
-                      <CardTitle className="text-lg">{team.name}</CardTitle>
-                      <CardDescription>
-                        {team.memberCount} members • {team.plan}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div
-                        className={`inline-flex items-center gap-2 px-2 py-1 rounded text-xs ${getRoleBadgeColor(team.role)}`}
-                      >
-                        {getRoleIcon(team.role)}
-                        <span className="capitalize">{team.role}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
+              {teams.map(
+                (
+                  team: {
+                    _id: string
+                    name: string
+                    memberCount: number
+                    plan: string
+                    role: string
+                  } | null
+                ) => {
+                  if (!team) return null
+                  return (
+                    <Card
+                      key={team._id}
+                      className={`cursor-pointer transition-all ${
+                        selectedTeamId === team._id
+                          ? 'border-primary ring-2 ring-primary/20'
+                          : 'hover:border-primary/50'
+                      }`}
+                      onClick={() => setSelectedTeamId(team._id)}
+                    >
+                      <CardHeader>
+                        <CardTitle className="text-lg">{team.name}</CardTitle>
+                        <CardDescription>
+                          {team.memberCount} members • {team.plan}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div
+                          className={`inline-flex items-center gap-2 px-2 py-1 rounded text-xs ${getRoleBadgeColor(team.role)}`}
+                        >
+                          {getRoleIcon(team.role)}
+                          <span className="capitalize">{team.role}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                }
+              )}
             </div>
           )}
         </CardContent>

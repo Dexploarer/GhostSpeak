@@ -106,6 +106,23 @@ export const getById = query({
 })
 
 /**
+ * Update team's USDC token account
+ */
+export const updateTokenAccount = mutation({
+  args: {
+    teamId: v.id('teams'),
+    usdcTokenAccount: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.teamId, {
+      usdcTokenAccount: args.usdcTokenAccount,
+      updatedAt: Date.now(),
+    })
+  },
+})
+
+/**
  * Get user's teams
  */
 export const getUserTeams = query({
@@ -230,7 +247,7 @@ export const inviteTeamMember = mutation({
     // Generate invite token using Web Crypto (V8 compatible)
     const tokenBytes = new Uint8Array(32)
     crypto.getRandomValues(tokenBytes)
-    const token = Array.from(tokenBytes, byte => byte.toString(16).padStart(2, '0')).join('')
+    const token = Array.from(tokenBytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
 
     // Create invite
     const inviteId = await ctx.db.insert('teamInvites', {

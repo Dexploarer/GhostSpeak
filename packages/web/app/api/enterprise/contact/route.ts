@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       success: true,
       message: 'Thank you for your interest! Our team will contact you within 24 hours.',
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Enterprise Contact] Error:', error)
     return NextResponse.json(
       { error: 'Internal server error', code: 'INTERNAL_ERROR' },

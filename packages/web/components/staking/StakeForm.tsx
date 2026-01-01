@@ -10,6 +10,10 @@ import { TierBadge } from './TierBadge'
 import { Loader2, AlertCircle, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useStakeMutation } from '@/lib/hooks/useStakingMutations'
+import { useCrossmintSigner } from '@/lib/hooks/useCrossmintSigner'
+import { deriveAllStakingPdas } from '@/lib/staking-pdas'
+import { address } from '@solana/addresses'
+import { getCurrentNetwork } from '@/lib/ghostspeak/client'
 
 interface StakeFormProps {
   agentAddress: string
@@ -26,6 +30,7 @@ const LOCK_DURATIONS = [
 
 export function StakeForm({ agentAddress, ghostBalance, onSuccess }: StakeFormProps) {
   const stakeMutation = useStakeMutation()
+  const signerHook = useCrossmintSigner()
   const [amount, setAmount] = useState('')
   const [selectedDuration, setSelectedDuration] = useState(LOCK_DURATIONS[0])
 
@@ -71,19 +76,26 @@ export function StakeForm({ agentAddress, ghostBalance, onSuccess }: StakeFormPr
     if (!isValid) return
 
     try {
-      // TODO: Derive these PDAs from the agentAddress
-      // These should be derived using PDA derivation functions from the SDK
-      const agentTokenAccount = 'PLACEHOLDER_TOKEN_ACCOUNT' // TODO: Derive agent's GHOST token account
-      const stakingVault = 'PLACEHOLDER_STAKING_VAULT' // TODO: Derive staking vault PDA
-      const stakingConfig = 'PLACEHOLDER_STAKING_CONFIG' // TODO: Derive global staking config PDA
+      // Check wallet connection
+      if (!signerHook.isConnected || !signerHook.address) {
+        throw new Error('Wallet not connected. Please connect your wallet first.')
+      }
+
+      // Derive all PDAs using the connected wallet address
+      const network = getCurrentNetwork() === 'testnet' ? 'devnet' : getCurrentNetwork()
+      const pdas = await deriveAllStakingPdas(
+        signerHook.address,
+        address(agentAddress),
+        network as 'mainnet' | 'devnet'
+      )
 
       await stakeMutation.mutateAsync({
         agentAddress,
         amount: parseFloat(amount),
         lockDurationDays: selectedDuration.days,
-        agentTokenAccount,
-        stakingVault,
-        stakingConfig,
+        agentTokenAccount: pdas.agentTokenAccount,
+        stakingVault: pdas.stakingVault,
+        stakingConfig: pdas.stakingConfig,
       })
 
       // Reset form

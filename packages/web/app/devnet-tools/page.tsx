@@ -79,9 +79,7 @@ export default function DevnetToolsPage() {
               🪂 GHOST Token Airdrop
               <Badge variant="secondary">Devnet</Badge>
             </CardTitle>
-            <CardDescription>
-              Claim 10,000 devnet GHOST tokens once per 24 hours
-            </CardDescription>
+            <CardDescription>Claim 10,000 devnet GHOST tokens once per 24 hours</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {!publicKey ? (
@@ -137,15 +135,11 @@ export default function DevnetToolsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Faucet Status</CardTitle>
-            <CardDescription>
-              Current status of the devnet GHOST faucet
-            </CardDescription>
+            <CardDescription>Current status of the devnet GHOST faucet</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoadingStatus ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Loading status...
-              </div>
+              <div className="text-center py-8 text-muted-foreground">Loading status...</div>
             ) : faucetStatus?.status === 'ok' ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-green-500">
@@ -177,7 +171,8 @@ export default function DevnetToolsPage() {
                         rel="noopener noreferrer"
                         className="text-xs font-mono text-primary hover:underline flex items-center gap-1"
                       >
-                        {faucetStatus.faucetAddress.slice(0, 8)}...{faucetStatus.faucetAddress.slice(-8)}
+                        {faucetStatus.faucetAddress.slice(0, 8)}...
+                        {faucetStatus.faucetAddress.slice(-8)}
                         <ExternalLink className="h-3 w-3" />
                       </a>
                     </div>
@@ -211,9 +206,7 @@ export default function DevnetToolsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Quick Start Guide</CardTitle>
-          <CardDescription>
-            Get started testing on GhostSpeak devnet
-          </CardDescription>
+          <CardDescription>Get started testing on GhostSpeak devnet</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">

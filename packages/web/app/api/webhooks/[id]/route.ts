@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { api } from '@/convex/_generated/api'
 import type { Id } from '@/convex/_generated/dataModel'
 import { fetchQuery, fetchMutation } from 'convex/nextjs'
+import { createHash } from 'crypto'
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -21,10 +22,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       return NextResponse.json({ error: 'Missing API key', code: 'UNAUTHORIZED' }, { status: 401 })
     }
 
+    // Hash the API key for validation
+    const hashedKey = createHash('sha256').update(apiKey).digest('hex')
+
     // Validate API key and get user
-    // @ts-expect-error - validateApiKey not in generated types, run `bunx convex dev` to regenerate
     const keyData = await fetchQuery(api.apiKeys.validateApiKey, {
-      apiKey,
+      hashedKey,
     })
 
     if (!keyData) {
@@ -41,7 +44,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   } catch (error: unknown) {
     console.error('[Webhooks API] Error deleting webhook:', error)
 
-    if (error instanceof Error && (error.message?.includes('not found') || error.message?.includes('Unauthorized'))) {
+    if (
+      error instanceof Error &&
+      (error.message?.includes('not found') || error.message?.includes('Unauthorized'))
+    ) {
       return NextResponse.json({ error: error.message, code: 'NOT_FOUND' }, { status: 404 })
     }
 
@@ -67,10 +73,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Missing API key', code: 'UNAUTHORIZED' }, { status: 401 })
     }
 
+    // Hash the API key for validation
+    const hashedKey = createHash('sha256').update(apiKey).digest('hex')
+
     // Validate API key and get user
-    // @ts-expect-error - validateApiKey not in generated types, run `bunx convex dev` to regenerate
     const keyData = await fetchQuery(api.apiKeys.validateApiKey, {
-      apiKey,
+      hashedKey,
     })
 
     if (!keyData) {
@@ -110,16 +118,27 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           : null,
         createdAt: new Date(subscription.createdAt).toISOString(),
       },
-      deliveries: deliveries.map((d) => ({
-        id: d._id,
-        event: d.event,
-        status: d.status,
-        attemptCount: d.attemptCount,
-        lastError: d.lastError,
-        lastResponseStatus: d.lastResponseStatus,
-        deliveredAt: d.deliveredAt ? new Date(d.deliveredAt).toISOString() : null,
-        createdAt: new Date(d.createdAt).toISOString(),
-      })),
+      deliveries: deliveries.map(
+        (d: {
+          _id: string
+          event: string
+          status: string
+          attemptCount: number
+          lastError?: string
+          lastResponseStatus?: number
+          deliveredAt?: number
+          createdAt: number
+        }) => ({
+          id: d._id,
+          event: d.event,
+          status: d.status,
+          attemptCount: d.attemptCount,
+          lastError: d.lastError,
+          lastResponseStatus: d.lastResponseStatus,
+          deliveredAt: d.deliveredAt ? new Date(d.deliveredAt).toISOString() : null,
+          createdAt: new Date(d.createdAt).toISOString(),
+        })
+      ),
     })
   } catch (error: unknown) {
     console.error('[Webhooks API] Error fetching webhook:', error)

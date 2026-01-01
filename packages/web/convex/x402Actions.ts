@@ -22,7 +22,10 @@ export const pollX402Transactions = action({
     facilitatorAddress: v.string(),
     batchSize: v.optional(v.number()),
   },
-  handler: async (ctx, args): Promise<{
+  handler: async (
+    ctx,
+    args
+  ): Promise<{
     success: boolean
     syncedCount: number
     lastSignature?: string
@@ -132,14 +135,17 @@ export const pollX402Transactions = action({
           // Update reputation from on-chain payment
           // NOTE: responseTimeMs is not available from on-chain data, so we use a default value
           // Webhooks provide actual response time, on-chain polling uses 0 (neutral impact)
-          const reputationResult = await ctx.runMutation(internal.payaiReputation.updateFromPayment, {
-            merchantAddress: payment.merchant,
-            paymentSignature: payment.signature,
-            amount: payment.amount,
-            success: payment.success,
-            responseTimeMs: 0, // On-chain doesn't have response time data
-            timestamp: payment.timestamp,
-          })
+          const reputationResult = await ctx.runMutation(
+            internal.payaiReputation.updateFromPayment,
+            {
+              merchantAddress: payment.merchant,
+              paymentSignature: payment.signature,
+              amount: payment.amount,
+              success: payment.success,
+              responseTimeMs: 0, // On-chain doesn't have response time data
+              timestamp: payment.timestamp,
+            }
+          )
 
           console.log('[X402 Action] Reputation updated:', {
             merchant: payment.merchant.slice(0, 8),
@@ -204,8 +210,7 @@ async function parseX402Transaction(
     // Find SPL token transfer instruction
     const transferIx = instructions.find((ix: any) => {
       const programId = ix.program
-      const isTokenProgram =
-        programId === 'spl-token' || programId === 'spl-token-2022'
+      const isTokenProgram = programId === 'spl-token' || programId === 'spl-token-2022'
 
       if (!isTokenProgram) return false
 

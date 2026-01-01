@@ -27,11 +27,17 @@ export const checkSasEnvironment = action({
 
     console.log('Checking SAS environment variables...')
     console.log('process.env object keys:', Object.keys(process.env).length)
-    console.log('All env vars starting with S:', Object.keys(process.env).filter(k => k.startsWith('S')))
+    console.log(
+      'All env vars starting with S:',
+      Object.keys(process.env).filter((k) => k.startsWith('S'))
+    )
     console.log('SOLANA_CLUSTER:', cluster ? 'SET' : 'NOT SET')
     console.log('SAS_PAYER_KEYPAIR:', payer ? `SET (${payer.length} chars)` : 'NOT SET')
     console.log('SAS_AUTHORITY_KEYPAIR:', authority ? `SET (${authority.length} chars)` : 'NOT SET')
-    console.log('SAS_AUTHORIZED_SIGNER_KEYPAIR:', signer ? `SET (${signer.length} chars)` : 'NOT SET')
+    console.log(
+      'SAS_AUTHORIZED_SIGNER_KEYPAIR:',
+      signer ? `SET (${signer.length} chars)` : 'NOT SET'
+    )
 
     if (payer) {
       try {

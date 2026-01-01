@@ -207,40 +207,50 @@ export default function ApiKeysPage() {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {apiKeys.map((key) => (
-              <Card key={key._id}>
-                <CardContent className="py-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{key.name || 'Unnamed Key'}</h3>
-                        <Badge variant={key.isActive ? 'default' : 'secondary'}>
-                          {key.isActive ? 'Active' : 'Revoked'}
-                        </Badge>
-                        <Badge variant="outline">{key.tier.toUpperCase()}</Badge>
+            {apiKeys.map(
+              (key: {
+                _id: string
+                name?: string
+                keyPrefix: string
+                tier: string
+                isActive: boolean
+                createdAt: number
+                lastUsedAt?: number
+              }) => (
+                <Card key={key._id}>
+                  <CardContent className="py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold">{key.name || 'Unnamed Key'}</h3>
+                          <Badge variant={key.isActive ? 'default' : 'secondary'}>
+                            {key.isActive ? 'Active' : 'Revoked'}
+                          </Badge>
+                          <Badge variant="outline">{key.tier.toUpperCase()}</Badge>
+                        </div>
+                        <p className="text-sm font-mono text-muted-foreground">{key.keyPrefix}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Created: {new Date(key.createdAt).toLocaleDateString()}
+                          {key.lastUsedAt &&
+                            ` • Last used: ${new Date(key.lastUsedAt).toLocaleDateString()}`}
+                        </p>
                       </div>
-                      <p className="text-sm font-mono text-muted-foreground">{key.keyPrefix}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Created: {new Date(key.createdAt).toLocaleDateString()}
-                        {key.lastUsedAt &&
-                          ` • Last used: ${new Date(key.lastUsedAt).toLocaleDateString()}`}
-                      </p>
-                    </div>
 
-                    {key.isActive && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleRevokeKey(key._id)}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Revoke
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      {key.isActive && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleRevokeKey(key._id)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Revoke
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            )}
           </div>
         )}
       </div>

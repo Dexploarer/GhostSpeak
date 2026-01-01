@@ -23,7 +23,6 @@ function getGhostScoreTier(score: number): {
 }
 
 export default function GhostScoreDashboard() {
-  // @ts-expect-error - getUserSubscription not in generated types, run `bunx convex dev` to regenerate
   const subscription = useConvexQuery(api.ghostScore.getUserSubscription)
   const verificationHistory = useConvexQuery(api.ghostScore.getVerificationHistory)
 
@@ -198,47 +197,56 @@ export default function GhostScoreDashboard() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {verificationHistory.slice(0, 10).map((verification) => {
-              const { tier, color } = getGhostScoreTier(verification.ghostScore)
+            {verificationHistory
+              .slice(0, 10)
+              .map(
+                (verification: {
+                  _id: string
+                  agentAddress: string
+                  ghostScore: number
+                  timestamp: number
+                }) => {
+                  const { tier, color } = getGhostScoreTier(verification.ghostScore)
 
-              return (
-                <Card key={verification._id} className="p-4 hover:shadow-lg transition-shadow">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-                        <Shield className="w-6 h-6 text-white" />
-                      </div>
+                  return (
+                    <Card key={verification._id} className="p-4 hover:shadow-lg transition-shadow">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                            <Shield className="w-6 h-6 text-white" />
+                          </div>
 
-                      <div className="flex-1">
-                        <div className="font-semibold mb-1">
-                          {formatAddress(verification.agentAddress)}
+                          <div className="flex-1">
+                            <div className="font-semibold mb-1">
+                              {formatAddress(verification.agentAddress)}
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Calendar className="w-4 h-4" />
+                              {new Date(verification.timestamp).toLocaleDateString()}
+                            </div>
+                          </div>
+
+                          <div className="text-right">
+                            <div className="text-sm text-muted-foreground mb-1">Ghost Score</div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-2xl font-black ${color}`}>
+                                {verification.ghostScore}
+                              </span>
+                              <Badge className={`${color} bg-transparent`}>{tier}</Badge>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="w-4 h-4" />
-                          {new Date(verification.timestamp).toLocaleDateString()}
-                        </div>
-                      </div>
 
-                      <div className="text-right">
-                        <div className="text-sm text-muted-foreground mb-1">Ghost Score</div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-2xl font-black ${color}`}>
-                            {verification.ghostScore}
-                          </span>
-                          <Badge className={`${color} bg-transparent`}>{tier}</Badge>
-                        </div>
+                        <Link href={`/ghost-score/${verification.agentAddress}`} className="ml-4">
+                          <Button variant="outline" size="sm">
+                            <ExternalLink className="w-4 h-4" />
+                          </Button>
+                        </Link>
                       </div>
-                    </div>
-
-                    <Link href={`/ghost-score/${verification.agentAddress}`} className="ml-4">
-                      <Button variant="outline" size="sm">
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                </Card>
-              )
-            })}
+                    </Card>
+                  )
+                }
+              )}
           </div>
         )}
       </div>

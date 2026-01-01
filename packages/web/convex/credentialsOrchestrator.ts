@@ -68,14 +68,18 @@ export const checkAndIssueReputationCredentials = internalMutation({
           const totalEarnings = payments.reduce((sum, p) => sum + BigInt(p.amount), BigInt(0))
 
           // Schedule credential issuance (async via Action)
-          await ctx.scheduler.runAfter(0, internal.credentialsAction.issueReputationTierCredential, {
-            agentAddress: args.agentAddress,
-            tier: milestone.tier,
-            ghostScore: args.newScore,
-            totalJobs: args.totalJobs,
-            successRate: args.successRate,
-            totalEarnings: totalEarnings.toString(),
-          })
+          await ctx.scheduler.runAfter(
+            0,
+            internal.sasCredentialsAction.issueReputationTierCredential,
+            {
+              agentAddress: args.agentAddress,
+              tier: milestone.tier,
+              ghostScore: args.newScore,
+              totalJobs: args.totalJobs,
+              successRate: args.successRate,
+              totalEarnings: totalEarnings.toString(),
+            }
+          )
 
           credentialsIssued.push(milestone.tier)
         }
@@ -327,7 +331,7 @@ export const checkAndIssuePaymentMilestoneCredentials = internalMutation({
           // Schedule credential issuance
           await ctx.scheduler.runAfter(
             0,
-            internal.credentialsAction.issuePaymentMilestoneCredential,
+            internal.sasCredentialsAction.issuePaymentMilestoneCredential,
             {
               agentAddress: args.agentAddress,
               milestone: milestone.count,
@@ -402,7 +406,7 @@ export const checkAndIssueStakingCredential = internalMutation({
       })
 
       // Schedule credential issuance
-      await ctx.scheduler.runAfter(0, internal.credentialsAction.issueStakingCredential, {
+      await ctx.scheduler.runAfter(0, internal.sasCredentialsAction.issueStakingCredential, {
         agentAddress: args.agentAddress,
         tier,
         badge,
@@ -457,7 +461,7 @@ export const issueVerifiedHireCredentialFromReview = internalMutation({
       })
 
       // Schedule credential issuance
-      await ctx.scheduler.runAfter(0, internal.credentialsAction.issueVerifiedHireCredential, {
+      await ctx.scheduler.runAfter(0, internal.sasCredentialsAction.issueVerifiedHireCredential, {
         agentAddress: args.agentAddress,
         clientAddress: args.clientAddress,
         rating: args.rating,

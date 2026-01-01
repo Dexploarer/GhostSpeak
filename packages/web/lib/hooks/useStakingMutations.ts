@@ -4,7 +4,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useStaking } from './useGhostSpeak'
 import { useCrossmintSigner } from './useCrossmintSigner'
 import { useToast } from '@/components/ui/use-toast'
-import type { Address } from '@solana/addresses'
+import { address, type Address } from '@solana/addresses'
+
+// GHOST token mint addresses
+const GHOST_MINT_DEVNET = 'BV4uhhMJ84zjwRomS15JMH5wdXVrMP8o9E1URS4xtYoh'
+const GHOST_MINT_MAINNET = 'DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump'
 
 export interface StakeMutationParams {
   /** Agent address to stake for */
@@ -37,14 +41,17 @@ export interface UnstakeMutationParams {
  */
 export function useStakeMutation() {
   const { client } = useStaking()
-  const signer = useCrossmintSigner()
+  const signerHook = useCrossmintSigner()
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (params: StakeMutationParams) => {
       if (!client) throw new Error('Staking client not initialized')
-      if (!signer) throw new Error('Wallet not connected')
+      if (!signerHook.isConnected) throw new Error('Wallet not connected')
+
+      const signer = signerHook.createSigner()
+      if (!signer) throw new Error('Failed to create signer')
 
       // Convert GHOST to lamports (assuming 9 decimals)
       const amountLamports = BigInt(Math.floor(params.amount * 1_000_000_000))
@@ -52,11 +59,15 @@ export function useStakeMutation() {
       // Convert days to seconds
       const lockDurationSeconds = BigInt(params.lockDurationDays * 24 * 60 * 60)
 
+      // Get GHOST mint address from environment or default to mainnet
+      const ghostMintAddress = process.env.NEXT_PUBLIC_GHOST_TOKEN_MINT || GHOST_MINT_MAINNET
+
       const signature = await client.stake({
         agent: params.agentAddress as Address,
         agentTokenAccount: params.agentTokenAccount as Address,
         stakingVault: params.stakingVault as Address,
         stakingConfig: params.stakingConfig as Address,
+        ghostMint: address(ghostMintAddress),
         amount: amountLamports,
         lockDuration: lockDurationSeconds,
         agentOwner: signer,
@@ -90,14 +101,17 @@ export function useStakeMutation() {
  */
 export function useUnstakeMutation() {
   const { client } = useStaking()
-  const signer = useCrossmintSigner()
+  const signerHook = useCrossmintSigner()
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (params: UnstakeMutationParams) => {
       if (!client) throw new Error('Staking client not initialized')
-      if (!signer) throw new Error('Wallet not connected')
+      if (!signerHook.isConnected) throw new Error('Wallet not connected')
+
+      const signer = signerHook.createSigner()
+      if (!signer) throw new Error('Failed to create signer')
 
       const signature = await client.unstake({
         stakingAccount: params.stakingAccount as Address,

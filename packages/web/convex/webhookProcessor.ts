@@ -1,4 +1,4 @@
-"use node";
+'use node'
 
 /**
  * Webhook Processor
@@ -26,19 +26,17 @@ export const processWebhooks = internalAction({
   }),
   handler: async (ctx): Promise<{ processed: number; successful: number; failed: number }> => {
     // Get pending webhooks ready for delivery
-    const pendingWebhooks: Doc<"webhookDeliveries">[] = await ctx.runQuery(
+    const pendingWebhooks: Doc<'webhookDeliveries'>[] = await ctx.runQuery(
       internal.webhookDelivery.getPendingWebhooks
     )
 
     console.log(`[Webhook Processor] Found ${pendingWebhooks.length} pending webhooks`)
 
     // Process up to 50 webhooks per run to avoid timeouts
-    const webhooksToProcess: Doc<"webhookDeliveries">[] = pendingWebhooks.slice(0, 50)
+    const webhooksToProcess: Doc<'webhookDeliveries'>[] = pendingWebhooks.slice(0, 50)
 
     const results = await Promise.allSettled(
-      webhooksToProcess.map((webhook: Doc<"webhookDeliveries">) =>
-        deliverWebhook(ctx, webhook)
-      )
+      webhooksToProcess.map((webhook: Doc<'webhookDeliveries'>) => deliverWebhook(ctx, webhook))
     )
 
     const successful = results.filter((r) => r.status === 'fulfilled').length
@@ -55,10 +53,7 @@ export const processWebhooks = internalAction({
 /**
  * Deliver a single webhook
  */
-async function deliverWebhook(
-  ctx: ActionCtx,
-  webhook: Doc<"webhookDeliveries">
-): Promise<void> {
+async function deliverWebhook(ctx: ActionCtx, webhook: Doc<'webhookDeliveries'>): Promise<void> {
   const { _id, url, secret, payload } = webhook
 
   try {
@@ -115,4 +110,3 @@ async function deliverWebhook(
     console.error(`[Webhook Delivery] Error: ${url} - ${errorMessage}`)
   }
 }
-

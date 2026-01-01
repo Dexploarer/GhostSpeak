@@ -31,7 +31,9 @@ const jupiterApi = createJupiterApiClient()
  *
  * NOTE: On devnet, there's no GHOST liquidity pool, so we immediately return fallback price.
  */
-export async function getGhostPriceInUsdc(network: 'mainnet' | 'devnet' = 'mainnet'): Promise<number> {
+export async function getGhostPriceInUsdc(
+  network: 'mainnet' | 'devnet' = 'mainnet'
+): Promise<number> {
   const cacheKey = `ghost-usdc-${network}`
 
   // Check cache first
@@ -111,7 +113,9 @@ export async function getGhostPriceInUsdc(network: 'mainnet' | 'devnet' = 'mainn
  *
  * Inverse of getGhostPriceInUsdc - how many GHOST per 1 USDC
  */
-export async function getUsdcPriceInGhost(network: 'mainnet' | 'devnet' = 'mainnet'): Promise<number> {
+export async function getUsdcPriceInGhost(
+  network: 'mainnet' | 'devnet' = 'mainnet'
+): Promise<number> {
   const ghostPrice = await getGhostPriceInUsdc(network)
   return 1 / ghostPrice
 }

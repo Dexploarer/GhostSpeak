@@ -5,7 +5,7 @@
  * with exponential backoff to handle temporary Crossmint API failures.
  */
 
-import { internalMutation, internalAction } from './_generated/server'
+import { internalMutation, internalAction, internalQuery } from './_generated/server'
 import { internal } from './_generated/api'
 import { v } from 'convex/values'
 
@@ -75,28 +75,31 @@ export const retryFailedIssuances = internalAction({
         switch (failure.credentialType) {
           case 'agent_identity':
             result = await ctx.runAction(
-              internal.credentialsAction.issueAgentIdentityCredential,
+              internal.sasCredentialsAction.issueAgentIdentityCredential,
               failure.payload
             )
             break
           case 'reputation_tier':
             result = await ctx.runAction(
-              internal.credentialsAction.issueReputationTierCredential,
+              internal.sasCredentialsAction.issueReputationTierCredential,
               failure.payload
             )
             break
           case 'payment_milestone':
             result = await ctx.runAction(
-              internal.credentialsAction.issuePaymentMilestoneCredential,
+              internal.sasCredentialsAction.issuePaymentMilestoneCredential,
               failure.payload
             )
             break
           case 'staking':
-            result = await ctx.runAction(internal.credentialsAction.issueStakingCredential, failure.payload)
+            result = await ctx.runAction(
+              internal.sasCredentialsAction.issueStakingCredential,
+              failure.payload
+            )
             break
           case 'verified_hire':
             result = await ctx.runAction(
-              internal.credentialsAction.issueVerifiedHireCredential,
+              internal.sasCredentialsAction.issueVerifiedHireCredential,
               failure.payload
             )
             break
@@ -151,7 +154,7 @@ export const retryFailedIssuances = internalAction({
 /**
  * Get pending retries
  */
-export const getPendingRetries = internalMutation({
+export const getPendingRetries = internalQuery({
   args: {},
   returns: v.array(
     v.object({

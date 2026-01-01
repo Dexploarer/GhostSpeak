@@ -5,6 +5,8 @@
  * to aggregate in the GhostSpeak marketplace
  */
 
+import { fetchElizaOSResources } from './fetchElizaOSResources'
+
 // =====================================================
 // TYPES
 // =====================================================
@@ -21,6 +23,8 @@ export interface ExternalResource {
   facilitator: string
   isActive: boolean
   isExternal: true
+  availabilityStatus?: 'available' | 'coming_soon' | 'maintenance' | 'deprecated'
+  statusMessage?: string
 }
 
 interface HeuristAgent {
@@ -203,10 +207,18 @@ export const STATIC_EXTERNAL_RESOURCES: ExternalResource[] = [
 // =====================================================
 
 export async function fetchAllExternalResources(): Promise<ExternalResource[]> {
-  const [heuristResources] = await Promise.all([
+  const [heuristResources, elizaOSResources] = await Promise.all([
     fetchHeuristResources(),
+    fetchElizaOSResources(),
     // Add more fetchers here as we integrate more services
   ])
 
-  return [...heuristResources, ...STATIC_EXTERNAL_RESOURCES]
+  console.log('[ExternalResources] Aggregated resources:', {
+    heurist: heuristResources.length,
+    elizaOS: elizaOSResources.length,
+    static: STATIC_EXTERNAL_RESOURCES.length,
+    total: heuristResources.length + elizaOSResources.length + STATIC_EXTERNAL_RESOURCES.length,
+  })
+
+  return [...heuristResources, ...elizaOSResources, ...STATIC_EXTERNAL_RESOURCES]
 }

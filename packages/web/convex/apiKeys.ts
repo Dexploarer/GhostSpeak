@@ -97,6 +97,38 @@ export const getByHashedKey = query({
 })
 
 /**
+ * Validate API key by hashed key and return API key data for authorization
+ */
+export const validateApiKey = query({
+  args: { hashedKey: v.string() },
+  returns: v.union(
+    v.object({
+      apiKeyId: v.id('apiKeys'),
+      userId: v.id('users'),
+      tier: v.string(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    // Find the API key by hashed key
+    const apiKey = await ctx.db
+      .query('apiKeys')
+      .withIndex('by_hashed_key', (q) => q.eq('hashedKey', args.hashedKey))
+      .first()
+
+    if (!apiKey || !apiKey.isActive) {
+      return null
+    }
+
+    return {
+      apiKeyId: apiKey._id,
+      userId: apiKey.userId,
+      tier: apiKey.tier,
+    }
+  },
+})
+
+/**
  * Get API key stats (usage, rate limits, etc.)
  */
 export const getKeyStats = query({

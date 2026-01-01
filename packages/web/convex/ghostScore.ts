@@ -103,6 +103,36 @@ export const getVerificationHistory = query({
   },
 })
 
+//
+// ─── SUBSCRIPTIONS ────────────────────────────────────────────────────────
+//
+
+/**
+ * Get user's Ghost Score subscription
+ * TODO: Implement full subscription system
+ */
+export const getUserSubscription = query({
+  args: {},
+  returns: v.union(
+    v.object({
+      tier: v.string(),
+      status: v.string(),
+      currentPeriodEnd: v.number(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return null
+
+    // TODO: Implement subscription system - for now return free tier
+    return {
+      tier: 'free',
+      status: 'active',
+      currentPeriodEnd: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days from now
+    }
+  },
+})
 
 //
 // ─── REVIEWS ───────────────────────────────────────────────────────────────

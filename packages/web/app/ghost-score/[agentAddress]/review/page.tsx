@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Star, Bot, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function ReviewAgentPage() {
   const params = useParams()
@@ -120,10 +121,13 @@ export default function ReviewAgentPage() {
         <Card className="p-6 mb-8">
           <div className="flex items-center gap-4">
             {agent.metadata.avatar ? (
-              <img
+              <Image
                 src={agent.metadata.avatar}
                 alt={agent.name}
+                width={64}
+                height={64}
                 className="w-16 h-16 rounded-full object-cover"
+                unoptimized
               />
             ) : (
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">

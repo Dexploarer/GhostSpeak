@@ -28,7 +28,8 @@ interface PayAIReputationRecord {
 // ENVIRONMENT VALIDATION
 // =====================================================
 
-const WEBHOOK_SECRET = process.env.PAYAI_WEBHOOK_SECRET
+// Reserved for future use when SDK supports webhook signature verification
+const _WEBHOOK_SECRET = process.env.PAYAI_WEBHOOK_SECRET
 
 // =====================================================
 // REPUTATION STORAGE (In-Memory Cache for Development)
@@ -150,8 +151,9 @@ function updateReputation(record: PayAIReputationRecord): ReputationEntry {
 
 /**
  * Record a PayAI payment to the reputation system
+ * Reserved for future use when SDK webhook handler is implemented
  */
-async function recordToReputation(record: PayAIReputationRecord): Promise<void> {
+async function _recordToReputation(record: PayAIReputationRecord): Promise<void> {
   const entry = updateReputation(record)
   const change = calculateReputationChange(record)
 
@@ -243,6 +245,7 @@ async function _verifyPaymentOnChain(paymentSignature: string): Promise<boolean>
     const rpc = createSolanaRpc(rpcUrl)
 
     // Fetch transaction from chain
+    //eslint-disable-next-line @typescript-eslint/no-explicit-any
     const transaction = await rpc
       .getTransaction(paymentSignature as any, {
         encoding: 'json',
@@ -267,7 +270,6 @@ async function _verifyPaymentOnChain(paymentSignature: string): Promise<boolean>
  * Issue reputation credential if agent crosses tier threshold
  */
 async function maybeIssueCredential(agentAddress: string, newScore: number): Promise<void> {
-  const _tier = getReputationTier(newScore)
   const entry = reputationCache.get(agentAddress)
 
   if (!entry) return
@@ -478,12 +480,9 @@ function getReputationTier(score: number): string {
 /**
  * Handle POST requests from PayAI webhooks
  */
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export async function POST(_request: NextRequest): Promise<NextResponse> {
   // TODO: Implement webhook handler once SDK supports createPayAIWebhookHandler
-  return NextResponse.json(
-    { error: 'PayAI webhook handler not yet implemented' },
-    { status: 501 }
-  )
+  return NextResponse.json({ error: 'PayAI webhook handler not yet implemented' }, { status: 501 })
 
   // try {
   //   // Get the raw body

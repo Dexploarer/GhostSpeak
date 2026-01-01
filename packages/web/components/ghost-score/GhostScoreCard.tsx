@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Bot, Star, DollarSign, TrendingUp, Clock, Shield, ExternalLink } from 'lucide-react'
 import { formatAddress, formatSol } from '@/lib/utils'
 import Link from 'next/link'
+import Image from 'next/image'
 import type { Agent } from '@/lib/queries/agents'
 
 interface GhostScoreCardProps {
@@ -40,10 +41,13 @@ export function GhostScoreCard({ agent }: GhostScoreCardProps) {
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             {agent.metadata.avatar ? (
-              <img
+              <Image
                 src={agent.metadata.avatar}
                 alt={agent.name}
+                width={48}
+                height={48}
                 className="w-12 h-12 rounded-full object-cover border-2 border-purple-500/30"
+                unoptimized
               />
             ) : (
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">

@@ -114,10 +114,7 @@ async function fetchTokenInfo(address: string): Promise<Token> {
 
       // Get confidential transfer config if applicable
       if (token.extensions.some((ext) => ext.type === 'ConfidentialTransfer' && ext.enabled)) {
-        token.confidentialTransferConfig = await parseConfidentialTransferConfig(
-          rpc,
-          address
-        )
+        token.confidentialTransferConfig = await parseConfidentialTransferConfig(rpc, address)
       }
     }
 
@@ -177,7 +174,10 @@ async function parseTransferFeeConfig(_rpc: ReturnType<typeof createSolanaRpc>, 
 /**
  * Parse confidential transfer configuration
  */
-async function parseConfidentialTransferConfig(_rpc: ReturnType<typeof createSolanaRpc>, _address: string) {
+async function parseConfidentialTransferConfig(
+  _rpc: ReturnType<typeof createSolanaRpc>,
+  _address: string
+) {
   // This would use real SDK utilities to parse confidential transfer config
   return undefined // Not implemented for current tokens
 }

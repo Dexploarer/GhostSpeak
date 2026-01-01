@@ -60,7 +60,7 @@ export default function EnterprisePage() {
       } else {
         throw new Error('Failed to submit')
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to submit. Please email us at enterprise@ghostspeak.ai')
     } finally {
       setIsSubmitting(false)

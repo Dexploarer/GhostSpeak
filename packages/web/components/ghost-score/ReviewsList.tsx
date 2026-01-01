@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Star, ThumbsUp, ThumbsDown, CheckCircle2, User } from 'lucide-react'
 import { formatAddress } from '@/lib/utils'
 import { toast } from 'sonner'
+import Image from 'next/image'
 
 interface ReviewsListProps {
   agentAddress: string
@@ -31,7 +32,7 @@ export function ReviewsList({ agentAddress }: ReviewsListProps) {
     try {
       await voteOnReview({ reviewId: reviewId as any, vote })
       toast.success(vote === 1 ? 'Upvoted!' : 'Downvoted!')
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to vote. Please sign in.')
     }
   }
@@ -76,10 +77,13 @@ export function ReviewsList({ agentAddress }: ReviewsListProps) {
               {/* Avatar */}
               <div className="flex-shrink-0">
                 {review.user?.avatarUrl ? (
-                  <img
+                  <Image
                     src={review.user.avatarUrl}
                     alt={review.user.name || 'User'}
+                    width={48}
+                    height={48}
                     className="w-12 h-12 rounded-full object-cover"
+                    unoptimized
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">

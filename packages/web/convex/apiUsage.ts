@@ -85,6 +85,7 @@ export const getSummaryByUser = query({
     billableRequests: v.number(),
     totalCost: v.number(),
     daily: v.any(),
+    byEndpoint: v.any(),
   }),
   handler: async (ctx, args) => {
     const records = await ctx.db
@@ -108,11 +109,40 @@ export const getSummaryByUser = query({
       {} as Record<string, { count: number; cost: number }>
     )
 
+    // Aggregate by endpoint
+    const byEndpoint = records.reduce(
+      (acc, record) => {
+        if (!acc[record.endpoint]) {
+          acc[record.endpoint] = {
+            count: 0,
+            billableCount: 0,
+            totalCost: 0,
+            avgResponseTime: 0,
+          }
+        }
+        acc[record.endpoint].count++
+        if (record.billable) acc[record.endpoint].billableCount++
+        acc[record.endpoint].totalCost += record.cost || 0
+        acc[record.endpoint].avgResponseTime += record.responseTime
+        return acc
+      },
+      {} as Record<
+        string,
+        { count: number; billableCount: number; totalCost: number; avgResponseTime: number }
+      >
+    )
+
+    // Calculate averages
+    Object.keys(byEndpoint).forEach((endpoint) => {
+      byEndpoint[endpoint].avgResponseTime /= byEndpoint[endpoint].count
+    })
+
     return {
       totalRequests: records.length,
       billableRequests: records.filter((r) => r.billable).length,
       totalCost: records.reduce((sum, r) => sum + (r.cost || 0), 0),
       daily,
+      byEndpoint,
     }
   },
 })

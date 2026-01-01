@@ -7,13 +7,13 @@
  */
 
 // Configuration
-export * from "./config";
+export * from './config'
 
 // Credential management
-export * from "./credential";
+export * from './credential'
 
 // Schema management
-export * from "./schemas";
+export * from './schemas'
 
 // Attestation issuance and verification
-export * from "./attestations";
+export * from './attestations'

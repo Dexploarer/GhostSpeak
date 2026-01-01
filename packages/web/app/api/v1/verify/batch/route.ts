@@ -104,13 +104,9 @@ export async function POST(req: NextRequest) {
             batch.map(async (address: string) => {
               try {
                 // Fetch agent reputation from cache
-                const reputation = await convexClient.query(
-                  // @ts-expect-error - getAgentReputation not in generated types, run `bunx convex dev` to regenerate
-                  api.agentReputationCache.getAgentReputation,
-                  {
-                    agentAddress: address,
-                  }
-                )
+                const reputation = await convexClient.query(api.agentReputationCache.getByAddress, {
+                  agentAddress: address,
+                })
 
                 if (!reputation) {
                   return {

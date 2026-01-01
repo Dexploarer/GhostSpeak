@@ -61,10 +61,7 @@ function getTierFromScore(score: number): string {
 /**
  * Calculate comprehensive Ghost Score from agent data
  */
-function calculateGhostScore(agent: {
-  totalJobsCompleted?: number
-  reputationScore?: number
-}): {
+function calculateGhostScore(agent: { totalJobsCompleted?: number; reputationScore?: number }): {
   score: number
   tier: string
   metrics: VerifyResponse['metrics']

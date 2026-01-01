@@ -547,10 +547,17 @@ export function useDelegations(options?: { enabled?: boolean }) {
 
         // Use new SDK methods for delegation queries
         // @ts-expect-error - getDelegationsFromVoter not yet implemented in SDK
-        const delegationsGiven = await client.governanceModule.getDelegationsFromVoter(address as Address)
+        const delegationsGiven = await client.governanceModule.getDelegationsFromVoter(
+          address as Address
+        )
         // @ts-expect-error - getDelegationsToDelegate not yet implemented in SDK
-        const delegationsReceived = await client.governanceModule.getDelegationsToDelegate(address as Address)
-        const [_dg, _dr] = await Promise.all([Promise.resolve(delegationsGiven), Promise.resolve(delegationsReceived)])
+        const delegationsReceived = await client.governanceModule.getDelegationsToDelegate(
+          address as Address
+        )
+        const [_dg, _dr] = await Promise.all([
+          Promise.resolve(delegationsGiven),
+          Promise.resolve(delegationsReceived),
+        ])
 
         // Map SDK response to component format
         const given: Delegation[] = delegationsGiven.map((d: any, i: number) => ({

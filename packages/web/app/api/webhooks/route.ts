@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { api } from '@/convex/_generated/api'
 import { fetchQuery, fetchMutation } from 'convex/nextjs'
-import { randomBytes } from 'crypto'
+import { randomBytes, createHash } from 'crypto'
 
 /**
  * POST /api/webhooks - Create webhook subscription
@@ -22,10 +22,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing API key', code: 'UNAUTHORIZED' }, { status: 401 })
     }
 
+    // Hash the API key for validation
+    const hashedKey = createHash('sha256').update(apiKey).digest('hex')
+
     // Validate API key and get user
-    // @ts-expect-error - validateApiKey not in generated types, run `bunx convex dev` to regenerate
     const keyData = await fetchQuery(api.apiKeys.validateApiKey, {
-      apiKey,
+      hashedKey,
     })
 
     if (!keyData) {
@@ -117,10 +119,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Missing API key', code: 'UNAUTHORIZED' }, { status: 401 })
     }
 
+    // Hash the API key for validation
+    const hashedKey = createHash('sha256').update(apiKey).digest('hex')
+
     // Validate API key and get user
-    // @ts-expect-error - validateApiKey not in generated types, run `bunx convex dev` to regenerate
     const keyData = await fetchQuery(api.apiKeys.validateApiKey, {
-      apiKey,
+      hashedKey,
     })
 
     if (!keyData) {
@@ -133,18 +137,31 @@ export async function GET(req: NextRequest) {
     })
 
     // Don't return secrets in list
-    const sanitized = subscriptions.map((sub) => ({
-      id: sub._id,
-      url: sub.url,
-      events: sub.events,
-      agentAddresses: sub.agentAddresses || null,
-      isActive: sub.isActive,
-      totalDeliveries: sub.totalDeliveries,
-      failedDeliveries: sub.failedDeliveries,
-      lastDeliveryAt: sub.lastDeliveryAt ? new Date(sub.lastDeliveryAt).toISOString() : null,
-      lastFailureAt: sub.lastFailureAt ? new Date(sub.lastFailureAt).toISOString() : null,
-      createdAt: new Date(sub.createdAt).toISOString(),
-    }))
+    const sanitized = subscriptions.map(
+      (sub: {
+        _id: string
+        url: string
+        events: string[]
+        agentAddresses?: string[]
+        isActive: boolean
+        totalDeliveries: number
+        failedDeliveries: number
+        lastDeliveryAt?: number
+        lastFailureAt?: number
+        createdAt: number
+      }) => ({
+        id: sub._id,
+        url: sub.url,
+        events: sub.events,
+        agentAddresses: sub.agentAddresses || null,
+        isActive: sub.isActive,
+        totalDeliveries: sub.totalDeliveries,
+        failedDeliveries: sub.failedDeliveries,
+        lastDeliveryAt: sub.lastDeliveryAt ? new Date(sub.lastDeliveryAt).toISOString() : null,
+        lastFailureAt: sub.lastFailureAt ? new Date(sub.lastFailureAt).toISOString() : null,
+        createdAt: new Date(sub.createdAt).toISOString(),
+      })
+    )
 
     return NextResponse.json({ webhooks: sanitized })
   } catch (error: unknown) {

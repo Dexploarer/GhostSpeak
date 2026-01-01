@@ -14,6 +14,7 @@
 import { address, type Address } from '@solana/addresses'
 import { findAssociatedTokenPda, fetchToken, TOKEN_PROGRAM_ADDRESS } from '@solana-program/token'
 import { getServerWallet, getRpc } from './server-wallet'
+import { sendTokenTransfer, confirmTransaction } from './transaction-utils'
 
 // USDC Mint addresses
 export const USDC_MINTS = {
@@ -117,7 +118,7 @@ export async function getOrCreateTeamTokenAccount(
     if (accountInfo.value) {
       return { tokenAccount, created: false }
     }
-  } catch (error) {
+  } catch (_error) {
     console.log('[TokenAccount] Account does not exist, will create:', tokenAccount)
   }
 
@@ -187,7 +188,7 @@ export async function deductUsage(
     const usdcMint = USDC_MINTS[network]
 
     // Get protocol treasury ATA using modern API
-    const [protocolTreasuryAta] = await findAssociatedTokenPda({
+    const [_protocolTreasuryAta] = await findAssociatedTokenPda({
       mint: usdcMint,
       owner: serverWallet.address,
       tokenProgram: TOKEN_PROGRAM_ADDRESS,
@@ -206,13 +207,37 @@ export async function deductUsage(
       }
     }
 
-    // TODO: Build and send transfer transaction using modern @solana/kit
-    // For now, return mock success
-    console.log('[TokenAccount] Deducted:', costMicroUsdc, 'from', teamTokenAccount)
+    // Execute on-chain transfer from team account to protocol treasury
+    console.log('[TokenAccount] Transferring:', costMicroUsdc, 'USDC from', teamTokenAccount)
 
-    return {
-      success: true,
-      signature: 'mock_signature_' + Date.now(),
+    try {
+      // Send token transfer transaction
+      const signature = await sendTokenTransfer(
+        _rpc,
+        teamTokenAccount,
+        _protocolTreasuryAta,
+        serverWallet, // Server wallet signs as authority
+        costMicroUsdc
+      )
+
+      console.log('[TokenAccount] Transfer successful, signature:', signature)
+
+      // Wait for confirmation (optional but recommended)
+      const confirmed = await confirmTransaction(_rpc, signature, 15)
+      if (!confirmed) {
+        console.warn('[TokenAccount] Transaction sent but not confirmed within timeout')
+      }
+
+      return {
+        success: true,
+        signature,
+      }
+    } catch (txError) {
+      console.error('[TokenAccount] Transaction failed:', txError)
+      return {
+        success: false,
+        error: txError instanceof Error ? txError.message : 'Transaction failed',
+      }
     }
   } catch (error) {
     console.error('[TokenAccount] Deduction failed:', error)
@@ -234,10 +259,13 @@ export async function createDepositTransaction(
   amountUsdc: number,
   network: 'mainnet' | 'devnet' = 'devnet'
 ): Promise<{
-  transaction: string // Base64 encoded transaction
+  transaction: string // Serialized transaction for client signing
   amount: bigint
   amountUi: number
+  fromTokenAccount: Address
+  toTokenAccount: Address
 }> {
+  const rpc = getRpc()
   const usdcMint = USDC_MINTS[network]
   const amountMicroUsdc = BigInt(Math.floor(amountUsdc * Math.pow(10, USDC_DECIMALS)))
 
@@ -248,14 +276,49 @@ export async function createDepositTransaction(
     tokenProgram: TOKEN_PROGRAM_ADDRESS,
   })
 
-  // TODO: Build transfer transaction using modern @solana/kit
-  // For now, return mock transaction
-  console.log('[TokenAccount] Created deposit tx:', amountUsdc, 'USDC')
+  try {
+    // Get latest blockhash
+    const { value: latestBlockhash } = await rpc.getLatestBlockhash().send()
 
-  return {
-    transaction: 'base64_encoded_transaction',
-    amount: amountMicroUsdc,
-    amountUi: amountUsdc,
+    // Build transfer instruction
+    // Note: authority is fromWalletAddress since they need to sign
+    const transferInstruction = {
+      programAddress: TOKEN_PROGRAM_ADDRESS,
+      accounts: [
+        { address: fromTokenAccount, role: 1 }, // Source (writable)
+        { address: toTokenAccount, role: 1 }, // Destination (writable)
+        { address: fromWalletAddress, role: 3 }, // Authority (signer)
+      ],
+      data: new Uint8Array([
+        3, // Transfer instruction discriminator
+        ...new Uint8Array(new BigUint64Array([amountMicroUsdc]).buffer),
+      ]),
+    }
+
+    // Build transaction message
+    // This creates a JSON representation that can be used client-side
+    const transactionMessage = {
+      version: 0,
+      lifetimeConstraint: {
+        blockhash: latestBlockhash.blockhash,
+        lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+      },
+      instructions: [transferInstruction],
+      feePayer: fromWalletAddress,
+    }
+
+    console.log('[TokenAccount] Created deposit transaction:', amountUsdc, 'USDC')
+
+    return {
+      transaction: JSON.stringify(transactionMessage),
+      amount: amountMicroUsdc,
+      amountUi: amountUsdc,
+      fromTokenAccount,
+      toTokenAccount,
+    }
+  } catch (error) {
+    console.error('[TokenAccount] Failed to create deposit transaction:', error)
+    throw error
   }
 }
 
@@ -374,7 +437,7 @@ export async function getOrCreateGhostTokenAccount(
     if (accountInfo.value) {
       return { tokenAccount, created: false }
     }
-  } catch (error) {
+  } catch (_error) {
     console.log('[GhostToken] Account does not exist, will create:', tokenAccount)
   }
 
@@ -444,7 +507,7 @@ export async function deductGhostUsage(
     const ghostMint = getGhostMint(network)
 
     // Get protocol treasury GHOST ATA using modern API
-    const [protocolTreasuryAta] = await findAssociatedTokenPda({
+    const [_protocolTreasuryAta] = await findAssociatedTokenPda({
       mint: ghostMint,
       owner: serverWallet.address,
       tokenProgram: TOKEN_PROGRAM_ADDRESS,
@@ -463,13 +526,37 @@ export async function deductGhostUsage(
       }
     }
 
-    // TODO: Build and send transfer transaction using modern @solana/kit
-    // For now, return mock success
-    console.log('[GhostToken] Deducted:', costMicroGhost, 'from', userTokenAccount)
+    // Execute on-chain transfer from user account to protocol treasury
+    console.log('[GhostToken] Transferring:', costMicroGhost, 'GHOST from', userTokenAccount)
 
-    return {
-      success: true,
-      signature: 'mock_ghost_signature_' + Date.now(),
+    try {
+      // Send token transfer transaction
+      const signature = await sendTokenTransfer(
+        _rpc,
+        userTokenAccount,
+        _protocolTreasuryAta,
+        serverWallet, // Server wallet signs as authority
+        costMicroGhost
+      )
+
+      console.log('[GhostToken] Transfer successful, signature:', signature)
+
+      // Wait for confirmation (optional but recommended)
+      const confirmed = await confirmTransaction(_rpc, signature, 15)
+      if (!confirmed) {
+        console.warn('[GhostToken] Transaction sent but not confirmed within timeout')
+      }
+
+      return {
+        success: true,
+        signature,
+      }
+    } catch (txError) {
+      console.error('[GhostToken] Transaction failed:', txError)
+      return {
+        success: false,
+        error: txError instanceof Error ? txError.message : 'Transaction failed',
+      }
     }
   } catch (error) {
     console.error('[GhostToken] Deduction failed:', error)

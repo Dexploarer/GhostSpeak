@@ -237,13 +237,17 @@ export const recordStake = mutation({
     })
 
     // Check for staking milestone and issue credential
-    await ctx.scheduler.runAfter(0, internal.credentialsOrchestrator.checkAndIssueStakingCredential, {
-      agentAddress: args.agentAddress,
-      amountStaked: args.amountStaked,
-      stakingTier: tier,
-      reputationBoostBps,
-      unlockAt,
-    })
+    await ctx.scheduler.runAfter(
+      0,
+      internal.credentialsOrchestrator.checkAndIssueStakingCredential,
+      {
+        agentAddress: args.agentAddress,
+        amountStaked: args.amountStaked,
+        stakingTier: tier,
+        reputationBoostBps,
+        unlockAt,
+      }
+    )
 
     return { success: true, tier, reputationBoostBps }
   },

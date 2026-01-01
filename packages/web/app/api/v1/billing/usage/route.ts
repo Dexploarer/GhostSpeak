@@ -59,7 +59,6 @@ export async function GET(request: NextRequest) {
     const totalCost = monthlyCost + overageInfo.overageFeesUi
 
     // Calculate breakdown by endpoint
-    // @ts-expect-error - byEndpoint not in generated types, run `bunx convex dev` to regenerate
     const endpointBreakdown = Object.entries(usageSummary.byEndpoint).map(
       ([endpoint, stats]: [string, any]) => ({
         endpoint,
@@ -71,7 +70,7 @@ export async function GET(request: NextRequest) {
     )
 
     // Daily usage chart data
-    const dailyUsage = Object.entries(usageSummary.daily).map(([date, stats]) => ({
+    const dailyUsage = Object.entries(usageSummary.daily).map(([date, stats]: [string, any]) => ({
       date,
       requests: stats.count,
       cost: stats.cost,

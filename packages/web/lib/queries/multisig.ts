@@ -600,14 +600,13 @@ export function useCreateMultisig() {
         signers: data.signers,
         owner: signer,
         config: {
-          max_signers: data.config?.maxSigners ?? 10,
-          default_timeout: BigInt(data.config?.defaultTimeout ?? 86400),
-          allow_emergency_override: data.config?.allowEmergencyOverride ?? false,
-          emergency_threshold: { __option: 'None' as const },
-          auto_execute: data.config?.autoExecute ?? true,
-          signer_change_threshold: data.config?.signerChangeThreshold ?? data.threshold,
-          allowed_transaction_types: [],
-          daily_limits: [],
+          multisigType: 5, // Custom type
+          timelockSeconds: BigInt(data.config?.defaultTimeout ?? 86400),
+          minSigners: 1,
+          maxSigners: data.config?.maxSigners ?? 10,
+          minReputationScore: 0,
+          requiresTokenHoldings: false,
+          minTokenBalance: BigInt(0),
         },
       })
 

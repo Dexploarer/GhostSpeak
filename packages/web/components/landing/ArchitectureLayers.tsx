@@ -28,14 +28,14 @@ const layers = [
     title: 'Trust Contracts (Rust)',
     color: '#18181b', // zinc-900
     text: 'white',
-    desc: 'Escrow, Reputation, Disputes, x402 Payments',
+    desc: 'Credentials, Ghost Score, Reputation, x402 Integration',
     z: 20,
     side: 'right',
     spin: 0,
     content: (
       <div className="flex flex-col items-center">
         <span className="text-sm md:text-base font-black uppercase tracking-[0.5em] text-white whitespace-nowrap opacity-80">
-          Escrow
+          Credentials
         </span>
         <div className="h-px w-8 bg-primary/40 mt-2" />
       </div>
@@ -43,17 +43,17 @@ const layers = [
   },
   {
     id: 'sdk',
-    title: 'SDK & Facilitator',
+    title: 'SDK & Services',
     color: '#09090b',
     text: 'white',
-    desc: 'x402 Client, Payment Verification, Agent Discovery',
+    desc: 'Credential Issuance, Ghost Score Tracking, Crossmint Bridge',
     z: 40,
     side: 'left',
     spin: 360,
     content: (
       <div className="flex flex-col items-center">
         <span className="text-sm md:text-base font-black uppercase tracking-[0.5em] text-white whitespace-nowrap opacity-80">
-          x402
+          SDK
         </span>
         <div className="h-px w-8 bg-primary/40 mt-2" />
       </div>
@@ -61,10 +61,10 @@ const layers = [
   },
   {
     id: 'app',
-    title: 'Marketplace',
+    title: 'Applications',
     color: '#ffffff',
     text: 'black',
-    desc: 'Discover Agents, Pay Per Call, Track Reputation',
+    desc: 'Web Dashboard, ElizaOS Plugin, CLI Tools, API Access',
     z: 60,
     side: 'right',
     spin: 0,
@@ -91,8 +91,8 @@ export function ArchitectureLayers() {
           Full-Stack <span className="text-primary">Trust</span>
         </h2>
         <p className="text-muted-foreground max-w-2xl mx-auto font-light max-sm:text-sm max-sm:px-2">
-          Escrow, reputation, and disputes built into every layer. From Solana smart contracts to
-          your agent&apos;s API.
+          Verifiable credentials and Ghost Score reputation built into every layer. From Solana
+          blockchain to your agent&apos;s identity.
         </p>
       </div>
 

@@ -53,12 +53,12 @@ export function ManifestoSection() {
         <motion.div style={{ y: y1 }} className="md:text-left text-center md:pl-10 lg:pl-20">
           <div className="inline-flex flex-col items-start">
             <span className="bg-primary-foreground text-primary px-3 sm:px-4 py-0.5 sm:py-1 text-base sm:text-xl font-bold uppercase -rotate-2 transform mb-2">
-              Protection
+              W3C Standard
             </span>
             <h3 className="text-4xl sm:text-5xl md:text-8xl font-black tracking-tighter w-full leading-[0.9]">
-              Escrow <br />
+              Verifiable <br />
               <span className="text-transparent stroke-text-primary-foreground opacity-70">
-                Backed
+                Credentials
               </span>
             </h3>
           </div>
@@ -67,13 +67,13 @@ export function ManifestoSection() {
         {/* Statement 3 - Right Aligned with Parallax */}
         <motion.div style={{ y: y2 }} className="md:text-right text-center md:pr-10 lg:pr-20">
           <div className="inline-flex flex-col items-end">
-            <span className="text-base sm:text-xl font-bold uppercase mb-2">Reputation</span>
+            <span className="text-base sm:text-xl font-bold uppercase mb-2">0-1000 Score</span>
             <h3 className="text-4xl sm:text-5xl md:text-8xl font-black tracking-tighter leading-[0.9]">
-              <span className="text-5xl sm:text-7xl md:text-[8rem] mr-1 sm:mr-2">On</span> <br />
-              Chain
+              <span className="text-5xl sm:text-7xl md:text-[8rem] mr-1 sm:mr-2">Ghost</span> <br />
+              Score
             </h3>
             <p className="mt-3 sm:mt-4 max-w-md text-sm sm:text-lg md:text-xl font-medium opacity-80 leading-tight">
-              Every payment builds verified reputation. Know who you&apos;re paying before you pay.
+              On-chain reputation that follows agents everywhere. Like a credit score, but for AI.
             </p>
           </div>
         </motion.div>
@@ -88,10 +88,10 @@ export function ManifestoSection() {
           <div className="inline-block p-1 bg-primary-foreground transform rotate-1">
             <div className="bg-background border-2 border-primary-foreground p-5 sm:p-8 md:p-12">
               <h4 className="text-2xl sm:text-4xl md:text-6xl font-black uppercase mb-2 sm:mb-4 tracking-tight text-foreground">
-                Dispute Resolution
+                Cross-Chain Identity
               </h4>
               <p className="font-mono text-muted-foreground uppercase tracking-widest text-[10px] sm:text-xs md:text-sm">
-                On-Chain Arbitration When Issues Arise
+                Solana Credentials → EVM Networks
               </p>
             </div>
           </div>

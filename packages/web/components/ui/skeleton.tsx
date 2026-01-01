@@ -4,7 +4,7 @@ function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>)
   return (
     <div
       className={cn(
-        'animate-pulse rounded-xl bg-gradient-to-r from-purple-100 via-purple-50 to-purple-100 dark:from-purple-900/20 dark:via-purple-800/20 dark:to-purple-900/20 bg-[length:200%_100%] animate-shimmer',
+        'animate-pulse rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 dark:from-primary/20 dark:via-primary/10 dark:to-primary/20 bg-[length:200%_100%] animate-shimmer',
         className
       )}
       {...props}

@@ -22,10 +22,9 @@ export function BentoGrid() {
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center mb-3 sm:mb-4">
               <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
             </div>
-            <h3 className="text-xl sm:text-2xl font-bold mb-2">x402 Agent Marketplace</h3>
+            <h3 className="text-xl sm:text-2xl font-bold mb-2">Verifiable Credentials</h3>
             <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 max-w-md">
-              Discover AI agents, pay per call with USDC, and get protected by escrow. No
-              subscriptions. No API keys. Just instant micropayments.
+              W3C-compliant credentials issued on-chain. Prove agent identity, capabilities, and reputation across any blockchain with portable, verifiable credentials.
             </p>
           </div>
           {/* Mock Network Visualization */}
@@ -36,7 +35,7 @@ export function BentoGrid() {
               ))}
             </div>
             <span className="text-xs font-mono text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20 backdrop-blur-sm">
-              Protocol Layer v1.0
+              W3C Standard
             </span>
           </div>
         </div>
@@ -52,17 +51,16 @@ export function BentoGrid() {
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center mb-3 sm:mb-4 backdrop-blur-sm">
             <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
           </div>
-          <h3 className="text-lg sm:text-xl font-bold mb-2">Trust Layer</h3>
+          <h3 className="text-lg sm:text-xl font-bold mb-2">Ghost Score</h3>
           <p className="text-muted-foreground text-xs sm:text-sm mb-4 sm:mb-6">
-            Unlike other x402 facilitators, we protect both parties with escrow and verified
-            reputation.
+            On-chain reputation that follows agents everywhere. Like a credit score, but for AI agents.
           </p>
 
           <div className="space-y-3">
             {[
-              { label: 'Escrow', val: 'On-chain', color: 'text-primary' },
-              { label: 'Reputation', val: 'Verified', color: 'text-primary/80' },
-              { label: 'Disputes', val: 'Resolved', color: 'text-primary/60' },
+              { label: 'Range', val: '0-1000', color: 'text-primary' },
+              { label: 'Tier', val: 'GOLD', color: 'text-primary/80' },
+              { label: 'Network', val: 'Solana', color: 'text-primary/60' },
             ].map((stat) => (
               <div
                 key={stat.label}
@@ -84,28 +82,28 @@ export function BentoGrid() {
       {/* Small Card 1 */}
       <div className="group rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 p-4 sm:p-6 hover:border-primary/30 transition-colors">
         <Cpu className="w-6 h-6 sm:w-8 sm:h-8 text-primary mb-3 sm:mb-4" />
-        <h4 className="font-bold mb-1 text-sm sm:text-base">No API Keys</h4>
+        <h4 className="font-bold mb-1 text-sm sm:text-base">PayAI Integration</h4>
         <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">
-          Pay per call. No subscriptions needed.
+          Track x402 payments and build reputation.
         </p>
       </div>
 
       {/* Small Card 2 */}
       <div className="group rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 p-4 sm:p-6 hover:border-primary/30 transition-colors">
         <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-primary mb-3 sm:mb-4" />
-        <h4 className="font-bold mb-1 text-sm sm:text-base">Escrow Protection</h4>
+        <h4 className="font-bold mb-1 text-sm sm:text-base">ElizaOS Plugin</h4>
         <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">
-          Funds held on-chain until work is verified.
+          Check Ghost Scores from any Eliza agent.
         </p>
       </div>
 
       {/* Wide Bottom Card */}
       <div className="md:col-span-1 group rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 p-4 sm:p-6 hover:border-primary/30 transition-colors flex flex-col justify-center items-center text-center">
         <div className="text-2xl sm:text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(204,255,0,0.3)]">
-          $0.001
+          Solana → EVM
         </div>
         <p className="text-[10px] sm:text-xs text-gray-500 mt-1.5 sm:mt-2 font-mono">
-          Per Agent Call (x402 Micropayments)
+          Cross-Chain Credentials via Crossmint
         </p>
       </div>
     </div>

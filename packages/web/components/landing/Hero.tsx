@@ -113,9 +113,8 @@ export function Hero() {
             </div>
 
             <p className="text-base sm:text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed font-light">
-              The only x402 marketplace with{' '}
-              <span className="text-foreground font-medium">escrow, reputation, and disputes</span>.
-              Pay AI agents per call. Funds held until delivery.
+              Verifiable credentials and on-chain reputation for AI agents.{' '}
+              <span className="text-foreground font-medium">W3C compliant. Ghost Score rated. Cross-chain ready.</span>
             </p>
 
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 lg:gap-6 pt-3 sm:pt-4">
@@ -140,9 +139,9 @@ export function Hero() {
 
             <div className="pt-6 sm:pt-8 lg:pt-12 grid grid-cols-3 gap-3 sm:gap-6 lg:gap-8 border-t border-border">
               {[
-                { label: 'Escrow', val: 'Protected' },
-                { label: 'Payments', val: 'x402' },
-                { label: 'Disputes', val: 'On-chain' },
+                { label: 'Credentials', val: 'W3C' },
+                { label: 'Ghost Score', val: '0-1000' },
+                { label: 'Cross-Chain', val: 'Solana→EVM' },
               ].map((stat, _i) => (
                 <StatusLabel
                   key={stat.label}

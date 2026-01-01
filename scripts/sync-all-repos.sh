@@ -15,19 +15,35 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}🔄 GhostSpeak Repository Sync Script${NC}"
 echo ""
 
-# Package configurations
-declare -A PACKAGES=(
-    ["sdk"]="packages/sdk-typescript|sdk-remote|https://github.com/Ghostspeak/sdk.git"
-    ["cli"]="packages/cli|cli-remote|https://github.com/Ghostspeak/cli.git"
-    ["plugin"]="plugin-ghostspeak|plugin-remote|https://github.com/Ghostspeak/plugin-ghostspeak.git"
-)
-
 BRANCH="main"
+
+# Function to get package config
+get_package_config() {
+    case $1 in
+        sdk)
+            echo "packages/sdk-typescript|sdk-remote|https://github.com/Ghostspeak/sdk.git"
+            ;;
+        cli)
+            echo "packages/cli|cli-remote|https://github.com/Ghostspeak/cli.git"
+            ;;
+        plugin)
+            echo "plugin-ghostspeak|plugin-remote|https://github.com/Ghostspeak/plugin-ghostspeak.git"
+            ;;
+        *)
+            echo ""
+            ;;
+    esac
+}
 
 # Function to sync a package
 sync_package() {
     local name=$1
-    local config=${PACKAGES[$name]}
+    local config=$(get_package_config "$name")
+
+    if [ -z "$config" ]; then
+        echo -e "${RED}❌ Unknown package: $name${NC}"
+        return 1
+    fi
 
     IFS='|' read -r dir remote_name remote_url <<< "$config"
 
@@ -72,17 +88,12 @@ if [ $# -eq 0 ]; then
     echo -e "${YELLOW}Syncing all packages...${NC}"
     echo ""
 
-    for package in "${!PACKAGES[@]}"; do
-        sync_package "$package"
-    done
+    sync_package "sdk"
+    sync_package "cli"
+    sync_package "plugin"
 else
     # Sync specific package(s)
     for package in "$@"; do
-        if [ -z "${PACKAGES[$package]}" ]; then
-            echo -e "${RED}❌ Unknown package: $package${NC}"
-            echo "Available packages: ${!PACKAGES[@]}"
-            exit 1
-        fi
         sync_package "$package"
     done
 fi

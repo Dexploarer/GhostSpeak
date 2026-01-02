@@ -167,22 +167,20 @@ export const Staking: React.FC<StakingProps> = ({ agent, autoRefresh = true }) =
         }
       }
 
-      // TODO: Replace with actual SDK staking calls when available
-      // For now, using mock data
-      await simulateAPICall(800)
-
-      // Mock data - replace with actual SDK integration
-      const mockData: StakingData = {
-        totalStaked: 15000, // 15K GHOST = Tier 3
-        currentTier: 3,
-        accruedRewards: 342.5,
-        stakingDuration: 45,
-        unlockDate: Date.now() + (15 * 24 * 60 * 60 * 1000), // 15 days from now
-        canClaim: true,
-        canUnstake: false // Still locked
+      // Load staking data using SDK
+      // Note: Staking queries not yet fully implemented in SDK
+      // Returns default/empty data for now - users should use CLI commands
+      const stakingDataResult: StakingData = {
+        totalStaked: 0,
+        currentTier: 0,
+        accruedRewards: 0,
+        stakingDuration: 0,
+        unlockDate: Date.now(),
+        canClaim: false,
+        canUnstake: false
       }
 
-      setStakingData(mockData)
+      setStakingData(stakingDataResult)
       setStage('ready')
       setLastUpdate(new Date())
 
@@ -198,13 +196,8 @@ export const Staking: React.FC<StakingProps> = ({ agent, autoRefresh = true }) =
     }
 
     try {
-      await simulateAPICall(300)
-
-      // Simulate accrued rewards growing
-      setStakingData(prev => ({
-        ...prev,
-        accruedRewards: prev.accruedRewards + (Math.random() * 0.5)
-      }))
+      // Reload staking data from SDK
+      await loadStakingData()
 
       setLastUpdate(new Date())
       if (!silent) {
@@ -219,11 +212,9 @@ export const Staking: React.FC<StakingProps> = ({ agent, autoRefresh = true }) =
   const claimRewards = async () => {
     setStage('claiming')
     try {
-      await simulateAPICall(2000)
-
       // TODO: Implement actual claim logic with SDK
-      setStakingData(prev => ({ ...prev, accruedRewards: 0, canClaim: false }))
-      setStage('ready')
+      setError('Claim functionality not yet implemented. Use CLI commands.')
+      setStage('error')
     } catch (err: any) {
       setError(err.message || 'Failed to claim rewards')
       setStage('error')
@@ -233,16 +224,9 @@ export const Staking: React.FC<StakingProps> = ({ agent, autoRefresh = true }) =
   const stakeTokens = async () => {
     setStage('staking')
     try {
-      await simulateAPICall(2000)
-
       // TODO: Implement actual staking logic with SDK
-      // For now, just simulate adding 1000 GHOST
-      setStakingData(prev => {
-        const newStaked = prev.totalStaked + 1000
-        const newTier = calculateTier(newStaked)
-        return { ...prev, totalStaked: newStaked, currentTier: newTier }
-      })
-      setStage('ready')
+      setError('Staking functionality not yet implemented. Use CLI commands.')
+      setStage('error')
     } catch (err: any) {
       setError(err.message || 'Failed to stake tokens')
       setStage('error')
@@ -252,16 +236,9 @@ export const Staking: React.FC<StakingProps> = ({ agent, autoRefresh = true }) =
   const unstakeTokens = async () => {
     setStage('unstaking')
     try {
-      await simulateAPICall(2000)
-
       // TODO: Implement actual unstaking logic with SDK
-      setStakingData(prev => ({
-        ...prev,
-        totalStaked: 0,
-        currentTier: 0,
-        canUnstake: false
-      }))
-      setStage('ready')
+      setError('Unstaking functionality not yet implemented. Use CLI commands.')
+      setStage('error')
     } catch (err: any) {
       setError(err.message || 'Failed to unstake tokens')
       setStage('error')
@@ -313,7 +290,6 @@ export const Staking: React.FC<StakingProps> = ({ agent, autoRefresh = true }) =
     return amount * (apy / 100)
   }
 
-  const simulateAPICall = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
   const renderStakingOverview = () => {
     const { nextTier, remaining, progress } = getNextTierInfo()

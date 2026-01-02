@@ -135,10 +135,8 @@ export const Ghost: React.FC<GhostProps> = ({ autoRefresh = true }) => {
     }
 
     try {
-      await simulateAPICall(300)
-
       // Reload ghosts from SDK
-      // TODO: Implement actual refresh logic
+      await loadGhosts()
 
       setLastUpdate(new Date())
       if (!silent) {
@@ -149,8 +147,6 @@ export const Ghost: React.FC<GhostProps> = ({ autoRefresh = true }) => {
       setStage('error')
     }
   }
-
-  const simulateAPICall = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
   const getPlatformIcon = (platform: string): string => {
     const icons: Record<string, string> = {

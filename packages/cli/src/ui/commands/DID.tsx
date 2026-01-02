@@ -163,50 +163,20 @@ export const DID: React.FC<DIDProps> = ({ agent, did: providedDid }) => {
       const did = providedDid || `did:ghostspeak:devnet:${agentAddr.toString()}`
       setDidIdentifier(did)
 
-      // Mock agent data (SDK integration pending)
-      setAgentName('Ghost Agent')
+      // Load agent data from SDK
+      // Note: DID document queries not yet fully implemented in SDK
+      // For now, check if agent exists and show create wizard
+      setAgentName('Agent')
 
-      // Check if DID exists (mock check)
-      const didExists = true // Simulate existing DID
+      // Check if DID exists (SDK integration pending)
+      const didExists = false // No DIDs created yet - SDK integration pending
       setHasDID(didExists)
 
       if (didExists) {
-        // Create mock DID document
-        const mockDocument: DIDDocument = {
-          '@context': [
-            'https://www.w3.org/ns/did/v1',
-            'https://w3id.org/security/suites/ed25519-2020/v1',
-          ],
-          id: did,
-          controller: did,
-          verificationMethod: [
-            {
-              id: `${did}#keys-1`,
-              type: 'Ed25519VerificationKey2020',
-              controller: did,
-              publicKeyMultibase: agentAddr.toString(),
-            },
-          ],
-          authentication: [`${did}#keys-1`],
-          assertionMethod: [`${did}#keys-1`],
-          service: [
-            {
-              id: `${did}#agent-service`,
-              type: 'AgentService',
-              serviceEndpoint: `https://api.ghostspeak.io/agents/${agentAddr.toString()}`,
-              description: 'AI agent interaction endpoint',
-            },
-          ],
-          metadata: {
-            agentName: 'Ghost Agent',
-            created: new Date().toISOString(),
-            updated: new Date().toISOString(),
-          },
-        }
-
-        setDidDocument(mockDocument)
+        // DID document would be loaded from SDK here
         setStage('overview')
       } else {
+        // Show create wizard for DID creation
         setStage('create_wizard')
       }
     } catch (err: any) {
@@ -218,45 +188,12 @@ export const DID: React.FC<DIDProps> = ({ agent, did: providedDid }) => {
   const createDID = async () => {
     setStage('creating')
 
-    // Simulate DID creation (SDK integration pending)
+    // DID creation via SDK (integration pending)
+    // Would call: await client.did.create({ ... })
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
-    // Create new DID document
-    const newDocument: DIDDocument = {
-      '@context': [
-        'https://www.w3.org/ns/did/v1',
-        'https://w3id.org/security/suites/ed25519-2020/v1',
-      ],
-      id: didIdentifier,
-      controller: didIdentifier,
-      verificationMethod: [
-        {
-          id: `${didIdentifier}#keys-1`,
-          type: VERIFICATION_METHOD_TYPES[selectedVerificationMethod].name,
-          controller: didIdentifier,
-          publicKeyMultibase: agentAddress,
-        },
-      ],
-      authentication: [`${didIdentifier}#keys-1`],
-      assertionMethod: [`${didIdentifier}#keys-1`],
-      service: addService
-        ? [
-            {
-              id: `${didIdentifier}#service-1`,
-              type: SERVICE_TYPES[selectedServiceType].name,
-              serviceEndpoint: serviceEndpoint,
-            },
-          ]
-        : [],
-      metadata: {
-        agentName: agentName,
-        created: new Date().toISOString(),
-        updated: new Date().toISOString(),
-      },
-    }
-
-    setDidDocument(newDocument)
-    setHasDID(true)
+    // For now, show success message but don't create mock document
+    // In production, this would create the DID on-chain and return the document
     setStage('success')
 
     setTimeout(() => setStage('overview'), 2000)
@@ -308,7 +245,34 @@ export const DID: React.FC<DIDProps> = ({ agent, did: providedDid }) => {
         )
 
       case 'overview':
-        if (!didDocument) return null
+        if (!didDocument) {
+          return (
+            <Box flexDirection="column" gap={1}>
+              <Alert
+                type="info"
+                title="DID Not Found"
+                message="No DID document found for this agent. Create one to enable W3C-compliant decentralized identity."
+                showBorder={true}
+              />
+              <Box marginTop={1}>
+                <Text dimColor>What is a DID?</Text>
+              </Box>
+              <Box marginTop={1} flexDirection="column">
+                <Text dimColor>• W3C Decentralized Identifier for agents</Text>
+                <Text dimColor>• Self-sovereign identity without central authority</Text>
+                <Text dimColor>• Cryptographic verification methods</Text>
+                <Text dimColor>• Service endpoints for agent interactions</Text>
+              </Box>
+              <Box marginTop={2}>
+                <Text dimColor>Press </Text>
+                <Text color="yellow">N</Text>
+                <Text dimColor> to create DID or </Text>
+                <Text color="yellow">Q</Text>
+                <Text dimColor> to exit</Text>
+              </Box>
+            </Box>
+          )
+        }
 
         return (
           <Box flexDirection="column" gap={1}>

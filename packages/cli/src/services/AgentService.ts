@@ -493,114 +493,65 @@ export class AgentService implements IAgentService {
     limit?: number
   }): Promise<Agent[]> {
     try {
-      // Create instance for querying
-      console.log('🔍 Querying all agents from blockchain...')
-      
-      // Create RPC client  
-      const baseRpc = createSolanaRpc('https://api.devnet.solana.com')
-      const rpc = wrapRpcClient(baseRpc)
+      // Query Convex indexer for discovered agents
+      console.log('🔍 Querying discovered agents from Convex indexer...')
 
+      const { queryDiscoveredAgents } = await import('../utils/convex-client.js')
 
-      
-      // Query program accounts for agents using RPC
-      const programAccounts = await rpc.getProgramAccounts(getCurrentProgramId(), { commitment: 'confirmed', encoding: 'base64' })
-      console.log('🔍 Found', programAccounts.length, 'program accounts on blockchain')
-      
-      // Parse real agent data from blockchain accounts
-      const agents: Agent[] = []
-      
-      for (const account of programAccounts) {
-        try {
-          let data = account.account.data
+      const discoveredAgents = await queryDiscoveredAgents({
+        limit: params?.limit || 100,
+      })
 
-          // Handle base64 encoded data
-          if (typeof data === 'string' || (Array.isArray(data) && data.length === 2)) {
-            // If data is a tuple [base64String, 'base64'], decode it
-            if (Array.isArray(data)) {
-              data = Buffer.from(data[0], 'base64')
-            } else {
-              // If it's just a base64 string
-              data = Buffer.from(data, 'base64')
-            }
-          }
+      console.log(`🔍 Found ${discoveredAgents.length} discovered agents in Convex`)
 
-          // Convert to Uint8Array if it's a Buffer
-          if (Buffer.isBuffer(data)) {
-            data = new Uint8Array(data)
-          }
+      // Transform Convex data to Agent format
+      const agents: Agent[] = discoveredAgents.map((agent) => ({
+        id: agent.ghostAddress,
+        address: agent.ghostAddress as Address,
+        name: `Ghost Agent ${agent.ghostAddress.slice(0, 8)}...`,
+        description: `Discovered ${agent.discoverySource} agent`,
+        capabilities: ['x402-payment'],
+        owner: undefined as any, // Ghost agents don't have owners until claimed
+        isActive: agent.status !== 'inactive',
+        reputationScore: 0,
+        createdAt: BigInt(agent.firstSeenTimestamp),
+        updatedAt: BigInt(agent.updatedAt || agent.createdAt),
+        metadata: {
+          source: 'convex-indexer',
+          discoverySource: agent.discoverySource,
+          firstTxSignature: agent.firstTxSignature,
+          slot: agent.slot,
+          blockTime: agent.blockTime,
+          status: agent.status,
+          facilitatorAddress: agent.facilitatorAddress,
+          ipfsUri: agent.ipfsUri,
+        },
+      }))
 
-          // Skip if data is too small to contain even the discriminator
-          if (data.length < 8) {
-            console.log('Skipping account - data too small for discriminator:', account.pubkey.toString(), 'length:', data.length)
-            continue
-          }
+      // Apply filters
+      let filteredAgents = agents
 
-          // Use SDK's proper borsh deserialization
-          const decodedAccount = decodeAgent({
-            address: account.pubkey.toString() as Address,
-            data,
-            executable: false,
-            lamports: account.account.lamports,
-            owner: account.account.owner,
-          })
-
-          if (!decodedAccount.data) {
-            console.log('Skipping account - failed to decode:', account.pubkey.toString())
-            continue
-          }
-
-          const agentData = decodedAccount.data
-
-          // Apply filters if specified
-          if (params?.category) {
-            if (!agentData.capabilities.includes(params.category)) {
-              continue
-            }
-          }
-
-          if (params?.search) {
-            const searchLower = params.search.toLowerCase()
-            if (!agentData.name.toLowerCase().includes(searchLower) &&
-                !agentData.description.toLowerCase().includes(searchLower) &&
-                !agentData.capabilities.some(cap => cap.toLowerCase().includes(searchLower))) {
-              continue
-            }
-          }
-
-          // Only return active agents unless specifically requested
-          if (!params?.includeInactive && !agentData.isActive) {
-            continue
-          }
-
-          agents.push({
-            id: agentData.agentId,
-            address: account.pubkey.toString() as Address,
-            name: agentData.name,
-            description: agentData.description || 'No description provided',
-            capabilities: agentData.capabilities.length > 0 ? agentData.capabilities : ['general'],
-            owner: agentData.owner,
-            isActive: agentData.isActive,
-            reputationScore: agentData.reputationScore,
-            createdAt: agentData.createdAt,
-            updatedAt: agentData.updatedAt,
-            metadata: {
-              source: 'blockchain',
-              accountSize: data.length,
-              metadataUri: agentData.metadataUri
-            }
-          })
-
-        } catch (parseError) {
-          console.error('Error parsing agent account:', account.pubkey.toString(), parseError)
-          // Continue with next account
-        }
+      if (params?.category && params.category !== 'x402-payment') {
+        // No agents match non-x402 categories since these are all discovered via x402
+        filteredAgents = []
       }
-      
-      console.log(`✅ Successfully parsed ${agents.length} agents from ${programAccounts.length} accounts`)
-      
+
+      if (params?.search) {
+        const searchLower = params.search.toLowerCase()
+        filteredAgents = filteredAgents.filter(
+          (agent) =>
+            agent.address.toLowerCase().includes(searchLower) ||
+            agent.metadata?.firstTxSignature?.toLowerCase().includes(searchLower)
+        )
+      }
+
+      if (!params?.includeInactive) {
+        filteredAgents = filteredAgents.filter((agent) => agent.isActive)
+      }
+
       // Apply sorting
       if (params?.sortBy) {
-        agents.sort((a, b) => {
+        filteredAgents.sort((a, b) => {
           switch (params.sortBy) {
             case 'reputation':
               return b.reputationScore - a.reputationScore
@@ -613,17 +564,24 @@ export class AgentService implements IAgentService {
           }
         })
       }
-      
+
       // Apply pagination
       const page = params?.page || 0
-      const limit = params?.limit || 10
+      const limit = params?.limit || 50
       const start = page * limit
       const end = start + limit
-      
-      return agents.slice(start, end)
+
+      return filteredAgents.slice(start, end)
     } catch (error) {
-      console.error('Error getting all agents from blockchain:', getErrorMessage(error))
-      // Fallback to empty array if blockchain query fails
+      console.error('Error querying agents from Convex:', getErrorMessage(error))
+
+      // Log helpful error message if Convex is not configured
+      if (getErrorMessage(error).includes('CONVEX_URL')) {
+        console.error('💡 Tip: Set CONVEX_URL environment variable to query discovered agents')
+        console.error('   Example: CONVEX_URL=https://your-deployment.convex.cloud')
+      }
+
+      // Fallback to empty array if Convex query fails
       return []
     }
   }

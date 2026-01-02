@@ -212,6 +212,16 @@ export const getAgentWithScore = query({
  * Aggregate statistics for dashboard overview
  */
 export const getDashboardStats = query({
+  returns: v.object({
+    totalAgents: v.number(),
+    discovered: v.number(),
+    claimed: v.number(),
+    verified: v.number(),
+    totalWithScores: v.number(),
+    avgGhostScore: v.number(),
+    activeAgents: v.number(),
+    tierDistribution: v.any(),
+  }),
   handler: async (ctx) => {
     // Total agents
     const allAgents = await ctx.db.query('discoveredAgents').collect()

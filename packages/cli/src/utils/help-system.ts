@@ -54,7 +54,7 @@ const HELP_TOPICS: Record<string, HelpTopic> = {
       },
       {
         command: 'ghost config setup',
-        description: 'Configure CLI settinghost',
+        description: 'Configure CLI settings',
         example: 'ghost config setup',
         aliases: ['cfg', 'configure']
       }

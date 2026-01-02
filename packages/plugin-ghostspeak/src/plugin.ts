@@ -24,6 +24,7 @@ import {
   checkGhostScoreAction,
   registerAgentAction,
   issueCredentialAction,
+  acceptPaymentAction,
   createDidAction,
   resolveDidAction,
   updateDidAction,
@@ -60,6 +61,8 @@ export const ghostspeakPlugin: Plugin = {
     CROSSMINT_SECRET_KEY: process.env.CROSSMINT_SECRET_KEY,
     CROSSMINT_REPUTATION_TEMPLATE_ID: process.env.CROSSMINT_REPUTATION_TEMPLATE_ID,
     CROSSMINT_ENV: process.env.CROSSMINT_ENV,
+    GHOSTSPEAK_MERCHANT_ADDRESS: process.env.GHOSTSPEAK_MERCHANT_ADDRESS,
+    PAYAI_FACILITATOR_URL: process.env.PAYAI_FACILITATOR_URL,
   },
 
   /**
@@ -105,6 +108,9 @@ export const ghostspeakPlugin: Plugin = {
     checkGhostScoreAction,
     registerAgentAction,
     issueCredentialAction,
+
+    // Payment (x402 via PayAI)
+    acceptPaymentAction,
 
     // DID
     createDidAction,

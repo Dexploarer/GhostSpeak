@@ -118,6 +118,30 @@ export const ghostspeakConfigSchema = z.object({
     .optional()
     .default('So11111111111111111111111111111111111111112')
     .describe('Token mint for escrow operations (default: Native SOL)'),
+
+  // =====================================================
+  // PAYMENT CONFIGURATION (x402 via PayAI)
+  // =====================================================
+
+  /**
+   * Merchant address to receive payments
+   * This is the Solana address that will receive USDC payments
+   */
+  GHOSTSPEAK_MERCHANT_ADDRESS: z
+    .string()
+    .optional()
+    .describe('Solana address to receive x402 payments (USDC)'),
+
+  /**
+   * PayAI facilitator URL
+   * Default: https://facilitator.payai.network
+   */
+  PAYAI_FACILITATOR_URL: z
+    .string()
+    .url()
+    .optional()
+    .default('https://facilitator.payai.network')
+    .describe('PayAI facilitator URL for x402 payment verification'),
 });
 
 /**
@@ -162,6 +186,8 @@ export function getConfigFromEnv(): GhostSpeakPluginConfig {
     STAKING_CONFIG_ADDRESS: process.env.STAKING_CONFIG_ADDRESS,
     GHOST_TOKEN_MINT: process.env.GHOST_TOKEN_MINT,
     ESCROW_TOKEN_MINT: process.env.ESCROW_TOKEN_MINT,
+    GHOSTSPEAK_MERCHANT_ADDRESS: process.env.GHOSTSPEAK_MERCHANT_ADDRESS,
+    PAYAI_FACILITATOR_URL: process.env.PAYAI_FACILITATOR_URL,
   });
 }
 

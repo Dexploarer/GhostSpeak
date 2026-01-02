@@ -10,6 +10,9 @@ export { checkGhostScoreAction } from './ghost-score';
 export { registerAgentAction } from './registerAgent';
 export { issueCredentialAction } from './issueCredential';
 
+// Payment Actions (x402 via PayAI)
+export { acceptPaymentAction } from './acceptPayment';
+
 // DID Actions
 export { createDidAction, resolveDidAction, updateDidAction } from './didActions';
 

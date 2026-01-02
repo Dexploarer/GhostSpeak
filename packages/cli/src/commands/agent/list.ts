@@ -48,10 +48,10 @@ export function registerListCommand(parentCommand: Command): void {
 
         agents.forEach((agent, index) => {
           const formattedInfo = formatAgentInfo(agent)
-          
+
           console.log(chalk.cyan(`${index + 1}. ${formattedInfo.name}`))
           console.log(chalk.gray(`   Address: ${formattedInfo.address}`))
-          console.log(chalk.gray(`   Owner: ${agent.owner.toString()}`))
+          console.log(chalk.gray(`   Owner: ${agent.owner ? agent.owner.toString() : 'Unclaimed (Ghost)'}`))
           console.log(chalk.gray(`   Description: ${formattedInfo.description}`))
           console.log(chalk.gray(`   Capabilities: ${formattedInfo.capabilities}`))
           console.log(chalk.gray(`   Status: ${formattedInfo.status === 'Active' ? '🟢 Active' : '🔴 Inactive'}`))

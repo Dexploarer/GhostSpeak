@@ -227,7 +227,7 @@ multisigCommand
       const { client, wallet } = await initializeClient('devnet')
       const safeClient = createSafeSDKClient(client)
 
-      const multisighost = await safeClient.governance.listMultisigs({ creator: wallet.address })
+      const multisigs = await safeClient.governance.listMultisigs({ creator: wallet.address })
 
       s.stop(`✅ Found ${multisigs.length} multisig wallets`)
 
@@ -235,14 +235,14 @@ multisigCommand
         outro(
           `${chalk.yellow('No multisig wallets found')}\n\n` +
           `${chalk.gray('• Create a multisig:')} ${chalk.cyan('ghost governance multisig create')}\n` +
-          `${chalk.gray('Get invited to existing multisighost by other members')}`
+          `${chalk.gray('Get invited to existing multisigs by other members')}`
         )
         return
       }
 
       // Display multisigs
       log.info(`\n${chalk.bold('Your Multisig Wallets:')}\n`)
-      
+
       multisigs.forEach((multisig, index) => {
         const isCreator = multisig.creator === wallet.address
         const role = isCreator ? chalk.green('CREATOR') : chalk.blue('MEMBER')
@@ -292,8 +292,8 @@ proposalCommand
       const safeClient = createSafeSDKClient(client)
 
       // Get user's multisigs
-      const multisighost = await safeClient.governance.listMultisigs({ creator: wallet.address })
-      
+      const multisigs = await safeClient.governance.listMultisigs({ creator: wallet.address })
+
       s.stop(`✅ Found ${multisigs.length} multisig wallets`)
 
       if (multisigs.length === 0) {

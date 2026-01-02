@@ -380,6 +380,12 @@ async function updateReputationFromOnChain(ctx: any, payment: any): Promise<void
  * Compares webhook events with on-chain transactions to detect discrepancies
  */
 export const verifyWebhookIntegrity = internalMutation({
+  returns: v.object({
+    total: v.number(),
+    webhookOnly: v.number(),
+    onChainOnly: v.number(),
+    verified: v.number(),
+  }),
   handler: async (ctx) => {
     console.log('[X402 Sync] Starting webhook integrity verification...')
 

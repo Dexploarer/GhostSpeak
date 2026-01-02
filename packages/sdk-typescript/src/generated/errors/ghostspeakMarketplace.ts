@@ -14,54 +14,34 @@ import {
 } from "@solana/kit";
 import { GHOSTSPEAK_MARKETPLACE_PROGRAM_ADDRESS } from "../programs";
 
-/** AlreadyDeactivated: DID document is already deactivated */
-export const GHOSTSPEAK_MARKETPLACE_ERROR__ALREADY_DEACTIVATED = 0x1770; // 6000
-/** TooManyVerificationMethods: Maximum number of verification methods reached */
-export const GHOSTSPEAK_MARKETPLACE_ERROR__TOO_MANY_VERIFICATION_METHODS = 0x1771; // 6001
-/** TooManyServiceEndpoints: Maximum number of service endpoints reached */
-export const GHOSTSPEAK_MARKETPLACE_ERROR__TOO_MANY_SERVICE_ENDPOINTS = 0x1772; // 6002
-/** DuplicateMethodId: Duplicate verification method ID */
-export const GHOSTSPEAK_MARKETPLACE_ERROR__DUPLICATE_METHOD_ID = 0x1773; // 6003
-/** DuplicateServiceId: Duplicate service endpoint ID */
-export const GHOSTSPEAK_MARKETPLACE_ERROR__DUPLICATE_SERVICE_ID = 0x1774; // 6004
-/** MethodNotFound: Verification method not found */
-export const GHOSTSPEAK_MARKETPLACE_ERROR__METHOD_NOT_FOUND = 0x1775; // 6005
-/** ServiceNotFound: Service endpoint not found */
-export const GHOSTSPEAK_MARKETPLACE_ERROR__SERVICE_NOT_FOUND = 0x1776; // 6006
-/** InvalidDidFormat: Invalid DID format */
-export const GHOSTSPEAK_MARKETPLACE_ERROR__INVALID_DID_FORMAT = 0x1777; // 6007
-/** UnauthorizedDidOperation: Unauthorized DID operation */
-export const GHOSTSPEAK_MARKETPLACE_ERROR__UNAUTHORIZED_DID_OPERATION = 0x1778; // 6008
-/** DidDeactivated: DID is deactivated */
-export const GHOSTSPEAK_MARKETPLACE_ERROR__DID_DEACTIVATED = 0x1779; // 6009
+/** SystemProgramAsAdmin: System program cannot be used as admin */
+export const GHOSTSPEAK_MARKETPLACE_ERROR__SYSTEM_PROGRAM_AS_ADMIN = 0x1770; // 6000
+/** DefaultKeyAsAdmin: Default (null) public key cannot be used as admin */
+export const GHOSTSPEAK_MARKETPLACE_ERROR__DEFAULT_KEY_AS_ADMIN = 0x1771; // 6001
+/** UnauthorizedAdmin: Unauthorized admin - key does not match protocol admin */
+export const GHOSTSPEAK_MARKETPLACE_ERROR__UNAUTHORIZED_ADMIN = 0x1772; // 6002
+/** TestAddressOnMainnet: Test address cannot be used on mainnet */
+export const GHOSTSPEAK_MARKETPLACE_ERROR__TEST_ADDRESS_ON_MAINNET = 0x1773; // 6003
+/** ValidationFailed: Admin validation failed - key failed security checks or is not properly configured */
+export const GHOSTSPEAK_MARKETPLACE_ERROR__VALIDATION_FAILED = 0x1774; // 6004
 
 export type GhostspeakMarketplaceError =
-  | typeof GHOSTSPEAK_MARKETPLACE_ERROR__ALREADY_DEACTIVATED
-  | typeof GHOSTSPEAK_MARKETPLACE_ERROR__DID_DEACTIVATED
-  | typeof GHOSTSPEAK_MARKETPLACE_ERROR__DUPLICATE_METHOD_ID
-  | typeof GHOSTSPEAK_MARKETPLACE_ERROR__DUPLICATE_SERVICE_ID
-  | typeof GHOSTSPEAK_MARKETPLACE_ERROR__INVALID_DID_FORMAT
-  | typeof GHOSTSPEAK_MARKETPLACE_ERROR__METHOD_NOT_FOUND
-  | typeof GHOSTSPEAK_MARKETPLACE_ERROR__SERVICE_NOT_FOUND
-  | typeof GHOSTSPEAK_MARKETPLACE_ERROR__TOO_MANY_SERVICE_ENDPOINTS
-  | typeof GHOSTSPEAK_MARKETPLACE_ERROR__TOO_MANY_VERIFICATION_METHODS
-  | typeof GHOSTSPEAK_MARKETPLACE_ERROR__UNAUTHORIZED_DID_OPERATION;
+  | typeof GHOSTSPEAK_MARKETPLACE_ERROR__DEFAULT_KEY_AS_ADMIN
+  | typeof GHOSTSPEAK_MARKETPLACE_ERROR__SYSTEM_PROGRAM_AS_ADMIN
+  | typeof GHOSTSPEAK_MARKETPLACE_ERROR__TEST_ADDRESS_ON_MAINNET
+  | typeof GHOSTSPEAK_MARKETPLACE_ERROR__UNAUTHORIZED_ADMIN
+  | typeof GHOSTSPEAK_MARKETPLACE_ERROR__VALIDATION_FAILED;
 
 let ghostspeakMarketplaceErrorMessages:
   | Record<GhostspeakMarketplaceError, string>
   | undefined;
 if (process.env.NODE_ENV !== "production") {
   ghostspeakMarketplaceErrorMessages = {
-    [GHOSTSPEAK_MARKETPLACE_ERROR__ALREADY_DEACTIVATED]: `DID document is already deactivated`,
-    [GHOSTSPEAK_MARKETPLACE_ERROR__DID_DEACTIVATED]: `DID is deactivated`,
-    [GHOSTSPEAK_MARKETPLACE_ERROR__DUPLICATE_METHOD_ID]: `Duplicate verification method ID`,
-    [GHOSTSPEAK_MARKETPLACE_ERROR__DUPLICATE_SERVICE_ID]: `Duplicate service endpoint ID`,
-    [GHOSTSPEAK_MARKETPLACE_ERROR__INVALID_DID_FORMAT]: `Invalid DID format`,
-    [GHOSTSPEAK_MARKETPLACE_ERROR__METHOD_NOT_FOUND]: `Verification method not found`,
-    [GHOSTSPEAK_MARKETPLACE_ERROR__SERVICE_NOT_FOUND]: `Service endpoint not found`,
-    [GHOSTSPEAK_MARKETPLACE_ERROR__TOO_MANY_SERVICE_ENDPOINTS]: `Maximum number of service endpoints reached`,
-    [GHOSTSPEAK_MARKETPLACE_ERROR__TOO_MANY_VERIFICATION_METHODS]: `Maximum number of verification methods reached`,
-    [GHOSTSPEAK_MARKETPLACE_ERROR__UNAUTHORIZED_DID_OPERATION]: `Unauthorized DID operation`,
+    [GHOSTSPEAK_MARKETPLACE_ERROR__DEFAULT_KEY_AS_ADMIN]: `Default (null) public key cannot be used as admin`,
+    [GHOSTSPEAK_MARKETPLACE_ERROR__SYSTEM_PROGRAM_AS_ADMIN]: `System program cannot be used as admin`,
+    [GHOSTSPEAK_MARKETPLACE_ERROR__TEST_ADDRESS_ON_MAINNET]: `Test address cannot be used on mainnet`,
+    [GHOSTSPEAK_MARKETPLACE_ERROR__UNAUTHORIZED_ADMIN]: `Unauthorized admin - key does not match protocol admin`,
+    [GHOSTSPEAK_MARKETPLACE_ERROR__VALIDATION_FAILED]: `Admin validation failed - key failed security checks or is not properly configured`,
   };
 }
 

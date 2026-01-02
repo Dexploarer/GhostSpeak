@@ -106,6 +106,58 @@ export const markAgentClaimed = internalMutation({
 })
 
 /**
+ * Public mutation to mark an agent as claimed (called by CLI)
+ */
+export const claimAgent = mutation({
+  args: {
+    ghostAddress: v.string(),
+    claimedBy: v.string(),
+    claimTxSignature: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const agent = await ctx.db
+      .query('discoveredAgents')
+      .withIndex('by_address', (q) => q.eq('ghostAddress', args.ghostAddress))
+      .first()
+
+    if (!agent) {
+      throw new Error(`Agent ${args.ghostAddress} not found in discovery database`)
+    }
+
+    if (agent.status === 'claimed') {
+      throw new Error(`Agent ${args.ghostAddress} is already claimed by ${agent.claimedBy}`)
+    }
+
+    // Update agent status
+    await ctx.db.patch(agent._id, {
+      status: 'claimed',
+      claimedAt: Date.now(),
+      claimedBy: args.claimedBy,
+      claimTxSignature: args.claimTxSignature,
+      updatedAt: Date.now(),
+    })
+
+    // Log claim event
+    await ctx.db.insert('discoveryEvents', {
+      eventType: 'agent_claimed',
+      ghostAddress: args.ghostAddress,
+      data: {
+        claimedBy: args.claimedBy,
+        signature: args.claimTxSignature,
+      },
+      timestamp: Date.now(),
+    })
+
+    return {
+      success: true,
+      agentId: agent._id,
+      ghostAddress: args.ghostAddress,
+      claimedBy: args.claimedBy,
+    }
+  },
+})
+
+/**
  * Add external ID mapping for an agent (called by actions)
  */
 export const addExternalIdMapping = internalMutation({
@@ -327,6 +379,12 @@ export const getIndexerState = query({
  * Get discovery stats
  */
 export const getDiscoveryStats = query({
+  returns: v.object({
+    totalDiscovered: v.number(),
+    totalClaimed: v.number(),
+    totalVerified: v.number(),
+    total: v.number(),
+  }),
   handler: async (ctx) => {
     const discovered = await ctx.db
       .query('discoveredAgents')

@@ -66,6 +66,55 @@ export class InteractiveMenu {
           hint: 'Create, list, update agents'
         },
         {
+          value: 'ghosts',
+          label: 'Ghost Agents',
+          icon: '👻',
+          description: 'Claim external AI agents and build identity',
+          hint: 'x402, Twitter, GitHub agents'
+        },
+        {
+          value: 'reputation',
+          label: 'Reputation & Staking',
+          icon: '⭐',
+          description: 'Ghost Score, GHOST staking, and privacy',
+          hint: 'Build trustworthiness'
+        },
+        {
+          value: 'multisig',
+          label: 'Multisig Wallets',
+          icon: '🔐',
+          description: 'Shared control wallets with threshold approvals',
+          hint: 'Secure agent management'
+        },
+        {
+          value: 'authorization',
+          label: 'Pre-Authorizations',
+          icon: '🔑',
+          description: 'Trustless reputation update permissions',
+          hint: 'Limit access, grant trust'
+        },
+        {
+          value: 'did',
+          label: 'Decentralized Identity',
+          icon: '🆔',
+          description: 'Create and manage DID documents',
+          hint: 'Verifiable identities'
+        },
+        {
+          value: 'credentials',
+          label: 'Credentials',
+          icon: '🔐',
+          description: 'Verifiable credentials management',
+          hint: 'Issue, verify, sync'
+        },
+        {
+          value: 'escrow',
+          label: 'Escrow',
+          icon: '💼',
+          description: 'x402 marketplace escrow transactions',
+          hint: 'Secure payments'
+        },
+        {
           value: 'wallet',
           label: 'Wallet',
           icon: '💳',
@@ -76,22 +125,22 @@ export class InteractiveMenu {
           value: 'governance',
           label: 'Governance',
           icon: '🏛️',
-          description: 'Multisig wallets, proposals, and voting',
+          description: 'Protocol governance and voting',
           hint: 'DAO operations'
-        },
-        {
-          value: 'transactions',
-          label: 'Transactions',
-          icon: '💰',
-          description: 'Auctions, disputes, and A2A connections',
-          hint: 'Advanced features'
         },
         {
           value: 'development',
           label: 'Development',
           icon: '🛠️',
-          description: 'SDK tools, testing, and dev resources',
-          hint: 'Developer tools'
+          description: 'Airdrops, faucets, and dev tools',
+          hint: 'Developer resources'
+        },
+        {
+          value: 'dashboards',
+          label: 'Interactive Dashboards',
+          icon: '📊',
+          description: 'Beautiful real-time monitoring interfaces',
+          hint: 'Visual monitoring'
         },
         {
           value: 'recent',
@@ -137,14 +186,35 @@ export class InteractiveMenu {
         case 'agents':
           await this.showAgentMenu()
           break
+        case 'ghosts':
+          await this.showGhostMenu()
+          break
+        case 'reputation':
+          await this.showReputationMenu()
+          break
+        case 'multisig':
+          await this.showMultisigMenu()
+          break
+        case 'authorization':
+          await this.showAuthorizationMenu()
+          break
+        case 'did':
+          await this.showDIDMenu()
+          break
+        case 'credentials':
+          await this.showCredentialsMenu()
+          break
+        case 'escrow':
+          await this.showEscrowMenu()
+          break
         case 'wallet':
           await this.showWalletMenu()
           break
         case 'governance':
           await this.showGovernanceMenu()
           break
-        case 'transactions':
-          await this.showTransactionsMenu()
+        case 'dashboards':
+          await this.showDashboardsMenu()
           break
         case 'development':
           await this.showDevelopmentMenu()
@@ -281,6 +351,248 @@ export class InteractiveMenu {
     }
   }
 
+  private async showGhostMenu(): Promise<void> {
+    const commands: CommandOption[] = [
+      { value: 'dashboard', label: '👻 Ghost Dashboard', command: 'ghost-ui', hint: 'Interactive monitoring' },
+      { value: 'claim', label: '🆕 Claim Ghost Agent', command: 'ghost claim', hint: 'Claim external AI agent' },
+      { value: 'link', label: '🔗 Link External ID', command: 'ghost link', hint: 'Link Twitter, GitHub, etc.' },
+      { value: 'list', label: '📋 List My Ghosts', command: 'ghost list', hint: 'View claimed agents' },
+      { value: 'back', label: '← Back', command: '', hint: '' }
+    ]
+
+    const choice = await select({
+      message: chalk.cyan('👻 Ghost Agent Management:'),
+      options: commands.map(cmd => ({
+        value: cmd.value,
+        label: cmd.label,
+        hint: cmd.hint
+      }))
+    })
+
+    if (isCancel(choice) || choice === 'back') {
+      return
+    }
+
+    const selected = commands.find(cmd => cmd.value === choice)
+    if (selected?.command) {
+      await this.executeCommand(selected.command)
+      this.saveRecentCommand(selected.command, selected.label)
+    }
+  }
+
+  private async showReputationMenu(): Promise<void> {
+    const commands: CommandOption[] = [
+      { value: 'reputation-ui', label: '📊 Reputation Dashboard', command: 'reputation-ui', hint: 'Ghost Score monitoring' },
+      { value: 'staking-ui', label: '💎 Staking Dashboard', command: 'staking-ui', hint: 'GHOST token staking' },
+      { value: 'check', label: '⭐ Check Ghost Score', command: 'reputation check', hint: 'View current score' },
+      { value: 'stake', label: '💰 Stake GHOST', command: 'staking stake', hint: 'Stake tokens for tier' },
+      { value: 'privacy', label: '🔒 Privacy Settings', command: 'privacy', hint: 'Control visibility' },
+      { value: 'back', label: '← Back', command: '', hint: '' }
+    ]
+
+    const choice = await select({
+      message: chalk.cyan('⭐ Reputation & Staking:'),
+      options: commands.map(cmd => ({
+        value: cmd.value,
+        label: cmd.label,
+        hint: cmd.hint
+      }))
+    })
+
+    if (isCancel(choice) || choice === 'back') {
+      return
+    }
+
+    const selected = commands.find(cmd => cmd.value === choice)
+    if (selected?.command) {
+      await this.executeCommand(selected.command)
+      this.saveRecentCommand(selected.command, selected.label)
+    }
+  }
+
+  private async showMultisigMenu(): Promise<void> {
+    const commands: CommandOption[] = [
+      { value: 'dashboard', label: '🔐 Multisig Dashboard', command: 'multisig-ui', hint: 'Interactive monitoring' },
+      { value: 'create', label: '🆕 Create Multisig', command: 'multisig create', hint: 'New shared wallet' },
+      { value: 'propose', label: '📝 Create Proposal', command: 'multisig propose', hint: 'Propose action' },
+      { value: 'approve', label: '✅ Approve Proposal', command: 'multisig approve', hint: 'Sign proposal' },
+      { value: 'execute', label: '⚡ Execute Proposal', command: 'multisig execute', hint: 'Run approved action' },
+      { value: 'list', label: '📋 List Multisigs', command: 'multisig list', hint: 'View your multisigs' },
+      { value: 'back', label: '← Back', command: '', hint: '' }
+    ]
+
+    const choice = await select({
+      message: chalk.cyan('🔐 Multisig Wallet Management:'),
+      options: commands.map(cmd => ({
+        value: cmd.value,
+        label: cmd.label,
+        hint: cmd.hint
+      }))
+    })
+
+    if (isCancel(choice) || choice === 'back') {
+      return
+    }
+
+    const selected = commands.find(cmd => cmd.value === choice)
+    if (selected?.command) {
+      await this.executeCommand(selected.command)
+      this.saveRecentCommand(selected.command, selected.label)
+    }
+  }
+
+  private async showAuthorizationMenu(): Promise<void> {
+    const commands: CommandOption[] = [
+      { value: 'dashboard', label: '🔑 Authorization Dashboard', command: 'auth-ui', hint: 'Interactive monitoring' },
+      { value: 'create', label: '🆕 Create Authorization', command: 'auth create', hint: 'Grant limited access' },
+      { value: 'revoke', label: '❌ Revoke Authorization', command: 'auth revoke', hint: 'Cancel permission' },
+      { value: 'verify', label: '✅ Verify Authorization', command: 'auth verify', hint: 'Check validity' },
+      { value: 'list', label: '📋 List Authorizations', command: 'auth list', hint: 'View permissions' },
+      { value: 'back', label: '← Back', command: '', hint: '' }
+    ]
+
+    const choice = await select({
+      message: chalk.cyan('🔑 Pre-Authorization Management:'),
+      options: commands.map(cmd => ({
+        value: cmd.value,
+        label: cmd.label,
+        hint: cmd.hint
+      }))
+    })
+
+    if (isCancel(choice) || choice === 'back') {
+      return
+    }
+
+    const selected = commands.find(cmd => cmd.value === choice)
+    if (selected?.command) {
+      await this.executeCommand(selected.command)
+      this.saveRecentCommand(selected.command, selected.label)
+    }
+  }
+
+  private async showDIDMenu(): Promise<void> {
+    const commands: CommandOption[] = [
+      { value: 'dashboard', label: '🆔 DID Dashboard', command: 'did-ui', hint: 'Interactive DID manager' },
+      { value: 'create', label: '🆕 Create DID', command: 'did create', hint: 'New decentralized identifier' },
+      { value: 'update', label: '✏️ Update DID', command: 'did update', hint: 'Modify DID document' },
+      { value: 'resolve', label: '🔍 Resolve DID', command: 'did resolve', hint: 'Look up DID document' },
+      { value: 'deactivate', label: '❌ Deactivate DID', command: 'did deactivate', hint: 'Revoke identifier' },
+      { value: 'back', label: '← Back', command: '', hint: '' }
+    ]
+
+    const choice = await select({
+      message: chalk.cyan('🆔 Decentralized Identity (DID):'),
+      options: commands.map(cmd => ({
+        value: cmd.value,
+        label: cmd.label,
+        hint: cmd.hint
+      }))
+    })
+
+    if (isCancel(choice) || choice === 'back') {
+      return
+    }
+
+    const selected = commands.find(cmd => cmd.value === choice)
+    if (selected?.command) {
+      await this.executeCommand(selected.command)
+      this.saveRecentCommand(selected.command, selected.label)
+    }
+  }
+
+  private async showCredentialsMenu(): Promise<void> {
+    const commands: CommandOption[] = [
+      { value: 'sync', label: '🔄 Sync Credentials', command: 'credentials sync', hint: 'Sync verifiable credentials' },
+      { value: 'back', label: '← Back', command: '', hint: '' }
+    ]
+
+    const choice = await select({
+      message: chalk.cyan('🔐 Verifiable Credentials:'),
+      options: commands.map(cmd => ({
+        value: cmd.value,
+        label: cmd.label,
+        hint: cmd.hint
+      }))
+    })
+
+    if (isCancel(choice) || choice === 'back') {
+      return
+    }
+
+    const selected = commands.find(cmd => cmd.value === choice)
+    if (selected?.command) {
+      await this.executeCommand(selected.command)
+      this.saveRecentCommand(selected.command, selected.label)
+    }
+  }
+
+  private async showEscrowMenu(): Promise<void> {
+    const commands: CommandOption[] = [
+      { value: 'dashboard', label: '💼 Escrow Dashboard', command: 'escrow-ui', hint: 'Interactive escrow monitor' },
+      { value: 'create', label: '🆕 Create Escrow', command: 'escrow create', hint: 'New secure transaction' },
+      { value: 'approve', label: '✅ Approve Escrow', command: 'escrow approve', hint: 'Confirm completion' },
+      { value: 'dispute', label: '⚖️ File Dispute', command: 'escrow dispute', hint: 'Contest transaction' },
+      { value: 'list', label: '📋 List Escrows', command: 'escrow list', hint: 'View all escrows' },
+      { value: 'get', label: '🔍 Get Escrow Details', command: 'escrow get', hint: 'View specific escrow' },
+      { value: 'back', label: '← Back', command: '', hint: '' }
+    ]
+
+    const choice = await select({
+      message: chalk.cyan('💼 Escrow Management:'),
+      options: commands.map(cmd => ({
+        value: cmd.value,
+        label: cmd.label,
+        hint: cmd.hint
+      }))
+    })
+
+    if (isCancel(choice) || choice === 'back') {
+      return
+    }
+
+    const selected = commands.find(cmd => cmd.value === choice)
+    if (selected?.command) {
+      await this.executeCommand(selected.command)
+      this.saveRecentCommand(selected.command, selected.label)
+    }
+  }
+
+  private async showDashboardsMenu(): Promise<void> {
+    const commands: CommandOption[] = [
+      { value: 'main', label: '📊 Main Dashboard', command: 'dashboard', hint: 'Overview of all metrics' },
+      { value: 'reputation', label: '⭐ Reputation Dashboard', command: 'reputation-ui', hint: 'Ghost Score tracking' },
+      { value: 'staking', label: '💎 Staking Dashboard', command: 'staking-ui', hint: 'GHOST token staking' },
+      { value: 'ghost', label: '👻 Ghost Dashboard', command: 'ghost-ui', hint: 'Claimed agents' },
+      { value: 'multisig', label: '🔐 Multisig Dashboard', command: 'multisig-ui', hint: 'Shared wallets' },
+      { value: 'auth', label: '🔑 Authorization Dashboard', command: 'auth-ui', hint: 'Pre-authorizations' },
+      { value: 'did', label: '🆔 DID Dashboard', command: 'did-ui', hint: 'Decentralized identity' },
+      { value: 'escrow', label: '💼 Escrow Dashboard', command: 'escrow-ui', hint: 'Transaction monitoring' },
+      { value: 'privacy', label: '🔒 Privacy Dashboard', command: 'privacy-ui', hint: 'Privacy settings' },
+      { value: 'airdrop', label: '🪂 Airdrop Dashboard', command: 'airdrop-ui', hint: 'GHOST token claims' },
+      { value: 'back', label: '← Back', command: '', hint: '' }
+    ]
+
+    const choice = await select({
+      message: chalk.cyan('📊 Interactive Dashboards:'),
+      options: commands.map(cmd => ({
+        value: cmd.value,
+        label: cmd.label,
+        hint: cmd.hint
+      }))
+    })
+
+    if (isCancel(choice) || choice === 'back') {
+      return
+    }
+
+    const selected = commands.find(cmd => cmd.value === choice)
+    if (selected?.command) {
+      await this.executeCommand(selected.command)
+      this.saveRecentCommand(selected.command, selected.label)
+    }
+  }
+
   private async showWalletMenu(): Promise<void> {
     const commands: CommandOption[] = [
       { value: 'list', label: '📋 List Wallets', command: 'wallet list', hint: 'View all your wallets' },
@@ -313,135 +625,16 @@ export class InteractiveMenu {
 
   private async showGovernanceMenu(): Promise<void> {
     const commands: CommandOption[] = [
-      { value: 'multisig-create', label: '🔐 Create Multisig', command: 'governance multisig create', hint: 'Multi-signature wallet' },
-      { value: 'multisig-list', label: '📋 List Multisigs', command: 'governance multisig list', hint: 'View wallets' },
-      { value: 'proposals', label: '📜 View Proposals', command: 'governance proposal list', hint: 'Active proposals' },
+      { value: 'proposal-create', label: '📝 Create Proposal', command: 'governance proposal create', hint: 'DAO governance proposal' },
+      { value: 'proposal-list', label: '📜 View Proposals', command: 'governance proposal list', hint: 'Active proposals' },
       { value: 'vote', label: '🗳️ Vote on Proposal', command: 'governance vote', hint: 'Cast your vote' },
+      { value: 'rbac-grant', label: '🛡️ Grant Role', command: 'governance rbac grant', hint: 'Grant permissions' },
+      { value: 'rbac-revoke', label: '🚫 Revoke Role', command: 'governance rbac revoke', hint: 'Remove permissions' },
       { value: 'back', label: '← Back', command: '', hint: '' }
     ]
 
     const choice = await select({
-      message: chalk.cyan('🏛️ Governance:'),
-      options: commands.map(cmd => ({
-        value: cmd.value,
-        label: cmd.label,
-        hint: cmd.hint
-      }))
-    })
-
-    if (isCancel(choice) || choice === 'back') {
-      return
-    }
-
-    const selected = commands.find(cmd => cmd.value === choice)
-    if (selected?.command) {
-      await this.executeCommand(selected.command)
-      this.saveRecentCommand(selected.command, selected.label)
-    }
-  }
-
-  private async showTransactionsMenu(): Promise<void> {
-    const subCategories = [
-      { value: 'auctions', label: 'Auctions', icon: '🔨', hint: 'Bid and monitor auctions' },
-      { value: 'disputes', label: 'Disputes', icon: '⚖️', hint: 'Resolve conflicts' },
-      { value: 'a2a', label: 'A2A Connections', icon: '📡', hint: 'Agent-to-Agent' },
-      { value: 'balance', label: 'Check Balance', icon: '💳', hint: 'View wallet balance' },
-      { value: 'back', label: '← Back to Main Menu', icon: '', hint: '' }
-    ]
-
-    const choice = await select({
-      message: chalk.cyan('💰 Transactions & Features:'),
-      options: subCategories.map(cat => ({
-        value: cat.value,
-        label: cat.icon ? `${cat.icon} ${cat.label}` : cat.label,
-        hint: cat.hint
-      }))
-    })
-
-    if (isCancel(choice) || choice === 'back') {
-      return
-    }
-
-    switch (choice) {
-      case 'auctions':
-        await this.showAuctionMenu()
-        break
-      case 'disputes':
-        await this.showDisputeMenu()
-        break
-      case 'a2a':
-        await this.showA2AMenu()
-        break
-      case 'balance':
-        await this.executeCommand('wallet balance')
-        break
-    }
-  }
-
-  private async showAuctionMenu(): Promise<void> {
-    const commands: CommandOption[] = [
-      { value: 'list', label: 'Browse Auctions', command: 'auction list', hint: 'View active auctions' },
-      { value: 'create', label: 'Create Auction', command: 'auction create', hint: 'Auction your services' },
-      { value: 'bid', label: 'Place Bid', command: 'auction bid', hint: 'Bid on an auction' },
-      { value: 'back', label: '← Back', command: '', hint: '' }
-    ]
-
-    const choice = await select({
-      message: chalk.cyan('🔨 Auctions:'),
-      options: commands.map(cmd => ({
-        value: cmd.value,
-        label: cmd.label,
-        hint: cmd.hint
-      }))
-    })
-
-    if (isCancel(choice) || choice === 'back') {
-      return
-    }
-
-    const selected = commands.find(cmd => cmd.value === choice)
-    if (selected?.command) {
-      await this.executeCommand(selected.command)
-      this.saveRecentCommand(selected.command, selected.label)
-    }
-  }
-
-  private async showDisputeMenu(): Promise<void> {
-    const commands: CommandOption[] = [
-      { value: 'list', label: 'View Disputes', command: 'dispute list', hint: 'List all disputes' },
-      { value: 'evidence', label: 'Submit Evidence', command: 'dispute evidence', hint: 'Add to dispute' },
-      { value: 'back', label: '← Back', command: '', hint: '' }
-    ]
-
-    const choice = await select({
-      message: chalk.cyan('⚖️ Disputes:'),
-      options: commands.map(cmd => ({
-        value: cmd.value,
-        label: cmd.label,
-        hint: cmd.hint
-      }))
-    })
-
-    if (isCancel(choice) || choice === 'back') {
-      return
-    }
-
-    const selected = commands.find(cmd => cmd.value === choice)
-    if (selected?.command) {
-      await this.executeCommand(selected.command)
-      this.saveRecentCommand(selected.command, selected.label)
-    }
-  }
-
-  private async showA2AMenu(): Promise<void> {
-    const commands: CommandOption[] = [
-      { value: 'connect', label: 'Initiate Connection', command: 'a2a connect', hint: 'Connect to another agent' },
-      { value: 'list', label: 'List Connections', command: 'a2a list', hint: 'View A2A connections' },
-      { value: 'back', label: '← Back', command: '', hint: '' }
-    ]
-
-    const choice = await select({
-      message: chalk.cyan('📡 Agent-to-Agent Connections:'),
+      message: chalk.cyan('🏛️ DAO Governance:'),
       options: commands.map(cmd => ({
         value: cmd.value,
         label: cmd.label,

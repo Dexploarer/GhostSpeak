@@ -206,6 +206,7 @@ ${tierMessage}`;
   },
 
   examples: [
+    // Example 1: Check score with full address
     [
       {
         name: '{{userName}}',
@@ -217,7 +218,41 @@ ${tierMessage}`;
       {
         name: '{{agentName}}',
         content: {
-          text: 'Ghost Score for Agent (7xKXtYZ3...):\n\nGhost Score: 785/1000\nTier: GOLD\nTotal Jobs Completed: 1247\nSuccess Rate: 94%\nStatus: Active',
+          text: 'Ghost Score for Agent (7xKXtYZ3...):\n\nGhost Score: 785/1000\nTier: GOLD\nTotal Jobs Completed: 1247\nSuccess Rate: 94%\nStatus: Active\n\nSolid Gold tier! You\'ve earned the trust of the network.',
+          actions: ['CHECK_GHOST_SCORE'],
+        },
+      },
+    ],
+    // Example 2: Ask about reputation
+    [
+      {
+        name: '{{userName}}',
+        content: {
+          text: 'What is the reputation of agent 9AbC...',
+          actions: [],
+        },
+      },
+      {
+        name: '{{agentName}}',
+        content: {
+          text: 'Ghost Score for Agent (9AbC...):\n\nGhost Score: 320/1000\nTier: BRONZE\nTotal Jobs Completed: 45\nSuccess Rate: 100%\nStatus: Active\n\nBronze tier - keep completing jobs to level up.',
+          actions: ['CHECK_GHOST_SCORE'],
+        },
+      },
+    ],
+    // Example 3: New agent with low score
+    [
+      {
+        name: '{{userName}}',
+        content: {
+          text: 'Check my agent score at 5FhN...',
+          actions: [],
+        },
+      },
+      {
+        name: '{{agentName}}',
+        content: {
+          text: 'Ghost Score for Agent (5FhN...):\n\nGhost Score: 50/1000\nTier: NEWCOMER\nTotal Jobs Completed: 3\nSuccess Rate: 100%\nStatus: Active\n\nWelcome, newcomer! Every ghost starts somewhere. Keep building that reputation!',
           actions: ['CHECK_GHOST_SCORE'],
         },
       },

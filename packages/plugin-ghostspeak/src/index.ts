@@ -17,6 +17,7 @@ export {
   checkGhostScoreAction,
   registerAgentAction,
   issueCredentialAction,
+  acceptPaymentAction,
   createDidAction,
   resolveDidAction,
   updateDidAction,
@@ -32,8 +33,8 @@ export { ghostScoreProvider, agentContextProvider } from './providers';
 // Config
 export { ghostspeakConfigSchema, type GhostSpeakPluginConfig } from './config';
 
-// Character
-export { caisperPersona, getRandomCatchphrase, getTierMessage } from './character/caisper';
+// Character (full ElizaOS Character configuration)
+export { caisperCharacter, caisperPersona, getRandomCatchphrase, getTierMessage } from './character';
 
 // Wallet utilities
 export {

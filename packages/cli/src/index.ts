@@ -23,6 +23,17 @@ import { privacyCommand } from './commands/privacy.js'
 import { didCommand } from './commands/did.js'
 import { escrowCommand } from './commands/escrow.js'
 import { dashboardCommand } from './commands/dashboard.js'
+import { ghostCommand } from './commands/ghost.js'
+import { ghostClaimCommand } from './commands/ghost-claim.js'
+import { ghostClaimTestCommand } from './commands/ghost-claim-test.js'
+import { multisigCommand } from './commands/multisig.js'
+import { authorizationCommand } from './commands/authorization.js'
+import { ghostUICommand } from './commands/ghost-ui.js'
+import { multisigUICommand } from './commands/multisig-ui.js'
+import { authorizationUICommand } from './commands/authorization-ui.js'
+import { privacyUICommand } from './commands/privacy-ui.js'
+import { didUICommand } from './commands/did-ui.js'
+import { escrowUICommand } from './commands/escrow-ui.js'
 import { checkForUpdates } from './utils/update-check.js'
 import { InteractiveMenu, shouldRunInteractive } from './utils/interactive-menu.js'
 import { readFileSync, existsSync } from 'fs'
@@ -171,16 +182,27 @@ async function main() {
 
     // 2. Core features - Text-based commands
     program.addCommand(agentCommand)       // Create and manage agents
+    program.addCommand(ghostCommand)       // Claim external agents (CLI)
+    program.addCommand(ghostClaimCommand)  // Simplified Ghost claiming (Auto-attestation)
+    program.addCommand(ghostClaimTestCommand) // Test Ghost claiming (Development only)
     program.addCommand(reputationCommand)  // Ghost Score reputation (CLI)
     program.addCommand(stakingCommand)     // GHOST token staking (CLI)
     program.addCommand(privacyCommand)     // Privacy settings (CLI)
     program.addCommand(didCommand)         // Decentralized identifiers (CLI)
     program.addCommand(escrowCommand)      // x402 marketplace escrow (CLI)
+    program.addCommand(multisigCommand)    // Multisig wallets (CLI)
+    program.addCommand(authorizationCommand) // Pre-authorizations (CLI)
 
     // 2b. Interactive UI dashboards
     program.addCommand(dashboardCommand)    // Master analytics dashboard (Beautiful UI)
     program.addCommand(reputationUICommand) // Ghost Score dashboard (Beautiful UI)
     program.addCommand(stakingUICommand)   // Staking dashboard (Beautiful UI)
+    program.addCommand(ghostUICommand)     // Ghost claiming dashboard (Beautiful UI)
+    program.addCommand(multisigUICommand)  // Multisig wallet dashboard (Beautiful UI)
+    program.addCommand(authorizationUICommand) // Pre-authorization dashboard (Beautiful UI)
+    program.addCommand(privacyUICommand)   // Privacy settings dashboard (Beautiful UI)
+    program.addCommand(didUICommand)       // DID document dashboard (Beautiful UI)
+    program.addCommand(escrowUICommand)    // Escrow monitor dashboard (Beautiful UI)
 
     // 3. Support and advanced features
     program.addCommand(governanceCommand)  // Protocol governance

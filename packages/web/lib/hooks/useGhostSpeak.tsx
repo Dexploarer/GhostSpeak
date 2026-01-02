@@ -157,18 +157,6 @@ export function useReputation() {
 }
 
 /**
- * Hook for PayAI operations (Payment Events)
- */
-export function usePayAI() {
-  const { client, isConnected } = useGhostSpeak()
-
-  return {
-    client: client?.payai ?? null,
-    isConnected,
-  }
-}
-
-/**
  * Hook for governance operations
  */
 export function useGovernance() {

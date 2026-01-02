@@ -1,15 +1,15 @@
 import { describe, expect, it, beforeEach, afterAll, beforeAll } from 'bun:test';
-import { starterPlugin, StarterService } from '../index';
-import { createMockRuntime, setupLoggerSpies, MockRuntime } from './test-utils';
-import { HandlerCallback, IAgentRuntime, Memory, State, UUID, logger } from '@elizaos/core';
+import { ghostspeakPlugin, GhostSpeakService } from '../index';
+import { createMockRuntime, setupLoggerSpies, MockRuntime, createTestMemory, createTestState } from './test-utils';
+import type { HandlerCallback, IAgentRuntime, Memory, State, UUID } from '@elizaos/core';
 
 /**
  * Integration tests demonstrate how multiple components of the plugin work together.
  * Unlike unit tests that test individual functions in isolation, integration tests
  * examine how components interact with each other.
  *
- * For example, this file shows how the HelloWorld action and HelloWorld provider
- * interact with the StarterService and the plugin's core functionality.
+ * For example, this file shows how the CHECK_GHOST_SCORE action and GHOST_SCORE_PROVIDER
+ * interact with the GhostSpeakService and the plugin's core functionality.
  */
 
 // Set up spies on logger
@@ -21,20 +21,34 @@ afterAll(() => {
   // No global restore needed in bun:test
 });
 
-describe('Integration: HelloWorld Action with StarterService', () => {
+describe('Integration: CHECK_GHOST_SCORE Action with GhostSpeakService', () => {
   let mockRuntime: MockRuntime;
 
   beforeEach(() => {
     // Create a service mock that will be returned by getService
     const mockService = {
       capabilityDescription:
-        'This is a starter service which is attached to the agent through the starter plugin.',
+        'GhostSpeak service for Ghost Score reputation and agent management',
       stop: () => Promise.resolve(),
+      getAgent: async () => ({
+        name: 'Test Agent',
+        reputationScore: BigInt(75000),
+        totalJobsCompleted: BigInt(100),
+        isActive: true,
+        x402Enabled: true,
+      }),
+      getCluster: () => 'devnet',
+      getStats: () => ({
+        cacheSize: 0,
+        hasSigner: false,
+        cluster: 'devnet',
+        isMainnet: false,
+      }),
     };
 
     // Create a mock runtime with a spied getService method
     const getServiceImpl = (serviceType: string) => {
-      if (serviceType === 'starter') {
+      if (serviceType === 'ghostspeak') {
         return mockService as any;
       }
       return null;
@@ -45,38 +59,31 @@ describe('Integration: HelloWorld Action with StarterService', () => {
     });
   });
 
-  it('should handle HelloWorld action with StarterService available', async () => {
-    // Find the HelloWorld action
-    const helloWorldAction = starterPlugin.actions?.find((action) => action.name === 'HELLO_WORLD');
-    expect(helloWorldAction).toBeDefined();
+  it('should handle CHECK_GHOST_SCORE action with GhostSpeakService available', async () => {
+    // Find the CHECK_GHOST_SCORE action
+    const checkGhostScoreAction = ghostspeakPlugin.actions?.find((action) => action.name === 'CHECK_GHOST_SCORE');
+    expect(checkGhostScoreAction).toBeDefined();
 
-    // Create a mock message and state
-    const mockMessage: Memory = {
-      id: '12345678-1234-1234-1234-123456789012' as UUID,
-      roomId: '12345678-1234-1234-1234-123456789012' as UUID,
-      entityId: '12345678-1234-1234-1234-123456789012' as UUID,
-      agentId: '12345678-1234-1234-1234-123456789012' as UUID,
+    // Create a mock message with a valid Solana address
+    // Using a valid base58 devnet-style address (44 characters)
+    const mockMessage = createTestMemory({
       content: {
-        text: 'Hello world',
+        text: 'check ghost score for 7EqQdEULxWcraVx3mXKFjc84LhCkMGZCkRuDpvcMwJeK',
         source: 'test',
       },
-      createdAt: Date.now(),
-    };
+    });
 
-    const mockState: State = {
-      values: {},
-      data: {},
-      text: '',
-    };
+    const mockState = createTestState();
 
     // Create a mock callback to capture the response
     const callbackCalls: any[] = [];
-    const callbackFn = (...args: any[]) => {
+    const callbackFn = async (...args: any[]) => {
       callbackCalls.push(args);
+      return [];
     };
 
     // Execute the action
-    await helloWorldAction?.handler(
+    const result = await checkGhostScoreAction?.handler(
       mockRuntime as Partial<IAgentRuntime> as IAgentRuntime,
       mockMessage,
       mockState,
@@ -85,18 +92,51 @@ describe('Integration: HelloWorld Action with StarterService', () => {
       []
     );
 
-    // Verify the callback was called with expected response
-    expect(callbackCalls.length).toBeGreaterThan(0);
-    if (callbackCalls.length > 0) {
-      expect(callbackCalls[0][0].text).toBe('Hello world!');
-      expect(callbackCalls[0][0].actions).toEqual(['HELLO_WORLD']);
-      expect(callbackCalls[0][0].source).toBe('test');
-    }
+    // Verify the action returned success
+    expect(result).toHaveProperty('success', true);
+    expect(result).toHaveProperty('values');
+    expect(result).toHaveProperty('data');
 
     // Get the service to ensure integration
-    const service = mockRuntime.getService('starter');
+    const service = mockRuntime.getService('ghostspeak');
     expect(service).toBeDefined();
-    expect(service?.capabilityDescription).toContain('starter service');
+    expect(service?.capabilityDescription).toContain('GhostSpeak');
+  });
+
+  it('should handle missing service gracefully', async () => {
+    const checkGhostScoreAction = ghostspeakPlugin.actions?.find((action) => action.name === 'CHECK_GHOST_SCORE');
+    expect(checkGhostScoreAction).toBeDefined();
+
+    // Create runtime without the service
+    const runtimeWithoutService = createMockRuntime({
+      getService: () => null,
+    });
+
+    const mockMessage = createTestMemory({
+      content: {
+        text: 'check ghost score',
+        source: 'test',
+      },
+    });
+
+    const callbackCalls: any[] = [];
+    const callbackFn = async (...args: any[]) => {
+      callbackCalls.push(args);
+      return [];
+    };
+
+    const result = await checkGhostScoreAction?.handler(
+      runtimeWithoutService as Partial<IAgentRuntime> as IAgentRuntime,
+      mockMessage,
+      createTestState(),
+      {},
+      callbackFn as HandlerCallback,
+      []
+    );
+
+    // Should fail gracefully with appropriate error
+    expect(result).toHaveProperty('success', false);
+    expect(result).toHaveProperty('error');
   });
 });
 
@@ -113,26 +153,61 @@ describe('Integration: Plugin initialization and service registration', () => {
     };
 
     // Run a minimal simulation of the plugin initialization process
-    if (starterPlugin.init) {
-      await starterPlugin.init(
-        { EXAMPLE_PLUGIN_VARIABLE: 'test-value' },
+    if (ghostspeakPlugin.init) {
+      await ghostspeakPlugin.init(
+        { SOLANA_CLUSTER: 'devnet' },
         mockRuntime as Partial<IAgentRuntime> as IAgentRuntime
       );
 
       // Directly mock the service registration that happens during initialization
       // because unit tests don't run the full agent initialization flow
-      if (starterPlugin.services) {
-        const StarterServiceClass = starterPlugin.services[0];
-        const serviceInstance = await StarterServiceClass.start(
+      if (ghostspeakPlugin.services) {
+        const GhostSpeakServiceClass = ghostspeakPlugin.services[0];
+        const serviceInstance = await GhostSpeakServiceClass.start(
           mockRuntime as Partial<IAgentRuntime> as IAgentRuntime
         );
 
         // Register the Service class to match the core API
-        mockRuntime.registerService(StarterServiceClass);
+        mockRuntime.registerService(GhostSpeakServiceClass);
       }
 
       // Now verify the service was registered with the runtime
       expect(registerServiceCalls.length).toBeGreaterThan(0);
     }
+  });
+
+  it('should export GhostSpeakService with correct serviceType', () => {
+    expect(GhostSpeakService.serviceType).toBe('ghostspeak');
+  });
+});
+
+describe('Integration: Provider and Service interaction', () => {
+  it('should have providers that work with the service', async () => {
+    const provider = ghostspeakPlugin.providers?.find(p => p.name === 'GHOST_SCORE_PROVIDER');
+    expect(provider).toBeDefined();
+
+    // Create runtime with mock service
+    const mockService = {
+      getAgent: async () => ({
+        name: 'Test Agent',
+        reputationScore: BigInt(50000),
+        totalJobsCompleted: BigInt(50),
+        isActive: true,
+      }),
+      getCluster: () => 'devnet',
+    };
+
+    const runtime = createMockRuntime({
+      getService: (type: string) => type === 'ghostspeak' ? mockService as any : null,
+    });
+
+    const message = createTestMemory();
+    const state = createTestState();
+
+    const result = await provider?.get(runtime as any, message, state);
+
+    expect(result).toHaveProperty('text');
+    expect(result).toHaveProperty('values');
+    expect(result).toHaveProperty('data');
   });
 });

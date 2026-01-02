@@ -107,6 +107,7 @@ export const checkGhostScoreAction: Action = {
         return {
           success: false,
           text: errorMsg,
+          values: {},
           error: new Error('Agent address required'),
         };
       }
@@ -126,6 +127,7 @@ export const checkGhostScoreAction: Action = {
         return {
           success: false,
           text: errorMsg,
+          values: {},
           error: new Error('Agent not found'),
         };
       }
@@ -166,8 +168,17 @@ ${tierMessage}`;
       return {
         success: true,
         text: response,
+        values: {
+          ghostScore,
+          tier,
+          totalJobs,
+          successRate,
+          isActive: agentData.isActive,
+          agentAddress: agentAddress.toString(),
+        },
         data: {
           agentAddress: agentAddress.toString(),
+          agentName: agentData.name,
           ghostScore,
           tier,
           totalJobs,
@@ -188,6 +199,7 @@ ${tierMessage}`;
       return {
         success: false,
         text: errorMsg,
+        values: {},
         error: error instanceof Error ? error : new Error(String(error)),
       };
     }

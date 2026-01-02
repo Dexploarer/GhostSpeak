@@ -18,9 +18,6 @@ import type {
   GetMultipleAccountsApi
 } from '@solana/kit'
 
-// Export PayAI types
-export type { PayAIClientConfig } from '../payai/PayAITypes.js'
-
 // Import generated types and re-export for convenience
 export * from '../generated/index.js'
 
@@ -152,8 +149,6 @@ export interface GhostSpeakConfig {
   ipfsConfig?: IPFSConfig
   /** Credential configuration for Crossmint sync */
   credentials?: CredentialConfig
-  /** PayAI configuration */
-  payai?: Partial<import('../payai/PayAITypes.js').PayAIClientConfig>
 }
 
 export interface CredentialConfig {

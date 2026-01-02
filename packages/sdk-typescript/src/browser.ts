@@ -14,7 +14,6 @@ export { MultisigModule } from './modules/multisig/MultisigModule.js'
 export { StakingModule } from './modules/staking/StakingModule.js'
 
 export { CredentialModule as CredentialsModule } from './modules/credentials/CredentialModule.js'
-export { PayAIClient } from './payai/PayAIClient.js'
 
 // Reputation module - browser safe (core module)
 export {

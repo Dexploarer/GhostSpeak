@@ -302,6 +302,12 @@ The credential has been created and ${request.syncToCrossmint ? 'bridged to EVM 
       return {
         success: true,
         text: responseText,
+        values: {
+          credentialType: request.credentialType,
+          agentId: request.agentId.toString(),
+          credentialId: result.solanaCredential?.credentialId,
+          crossmintId: result.crossmintSync?.id,
+        },
         data: {
           credentialType: request.credentialType,
           agentId: request.agentId.toString(),
@@ -333,6 +339,7 @@ Common issues:
       return {
         success: false,
         text: errorMsg,
+        values: {},
         error: error instanceof Error ? error : new Error(String(error)),
       };
     }

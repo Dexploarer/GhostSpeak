@@ -73,7 +73,7 @@ export { ExternalIdResolver, type ApiResolverConfig } from './modules/api/index.
 
 // Channel module - REMOVED (use A2A for agent communication)
 
-// Marketplace module - REMOVED (use PayAI for discovery)
+// Marketplace module - REMOVED (use facilitator discovery mechanisms)
 
 // Governance module
 export {
@@ -254,52 +254,12 @@ export {
 // PROTOCOL EXPORTS (x402, A2A, H2A)
 // =====================================================
 
-// x402 Payment Protocol - Replaced by PayAI
-// See PayAI Integration section below
-// PaymentStreamingManager removed - use PayAI for payment flows
+// x402 Payment Protocol - Generic facilitator support
+// PaymentStreamingManager removed - use facilitator-specific integration
 
 // A2A (Agent-to-Agent) Protocol - REMOVED (messaging deprecated)
 
 // H2A (Human-to-Agent) Protocol - REMOVED (messaging deprecated)
-
-// =====================================================
-// PAYAI INTEGRATION (Recommended Payment Facilitator)
-// =====================================================
-
-export {
-  PayAIClient,
-  createPayAIClient,
-  payAIFetch,
-  isPaymentRequired,
-  extractPaymentRequirements,
-  PayAIWebhookHandler,
-  createPayAIWebhookHandler,
-  generateTestWebhookSignature,
-  createMockPayAIWebhook,
-  // Agent Sync
-  PayAIAgentSync,
-  createPayAIAgentSync
-} from './payai/index.js'
-
-export type {
-  PayAIWebhookEventType,
-  PayAIPaymentStatus,
-  PayAINetwork,
-  PayAIWebhookPayload,
-  PayAIPaymentData,
-  PayAIWebhookVerification,
-  PayAIClientConfig,
-  PayAIPaymentRequirement,
-  PayAIPaymentResponse,
-  PayAIReputationRecord,
-  PayAIAgentRegistration,
-  PayAIWebhookHandlerOptions,
-  PayAIWebhookResult,
-  // Agent Sync types
-  PayAIAgentSyncConfig,
-  AgentSyncResult,
-  GhostSpeakAgentData
-} from './payai/index.js'
 
 // =====================================================
 // CRYPTO EXPORTS

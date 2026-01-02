@@ -253,6 +253,12 @@ Next steps:
       return {
         success: true,
         text: responseText,
+        values: {
+          agentAddress: result.address.toString(),
+          name: request.name,
+          capabilities: request.capabilities,
+          network: process.env.SOLANA_CLUSTER || 'devnet',
+        },
         data: {
           agentAddress: result.address.toString(),
           signature: result.signature,
@@ -289,6 +295,7 @@ Try:
       return {
         success: false,
         text: errorMsg,
+        values: {},
         error: error instanceof Error ? error : new Error(String(error)),
       };
     }

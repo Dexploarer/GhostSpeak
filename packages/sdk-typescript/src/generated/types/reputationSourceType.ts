@@ -19,7 +19,7 @@ import {
 export enum ReputationSourceType {
   AccountAge,
   X402Transactions,
-  PayAIReviews,
+  UserReviews,
   ElizaOSReputation,
   CrossmintVerification,
   EndpointReliability,

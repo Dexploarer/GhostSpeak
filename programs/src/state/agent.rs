@@ -52,7 +52,7 @@ pub enum ReputationSourceType {
     X402Transactions,               // 30%
 
     // Platform Sources (30% total)
-    PayAIReviews,                   // 10%
+    UserReviews,                    // 10% - User ratings/reviews from service usage
     ElizaOSReputation,              // 10%
     CrossmintVerification,          // 5%
     EndpointReliability,            // 5%

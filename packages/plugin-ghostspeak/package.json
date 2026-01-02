@@ -98,9 +98,36 @@
   "agentConfig": {
     "pluginType": "elizaos:plugin:1.0.0",
     "pluginParameters": {
-      "API_KEY": {
+      "AGENT_WALLET_PRIVATE_KEY": {
         "type": "string",
-        "description": "API key for the service"
+        "description": "Agent wallet private key (base58, hex, or JSON array format). Required for write operations.",
+        "required": false
+      },
+      "SOLANA_CLUSTER": {
+        "type": "string",
+        "description": "Solana cluster (devnet, mainnet-beta, testnet). Default: devnet",
+        "required": false,
+        "default": "devnet"
+      },
+      "SOLANA_RPC_URL": {
+        "type": "string",
+        "description": "Custom Solana RPC endpoint URL",
+        "required": false
+      },
+      "CROSSMINT_SECRET_KEY": {
+        "type": "string",
+        "description": "Crossmint API secret key for EVM credential bridging",
+        "required": false
+      },
+      "CROSSMINT_REPUTATION_TEMPLATE_ID": {
+        "type": "string",
+        "description": "Crossmint template ID for reputation credentials",
+        "required": false
+      },
+      "CROSSMINT_ENV": {
+        "type": "string",
+        "description": "Crossmint environment (staging or production)",
+        "required": false
       }
     }
   },

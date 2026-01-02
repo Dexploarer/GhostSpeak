@@ -149,7 +149,7 @@ export default function AgentsPage() {
                   </span>
                   <span className="flex items-center gap-1">
                     <DollarSign className="w-3 h-3 text-primary" />
-                    PayAI
+                    x402
                   </span>
                 </div>
 

@@ -6,8 +6,6 @@
  * Provides access to SDK modules for agent, credentials, reputation,
  * governance, and multisig operations.
  *
- * Payment facilitation is delegated to PayAI via PayAIClient.
- *
  * Uses the browser-safe SDK entry point to avoid server-only dependencies.
  */
 
@@ -24,7 +22,6 @@ import {
   MultisigModule,
   CredentialsModule,
   StakingModule,
-  PayAIClient,
   SASAttestationHelper,
   GHOSTSPEAK_PROGRAM_ID,
 } from '@ghostspeak/sdk/browser'
@@ -55,7 +52,6 @@ export type NetworkType = keyof typeof NETWORK_ENDPOINTS
  * - credentials: Verifiable Credentials (VCs) module
  * - reputation: Performance-based trust layer
  * - staking: GHOST token staking for reputation boost
- * - payai: PayAI integration for payment events
  */
 export interface GhostSpeakClient {
   programId: Address
@@ -67,7 +63,6 @@ export interface GhostSpeakClient {
   staking: InstanceType<typeof StakingModule>
   governanceModule: InstanceType<typeof GovernanceModule>
   multisigModule: InstanceType<typeof MultisigModule>
-  payai: InstanceType<typeof PayAIClient>
 }
 
 // Client singleton cache
@@ -115,8 +110,6 @@ export function createGhostSpeakClient(
     // Governance
     governanceModule: new GovernanceModule(config),
     multisigModule: new MultisigModule(config),
-    // PayAI Integration
-    payai: new PayAIClient({ rpcUrl }),
   }
 
   // Cache the client

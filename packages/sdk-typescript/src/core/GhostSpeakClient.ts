@@ -9,7 +9,6 @@ import { GovernanceModule } from '../modules/governance/GovernanceModule.js'
 import { MultisigModule } from '../modules/multisig/MultisigModule.js'
 
 import { UnifiedCredentialService } from '../modules/credentials/UnifiedCredentialService.js'
-import { PayAIClient } from '../payai/PayAIClient.js'
 import { ReputationModule } from '../modules/reputation/ReputationModule.js'
 import { DidModule } from '../modules/did/DidModule.js'
 import { PrivacyModule } from '../modules/privacy/PrivacyModule.js'
@@ -60,8 +59,8 @@ export class GhostSpeakClient {
   /**
    * Direct access to Ghost Module for claiming external agents
    *
-   * Ghosts are external AI agents (type 10) that exist on x402 facilitators
-   * like PayAI. They can be claimed using Solana Attestation Service (SAS)
+   * Ghosts are external AI agents (type 10) that exist on x402 facilitators.
+   * They can be claimed using Solana Attestation Service (SAS)
    * for trustless ownership verification.
    */
   get ghosts(): GhostModule {
@@ -89,23 +88,6 @@ export class GhostSpeakClient {
     return new AgentBuilder(this.config)
   }
 
-
-
-  /**
-   * PayAI operations (x402 payments)
-   */
-  payai(): PayAIClient {
-    return new PayAIClient({
-      rpcUrl: this.config.rpcEndpoint!,
-      facilitatorUrl: this.config.payai?.facilitatorUrl,
-      timeout: this.config.transactionTimeout,
-      retry: this.config.retryConfig && {
-        attempts: this.config.retryConfig.maxRetries ?? 3,
-        delayMs: this.config.retryConfig.baseDelay ?? 1000
-      }
-    })
-  }
-
   /**
    * Reputation operations
    */
@@ -127,7 +109,7 @@ export class GhostSpeakClient {
   /**
    * Multi-Source Reputation Aggregator (Pillar 3: External Sources)
    *
-   * Aggregate reputation data from multiple sources (PayAI, GitHub, custom webhooks)
+   * Aggregate reputation data from multiple sources (x402, GitHub, custom webhooks)
    * with weighted scoring and conflict detection.
    */
   reputationAggregator() {

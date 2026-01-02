@@ -19,8 +19,6 @@ const nextConfig: NextConfig = {
 
   // Optimize memory usage during build
   experimental: {
-    // Disable SWC minification to reduce memory usage
-    swcMinify: false,
     // Reduce webpack cache size
     webpackMemoryOptimizations: true,
   },

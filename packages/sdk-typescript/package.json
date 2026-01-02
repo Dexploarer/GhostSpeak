@@ -62,6 +62,7 @@
     "build:wasm": "bun run wasm:build",
     "build:dev": "tsup --watch",
     "dev": "tsup --watch",
+    "prepare": "tsup",
     "type-check": "tsc --noEmit",
     "test": "vitest run --reporter=verbose",
     "test:ci": "vitest run --reporter=default",

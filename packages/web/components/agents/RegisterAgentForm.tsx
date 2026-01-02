@@ -53,7 +53,7 @@ export function RegisterAgentForm({ onSuccess }: { onSuccess?: () => void }) {
     watch,
     reset,
   } = useForm<RegisterAgentForm>({
-    resolver: zodResolver(registerAgentSchema) as any,
+    resolver: zodResolver(registerAgentSchema),
     defaultValues: {
       capabilities: [],
     },

@@ -3,7 +3,7 @@
  * Enhanced with connection pooling for optimal performance
  */
 
-import { createSolanaRpc, createSolanaRpcSubscriptions, createKeyPairSignerFromBytes, address, type TransactionSigner, type KeyPairSigner } from '@solana/kit'
+import { createSolanaRpc, createKeyPairSignerFromBytes, address, type TransactionSigner, type KeyPairSigner } from '@solana/kit'
 import {
   GhostSpeakClient,
   GHOSTSPEAK_PROGRAM_ID,
@@ -218,20 +218,9 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
   // Create traditional RPC client for compatibility
   const rpc = createSolanaRpc(rpcUrl)
 
-  // Create RPC subscriptions for websocket connections
-  let rpcSubscriptions: ReturnType<typeof createSolanaRpcSubscriptions> | undefined
-  try {
-    const wsUrl = rpcUrl
-      .replace('https://', 'wss://')
-      .replace('http://', 'ws://')
-      .replace('api.devnet', 'api.devnet')
-      .replace('api.testnet', 'api.testnet')
-      .replace('api.mainnet-beta', 'api.mainnet-beta')
-
-    rpcSubscriptions = createSolanaRpcSubscriptions(wsUrl)
-  } catch (error) {
-    console.warn('Warning: Could not create RPC subscriptions, transaction confirmations may be slower')
-  }
+  // Note: RPC subscriptions are not currently available in @solana/kit
+  // Transaction confirmations will use polling instead
+  let rpcSubscriptions: any | undefined
 
   // Get wallet
   const wallet = await getWallet()

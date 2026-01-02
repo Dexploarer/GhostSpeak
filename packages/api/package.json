@@ -1,0 +1,35 @@
+{
+  "name": "@ghostspeak/api",
+  "version": "0.1.0",
+  "description": "GhostSpeak Public REST API - Universal Agent Identity Lookup",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "bun --hot src/index.ts",
+    "start": "bun src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@solana/rpc": "^5.1.0",
+    "@solana/addresses": "^5.1.0",
+    "@solana/codecs": "^5.1.0",
+    "@solana/kit": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.3.3"
+  },
+  "keywords": [
+    "ghostspeak",
+    "ai-agents",
+    "solana",
+    "reputation",
+    "identity",
+    "api"
+  ],
+  "author": "GhostSpeak Protocol",
+  "license": "MIT"
+}

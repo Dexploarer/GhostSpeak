@@ -25,12 +25,11 @@ describe('Agent Register Command', () => {
   it('should have required options', () => {
     const registerCmd = agentCommand.commands.find(cmd => cmd.name() === 'register')
     const options = registerCmd?.options.map(opt => opt.long)
-    
+
     expect(options).toContain('--name')
     expect(options).toContain('--description')
     expect(options).toContain('--capabilities')
     expect(options).toContain('--endpoint')
-    expect(options).toContain('--merkle-tree')
     expect(options).toContain('--yes')
   })
 

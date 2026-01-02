@@ -5,7 +5,7 @@
  * These are called by cron jobs to poll for x402 transactions.
  */
 
-import { action } from './_generated/server'
+import { internalAction } from './_generated/server'
 import { internal, api } from './_generated/api'
 import { v } from 'convex/values'
 
@@ -17,7 +17,7 @@ import { v } from 'convex/values'
  * 2. Parses x402 payment data
  * 3. Calls internal mutations to update database
  */
-export const pollX402Transactions = action({
+export const pollX402Transactions = internalAction({
   args: {
     facilitatorAddress: v.string(),
     batchSize: v.optional(v.number()),
@@ -136,7 +136,7 @@ export const pollX402Transactions = action({
           // NOTE: responseTimeMs is not available from on-chain data, so we use a default value
           // Webhooks provide actual response time, on-chain polling uses 0 (neutral impact)
           const reputationResult = await ctx.runMutation(
-            internal.payaiReputation.updateFromPayment,
+            internal.transactionReputation.updateFromPayment,
             {
               merchantAddress: payment.merchant,
               paymentSignature: payment.signature,

@@ -18,7 +18,7 @@ export interface AgentData {
   merkleTree?: string
 }
 
-export async function registerAgentPrompts(options: { name?: string; description?: string; capabilities?: string; category?: string; endpoint?: string; metadata?: boolean; yes?: boolean }): Promise<AgentData> {
+export async function registerAgentPrompts(options: { name?: string; description?: string; capabilities?: string; category?: string; endpoint?: string; metadata?: boolean; yes?: boolean; type?: string }): Promise<AgentData> {
   // Agent name
   const name = options.name ?? await text({
     message: 'What is your agent\'s name?',
@@ -102,17 +102,23 @@ export async function registerAgentPrompts(options: { name?: string; description
   }
 
   // Agent Type Selection
-  const agentType = await select({
-    message: 'Select Agent Type:',
-    options: [
-      { value: 'standard', label: 'Standard Agent', hint: 'Best for most use cases (Mutable, On-chain Reputation)' },
-      { value: 'compressed', label: 'Compressed Agent', hint: 'Lower cost, requires Merkle Tree (Optimized)' }
-    ]
-  })
+  let agentType = options.type || 'standard' // Default to 'standard' if not provided
 
-  if (isCancel(agentType)) {
-    cancel('Agent registration cancelled')
-    process.exit(0)
+  if (!options.type) {
+    const selectedType = await select({
+      message: 'Select Agent Type:',
+      options: [
+        { value: 'standard', label: 'Standard Agent', hint: 'Best for most use cases (Mutable, On-chain Reputation)' },
+        { value: 'compressed', label: 'Compressed Agent', hint: 'Lower cost, requires Merkle Tree (Optimized)' }
+      ]
+    })
+
+    if (isCancel(selectedType)) {
+      cancel('Agent registration cancelled')
+      process.exit(0)
+    }
+
+    agentType = selectedType as string
   }
 
   // Merkle Tree Address (only if compressed)

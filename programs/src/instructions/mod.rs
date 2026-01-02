@@ -14,6 +14,7 @@ pub mod agent_management;
 pub mod compliance_governance;
 pub mod credential;
 pub mod did; // W3C-compliant decentralized identifiers (did:sol)
+pub mod ghost; // Ghost identity management (NEW FOR GHOST)
 pub mod ghost_protect; // B2C escrow with dispute resolution
 pub mod protocol_config;
 pub mod reputation; // Multi-source reputation aggregation
@@ -28,6 +29,7 @@ pub use agent_management::*;
 pub use compliance_governance::*;
 pub use credential::*;
 pub use did::*;
+pub use ghost::*; // Ghost identity instructions (NEW FOR GHOST)
 pub use ghost_protect::*;
 pub use protocol_config::*;
 pub use reputation::*;

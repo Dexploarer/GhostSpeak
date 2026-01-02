@@ -9,6 +9,15 @@ import { v } from 'convex/values'
 import { mutation, query, internalMutation, internalQuery } from './_generated/server'
 import { Id } from './_generated/dataModel'
 
+// Define event type for internal use
+const eventType = v.union(
+  v.literal('score.updated'),
+  v.literal('tier.changed'),
+  v.literal('credential.issued'),
+  v.literal('staking.created'),
+  v.literal('staking.updated')
+)
+
 /**
  * Queue a webhook event for delivery
  */
@@ -28,6 +37,67 @@ export const queueWebhookEvent = mutation({
     queued: v.number(),
     webhookIds: v.array(v.id('webhookDeliveries')),
   }),
+  handler: async (ctx, args) => {
+    const { event, agentAddress, data } = args
+
+    // Find all active subscriptions for this event type
+    const subscriptions = await ctx.db
+      .query('webhookSubscriptions')
+      .withIndex('by_active', (q) => q.eq('isActive', true))
+      .collect()
+
+    // Filter subscriptions that match this event and agent
+    const matchingSubscriptions = subscriptions.filter((sub) => {
+      // Check if event type matches
+      if (!sub.events.includes(event)) return false
+
+      // Check if agent filter matches (if specified)
+      if (sub.agentAddresses && sub.agentAddresses.length > 0) {
+        return sub.agentAddresses.includes(agentAddress)
+      }
+
+      return true
+    })
+
+    // Create webhook delivery records for each matching subscription
+    const webhookIds: Id<'webhookDeliveries'>[] = []
+
+    for (const subscription of matchingSubscriptions) {
+      const webhookId = await ctx.db.insert('webhookDeliveries', {
+        subscriptionId: subscription._id,
+        userId: subscription.userId,
+        event,
+        payload: {
+          event,
+          agentAddress,
+          data,
+          timestamp: Date.now(),
+        },
+        url: subscription.url,
+        secret: subscription.secret,
+        status: 'pending',
+        attemptCount: 0,
+        maxAttempts: 5,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+
+      webhookIds.push(webhookId)
+    }
+
+    return { queued: webhookIds.length, webhookIds }
+  },
+})
+
+/**
+ * Internal version for cron jobs to queue webhook events
+ */
+export const queueWebhookEventInternal = internalMutation({
+  args: {
+    event: eventType,
+    agentAddress: v.string(),
+    data: v.any(),
+  },
   handler: async (ctx, args) => {
     const { event, agentAddress, data } = args
 

@@ -35,7 +35,7 @@ pub struct UpdateAgentService<'info> {
         mut,
         seeds = [b"agent", owner.key().as_ref()],
         bump = agent.bump,
-        has_one = owner
+        constraint = agent.owner == Some(owner.key()) @ GhostSpeakError::InvalidAgentOwner
     )]
     pub agent: Account<'info, Agent>,
 
@@ -55,7 +55,7 @@ pub struct ManageAgentStatus<'info> {
         mut,
         seeds = [b"agent", owner.key().as_ref()],
         bump = agent.bump,
-        has_one = owner
+        constraint = agent.owner == Some(owner.key()) @ GhostSpeakError::InvalidAgentOwner
     )]
     pub agent: Account<'info, Agent>,
 

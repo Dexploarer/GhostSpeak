@@ -19,6 +19,7 @@ export interface RegisterOptions {
   description?: string
   capabilities?: string
   endpoint?: string
+  type?: string
   metadata?: boolean
   yes?: boolean
 }

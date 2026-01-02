@@ -4,7 +4,7 @@
  */
 
 import { v } from 'convex/values'
-import { query, mutation } from './_generated/server'
+import { query, mutation, internalQuery } from './_generated/server'
 
 // ─── QUERIES ─────────────────────────────────────────────────────────────────
 
@@ -125,6 +125,39 @@ export const getTopByScore = query({
       .withIndex('by_score')
       .order('desc')
       .take(limit)
+  },
+})
+
+/**
+ * Get all cached reputation records (for anomaly detection)
+ */
+export const listAll = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query('agentReputationCache').collect()
+  },
+})
+
+/**
+ * Internal version of getByAddress for cron jobs
+ */
+export const getByAddressInternal = internalQuery({
+  args: { agentAddress: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query('agentReputationCache')
+      .withIndex('by_address', (q) => q.eq('agentAddress', args.agentAddress))
+      .first()
+  },
+})
+
+/**
+ * Internal version of listAll for cron jobs
+ */
+export const listAllInternal = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query('agentReputationCache').collect()
   },
 })
 

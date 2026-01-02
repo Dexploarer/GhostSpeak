@@ -21,3 +21,12 @@ export function formatNumber(num: number): string {
   if (num >= 1e3) return `${(num / 1e3).toFixed(2)}K`
   return num.toString()
 }
+
+export function formatTokenAmount(amount: number | bigint | string, decimals = 9): string {
+  const numValue = typeof amount === 'string' ? parseFloat(amount) : Number(amount)
+  const value = numValue / Math.pow(10, decimals)
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  })
+}

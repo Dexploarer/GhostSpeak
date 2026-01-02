@@ -6,7 +6,7 @@
 import React from 'react'
 import { Box, Text } from 'ink'
 
-interface InfoRowProps {
+export interface InfoRowProps {
   label: string
   value: string | number
   color?: string

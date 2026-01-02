@@ -353,7 +353,7 @@ export default defineSchema({
     totalJobs: v.number(),
     disputes: v.number(),
     disputeResolution: v.string(), // '100%', '95%', etc.
-    // PayAI data (x402 payment history)
+    // Payment data (x402 payment history)
     payaiData: v.optional(
       v.object({
         last30Days: v.object({
@@ -513,7 +513,7 @@ export default defineSchema({
   // Track on-chain polling state for x402 payments
   //
   x402SyncState: defineTable({
-    facilitatorAddress: v.string(), // PayAI facilitator address
+    facilitatorAddress: v.string(), // X402 facilitator address
     lastSignature: v.string(), // Last synced transaction signature
     lastSyncAt: v.number(), // Last sync timestamp
     totalSynced: v.number(), // Total payments synced
@@ -526,14 +526,14 @@ export default defineSchema({
   //
   x402SyncEvents: defineTable({
     signature: v.string(), // Transaction signature (on-chain proof)
-    facilitatorAddress: v.string(), // PayAI facilitator
+    facilitatorAddress: v.string(), // X402 facilitator
     merchantAddress: v.string(), // Agent receiving payment
     payerAddress: v.string(), // User sending payment
     amount: v.string(), // Payment amount (BigInt as string)
     success: v.boolean(), // Payment success status
     syncedAt: v.number(), // When event was recorded
     // Dual-source tracking
-    sourceWebhook: v.boolean(), // Received via PayAI webhook
+    sourceWebhook: v.boolean(), // Received via payment webhook
     sourceOnChain: v.boolean(), // Discovered via on-chain polling
   })
     .index('by_signature', ['signature'])
@@ -932,4 +932,91 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index('by_config_key', ['configKey']),
+
+  //
+  // ─── GHOST DISCOVERY: DISCOVERED AGENTS ────────────────────────────────────
+  // Track agents discovered on-chain (before they claim their identity)
+  //
+  discoveredAgents: defineTable({
+    // Agent identity
+    ghostAddress: v.string(),
+    // Discovery metadata
+    firstTxSignature: v.string(), // First transaction where agent was discovered
+    firstSeenTimestamp: v.number(), // When agent was first discovered
+    discoverySource: v.string(), // 'program_logs' | 'account_scan' | 'x402_payment'
+    facilitatorAddress: v.optional(v.string()), // PayAI or other facilitator
+    slot: v.number(), // Solana slot number
+    blockTime: v.number(), // Block timestamp
+    // Status tracking
+    status: v.string(), // 'discovered' | 'claimed' | 'verified'
+    // Claim tracking
+    claimedAt: v.optional(v.number()),
+    claimedBy: v.optional(v.string()), // Wallet address that claimed it
+    // Metadata storage (Convex file storage or IPFS)
+    metadataFileId: v.optional(v.id('_storage')), // Convex file storage
+    ipfsCid: v.optional(v.string()), // IPFS CID (alternative)
+    ipfsUri: v.optional(v.string()), // IPFS URI
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_address', ['ghostAddress'])
+    .index('by_status', ['status'])
+    .index('by_discovery_source', ['discoverySource'])
+    .index('by_facilitator', ['facilitatorAddress'])
+    .index('by_first_seen', ['firstSeenTimestamp']),
+
+  //
+  // ─── GHOST DISCOVERY: EXTERNAL ID MAPPINGS ─────────────────────────────────
+  // Cross-platform identity mappings (PayAI, ElizaOS, GitHub, etc.)
+  //
+  externalIdMappings: defineTable({
+    ghostAddress: v.string(),
+    platform: v.string(), // 'payai' | 'elizaos' | 'github' | 'twitter' | etc.
+    externalId: v.string(), // Platform-specific ID
+    verified: v.boolean(), // Whether mapping is verified
+    verifiedAt: v.optional(v.number()),
+    // Discovery metadata
+    discoveredFrom: v.optional(v.string()), // 'x402_payment' | 'manual' | 'claim'
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_ghost', ['ghostAddress'])
+    .index('by_platform', ['platform'])
+    .index('by_platform_external_id', ['platform', 'externalId']),
+
+  //
+  // ─── GHOST DISCOVERY: INDEXER STATE ────────────────────────────────────────
+  // Track blockchain indexing progress
+  //
+  ghostIndexerState: defineTable({
+    stateKey: v.string(), // 'last_processed_slot' | 'last_processed_signature' | etc.
+    value: v.string(), // State value as string
+    network: v.string(), // 'devnet' | 'mainnet-beta'
+    updatedAt: v.number(),
+  }).index('by_state_key', ['stateKey']).index('by_network', ['network']),
+
+  //
+  // ─── GHOST DISCOVERY: DISCOVERY EVENTS ─────────────────────────────────────
+  // Audit log of agent discoveries
+  //
+  discoveryEvents: defineTable({
+    eventType: v.string(), // 'agent_discovered' | 'agent_claimed' | 'external_id_mapped'
+    ghostAddress: v.optional(v.string()),
+    data: v.optional(
+      v.object({
+        signature: v.optional(v.string()),
+        slot: v.optional(v.number()),
+        blockTime: v.optional(v.number()),
+        facilitator: v.optional(v.string()),
+        platform: v.optional(v.string()),
+        externalId: v.optional(v.string()),
+      })
+    ),
+    timestamp: v.number(),
+  })
+    .index('by_event_type', ['eventType'])
+    .index('by_ghost', ['ghostAddress'])
+    .index('by_timestamp', ['timestamp']),
 })

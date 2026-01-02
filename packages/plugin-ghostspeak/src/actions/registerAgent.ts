@@ -13,7 +13,7 @@ import type {
   State,
 } from '@elizaos/core';
 import { logger } from '@elizaos/core';
-import { GhostSpeakClient } from '@ghostspeak/sdk';
+import { GhostSpeakService } from '../services/GhostSpeakService';
 import { getAgentSigner, ensureFundedWallet } from '../wallet';
 
 /**
@@ -165,14 +165,26 @@ Optional: "model: gpt-4, type: 0, compressed"`;
         throw new Error('Insufficient SOL balance. Please fund your wallet or wait for airdrop.');
       }
 
-      // Create GhostSpeak client
-      const client = new GhostSpeakClient({
-        cluster: (process.env.SOLANA_CLUSTER as 'devnet' | 'mainnet-beta' | 'testnet') || 'devnet',
-        rpcEndpoint: process.env.SOLANA_RPC_URL,
-      });
+      // Get the GhostSpeak service
+      const service = runtime.getService<GhostSpeakService>('ghostspeak');
+      if (!service) {
+        throw new Error('GhostSpeak service not available');
+      }
 
       // Register agent
       let result: any;
+
+      // Build metadata for capabilities
+      const metadata = {
+        capabilities: request.capabilities,
+        model: request.model,
+        framework: 'elizaos',
+        registeredAt: Date.now(),
+      };
+      const metadataUri = `data:application/json,${encodeURIComponent(JSON.stringify(metadata))}`;
+
+      // Generate unique agent ID
+      const agentId = `${request.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
 
       if (request.useCompressedNFT) {
         // Use compressed NFT (requires merkle tree)
@@ -180,21 +192,21 @@ Optional: "model: gpt-4, type: 0, compressed"`;
         // TODO: Implement compressed NFT registration with merkle tree
         logger.warn('Compressed NFT registration not yet implemented, using standard registration');
 
-        result = await client.agents.register(signer, {
+        result = await service.agents.register(signer, {
           name: request.name,
           description: request.description,
-          capabilities: request.capabilities,
-          model: request.model,
-          agentType: request.agentType,
+          metadataUri,
+          agentId,
+          agentType: request.agentType || 0,
         });
       } else {
         // Standard registration
-        result = await client.agents.register(signer, {
+        result = await service.agents.register(signer, {
           name: request.name,
           description: request.description,
-          capabilities: request.capabilities,
-          model: request.model,
-          agentType: request.agentType,
+          metadataUri,
+          agentId,
+          agentType: request.agentType || 0,
         });
       }
 
@@ -203,13 +215,10 @@ Optional: "model: gpt-4, type: 0, compressed"`;
         signature: result.signature,
       }, 'Agent registered successfully');
 
-      // Store agent address in runtime state for future use
-      try {
-        await runtime.setState('ghostspeakAgentAddress', result.address.toString());
-        logger.debug('Stored agent address in runtime state');
-      } catch (error) {
-        logger.warn({ error }, 'Failed to store agent address in runtime state (non-critical)');
-      }
+      // Log the agent address for reference
+      logger.debug({
+        agentAddress: result.address.toString(),
+      }, 'Agent registered - address can be used for future operations');
 
       // Build success response
       const responseText = `✅ Agent registered successfully on GhostSpeak!

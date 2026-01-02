@@ -289,7 +289,7 @@ export const recordVerifiedHireCredential = internalMutation({
 /**
  * Check payment milestones and issue credentials
  *
- * Called after each PayAI payment to check if agent reached 10/100/1000 payments
+ * Called after each payment to check if agent reached 10/100/1000 payments
  */
 export const checkAndIssuePaymentMilestoneCredentials = internalMutation({
   args: {

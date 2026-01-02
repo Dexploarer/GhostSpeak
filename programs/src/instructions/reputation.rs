@@ -26,7 +26,7 @@ pub struct InitializeReputationMetrics<'info> {
 
     /// Agent account
     #[account(
-        constraint = agent.owner == authority.key() @ GhostSpeakError::InvalidAgentOwner
+        constraint = agent.owner == Some(authority.key()) @ GhostSpeakError::InvalidAgentOwner
     )]
     pub agent: Account<'info, Agent>,
 

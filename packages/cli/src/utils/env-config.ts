@@ -4,6 +4,8 @@ import { existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 // July 2025 @solana/kit patterns
 import { address, type Address } from '@solana/kit';
+// Import canonical program IDs
+import { PROGRAM_IDS } from '../../../../config/program-ids.js';
 
 // Load environment variables from multiple possible locations
 function loadEnvFiles() {
@@ -70,41 +72,55 @@ function getCurrentNetwork(): 'mainnet-beta' | 'devnet' | 'testnet' | 'localnet'
 
 /**
  * Get program ID for the current network using July 2025 patterns
- * Returns null if not configured (for graceful CLI startup)
+ * Uses canonical program IDs from config/program-ids.ts as source of truth
+ * Environment variables can override for testing, but mismatches trigger warnings
  */
 function getProgramId(): Address | null {
   const network = getCurrentNetwork();
-  let programIdStr: string | undefined;
-  
-  // Default devnet program ID (deployed GhostSpeak program)
-  const DEFAULT_DEVNET_PROGRAM_ID = 'GHSTSPKUhJAMv3j79AFyPoYjyPHaSDe65bE8F6yEhV8s';
-  
+
+  // Get canonical program ID from config
+  const networkKey = network === 'mainnet-beta' ? 'mainnet' : network;
+  const canonicalId = PROGRAM_IDS[networkKey as keyof typeof PROGRAM_IDS];
+
+  // Check for environment variable override
+  let envProgramIdStr: string | undefined;
   switch (network) {
     case 'mainnet-beta':
-      programIdStr = process.env.GHOSTSPEAK_PROGRAM_ID_MAINNET;
+      envProgramIdStr = process.env.GHOSTSPEAK_PROGRAM_ID_MAINNET;
       break;
     case 'devnet':
-      programIdStr = process.env.GHOSTSPEAK_PROGRAM_ID_DEVNET ?? DEFAULT_DEVNET_PROGRAM_ID;
+      envProgramIdStr = process.env.GHOSTSPEAK_PROGRAM_ID_DEVNET;
       break;
     case 'testnet':
-      programIdStr = process.env.GHOSTSPEAK_PROGRAM_ID_TESTNET;
+      envProgramIdStr = process.env.GHOSTSPEAK_PROGRAM_ID_TESTNET;
       break;
     case 'localnet':
-      programIdStr = process.env.GHOSTSPEAK_PROGRAM_ID_LOCALNET;
+      envProgramIdStr = process.env.GHOSTSPEAK_PROGRAM_ID_LOCALNET;
       break;
   }
-  
-  if (!programIdStr) {
-    // Return null for graceful handling - some CLI commands don't need the program
-    return null;
+
+  // If environment variable is set, validate it matches canonical
+  if (envProgramIdStr) {
+    try {
+      const envProgramId = address(envProgramIdStr);
+      if (envProgramId !== canonicalId) {
+        console.warn('⚠️  WARNING: Program ID mismatch detected!');
+        console.warn(`   Environment: ${envProgramId}`);
+        console.warn(`   Canonical:   ${canonicalId}`);
+        console.warn(`   Using canonical program ID from config/program-ids.ts`);
+        console.warn(`   To fix: Update GHOSTSPEAK_PROGRAM_ID_${network.toUpperCase().replace('-', '_')} in .env`);
+      }
+      // Always use canonical ID to prevent mismatches
+      return canonicalId;
+    } catch (error) {
+      console.warn(`Invalid program ID in environment for ${network}: ${envProgramIdStr}`);
+      console.warn(`Using canonical program ID: ${canonicalId}`);
+      return canonicalId;
+    }
   }
-  
-  try {
-    return address(programIdStr);
-  } catch (error) {
-    console.warn(`Invalid program ID for ${network}: ${programIdStr}`);
-    return null;
-  }
+
+  // Return canonical ID
+  return canonicalId;
 }
 
 /**

@@ -23,16 +23,18 @@ vi.mock('fs', () => ({
 describe('AuditTrail', () => {
   let auditTrail: AuditTrail
   let eventBus: EventBus
-  let mockFs: any
 
   beforeEach(async () => {
-    mockFs = vi.mocked(fs)
-    mockFs.readFile.mockResolvedValue('')
-    mockFs.access.mockRejectedValue(new Error('Directory does not exist'))
-    mockFs.mkdir.mockResolvedValue(undefined)
-    mockFs.appendFile.mockResolvedValue(undefined)
-    mockFs.writeFile.mockResolvedValue(undefined)
-    mockFs.unlink.mockResolvedValue(undefined)
+    // Reset all mocks
+    vi.clearAllMocks()
+
+    // Setup mock implementations
+    vi.spyOn(fs, 'readFile').mockResolvedValue('' as any)
+    vi.spyOn(fs, 'access').mockRejectedValue(new Error('Directory does not exist'))
+    vi.spyOn(fs, 'mkdir').mockResolvedValue(undefined as any)
+    vi.spyOn(fs, 'appendFile').mockResolvedValue(undefined as any)
+    vi.spyOn(fs, 'writeFile').mockResolvedValue(undefined as any)
+    vi.spyOn(fs, 'unlink').mockResolvedValue(undefined as any)
 
     eventBus = EventBus.getInstance()
     eventBus.setMaxListeners(50) // Increase listener limit for tests
@@ -63,7 +65,7 @@ describe('AuditTrail', () => {
       await auditTrail.logEvent(event)
 
       // Verify event was logged (check if it would be written to file)
-      expect(mockFs.appendFile).toHaveBeenCalledWith(
+      expect(fs.appendFile).toHaveBeenCalledWith(
         expect.stringContaining('audit.log'),
         expect.stringContaining('"type":"transaction"')
       )
@@ -87,7 +89,7 @@ describe('AuditTrail', () => {
 
       await auditTrailHighSeverity.logEvent(lowSeverityEvent)
 
-      expect(mockFs.appendFile).not.toHaveBeenCalled()
+      expect(fs.appendFile).not.toHaveBeenCalled()
     })
 
     it('should not log events when disabled', async () => {
@@ -106,7 +108,7 @@ describe('AuditTrail', () => {
 
       await disabledAuditTrail.logEvent(event)
 
-      expect(mockFs.appendFile).not.toHaveBeenCalled()
+      expect(fs.appendFile).not.toHaveBeenCalled()
     })
 
     it('should create audit trail instances', () => {
@@ -136,7 +138,7 @@ describe('AuditTrail', () => {
 
       await auditTrail.logTransaction(transaction)
 
-      expect(mockFs.appendFile).toHaveBeenCalledWith(
+      expect(fs.appendFile).toHaveBeenCalledWith(
         expect.stringContaining('audit.log'),
         expect.stringContaining('"type":"transaction"')
       )
@@ -152,7 +154,7 @@ describe('AuditTrail', () => {
 
       await auditTrail.logTransaction(largeTransaction)
 
-      expect(mockFs.appendFile).toHaveBeenCalledWith(
+      expect(fs.appendFile).toHaveBeenCalledWith(
         expect.stringContaining('audit.log'),
         expect.stringContaining('"severity":"high"')
       )
@@ -172,7 +174,7 @@ describe('AuditTrail', () => {
         result: 'success'
       })
 
-      expect(mockFs.appendFile).toHaveBeenCalledWith(
+      expect(fs.appendFile).toHaveBeenCalledWith(
         expect.stringContaining('audit.log'),
         expect.stringContaining('"type":"authentication"')
       )
@@ -189,7 +191,7 @@ describe('AuditTrail', () => {
         result: 'failure'
       })
 
-      expect(mockFs.appendFile).toHaveBeenCalledWith(
+      expect(fs.appendFile).toHaveBeenCalledWith(
         expect.stringContaining('audit.log'),
         expect.stringContaining('"result":"failure"')
       )
@@ -205,7 +207,7 @@ describe('AuditTrail', () => {
         userId: 'user123'
       })
 
-      expect(mockFs.appendFile).toHaveBeenCalledWith(
+      expect(fs.appendFile).toHaveBeenCalledWith(
         expect.stringContaining('audit.log'),
         expect.stringContaining('"type":"security_event"')
       )
@@ -228,7 +230,7 @@ describe('AuditTrail', () => {
         error: 'Transaction failed'
       })
 
-      expect(mockFs.appendFile).toHaveBeenCalledWith(
+      expect(fs.appendFile).toHaveBeenCalledWith(
         expect.stringContaining('audit.log'),
         expect.stringContaining('"type":"error"')
       )
@@ -243,7 +245,7 @@ describe('AuditTrail', () => {
         { id: '2', type: 'authentication', severity: 'low', timestamp: new Date().toISOString(), userId: 'user2', description: 'Auth', details: {}, action: 'auth', result: 'success' }
       ]
       const mockLogContent = mockEvents.map(e => JSON.stringify(e)).join('\n')
-      mockFs.readFile.mockResolvedValue(mockLogContent)
+      vi.spyOn(fs, 'readFile').mockResolvedValue(mockLogContent as any)
 
       const report = await auditTrail.generateReport({
         startDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
@@ -260,13 +262,13 @@ describe('AuditTrail', () => {
     it('should filter events by date range', async () => {
       const oldDate = new Date('2023-01-01')
       const recentDate = new Date()
-      
+
       const mockEvents = [
         { id: '1', type: 'transaction', severity: 'medium', timestamp: oldDate.toISOString(), userId: 'user1', description: 'Old', details: {}, action: 'test', result: 'success' },
         { id: '2', type: 'transaction', severity: 'medium', timestamp: recentDate.toISOString(), userId: 'user1', description: 'Recent', details: {}, action: 'test', result: 'success' }
       ]
       const mockLogContent = mockEvents.map(e => JSON.stringify(e)).join('\n')
-      mockFs.readFile.mockResolvedValue(mockLogContent)
+      vi.spyOn(fs, 'readFile').mockResolvedValue(mockLogContent as any)
 
       const report = await auditTrail.generateReport({
         startDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
@@ -291,7 +293,7 @@ describe('AuditTrail', () => {
         result: i < 3 ? 'success' : 'failure' // 70% failure rate
       }))
       const mockLogContent = mockEvents.map(e => JSON.stringify(e)).join('\n')
-      mockFs.readFile.mockResolvedValue(mockLogContent)
+      vi.spyOn(fs, 'readFile').mockResolvedValue(mockLogContent as any)
 
       const report = await auditTrail.generateReport({
         startDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
@@ -306,8 +308,8 @@ describe('AuditTrail', () => {
 
   describe('Report Export', () => {
     it('should export report as JSON', async () => {
-      mockFs.readFile.mockResolvedValue('')
-      
+      vi.spyOn(fs, 'readFile').mockResolvedValue('' as any)
+
       const report = await auditTrail.generateReport({
         startDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
         endDate: new Date()
@@ -315,15 +317,15 @@ describe('AuditTrail', () => {
 
       await auditTrail.exportReport(report, '/tmp/report.json', 'json')
 
-      expect(mockFs.writeFile).toHaveBeenCalledWith(
+      expect(fs.writeFile).toHaveBeenCalledWith(
         '/tmp/report.json',
         expect.stringContaining('"metadata"')
       )
     })
 
     it('should export report as CSV', async () => {
-      mockFs.readFile.mockResolvedValue('')
-      
+      vi.spyOn(fs, 'readFile').mockResolvedValue('' as any)
+
       const report = await auditTrail.generateReport({
         startDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
         endDate: new Date()
@@ -331,15 +333,15 @@ describe('AuditTrail', () => {
 
       await auditTrail.exportReport(report, '/tmp/report.csv', 'csv')
 
-      expect(mockFs.writeFile).toHaveBeenCalledWith(
+      expect(fs.writeFile).toHaveBeenCalledWith(
         '/tmp/report.csv',
         expect.stringContaining('"ID","Type","Severity"')
       )
     })
 
     it('should export report as HTML', async () => {
-      mockFs.readFile.mockResolvedValue('')
-      
+      vi.spyOn(fs, 'readFile').mockResolvedValue('' as any)
+
       const report = await auditTrail.generateReport({
         startDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
         endDate: new Date()
@@ -347,7 +349,7 @@ describe('AuditTrail', () => {
 
       await auditTrail.exportReport(report, '/tmp/report.html', 'html')
 
-      expect(mockFs.writeFile).toHaveBeenCalledWith(
+      expect(fs.writeFile).toHaveBeenCalledWith(
         '/tmp/report.html',
         expect.stringContaining('<!DOCTYPE html>')
       )
@@ -361,7 +363,7 @@ describe('AuditTrail', () => {
         { id: '2', type: 'transaction', severity: 'medium', timestamp: new Date().toISOString(), userId: 'user1', description: 'Token transfer', details: {}, action: 'transfer', result: 'success' }
       ]
       const mockLogContent = mockEvents.map(e => JSON.stringify(e)).join('\n')
-      mockFs.readFile.mockResolvedValue(mockLogContent)
+      vi.spyOn(fs, 'readFile').mockResolvedValue(mockLogContent as any)
 
       const results = await auditTrail.searchEvents({
         text: 'agent'
@@ -377,7 +379,7 @@ describe('AuditTrail', () => {
         { id: '2', type: 'transaction', severity: 'medium', timestamp: new Date().toISOString(), userId: 'user2', description: 'Event 2', details: {}, action: 'test', result: 'success' }
       ]
       const mockLogContent = mockEvents.map(e => JSON.stringify(e)).join('\n')
-      mockFs.readFile.mockResolvedValue(mockLogContent)
+      vi.spyOn(fs, 'readFile').mockResolvedValue(mockLogContent as any)
 
       const results = await auditTrail.searchEvents({
         userId: 'user1'
@@ -409,7 +411,7 @@ describe('AuditTrail', () => {
         correlationId: 'corr123'
       })
 
-      expect(mockFs.appendFile).toHaveBeenCalledWith(
+      expect(fs.appendFile).toHaveBeenCalledWith(
         expect.stringContaining('audit.log'),
         expect.stringContaining('"type":"transaction"')
       )
@@ -430,7 +432,7 @@ describe('AuditTrail', () => {
         correlationId: 'corr456'
       })
 
-      expect(mockFs.appendFile).toHaveBeenCalledWith(
+      expect(fs.appendFile).toHaveBeenCalledWith(
         expect.stringContaining('audit.log'),
         expect.stringContaining('"type":"security_event"')
       )
@@ -441,7 +443,7 @@ describe('AuditTrail', () => {
     it('should clear logs', async () => {
       await auditTrail.clearLogs()
 
-      expect(mockFs.unlink).toHaveBeenCalledWith(
+      expect(fs.unlink).toHaveBeenCalledWith(
         expect.stringContaining('audit.log')
       )
     })
@@ -458,7 +460,7 @@ describe('AuditTrail', () => {
         action: 'test',
         result: 'success'
       }
-      mockFs.readFile.mockResolvedValue(JSON.stringify(recentEvent))
+      vi.spyOn(fs, 'readFile').mockResolvedValue(JSON.stringify(recentEvent) as any)
 
       const events = await auditTrail.getRecentEvents(10)
 

@@ -470,7 +470,7 @@ export function useReputationLeaderboard(category?: string, limit = 10) {
       // Filter by category if specified
       let filteredAgents = allAgents
       if (category) {
-        filteredAgents = allAgents.filter((agent: { data?: AgentAccountData }) =>
+        filteredAgents = allAgents.filter((agent) =>
           agent.data?.capabilities?.includes(category)
         )
       }
@@ -478,11 +478,11 @@ export function useReputationLeaderboard(category?: string, limit = 10) {
       // Sort by reputation score and take top N
       return filteredAgents
         .sort(
-          (a: { data?: AgentAccountData }, b: { data?: AgentAccountData }) =>
+          (a, b) =>
             (b.data?.reputationScore || 0) - (a.data?.reputationScore || 0)
         )
         .slice(0, limit)
-        .map((agent: { address: Address; data?: AgentAccountData }) => ({
+        .map((agent) => ({
           address: agent.address,
           name: agent.data?.name || 'Unknown',
           score: Math.round((agent.data?.reputationScore || 0) / 100),

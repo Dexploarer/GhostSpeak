@@ -594,6 +594,22 @@ pub enum GhostSpeakError {
     NoValidatorAssigned = 2753,
     #[msg("Network mismatch")]
     NetworkMismatch = 2754,
+
+    // ===== GHOST IDENTITY ERRORS (2800-2849) =====
+    #[msg("Invalid agent status for this operation")]
+    InvalidAgentStatus = 2800,
+    #[msg("Ghost already claimed by another owner")]
+    AlreadyClaimed = 2801,
+    #[msg("Unauthorized owner - you don't own this Ghost")]
+    UnauthorizedOwner = 2802,
+    #[msg("Too many external identifiers (max 10)")]
+    TooManyExternalIds = 2803,
+    #[msg("Too many reputation components (max 8)")]
+    TooManyReputationComponents = 2804,
+    #[msg("External ID already exists for this platform")]
+    ExternalIdAlreadyExists = 2805,
+    #[msg("Ghost Score out of valid range (0-1000)")]
+    InvalidGhostScore = 2806,
 }
 
 // =====================================================
@@ -984,6 +1000,133 @@ pub mod ghostspeak_marketplace {
 
     pub fn manage_agent_status(ctx: Context<ManageAgentStatus>, new_status: bool) -> Result<()> {
         instructions::agent_management::manage_agent_status(ctx, new_status)
+    }
+
+    // =====================================================
+    // GHOST IDENTITY MANAGEMENT INSTRUCTIONS
+    // =====================================================
+    // Core Ghost Identity system for discovered agents
+
+    /// Auto-create a Ghost from discovered x402 transaction (indexer service only)
+    ///
+    /// Used by the off-chain indexer service when it discovers a new agent
+    /// via x402 payment transactions. Creates an Unregistered Ghost.
+    ///
+    /// Parameters:
+    /// - payment_address: The x402_payment_address (merchant address) of the discovered agent
+    /// - first_tx_signature: Transaction signature where this agent was first discovered
+    /// - discovery_source: Source identifier (e.g., "http:payai", "blockchain:direct")
+    /// - initial_ghost_score: Optional initial Ghost Score from backfill metrics
+    pub fn auto_create_ghost(
+        ctx: Context<AutoCreateGhost>,
+        payment_address: Pubkey,
+        first_tx_signature: String,
+        discovery_source: String,
+        initial_ghost_score: Option<u64>,
+    ) -> Result<()> {
+        instructions::ghost::auto_create_ghost(
+            ctx,
+            payment_address,
+            first_tx_signature,
+            discovery_source,
+            initial_ghost_score,
+        )
+    }
+
+    /// Register metadata for an Unregistered Ghost
+    ///
+    /// Adds name, description, capabilities, and service endpoint to a discovered Ghost.
+    /// Transitions: Unregistered → Registered
+    /// Anyone can add metadata to an Unregistered Ghost.
+    ///
+    /// Parameters:
+    /// - name: Agent name (max 64 chars)
+    /// - description: Agent description (max 128 chars)
+    /// - capabilities: List of capabilities (max 5)
+    /// - service_endpoint: Optional HTTP endpoint for the agent service
+    pub fn register_ghost_metadata(
+        ctx: Context<RegisterGhostMetadata>,
+        name: String,
+        description: String,
+        capabilities: Vec<String>,
+        service_endpoint: Option<String>,
+    ) -> Result<()> {
+        instructions::ghost::register_ghost_metadata(
+            ctx,
+            name,
+            description,
+            capabilities,
+            service_endpoint,
+        )
+    }
+
+    /// Claim ownership of a Ghost using Solana Attestation Service (SAS)
+    ///
+    /// Security: Uses SAS for trustless ownership verification. The claimer must have
+    /// created a SAS attestation proving they own the x402_payment_address.
+    ///
+    /// Auto-creates: DID document with did:sol:<network>:<address> format
+    /// Transitions: Unregistered/Registered → Claimed
+    ///
+    /// SAS Attestation Requirements:
+    /// - Credential: GhostSpeak ownership credential (issuer)
+    /// - Schema: Ghost ownership schema defining attestation data structure
+    /// - Nonce: x402_payment_address (ensures PDA uniqueness)
+    /// - Data: Contains x402_payment_address as proof of ownership
+    ///
+    /// Parameters:
+    /// - sas_credential: Pubkey of the SAS Credential (issuer) for ownership attestations
+    /// - sas_schema: Pubkey of the SAS Schema defining the ownership attestation format
+    /// - ipfs_metadata_uri: Optional IPFS URI for agent metadata (ipfs://...)
+    /// - network: Network identifier ("devnet", "mainnet-beta", "testnet")
+    pub fn claim_ghost(
+        ctx: Context<ClaimGhost>,
+        sas_credential: Pubkey,
+        sas_schema: Pubkey,
+        ipfs_metadata_uri: Option<String>,
+        network: String,
+    ) -> Result<()> {
+        instructions::ghost::claim_ghost(
+            ctx,
+            sas_credential,
+            sas_schema,
+            ipfs_metadata_uri,
+            network,
+        )
+    }
+
+    /// Link a platform-specific external ID to a Ghost
+    ///
+    /// Creates a cross-platform identity mapping for this Ghost.
+    /// Only the Ghost owner can link external IDs.
+    ///
+    /// Parameters:
+    /// - platform: Platform identifier (e.g., "payai", "eliza", "github") (max 32 chars)
+    /// - external_id: Platform-specific agent ID (max 128 chars)
+    /// - verified: Whether this external ID has been verified
+    pub fn link_external_id(
+        ctx: Context<LinkExternalId>,
+        platform: String,
+        external_id: String,
+        verified: bool,
+    ) -> Result<()> {
+        instructions::ghost::link_external_id(ctx, platform, external_id, verified)
+    }
+
+    /// Update Ghost Score from off-chain calculation
+    ///
+    /// Called by the reputation oracle/calculator service.
+    /// Updates the weighted Ghost Score and optionally the reputation components.
+    ///
+    /// Parameters:
+    /// - new_score: New Ghost Score (0-1000)
+    /// - components: Optional reputation component breakdown
+    pub fn update_ghost_score(
+        ctx: Context<UpdateGhostScore>,
+        new_score: u64,
+        components: Option<Vec<crate::state::ReputationComponent>>,
+    ) -> Result<()> {
+        instructions::ghost::update_ghost_score(ctx, new_score, components)
     }
 
     // MARKETPLACE INSTRUCTIONS REMOVED

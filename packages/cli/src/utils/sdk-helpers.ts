@@ -164,7 +164,7 @@ export class SafeAuctionClient {
 }
 
 /**
- * Safe agent operations  
+ * Safe agent operations
  */
 export class SafeAgentClient {
   private agentClient: AgentClient | undefined
@@ -181,6 +181,18 @@ export class SafeAgentClient {
     } catch (error) {
       console.warn('Failed to list agents:', error instanceof Error ? error.message : String(error))
       return []
+    }
+  }
+
+  async getAgentAccount(agentAddress: Address): Promise<any> {
+    try {
+      if (!this.agentClient) return null
+      // Try to get agent using SDK's get method
+      const result = await (this.agentClient as any).get?.(agentAddress)
+      return result || null
+    } catch (error) {
+      console.warn('Failed to get agent account:', error instanceof Error ? error.message : String(error))
+      return null
     }
   }
 }

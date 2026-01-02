@@ -17,6 +17,7 @@ export * from "./credential";
 export * from "./credentialTemplate";
 export * from "./credentialType";
 export * from "./didDocument";
+export * from "./externalIdMapping";
 export * from "./ghostProtectEscrow";
 export * from "./governanceProposal";
 export * from "./multisig";

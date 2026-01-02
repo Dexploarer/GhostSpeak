@@ -10,7 +10,59 @@ use anchor_lang::prelude::*;
 // Import PricingModel from lib.rs
 use crate::PricingModel;
 
-// PDA Seeds
+// ========== GHOST IDENTITY ENHANCEMENTS ==========
+
+/// Agent lifecycle status (Ghost Identity)
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AgentStatus {
+    /// Auto-created from x402 transaction, minimal data
+    Unregistered,
+    /// Agent added metadata (name, desc, endpoint)
+    Registered,
+    /// Ownership proven via signature
+    Claimed,
+    /// DID + VCs issued
+    Verified,
+}
+
+/// Cross-platform identity mapping
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq)]
+pub struct ExternalIdentifier {
+    pub platform: String,           // "payai", "eliza", "crossmint", etc.
+    pub external_id: String,        // Platform-specific agent ID
+    pub verified: bool,             // Ownership verified?
+    pub verified_at: i64,           // When verified
+}
+
+/// Reputation component for multi-source Ghost Score
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq)]
+pub struct ReputationComponent {
+    pub source_type: ReputationSourceType,
+    pub score: u64,                 // Raw score (0-100)
+    pub weight: u32,                // Weight in basis points (0-10000)
+    pub last_updated: i64,
+    pub data_points: u64,           // Sample size
+}
+
+/// Multi-source reputation types for Ghost Score
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ReputationSourceType {
+    // Activity Sources (60% total)
+    AccountAge,                     // 30%
+    X402Transactions,               // 30%
+
+    // Platform Sources (30% total)
+    PayAIReviews,                   // 10%
+    ElizaOSReputation,              // 10%
+    CrossmintVerification,          // 5%
+    EndpointReliability,            // 5%
+
+    // Achievement Sources (10% total)
+    JobCompletions,                 // 5%
+    SkillEndorsements,              // 5%
+}
+
+// PDA Seeds (exported for instruction use)
 pub const AGENT_SEED: &[u8] = b"agent";
 pub const AGENT_VERIFICATION_SEED: &[u8] = b"agent_verification";
 
@@ -52,16 +104,30 @@ pub struct AgentAnalytics {
 
 #[account]
 pub struct Agent {
-    pub owner: Pubkey,
-    pub agent_id: String,         // Unique agent identifier
+    // ========== GHOST IDENTITY CORE ==========
+    pub owner: Option<Pubkey>,    // None until claimed (CHANGED FOR GHOST)
+    pub status: AgentStatus,      // Lifecycle state (NEW FOR GHOST)
+    pub agent_id: String,         // Backward compatibility
+
+    // === DISCOVERY PROVENANCE (NEW FOR GHOST) ===
+    pub first_tx_signature: String, // How we discovered this Ghost
+    pub first_seen_timestamp: i64,  // When auto-created
+    pub discovery_source: String,   // "http:payai", "blockchain:direct"
+    pub claimed_at: Option<i64>,    // When ownership proven
+
+    // === BASIC METADATA ===
     pub agent_type: u8,           // Agent type (0=general, 1=trading, 2=content, 3=automation, etc.)
     pub name: String,
     pub description: String,
     pub capabilities: Vec<String>,
     pub pricing_model: PricingModel,
+
+    // === LEGACY REPUTATION (KEPT FOR COMPAT) ===
     pub reputation_score: u32,
     pub total_jobs_completed: u32,
     pub total_earnings: u64,
+
+    // === TIMESTAMPS ===
     pub is_active: bool,
     pub created_at: i64,
     pub updated_at: i64,
@@ -91,6 +157,18 @@ pub struct Agent {
     pub x402_total_payments: u64, // Total x402 payments received
     pub x402_total_calls: u64,    // Total x402 API calls serviced
     pub last_payment_timestamp: i64, // Timestamp of last x402 payment (for proof-of-agent)
+
+    // === CROSS-PLATFORM IDENTITY (NEW FOR GHOST) ===
+    pub external_identifiers: Vec<ExternalIdentifier>, // Platform ID mappings
+
+    // === MULTI-SOURCE REPUTATION (NEW FOR GHOST) ===
+    pub ghost_score: u64,                              // 0-1000 weighted score
+    pub reputation_components: Vec<ReputationComponent>, // Source breakdown
+
+    // === CREDENTIALS (NEW FOR GHOST) ===
+    pub did_address: Option<Pubkey>,  // W3C DID document PDA
+    pub credentials: Vec<Pubkey>,     // VC references
+
     // API Schema Support for Service Discovery
     pub api_spec_uri: String,     // IPFS/HTTP URL to OpenAPI 3.0 spec (JSON)
     pub api_version: String,      // Semantic version of the API (e.g., "1.0.0")
@@ -104,18 +182,32 @@ impl Agent {
     pub const MAX_URI_LEN: usize = 64;      // Reduced for URIs
     pub const MAX_TOKENS: usize = 5;        // Reduced from 10
     pub const MAX_CAP_LEN: usize = 32;      // Reduced capability string length
-    
+    pub const MAX_EXTERNAL_IDS: usize = 10; // Max external identifiers
+    pub const MAX_REPUTATION_COMPONENTS: usize = 8; // Max reputation sources
+    pub const MAX_CREDENTIALS: usize = 20;  // Max VCs
+    pub const MAX_EXTERNAL_ID_LEN: usize = 64; // Max external ID string
+
     pub const LEN: usize = 8 + // discriminator
-        32 + // owner
+        // === GHOST IDENTITY CORE ===
+        1 + 32 + // owner: Option<Pubkey> (CHANGED)
+        1 + // status: AgentStatus enum
         4 + 32 + // agent_id (max 32 chars)
+        // === DISCOVERY PROVENANCE ===
+        4 + 88 + // first_tx_signature (Solana signature)
+        8 + // first_seen_timestamp i64
+        4 + 32 + // discovery_source
+        1 + 8 + // claimed_at: Option<i64>
+        // === BASIC METADATA ===
         1 + // agent_type u8
         4 + MAX_NAME_LENGTH + // name
         4 + Self::MAX_DESC_LEN + // description (reduced)
         4 + (4 + Self::MAX_CAP_LEN) * MAX_CAPABILITIES_COUNT + // capabilities (reduced)
         1 + 1 + // pricing_model enum
+        // === LEGACY REPUTATION ===
         4 + // reputation_score
         4 + // total_jobs_completed
         8 + // total_earnings
+        // === TIMESTAMPS ===
         1 + // is_active
         8 + // created_at
         8 + // updated_at
@@ -144,6 +236,14 @@ impl Agent {
         8 + // x402_total_payments u64
         8 + // x402_total_calls u64
         8 + // last_payment_timestamp i64
+        // === CROSS-PLATFORM IDENTITY (NEW FOR GHOST) ===
+        4 + (Self::MAX_EXTERNAL_IDS * (4 + 32 + 4 + Self::MAX_EXTERNAL_ID_LEN + 1 + 8)) + // external_identifiers
+        // === MULTI-SOURCE REPUTATION (NEW FOR GHOST) ===
+        8 + // ghost_score u64
+        4 + (Self::MAX_REPUTATION_COMPONENTS * (1 + 8 + 4 + 8 + 8)) + // reputation_components
+        // === CREDENTIALS (NEW FOR GHOST) ===
+        1 + 32 + // did_address: Option<Pubkey>
+        4 + (Self::MAX_CREDENTIALS * 32) + // credentials Vec<Pubkey>
         // API schema fields
         4 + Self::MAX_URI_LEN + // api_spec_uri (reduced)
         4 + 16 + // api_version (reduced for semver)
@@ -166,7 +266,7 @@ impl Agent {
         self.updated_at = Clock::get().unwrap().unix_timestamp;
     }
 
-    /// Initialize a new agent
+    /// Initialize a new agent (for backward compatibility - creates Registered status)
     pub fn initialize(
         &mut self,
         owner: Pubkey,
@@ -183,7 +283,16 @@ impl Agent {
 
         let clock = Clock::get()?;
 
-        self.owner = owner;
+        // Ghost Identity fields
+        self.owner = Some(owner); // Set owner immediately (backward compat)
+        self.status = AgentStatus::Registered; // Start as Registered (manual registration)
+        self.agent_id = String::new();
+        self.first_tx_signature = String::new();
+        self.first_seen_timestamp = clock.unix_timestamp;
+        self.discovery_source = String::from("manual");
+        self.claimed_at = Some(clock.unix_timestamp); // Auto-claim for manual registration
+
+        // Metadata
         self.name = name;
         self.description = description;
         self.capabilities = Vec::new();
@@ -205,6 +314,64 @@ impl Agent {
         self.api_spec_uri = String::new();
         self.api_version = String::new();
         self.last_payment_timestamp = 0;
+
+        // Ghost reputation fields
+        self.external_identifiers = Vec::new();
+        self.ghost_score = 0;
+        self.reputation_components = Vec::new();
+        self.did_address = None;
+        self.credentials = Vec::new();
+
+        self.bump = bump;
+
+        Ok(())
+    }
+
+    /// Initialize an auto-discovered Ghost (from x402 monitoring)
+    pub fn initialize_ghost(
+        &mut self,
+        payment_address: Pubkey,
+        first_tx_signature: String,
+        discovery_source: String,
+        bump: u8,
+    ) -> Result<()> {
+        let clock = Clock::get()?;
+
+        // Ghost Identity - owner is None until claimed
+        self.owner = None;
+        self.status = AgentStatus::Unregistered;
+        self.agent_id = String::new();
+        self.first_tx_signature = first_tx_signature;
+        self.first_seen_timestamp = clock.unix_timestamp;
+        self.discovery_source = discovery_source;
+        self.claimed_at = None;
+
+        // Minimal metadata for Unregistered Ghost
+        self.name = String::new();
+        self.description = String::new();
+        self.capabilities = Vec::new();
+        self.pricing_model = PricingModel::Fixed;
+        self.reputation_score = 0;
+        self.total_jobs_completed = 0;
+        self.total_earnings = 0;
+        self.is_active = true;
+        self.created_at = clock.unix_timestamp;
+        self.updated_at = clock.unix_timestamp;
+
+        // x402 fields
+        self.x402_enabled = true;
+        self.x402_payment_address = payment_address;
+        self.x402_total_payments = 0;
+        self.x402_total_calls = 0;
+        self.last_payment_timestamp = 0;
+
+        // Ghost reputation
+        self.external_identifiers = Vec::new();
+        self.ghost_score = 0;
+        self.reputation_components = Vec::new();
+        self.did_address = None;
+        self.credentials = Vec::new();
+
         self.bump = bump;
 
         Ok(())

@@ -55,10 +55,22 @@ import {
   type ReadonlyUint8Array,
 } from "@solana/kit";
 import {
+  getAgentStatusDecoder,
+  getAgentStatusEncoder,
+  getExternalIdentifierDecoder,
+  getExternalIdentifierEncoder,
   getPricingModelDecoder,
   getPricingModelEncoder,
+  getReputationComponentDecoder,
+  getReputationComponentEncoder,
+  type AgentStatus,
+  type AgentStatusArgs,
+  type ExternalIdentifier,
+  type ExternalIdentifierArgs,
   type PricingModel,
   type PricingModelArgs,
+  type ReputationComponent,
+  type ReputationComponentArgs,
 } from "../types";
 
 export const AGENT_DISCRIMINATOR = new Uint8Array([
@@ -71,8 +83,13 @@ export function getAgentDiscriminatorBytes() {
 
 export type Agent = {
   discriminator: ReadonlyUint8Array;
-  owner: Address;
+  owner: Option<Address>;
+  status: AgentStatus;
   agentId: string;
+  firstTxSignature: string;
+  firstSeenTimestamp: bigint;
+  discoverySource: string;
+  claimedAt: Option<bigint>;
   agentType: number;
   name: string;
   description: string;
@@ -108,14 +125,24 @@ export type Agent = {
   x402TotalPayments: bigint;
   x402TotalCalls: bigint;
   lastPaymentTimestamp: bigint;
+  externalIdentifiers: Array<ExternalIdentifier>;
+  ghostScore: bigint;
+  reputationComponents: Array<ReputationComponent>;
+  didAddress: Option<Address>;
+  credentials: Array<Address>;
   apiSpecUri: string;
   apiVersion: string;
   bump: number;
 };
 
 export type AgentArgs = {
-  owner: Address;
+  owner: OptionOrNullable<Address>;
+  status: AgentStatusArgs;
   agentId: string;
+  firstTxSignature: string;
+  firstSeenTimestamp: number | bigint;
+  discoverySource: string;
+  claimedAt: OptionOrNullable<number | bigint>;
   agentType: number;
   name: string;
   description: string;
@@ -151,6 +178,11 @@ export type AgentArgs = {
   x402TotalPayments: number | bigint;
   x402TotalCalls: number | bigint;
   lastPaymentTimestamp: number | bigint;
+  externalIdentifiers: Array<ExternalIdentifierArgs>;
+  ghostScore: number | bigint;
+  reputationComponents: Array<ReputationComponentArgs>;
+  didAddress: OptionOrNullable<Address>;
+  credentials: Array<Address>;
   apiSpecUri: string;
   apiVersion: string;
   bump: number;
@@ -161,8 +193,19 @@ export function getAgentEncoder(): Encoder<AgentArgs> {
   return transformEncoder(
     getStructEncoder([
       ["discriminator", fixEncoderSize(getBytesEncoder(), 8)],
-      ["owner", getAddressEncoder()],
+      ["owner", getOptionEncoder(getAddressEncoder())],
+      ["status", getAgentStatusEncoder()],
       ["agentId", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      [
+        "firstTxSignature",
+        addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()),
+      ],
+      ["firstSeenTimestamp", getI64Encoder()],
+      [
+        "discoverySource",
+        addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()),
+      ],
+      ["claimedAt", getOptionEncoder(getI64Encoder())],
       ["agentType", getU8Encoder()],
       ["name", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ["description", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
@@ -212,6 +255,14 @@ export function getAgentEncoder(): Encoder<AgentArgs> {
       ["x402TotalPayments", getU64Encoder()],
       ["x402TotalCalls", getU64Encoder()],
       ["lastPaymentTimestamp", getI64Encoder()],
+      ["externalIdentifiers", getArrayEncoder(getExternalIdentifierEncoder())],
+      ["ghostScore", getU64Encoder()],
+      [
+        "reputationComponents",
+        getArrayEncoder(getReputationComponentEncoder()),
+      ],
+      ["didAddress", getOptionEncoder(getAddressEncoder())],
+      ["credentials", getArrayEncoder(getAddressEncoder())],
       ["apiSpecUri", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ["apiVersion", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ["bump", getU8Encoder()],
@@ -224,8 +275,19 @@ export function getAgentEncoder(): Encoder<AgentArgs> {
 export function getAgentDecoder(): Decoder<Agent> {
   return getStructDecoder([
     ["discriminator", fixDecoderSize(getBytesDecoder(), 8)],
-    ["owner", getAddressDecoder()],
+    ["owner", getOptionDecoder(getAddressDecoder())],
+    ["status", getAgentStatusDecoder()],
     ["agentId", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    [
+      "firstTxSignature",
+      addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder()),
+    ],
+    ["firstSeenTimestamp", getI64Decoder()],
+    [
+      "discoverySource",
+      addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder()),
+    ],
+    ["claimedAt", getOptionDecoder(getI64Decoder())],
     ["agentType", getU8Decoder()],
     ["name", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
     ["description", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
@@ -273,6 +335,11 @@ export function getAgentDecoder(): Decoder<Agent> {
     ["x402TotalPayments", getU64Decoder()],
     ["x402TotalCalls", getU64Decoder()],
     ["lastPaymentTimestamp", getI64Decoder()],
+    ["externalIdentifiers", getArrayDecoder(getExternalIdentifierDecoder())],
+    ["ghostScore", getU64Decoder()],
+    ["reputationComponents", getArrayDecoder(getReputationComponentDecoder())],
+    ["didAddress", getOptionDecoder(getAddressDecoder())],
+    ["credentials", getArrayDecoder(getAddressDecoder())],
     ["apiSpecUri", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
     ["apiVersion", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
     ["bump", getU8Decoder()],

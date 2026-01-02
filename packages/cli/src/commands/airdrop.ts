@@ -23,9 +23,8 @@ import {
   setTransactionMessageLifetimeUsingBlockhash,
   appendTransactionMessageInstruction,
   pipe,
-  signTransaction,
-  compileTransaction,
-  sendAndConfirmTransaction,
+  signTransactionMessageWithSigners,
+  sendAndConfirmTransactionFactory,
 } from '@solana/kit'
 import { createKeyPairSignerFromBytes } from '@solana/signers'
 import fs from 'fs'
@@ -215,10 +214,15 @@ export const airdropCommand = new Command('airdrop')
 
       spinner.text = `Transferring ${AIRDROP_AMOUNT.toLocaleString()} GHOST...`
 
-      // Sign and send
-      const signedTransaction = await signTransaction([walletKeypair], transactionMessage)
-      const compiledTransaction = compileTransaction(signedTransaction)
-      const signature = await sendAndConfirmTransaction(rpc, compiledTransaction, { commitment: 'confirmed' })
+      // Sign and send using modern v5 pattern
+      const signedTransaction = await signTransactionMessageWithSigners(transactionMessage)
+
+      const sendAndConfirmTransaction = sendAndConfirmTransactionFactory({
+        rpc: rpc as Parameters<typeof sendAndConfirmTransactionFactory>[0]['rpc'],
+        rpcSubscriptions: undefined as any // Subscriptions not currently available
+      })
+
+      const signature = await sendAndConfirmTransaction(signedTransaction, { commitment: 'confirmed' })
 
       spinner.succeed('Transfer complete!')
 

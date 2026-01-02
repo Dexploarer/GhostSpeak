@@ -144,7 +144,7 @@ describe('Enhanced Cache System', () => {
       // Set up some cache data
       await cache.set('test1', { data: 'value1' })
       await cache.set('test2', { data: 'value2' })
-      
+
       // Generate some access patterns
       await cache.get('test1')
       await cache.get('test1')
@@ -152,25 +152,25 @@ describe('Enhanced Cache System', () => {
 
       const insights = await cache.getPerformanceInsights()
 
-      expect(insights).toMatchObject({
-        performanceScore: expect.any(Number),
-        memoryEfficiency: {
-          utilizationRatio: expect.any(Number),
-          compressionRatio: expect.any(Number),
-          fragmentationScore: expect.any(Number)
-        },
-        accessPatterns: {
-          hotKeys: expect.any(Array),
-          coldKeys: expect.any(Array),
-          predictedMisses: expect.any(Number),
-          warmingOpportunities: expect.any(Array)
-        },
-        bottlenecks: expect.any(Array),
-        recommendations: expect.any(Array)
-      })
-
+      // Check performanceScore
+      expect(typeof insights.performanceScore).toBe('number')
       expect(insights.performanceScore).toBeGreaterThanOrEqual(0)
       expect(insights.performanceScore).toBeLessThanOrEqual(100)
+
+      // Check memoryEfficiency
+      expect(typeof insights.memoryEfficiency.utilizationRatio).toBe('number')
+      expect(typeof insights.memoryEfficiency.compressionRatio).toBe('number')
+      expect(typeof insights.memoryEfficiency.fragmentationScore).toBe('number')
+
+      // Check accessPatterns
+      expect(Array.isArray(insights.accessPatterns.hotKeys)).toBe(true)
+      expect(Array.isArray(insights.accessPatterns.coldKeys)).toBe(true)
+      expect(typeof insights.accessPatterns.predictedMisses).toBe('number')
+      expect(Array.isArray(insights.accessPatterns.warmingOpportunities)).toBe(true)
+
+      // Check arrays
+      expect(Array.isArray(insights.bottlenecks)).toBe(true)
+      expect(Array.isArray(insights.recommendations)).toBe(true)
     })
 
     it('should identify hot keys correctly', async () => {

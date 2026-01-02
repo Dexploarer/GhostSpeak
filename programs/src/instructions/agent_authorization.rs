@@ -35,7 +35,7 @@ use crate::state::{
 pub struct CreateAgentAuthorization<'info> {
     /// Agent granting authorization
     #[account(
-        constraint = agent.owner == authority.key() @ GhostSpeakError::InvalidAgentOwner
+        constraint = agent.owner == Some(authority.key()) @ GhostSpeakError::InvalidAgentOwner
     )]
     pub agent: Account<'info, Agent>,
 
@@ -234,7 +234,7 @@ pub fn update_reputation_with_auth(
 pub struct RevokeAuthorization<'info> {
     /// Agent revoking authorization
     #[account(
-        constraint = agent.owner == authority.key() @ GhostSpeakError::InvalidAgentOwner
+        constraint = agent.owner == Some(authority.key()) @ GhostSpeakError::InvalidAgentOwner
     )]
     pub agent: Account<'info, Agent>,
 

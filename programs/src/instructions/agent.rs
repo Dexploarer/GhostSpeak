@@ -95,7 +95,7 @@ pub struct UpdateAgent<'info> {
             agent_id.as_bytes()
         ],
         bump = agent_account.bump,
-        constraint = agent_account.owner == signer.key() @ GhostSpeakError::InvalidAgentOwner,
+        constraint = agent_account.owner == Some(signer.key()) @ GhostSpeakError::InvalidAgentOwner,
         constraint = agent_account.is_active @ GhostSpeakError::AgentNotActive
     )]
     pub agent_account: Account<'info, Agent>,
@@ -121,7 +121,7 @@ pub struct UpdateAgentStatus<'info> {
             agent_id.as_bytes()
         ],
         bump = agent_account.bump,
-        constraint = agent_account.owner == signer.key() @ GhostSpeakError::InvalidAgentOwner
+        constraint = agent_account.owner == Some(signer.key()) @ GhostSpeakError::InvalidAgentOwner
     )]
     pub agent_account: Account<'info, Agent>,
 
@@ -146,7 +146,7 @@ pub struct UpdateAgentReputation<'info> {
             agent_id.as_bytes()
         ],
         bump = agent_account.bump,
-        constraint = agent_account.owner == signer.key() @ GhostSpeakError::InvalidAgentOwner,
+        constraint = agent_account.owner == Some(signer.key()) @ GhostSpeakError::InvalidAgentOwner,
         constraint = agent_account.is_active @ GhostSpeakError::AgentNotActive
     )]
     pub agent_account: Account<'info, Agent>,
@@ -213,11 +213,11 @@ pub struct VerifyAgent<'info> {
 /// - Timestamp validation for creation tracking
 pub fn register_agent(
     ctx: Context<RegisterAgent>,
-    _agent_type: u8,
+    agent_type: u8,
     name: String,
     description: String,
     metadata_uri: String,
-    _agent_id: String,
+    agent_id: String,
     pricing_model: PricingModel,
 ) -> Result<()> {
     // Initialize agent registration
@@ -243,8 +243,10 @@ pub fn register_agent(
     // // SECURITY FIX: Atomic rate limit check and agent increment to prevent race conditions
     // user_registry.increment_agents_with_rate_limit_check(sys_clock.unix_timestamp)?;
 
-    // Initialize agent account with validated inputs
-    agent.owner = ctx.accounts.signer.key();
+    // Initialize agent account with validated inputs - ALL FIELDS MUST BE SET
+    agent.owner = Some(ctx.accounts.signer.key());
+    agent.agent_id = agent_id; // CRITICAL: Must initialize agent_id
+    agent.agent_type = agent_type; // CRITICAL: Must initialize agent_type
     agent.name = name.clone();
     agent.description = description.clone();
     agent.capabilities = vec!["general".to_string()]; // Single capability to avoid empty vec
@@ -271,18 +273,30 @@ pub fn register_agent(
     agent.transfer_hook = None;
     agent.parent_agent = None;
     agent.generation = 0;
+    // x402 Payment Protocol fields - initialize all to defaults
+    agent.x402_enabled = false;
+    agent.x402_payment_address = ctx.accounts.signer.key(); // Default to owner
+    agent.x402_accepted_tokens = Vec::new();
+    agent.x402_price_per_call = 0;
+    agent.x402_service_endpoint = "".to_string();
+    agent.x402_total_payments = 0;
+    agent.x402_total_calls = 0;
+    agent.last_payment_timestamp = 0;
+    // API Schema fields - initialize to empty
+    agent.api_spec_uri = "".to_string();
+    agent.api_version = "".to_string();
     agent.bump = ctx.bumps.agent_account;
 
     // Emit optimized event with essential data
     emit!(crate::AgentRegisteredEvent {
         agent: agent.key(),
-        owner: agent.owner,
+        owner: agent.owner.unwrap(), // Safe: we just set it
         name, // Use actual validated name
         timestamp: sys_clock.unix_timestamp,
     });
 
     msg!(
-        "Agent registered successfully - Owner: {}, Agent: {}",
+        "Agent registered successfully - Owner: {:?}, Agent: {}",
         agent.owner,
         agent.key()
     );
@@ -302,11 +316,11 @@ pub fn register_agent(
 /// - Input validation with detailed error reporting
 pub fn update_agent(
     ctx: Context<UpdateAgent>,
-    _agent_type: u8,
+    agent_type: u8,
     name: Option<String>,
     description: Option<String>,
     metadata_uri: String,
-    _agent_id: String,
+    agent_id: String,
     pricing_model: Option<PricingModel>,
 ) -> Result<()> {
     // Process agent update
@@ -359,12 +373,12 @@ pub fn update_agent(
         // Emit update event
         emit!(crate::AgentUpdatedEvent {
             agent: agent.key(),
-            owner: agent.owner,
+            owner: agent.owner.unwrap_or_default(),
             timestamp: clock.unix_timestamp,
         });
 
         msg!(
-            "Agent updated successfully - Owner: {}, Agent: {}",
+            "Agent updated successfully - Owner: {:?}, Agent: {}",
             agent.owner,
             agent.key()
         );
@@ -412,29 +426,29 @@ pub fn verify_agent(
     Ok(())
 }
 
-pub fn deactivate_agent(ctx: Context<UpdateAgentStatus>, _agent_id: String) -> Result<()> {
+pub fn deactivate_agent(ctx: Context<UpdateAgentStatus>, agent_id: String) -> Result<()> {
     let agent = &mut ctx.accounts.agent_account;
 
     require!(agent.is_active, GhostSpeakError::AgentNotActive);
 
     agent.deactivate();
-    msg!("Agent deactivated: {}", agent.owner);
+    msg!("Agent deactivated: {:?}", agent.owner);
     Ok(())
 }
 
-pub fn activate_agent(ctx: Context<UpdateAgentStatus>, _agent_id: String) -> Result<()> {
+pub fn activate_agent(ctx: Context<UpdateAgentStatus>, agent_id: String) -> Result<()> {
     let agent = &mut ctx.accounts.agent_account;
 
     require!(!agent.is_active, GhostSpeakError::AgentAlreadyActive);
 
     agent.activate();
-    msg!("Agent activated: {}", agent.owner);
+    msg!("Agent activated: {:?}", agent.owner);
     Ok(())
 }
 
 pub fn update_agent_reputation(
     ctx: Context<UpdateAgentReputation>,
-    _agent_id: String,
+    agent_id: String,
     reputation_score: u64,
 ) -> Result<()> {
     let agent = &mut ctx.accounts.agent_account;
@@ -450,7 +464,7 @@ pub fn update_agent_reputation(
 
     agent.update_reputation(reputation_score);
     msg!(
-        "Agent reputation updated: {} -> {}",
+        "Agent reputation updated: {:?} -> {}",
         agent.owner,
         reputation_score
     );

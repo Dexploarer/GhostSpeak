@@ -23,7 +23,7 @@ import { randomUUID } from 'crypto'
 import { toSDKSigner } from '../utils/client.js'
 import { getCurrentProgramId } from '../../../../config/program-ids.js'
 import { createSolanaRpc } from '@solana/kit'
-import { AgentModule, type GhostSpeakClient, type RpcClient } from '@ghostspeak/sdk'
+import { AgentModule, type GhostSpeakClient, type RpcClient, decodeAgent } from '@ghostspeak/sdk'
 import { getErrorMessage } from '../utils/type-guards.js'
 import { uploadMetadataToIPFS } from '../utils/ipfs.js'
 
@@ -511,119 +511,85 @@ export class AgentService implements IAgentService {
       
       for (const account of programAccounts) {
         try {
-          const data = account.account.data
-          
-          // Skip if data is too small to be an agent account
-          if (data.length < 200) {
-            console.log('Skipping account - data too small:', account.pubkey.toString())
-            continue
-          }
-          
-          // Check discriminator (first 8 bytes) to identify agent accounts
-          // Agent account discriminator would be specific pattern
-          // const discriminator = data.slice(0, 8)
-          
-          // Parse agent account data
-          // In production, use proper Borsh deserialization
-          let offset = 8 // Skip discriminator
-          
-          // Parse agent ID (32 bytes)
-          const idBytes = data.slice(offset, offset + 32)
-          const agentId = Buffer.from(idBytes).toString('utf8').replace(/\0/g, '').trim()
-          offset += 32
-          
-          // Parse owner (32 bytes pubkey)
-          const ownerBytes = data.slice(offset, offset + 32)
-          const owner = ownerBytes.toString('hex')
-          offset += 32
-          
-          // Parse name (64 bytes)
-          const nameBytes = data.slice(offset, offset + 64)
-          const name = Buffer.from(nameBytes).toString('utf8').replace(/\0/g, '').trim()
-          offset += 64
-          
-          // Parse description (256 bytes)
-          const descBytes = data.slice(offset, offset + 256)
-          const description = Buffer.from(descBytes).toString('utf8').replace(/\0/g, '').trim()
-          offset += 256
-          
-          // Parse capabilities count (4 bytes)
-          const capCountBytes = data.slice(offset, offset + 4)
-          const capCount = Buffer.from(capCountBytes).readUInt32LE(0)
-          offset += 4
-          
-          // Parse capabilities
-          const capabilities: string[] = []
-          for (let i = 0; i < Math.min(capCount, 10); i++) {
-            const capBytes = data.slice(offset, offset + 32)
-            const capability = Buffer.from(capBytes).toString('utf8').replace(/\0/g, '').trim()
-            if (capability) {
-              capabilities.push(capability)
+          let data = account.account.data
+
+          // Handle base64 encoded data
+          if (typeof data === 'string' || (Array.isArray(data) && data.length === 2)) {
+            // If data is a tuple [base64String, 'base64'], decode it
+            if (Array.isArray(data)) {
+              data = Buffer.from(data[0], 'base64')
+            } else {
+              // If it's just a base64 string
+              data = Buffer.from(data, 'base64')
             }
-            offset += 32
           }
-          
-          // Parse isActive (1 byte)
-          const isActive = data[offset] === 1
-          offset += 1
-          
-          // Parse reputation score (8 bytes)
-          const repBytes = data.slice(offset, offset + 8)
-          const reputationScore = Buffer.from(repBytes).readBigUInt64LE(0)
-          offset += 8
-          
-          // Parse timestamps (8 bytes each)
-          const createdBytes = data.slice(offset, offset + 8)
-          const createdAt = Buffer.from(createdBytes).readBigUInt64LE(0)
-          offset += 8
-          
-          const updatedBytes = data.slice(offset, offset + 8)
-          const updatedAt = Buffer.from(updatedBytes).readBigUInt64LE(0)
-          
-          // Skip invalid or empty agents
-          if (!agentId || !name || name === '') {
-            console.log('Skipping invalid agent data')
+
+          // Convert to Uint8Array if it's a Buffer
+          if (Buffer.isBuffer(data)) {
+            data = new Uint8Array(data)
+          }
+
+          // Skip if data is too small to contain even the discriminator
+          if (data.length < 8) {
+            console.log('Skipping account - data too small for discriminator:', account.pubkey.toString(), 'length:', data.length)
             continue
           }
-          
+
+          // Use SDK's proper borsh deserialization
+          const decodedAccount = decodeAgent({
+            address: account.pubkey.toString() as Address,
+            data,
+            executable: false,
+            lamports: account.account.lamports,
+            owner: account.account.owner,
+          })
+
+          if (!decodedAccount.data) {
+            console.log('Skipping account - failed to decode:', account.pubkey.toString())
+            continue
+          }
+
+          const agentData = decodedAccount.data
+
           // Apply filters if specified
           if (params?.category) {
-            if (!capabilities.includes(params.category)) {
+            if (!agentData.capabilities.includes(params.category)) {
               continue
             }
           }
-          
+
           if (params?.search) {
             const searchLower = params.search.toLowerCase()
-            if (!name.toLowerCase().includes(searchLower) && 
-                !description.toLowerCase().includes(searchLower) &&
-                !capabilities.some(cap => cap.toLowerCase().includes(searchLower))) {
+            if (!agentData.name.toLowerCase().includes(searchLower) &&
+                !agentData.description.toLowerCase().includes(searchLower) &&
+                !agentData.capabilities.some(cap => cap.toLowerCase().includes(searchLower))) {
               continue
             }
           }
-          
+
           // Only return active agents unless specifically requested
-          if (!params?.includeInactive && !isActive) {
+          if (!params?.includeInactive && !agentData.isActive) {
             continue
           }
-          
+
           agents.push({
-            id: agentId,
+            id: agentData.agentId,
             address: account.pubkey.toString() as Address,
-            name,
-            description: description || 'No description provided',
-            capabilities: capabilities.length > 0 ? capabilities : ['general'],
-            owner: owner as Address,
-            isActive,
-            reputationScore: Number(reputationScore),
-            createdAt,
-            updatedAt,
+            name: agentData.name,
+            description: agentData.description || 'No description provided',
+            capabilities: agentData.capabilities.length > 0 ? agentData.capabilities : ['general'],
+            owner: agentData.owner,
+            isActive: agentData.isActive,
+            reputationScore: agentData.reputationScore,
+            createdAt: agentData.createdAt,
+            updatedAt: agentData.updatedAt,
             metadata: {
               source: 'blockchain',
-              accountSize: data.length
+              accountSize: data.length,
+              metadataUri: agentData.metadataUri
             }
           })
-          
+
         } catch (parseError) {
           console.error('Error parsing agent account:', account.pubkey.toString(), parseError)
           // Continue with next account

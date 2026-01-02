@@ -15,6 +15,14 @@ import { governanceCommand } from './commands/governance.js'
 import { quickstartCommand } from './commands/quickstart.js'
 import { walletCommand } from './commands/wallet.js'
 import { credentialsCommand } from './commands/credentials.js'
+import { reputationCommand } from './commands/reputation.js'
+import { reputationUICommand } from './commands/reputation-ui.js'
+import { stakingCommand } from './commands/staking.js'
+import { stakingUICommand } from './commands/staking-ui.js'
+import { privacyCommand } from './commands/privacy.js'
+import { didCommand } from './commands/did.js'
+import { escrowCommand } from './commands/escrow.js'
+import { dashboardCommand } from './commands/dashboard.js'
 import { checkForUpdates } from './utils/update-check.js'
 import { InteractiveMenu, shouldRunInteractive } from './utils/interactive-menu.js'
 import { readFileSync, existsSync } from 'fs'
@@ -161,8 +169,18 @@ async function main() {
     program.addCommand(airdropCommand)     // Get devnet GHOST tokens (CLI)
     program.addCommand(airdropUICommand)   // Get devnet GHOST tokens (Interactive UI)
 
-    // 2. Core features
+    // 2. Core features - Text-based commands
     program.addCommand(agentCommand)       // Create and manage agents
+    program.addCommand(reputationCommand)  // Ghost Score reputation (CLI)
+    program.addCommand(stakingCommand)     // GHOST token staking (CLI)
+    program.addCommand(privacyCommand)     // Privacy settings (CLI)
+    program.addCommand(didCommand)         // Decentralized identifiers (CLI)
+    program.addCommand(escrowCommand)      // x402 marketplace escrow (CLI)
+
+    // 2b. Interactive UI dashboards
+    program.addCommand(dashboardCommand)    // Master analytics dashboard (Beautiful UI)
+    program.addCommand(reputationUICommand) // Ghost Score dashboard (Beautiful UI)
+    program.addCommand(stakingUICommand)   // Staking dashboard (Beautiful UI)
 
     // 3. Support and advanced features
     program.addCommand(governanceCommand)  // Protocol governance

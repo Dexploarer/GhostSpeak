@@ -3,6 +3,7 @@ import type { TransactionSigner } from '@solana/kit'
 import type { GhostSpeakConfig } from '../types/index.js'
 import { GHOSTSPEAK_PROGRAM_ID } from '../types/index.js'
 import { AgentModule } from './modules/AgentModule.js'
+import { GhostModule } from './modules/GhostModule.js'
 
 import { GovernanceModule } from '../modules/governance/GovernanceModule.js'
 import { MultisigModule } from '../modules/multisig/MultisigModule.js'
@@ -56,7 +57,16 @@ export class GhostSpeakClient {
     return new AgentModule(this.config)
   }
 
-
+  /**
+   * Direct access to Ghost Module for claiming external agents
+   *
+   * Ghosts are external AI agents (type 10) that exist on x402 facilitators
+   * like PayAI. They can be claimed using Solana Attestation Service (SAS)
+   * for trustless ownership verification.
+   */
+  get ghosts(): GhostModule {
+    return new GhostModule(this.config)
+  }
 
   /**
    * Direct access to Governance Module for read operations

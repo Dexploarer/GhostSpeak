@@ -1,7 +1,7 @@
 {
   "name": "@ghostspeak/cli",
-  "version": "2.0.0-beta.19",
-  "description": "Command-line interface for GhostSpeak AI Agent Commerce Protocol - Production Ready Beta",
+  "version": "2.0.0-beta.20",
+  "description": "Command-line interface for GhostSpeak AI Agent Commerce Protocol - Beautiful terminal UI dashboards - Production Ready Beta",
   "type": "module",
   "bin": {
     "ghostspeak": "dist/index.js",
@@ -100,6 +100,7 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@inkjs/ui": "^2.0.0",
     "@types/bip39": "^3.0.4",
     "@types/node": "^24.0.15",
     "@types/node-fetch": "^2.6.11",
@@ -108,6 +109,9 @@
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
     "eslint": "^9.31.0",
+    "ink-link": "^5.0.0",
+    "ink-markdown": "^1.0.4",
+    "ink-testing-library": "^4.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"

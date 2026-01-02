@@ -384,6 +384,224 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       }
     ]
   },
+  "auto_create_ghost": {
+    "name": "auto_create_ghost",
+    "expectedAccounts": [
+      {
+        "name": "agent_account",
+        "pda": true
+      },
+      {
+        "name": "authority",
+        "pda": false
+      },
+      {
+        "name": "system_program",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "agent_account",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                97,
+                103,
+                101,
+                110,
+                116
+              ]
+            },
+            {
+              "kind": "arg",
+              "path": "payment_address"
+            }
+          ]
+        }
+      },
+      {
+        "name": "authority",
+        "writable": true,
+        "signer": true,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "system_program",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [],
+        "address": "11111111111111111111111111111111"
+      }
+    ],
+    "docs": "Auto-create a Ghost from discovered x402 transaction (indexer service only)  Used by the off-chain indexer service when it discovers a new agent via x402 payment transactions. Creates an Unregistered Ghost.  Parameters: - payment_address: The x402_payment_address (merchant address) of the discovered agent - first_tx_signature: Transaction signature where this agent was first discovered - discovery_source: Source identifier (e.g., \"http:payai\", \"blockchain:direct\") - initial_ghost_score: Optional initial Ghost Score from backfill metrics",
+    "discriminator": [
+      50,
+      170,
+      232,
+      73,
+      238,
+      200,
+      180,
+      16
+    ],
+    "args": [
+      {
+        "name": "payment_address",
+        "type": "pubkey"
+      },
+      {
+        "name": "first_tx_signature",
+        "type": "string"
+      },
+      {
+        "name": "discovery_source",
+        "type": "string"
+      },
+      {
+        "name": "initial_ghost_score",
+        "type": {
+          "option": "u64"
+        }
+      }
+    ]
+  },
+  "claim_ghost": {
+    "name": "claim_ghost",
+    "expectedAccounts": [
+      {
+        "name": "agent_account",
+        "pda": false
+      },
+      {
+        "name": "did_document",
+        "pda": true
+      },
+      {
+        "name": "sas_attestation",
+        "pda": false
+      },
+      {
+        "name": "claimer",
+        "pda": false
+      },
+      {
+        "name": "system_program",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "agent_account",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "did_document",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "DID document to create for this Ghost",
+          "Seeds: [b\"did_document\", agent_account.x402_payment_address.as_ref()]"
+        ],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                100,
+                105,
+                100,
+                95,
+                100,
+                111,
+                99,
+                117,
+                109,
+                101,
+                110,
+                116
+              ]
+            },
+            {
+              "kind": "account",
+              "path": "agent_account.x402_payment_address",
+              "account": "Agent"
+            }
+          ]
+        }
+      },
+      {
+        "name": "sas_attestation",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [
+          "SAS Attestation proving ownership of x402_payment_address",
+          "PDA: [b\"attestation\", sas_credential, sas_schema, x402_payment_address]"
+        ]
+      },
+      {
+        "name": "claimer",
+        "writable": true,
+        "signer": true,
+        "optional": false,
+        "docs": [
+          "The claimer must have created a SAS attestation proving they own x402_payment_address"
+        ]
+      },
+      {
+        "name": "system_program",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [],
+        "address": "11111111111111111111111111111111"
+      }
+    ],
+    "docs": "Claim ownership of a Ghost using Solana Attestation Service (SAS)  Security: Uses SAS for trustless ownership verification. The claimer must have created a SAS attestation proving they own the x402_payment_address.  Auto-creates: DID document with did:sol:<network>:<address> format Transitions: Unregistered/Registered → Claimed  SAS Attestation Requirements: - Credential: GhostSpeak ownership credential (issuer) - Schema: Ghost ownership schema defining attestation data structure - Nonce: x402_payment_address (ensures PDA uniqueness) - Data: Contains x402_payment_address as proof of ownership  Parameters: - sas_credential: Pubkey of the SAS Credential (issuer) for ownership attestations - sas_schema: Pubkey of the SAS Schema defining the ownership attestation format - ipfs_metadata_uri: Optional IPFS URI for agent metadata (ipfs://...) - network: Network identifier (\"devnet\", \"mainnet-beta\", \"testnet\")",
+    "discriminator": [
+      149,
+      107,
+      35,
+      233,
+      252,
+      101,
+      148,
+      225
+    ],
+    "args": [
+      {
+        "name": "sas_credential",
+        "type": "pubkey"
+      },
+      {
+        "name": "sas_schema",
+        "type": "pubkey"
+      },
+      {
+        "name": "ipfs_metadata_uri",
+        "type": {
+          "option": "string"
+        }
+      },
+      {
+        "name": "network",
+        "type": "string"
+      }
+    ]
+  },
   "create_agent_authorization": {
     "name": "create_agent_authorization",
     "expectedAccounts": [
@@ -2478,6 +2696,111 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
       }
     ]
   },
+  "link_external_id": {
+    "name": "link_external_id",
+    "expectedAccounts": [
+      {
+        "name": "agent_account",
+        "pda": false
+      },
+      {
+        "name": "external_id_mapping",
+        "pda": true
+      },
+      {
+        "name": "authority",
+        "pda": false
+      },
+      {
+        "name": "system_program",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "agent_account",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "external_id_mapping",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": [],
+        "pda": {
+          "seeds": [
+            {
+              "kind": "const",
+              "value": [
+                101,
+                120,
+                116,
+                101,
+                114,
+                110,
+                97,
+                108,
+                95,
+                105,
+                100
+              ]
+            },
+            {
+              "kind": "arg",
+              "path": "platform"
+            },
+            {
+              "kind": "arg",
+              "path": "external_id"
+            }
+          ]
+        }
+      },
+      {
+        "name": "authority",
+        "writable": true,
+        "signer": true,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "system_program",
+        "writable": false,
+        "signer": false,
+        "optional": false,
+        "docs": [],
+        "address": "11111111111111111111111111111111"
+      }
+    ],
+    "docs": "Link a platform-specific external ID to a Ghost  Creates a cross-platform identity mapping for this Ghost. Only the Ghost owner can link external IDs.  Parameters: - platform: Platform identifier (e.g., \"payai\", \"eliza\", \"github\") (max 32 chars) - external_id: Platform-specific agent ID (max 128 chars) - verified: Whether this external ID has been verified",
+    "discriminator": [
+      156,
+      102,
+      141,
+      155,
+      175,
+      13,
+      29,
+      86
+    ],
+    "args": [
+      {
+        "name": "platform",
+        "type": "string"
+      },
+      {
+        "name": "external_id",
+        "type": "string"
+      },
+      {
+        "name": "verified",
+        "type": "bool"
+      }
+    ]
+  },
   "manage_agent_status": {
     "name": "manage_agent_status",
     "expectedAccounts": [
@@ -3046,6 +3369,71 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
           "defined": {
             "name": "PricingModel"
           }
+        }
+      }
+    ]
+  },
+  "register_ghost_metadata": {
+    "name": "register_ghost_metadata",
+    "expectedAccounts": [
+      {
+        "name": "agent_account",
+        "pda": false
+      },
+      {
+        "name": "authority",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "agent_account",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "authority",
+        "writable": true,
+        "signer": true,
+        "optional": false,
+        "docs": [
+          "Anyone can add metadata to an Unregistered Ghost",
+          "Claiming proves ownership later"
+        ]
+      }
+    ],
+    "docs": "Register metadata for an Unregistered Ghost  Adds name, description, capabilities, and service endpoint to a discovered Ghost. Transitions: Unregistered → Registered Anyone can add metadata to an Unregistered Ghost.  Parameters: - name: Agent name (max 64 chars) - description: Agent description (max 128 chars) - capabilities: List of capabilities (max 5) - service_endpoint: Optional HTTP endpoint for the agent service",
+    "discriminator": [
+      34,
+      233,
+      111,
+      236,
+      212,
+      22,
+      26,
+      254
+    ],
+    "args": [
+      {
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "name": "description",
+        "type": "string"
+      },
+      {
+        "name": "capabilities",
+        "type": {
+          "vec": "string"
+        }
+      },
+      {
+        "name": "service_endpoint",
+        "type": {
+          "option": "string"
         }
       }
     ]
@@ -4492,6 +4880,66 @@ export const instructionAccountMappings: Record<string, InstructionMapping> = {
         "name": "remove_service_endpoint_id",
         "type": {
           "option": "string"
+        }
+      }
+    ]
+  },
+  "update_ghost_score": {
+    "name": "update_ghost_score",
+    "expectedAccounts": [
+      {
+        "name": "agent_account",
+        "pda": false
+      },
+      {
+        "name": "authority",
+        "pda": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "agent_account",
+        "writable": true,
+        "signer": false,
+        "optional": false,
+        "docs": []
+      },
+      {
+        "name": "authority",
+        "writable": false,
+        "signer": true,
+        "optional": false,
+        "docs": [
+          "Authority allowed to update scores (could be governance/oracle)"
+        ]
+      }
+    ],
+    "docs": "Update Ghost Score from off-chain calculation  Called by the reputation oracle/calculator service. Updates the weighted Ghost Score and optionally the reputation components.  Parameters: - new_score: New Ghost Score (0-1000) - components: Optional reputation component breakdown",
+    "discriminator": [
+      213,
+      152,
+      5,
+      80,
+      163,
+      224,
+      151,
+      120
+    ],
+    "args": [
+      {
+        "name": "new_score",
+        "type": "u64"
+      },
+      {
+        "name": "components",
+        "type": {
+          "option": {
+            "vec": {
+              "defined": {
+                "name": "ReputationComponent"
+              }
+            }
+          }
         }
       }
     ]

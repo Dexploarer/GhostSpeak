@@ -310,7 +310,7 @@ export function ProposalCard({
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600 dark:text-gray-400">Voting Results</span>
               <span className="text-gray-900 dark:text-white font-medium">
-                {formatTokenAmount(progressData.totalVotes.toString())} votes
+                {formatTokenAmount(progressData.totalVotes)} votes
               </span>
             </div>
 

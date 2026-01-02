@@ -374,7 +374,150 @@ console.log(`Remaining uses: ${status.remainingUses}/${authorization.indexLimit}
 
 **See:** [Authorization Storage Guide](./docs/AUTHORIZATION_STORAGE.md) for complete documentation.
 
-### **9. Analytics & Monitoring**
+### **9. External ID Resolution (REST API)** 🆕
+
+Resolve cross-platform identities to Ghost addresses using the GhostSpeak Public API. Faster than on-chain lookups for read operations.
+
+```typescript
+import { ExternalIdResolver } from '@ghostspeak/sdk'
+
+// Initialize resolver for devnet
+const resolver = new ExternalIdResolver({
+  cluster: 'devnet' // Uses https://api-devnet.ghostspeak.ai
+})
+
+// Production mainnet
+const mainnetResolver = new ExternalIdResolver({
+  cluster: 'mainnet-beta' // Uses https://api.ghostspeak.ai
+})
+
+// Custom API URL
+const customResolver = new ExternalIdResolver({
+  apiUrl: 'https://custom-api.example.com'
+})
+```
+
+#### **Resolve External IDs to Ghost Addresses**
+
+```typescript
+// Quick resolve - returns Ghost address
+const ghostAddress = await resolver.resolve('payai', 'agent-123')
+console.log(`Ghost Address: ${ghostAddress}`)
+
+// Full lookup - returns mapping + Ghost data
+const result = await resolver.lookup('payai', 'agent-123')
+console.log(`Platform: ${result.mapping.platform}`)
+console.log(`External ID: ${result.mapping.externalId}`)
+console.log(`Ghost Address: ${result.mapping.ghostAddress}`)
+console.log(`Verified: ${result.mapping.verified}`)
+
+if (result.ghost) {
+  console.log(`Name: ${result.ghost.name}`)
+  console.log(`Ghost Score: ${result.ghost.ghostScore}`)
+  console.log(`Status: ${result.ghost.status}`)
+}
+```
+
+#### **Fetch Ghost Data via API**
+
+```typescript
+// Get full Ghost profile (faster than on-chain query)
+const ghost = await resolver.getGhost(ghostAddress)
+console.log(`Agent: ${ghost.name}`)
+console.log(`Owner: ${ghost.owner}`)
+console.log(`Reputation: ${ghost.reputationScore}`)
+console.log(`External IDs:`, ghost.externalIdentifiers)
+
+// Get Ghost Score breakdown
+const score = await resolver.getGhostScore(ghostAddress)
+console.log(`Score: ${score.score}/${score.maxScore}`)
+score.components.forEach(c => {
+  console.log(`- ${c.source}: ${c.score} (weight: ${c.weight})`)
+})
+
+// Get detailed reputation data
+const reputation = await resolver.getGhostReputation(ghostAddress)
+console.log('Reputation breakdown:', reputation)
+```
+
+#### **Batch Operations**
+
+```typescript
+// Resolve multiple external IDs in parallel
+const identifiers = [
+  { platform: 'payai', externalId: 'agent-1' },
+  { platform: 'elizaos', externalId: 'eliza-bot' },
+  { platform: 'github', externalId: 'ai-assistant-007' }
+]
+
+const addresses = await resolver.resolveBatch(identifiers)
+addresses.forEach((addr, i) => {
+  if (addr) {
+    console.log(`${identifiers[i].platform}:${identifiers[i].externalId} → ${addr}`)
+  } else {
+    console.log(`${identifiers[i].platform}:${identifiers[i].externalId} → Not found`)
+  }
+})
+```
+
+#### **Check Existence & List External IDs**
+
+```typescript
+// Check if external ID exists
+const exists = await resolver.exists('payai', 'agent-123')
+console.log(`Exists: ${exists}`)
+
+// Get all external IDs for a Ghost
+const externalIds = await resolver.getExternalIds(ghostAddress)
+externalIds.forEach(id => {
+  console.log(`${id.platform}:${id.externalId} (verified: ${id.verified})`)
+})
+```
+
+#### **API Health Check**
+
+```typescript
+// Check API availability and network status
+const health = await resolver.checkHealth()
+console.log(`Status: ${health.status}`)
+console.log(`Network: ${health.network}`)
+console.log(`RPC Connected: ${health.rpc.connected}`)
+console.log(`RPC Latency: ${health.rpc.latency}ms`)
+```
+
+#### **Error Handling**
+
+```typescript
+import {
+  ExternalIdNotFoundError,
+  GhostNotFoundError,
+  GhostSpeakError
+} from '@ghostspeak/sdk'
+
+try {
+  const address = await resolver.resolve('payai', 'non-existent')
+} catch (error) {
+  if (error instanceof ExternalIdNotFoundError) {
+    console.error(`No Ghost found for ${error.platform}:${error.externalId}`)
+  } else if (error instanceof GhostNotFoundError) {
+    console.error(`Ghost not found: ${error.message}`)
+  } else if (error instanceof GhostSpeakError) {
+    console.error(`API Error [${error.code}]: ${error.message}`)
+  }
+}
+```
+
+#### **Supported Platforms**
+
+- `payai` - PayAI Network agents
+- `elizaos` - ElizaOS framework agents
+- `github` - GitHub-verified agents
+- `twitter` - Twitter/X-verified agents
+- Custom platforms (defined by facilitators)
+
+**Performance:** API lookups are **10-50x faster** than on-chain queries, ideal for real-time integrations.
+
+### **10. Analytics & Monitoring**
 ```typescript
 // Collect real-time analytics
 const analytics = await client.analytics.collectAllMetrics()
@@ -390,7 +533,7 @@ const report = await client.analytics.generateReport({
 const exportData = await client.analytics.exportForDashboard('grafana')
 ```
 
-### **10. Privacy Features (Production)**
+### **11. Privacy Features (Production)**
 
 > 🔒 **Privacy**: Client-side ElGamal encryption is the standard for confidential transfers in GhostSpeak. It provides robust privacy verification via the x402 payment layer.
 

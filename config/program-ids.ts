@@ -53,18 +53,3 @@ export function getNetworkConfig(network: NetworkEnvironment = 'devnet') {
     network,
   };
 }
-
-export function getNetworkConfig(network: NetworkEnvironment = 'devnet') {
-  const endpoints = {
-    mainnet: 'https://api.mainnet-beta.solana.com',
-    devnet: 'https://api.devnet.solana.com',
-    testnet: 'https://api.testnet.solana.com',
-    localnet: 'http://localhost:8899',
-  };
-
-  return {
-    endpoint: endpoints[network],
-    programId: PROGRAM_IDS[network],
-    network,
-  };
-}

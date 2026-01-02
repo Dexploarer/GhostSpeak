@@ -8,7 +8,7 @@ import { Box, Text } from 'ink'
 
 export type StatusType = 'success' | 'error' | 'warning' | 'info' | 'pending'
 
-interface StatusBadgeProps {
+export interface StatusBadgeProps {
   status: StatusType
   text: string
 }

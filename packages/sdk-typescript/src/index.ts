@@ -54,8 +54,19 @@ export {
 // Agent module
 export { AgentModule } from './core/modules/AgentModule.js'
 
+// Ghost module - Claim external agents
+export {
+  GhostModule,
+  type ClaimGhostParams,
+  type PreparedClaimResult,
+  type Network
+} from './core/modules/GhostModule.js'
+
 // Authorization module - Trustless agent pre-authorization
 export { AuthorizationModule } from './modules/authorization/index.js'
+
+// API module - REST API wrappers
+export { ExternalIdResolver, type ApiResolverConfig } from './modules/api/index.js'
 
 // Escrow module
 
@@ -131,6 +142,19 @@ export {
   type CategoryReputation,
   type PayAIReputationRecordInput,
 } from './modules/reputation/ReputationModule.js'
+
+// SAS (Solana Attestation Service) module
+export {
+  SASAttestationHelper,
+  SAS_PROGRAM_ID,
+  ATTESTATION_SEED,
+  CREDENTIAL_SEED,
+  SCHEMA_SEED,
+  type GhostSpeakCredentialConfig,
+  type GhostOwnershipAttestationData,
+  type AttestationPDAResult,
+  type CreateAttestationConfig
+} from './modules/sas/index.js'
 
 // Reputation Tag Engine (Pillar 2: Granular Tags)
 export { ReputationTagEngine } from './utils/reputation-tag-engine.js'
@@ -443,6 +467,9 @@ export {
   // Instruction builders - these are the primary exports users need
   getRegisterAgentInstructionAsync,
 
+  // ===== GHOST INSTRUCTIONS (External Agent Claiming) =====
+  getClaimGhostInstruction,
+
   // ===== STAKING INSTRUCTIONS (GHOST Token Staking) =====
   getInitializeStakingConfigInstructionAsync,
   getStakeGhostInstructionAsync,
@@ -495,6 +522,9 @@ export {
 // Account decoders (exported specifically to avoid conflict with types)
 export {
   getAgentDecoder,
+  decodeAgent,
+  fetchAgent,
+  fetchMaybeAgent,
   getStakingAccountDecoder,
   getStakingConfigDecoder,
   getGhostProtectEscrowDecoder,

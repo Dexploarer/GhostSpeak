@@ -66,8 +66,10 @@ export type { ReputationMetrics } from '@/lib/queries/reputation'
 // Auth types
 export type {
   AuthState,
-  AuthUser,
-  WalletConnectionStatus,
+  ConvexUser,
+  CrossmintWalletStatus,
+  CrossmintAuthStatus,
+  AuthStore,
 } from '@/lib/auth/types'
 
 // Error types

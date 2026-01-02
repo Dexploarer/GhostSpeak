@@ -497,6 +497,41 @@ export class NetworkOptimizer extends EventEmitter {
   }
 
   /**
+   * Reset optimizer state (for testing)
+   */
+  reset(): void {
+    // Reset metrics
+    this.metrics = {
+      averageResponseTime: 0,
+      successRate: 100,
+      totalRequests: 0,
+      failedRequests: 0,
+      circuitBreakerActivations: 0,
+      bandwidthUsage: 0,
+      endpointMetrics: {}
+    }
+
+    // Clear tracking arrays
+    this.responseTimes = []
+    this.bandwidthTracker.clear()
+
+    // Reset circuit breakers
+    this.circuitBreakers.clear()
+
+    // Reset active requests
+    this.activeRequests.clear()
+    this.totalActiveRequests = 0
+
+    // Clear request queues
+    this.requestQueues = {
+      critical: new PriorityQueue<() => Promise<unknown>>(),
+      high: new PriorityQueue<() => Promise<unknown>>(),
+      medium: new PriorityQueue<() => Promise<unknown>>(),
+      low: new PriorityQueue<() => Promise<unknown>>()
+    }
+  }
+
+  /**
    * Execute request with priority handling
    */
   private async executeWithPriority<T>(

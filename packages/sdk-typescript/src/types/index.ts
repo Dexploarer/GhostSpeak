@@ -456,3 +456,5 @@ export interface AttachmentUploadResult {
   ipfsUri: string
   size: number
 }
+// API types
+export * from './api-types.js'

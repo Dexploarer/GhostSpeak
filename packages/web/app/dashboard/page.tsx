@@ -2,7 +2,8 @@
 
 import React, { useMemo } from 'react'
 import { useWalletAddress } from '@/lib/hooks/useAuth'
-import { useAgents } from '@/lib/queries/agents'
+import { useQuery as useConvexQuery } from 'convex/react'
+import { api } from '@/convex/_generated/api'
 import { GlassCard } from '@/components/dashboard/shared/GlassCard'
 import { StatsCard } from '@/components/dashboard/shared/StatsCard'
 import { ActivityChart } from '@/components/dashboard/shared/ActivityChart'
@@ -14,25 +15,29 @@ import Link from 'next/link'
 
 export default function DashboardOverview() {
   const { shortAddress, isConnected } = useWalletAddress()
-  const { data: agents = [], isLoading: isLoadingAgents } = useAgents()
 
-  // Calculate stats from real data
+  // Use Convex reactive queries instead of polling
+  const dashboardStats = useConvexQuery(api.agentsDashboard.getDashboardStats)
+  const topAgents = useConvexQuery(api.agentsDashboard.getTopAgents, { limit: 3 })
+
+  const isLoadingAgents = dashboardStats === undefined || topAgents === undefined
+
+  // Get stats from Convex (real-time reactive)
   const stats = useMemo(() => {
-    // Average Reputation
-    const avgReputation =
-      agents.length > 0
-        ? agents.reduce((acc, curr) => acc + curr.reputation.score, 0) / agents.length
-        : 0
-
-    // Active agents (those with recent activity)
-    const activeAgentCount = agents.filter((a) => a.reputation.score > 0).length
+    if (!dashboardStats) {
+      return {
+        agentCount: 0,
+        activeAgentCount: 0,
+        avgReputation: 0,
+      }
+    }
 
     return {
-      agentCount: agents.length,
-      activeAgentCount,
-      avgReputation,
+      agentCount: dashboardStats.totalAgents,
+      activeAgentCount: dashboardStats.activeAgents,
+      avgReputation: dashboardStats.avgGhostScore,
     }
-  }, [agents])
+  }, [dashboardStats])
 
   // Chart data for agent activity (mock for now - will integrate with PayAI events)
   const chartData = useMemo(() => {
@@ -145,26 +150,26 @@ export default function DashboardOverview() {
         </div>
 
         <div className="space-y-6">
-          <h3 className="text-lg font-bold">My Agents</h3>
+          <h3 className="text-lg font-bold">Top Agents</h3>
           {isLoadingAgents ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
                 <GlassCard key={i} className="h-20 animate-pulse" />
               ))}
             </div>
-          ) : agents.length === 0 ? (
+          ) : !topAgents || topAgents.length === 0 ? (
             <GlassCard className="p-6 text-center text-muted-foreground border-dashed">
-              No agents registered yet.
+              No agents discovered yet.
             </GlassCard>
           ) : (
             <div className="space-y-4">
-              {agents.slice(0, 3).map((agent) => (
-                <GlassCard key={agent.address} className="p-4 flex items-center justify-between">
+              {topAgents.map((agent) => (
+                <GlassCard key={agent.ghostAddress} className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div
                       className={cn(
                         'w-8 h-8 rounded-full flex items-center justify-center',
-                        agent.reputation.score > 50
+                        (agent.ghostScore ?? 0) > 500
                           ? 'bg-green-500/20 text-green-500'
                           : 'bg-gray-500/20 text-gray-500'
                       )}
@@ -172,15 +177,17 @@ export default function DashboardOverview() {
                       <Bot className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">{agent.name || 'Unnamed Agent'}</p>
+                      <p className="text-sm font-medium">
+                        {agent.ghostAddress.slice(0, 8)}...{agent.ghostAddress.slice(-6)}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        Rep: {agent.reputation.score.toFixed(1)}
+                        Score: {agent.ghostScore ?? 0} • {agent.tier ?? 'Newcomer'}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-muted-foreground font-mono">
-                      {agent.address.slice(0, 6)}...{agent.address.slice(-4)}
+                    <p className="text-xs text-muted-foreground">
+                      {agent.totalJobs ?? 0} jobs
                     </p>
                   </div>
                 </GlassCard>

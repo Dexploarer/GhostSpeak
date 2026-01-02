@@ -136,7 +136,7 @@ pub struct SubmitDelivery<'info> {
 
     #[account(
         constraint = agent.key() == escrow.agent @ GhostSpeakError::InvalidAgent,
-        constraint = agent.owner == agent_owner.key() @ GhostSpeakError::InvalidAgentOwner
+        constraint = agent.owner == Some(agent_owner.key()) @ GhostSpeakError::InvalidAgentOwner
     )]
     pub agent: Account<'info, Agent>,
 

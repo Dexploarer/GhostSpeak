@@ -47,7 +47,7 @@ export function useCredentials() {
   const walletAddress = wallet.address
 
   return useQuery({
-    queryKey: credentialKeys.list(walletAddress ?? undefined),
+    queryKey: credentialKeys.list(walletAddress || ''),
     queryFn: async (): Promise<Credential[]> => {
       if (!walletAddress) return []
 
@@ -146,7 +146,7 @@ export function useSyncCredential() {
       // Manually update the cache to reflect the new sync status immediately
       // This persists the status until the next full page refresh/query invalidation
       queryClient.setQueryData(
-        credentialKeys.list(wallet.address ?? undefined),
+        credentialKeys.list(wallet.address || ''),
         (old: Credential[] | undefined) => {
           if (!old) return []
           return old.map((c) => {

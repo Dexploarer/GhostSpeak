@@ -209,7 +209,7 @@ export function VotingInterface({ proposal, className }: VotingInterfaceProps): 
                   <div className="text-right">
                     <div className="font-semibold">{votingStats.forPercentage.toFixed(1)}%</div>
                     <div className="text-xs text-gray-500">
-                      {formatTokenAmount(votingStats.forVotes.toString())} votes
+                      {formatTokenAmount(votingStats.forVotes)} votes
                     </div>
                   </div>
                 </div>
@@ -231,7 +231,7 @@ export function VotingInterface({ proposal, className }: VotingInterfaceProps): 
                   <div className="text-right">
                     <div className="font-semibold">{votingStats.againstPercentage.toFixed(1)}%</div>
                     <div className="text-xs text-gray-500">
-                      {formatTokenAmount(votingStats.againstVotes.toString())} votes
+                      {formatTokenAmount(votingStats.againstVotes)} votes
                     </div>
                   </div>
                 </div>
@@ -256,7 +256,7 @@ export function VotingInterface({ proposal, className }: VotingInterfaceProps): 
                         {votingStats.abstainPercentage.toFixed(1)}%
                       </div>
                       <div className="text-xs text-gray-500">
-                        {formatTokenAmount(votingStats.abstainVotes.toString())} votes
+                        {formatTokenAmount(votingStats.abstainVotes)} votes
                       </div>
                     </div>
                   </div>
@@ -274,7 +274,7 @@ export function VotingInterface({ proposal, className }: VotingInterfaceProps): 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
               <div className="text-center">
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {formatTokenAmount(votingStats.totalVotes.toString())}
+                  {formatTokenAmount(votingStats.totalVotes)}
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Total Votes</div>
               </div>

@@ -16,7 +16,7 @@ import type {
 import { logger } from '@elizaos/core';
 import { address } from '@solana/addresses';
 import type { Address } from '@solana/addresses';
-import { GhostSpeakClient } from '@ghostspeak/sdk';
+import { GhostSpeakService } from '../services/GhostSpeakService';
 import { getAgentSigner, ensureFundedWallet } from '../wallet';
 
 /**
@@ -168,25 +168,41 @@ Optional: "name: Agent Name, capabilities: [cap1, cap2], email: user@example.com
         throw new Error('Insufficient SOL balance. Please fund your wallet.');
       }
 
-      // Create GhostSpeak client
-      const client = new GhostSpeakClient({
-        cluster: (process.env.SOLANA_CLUSTER as 'devnet' | 'mainnet-beta' | 'testnet') || 'devnet',
-        rpcEndpoint: process.env.SOLANA_RPC_URL,
-      });
+      // Get the GhostSpeak service
+      const service = runtime.getService<GhostSpeakService>('ghostspeak');
+      if (!service) {
+        throw new Error('GhostSpeak service not available');
+      }
 
       // Issue credential based on type
       let result: any;
 
       if (request.credentialType === 'agent-identity') {
-        // Issue agent identity credential
-        result = await client.credentials.issueAgentIdentityCredential({
-          agentId: request.agentId,
-          owner: signer.address,
+        // Issue agent identity credential using UnifiedCredentialService
+        const credentialService = service.credentials();
+
+        // Build the credential with required parameters
+        const now = Math.floor(Date.now() / 1000);
+
+        // Create a signature for the credential data
+        // In production, this would be a proper cryptographic signature
+        const signatureData = new TextEncoder().encode(
+          `${request.agentId.toString()}:${signer.address.toString()}:${now}`
+        );
+
+        result = await credentialService.issueAgentIdentityCredential({
+          agentId: request.agentId.toString(),
+          owner: signer.address.toString(),
           name: request.subject.name || 'Unknown Agent',
           capabilities: request.subject.capabilities || [],
+          serviceEndpoint: `https://ghostspeak.ai/agents/${request.agentId.toString().slice(0, 8)}`,
+          frameworkOrigin: 'elizaos',
           x402Enabled: true,
+          registeredAt: now,
+          verifiedAt: now,
           syncToCrossmint: request.syncToCrossmint,
           recipientEmail: request.recipientEmail,
+          signature: signatureData,
         });
 
         logger.info({
@@ -196,7 +212,7 @@ Optional: "name: Agent Name, capabilities: [cap1, cap2], email: user@example.com
 
       } else if (request.credentialType === 'reputation') {
         // Fetch agent reputation data first
-        const agentData = await client.agents.getAgentAccount(request.agentId);
+        const agentData = await service.agents.getAgentAccount(request.agentId);
 
         if (!agentData) {
           throw new Error(`Agent not found: ${request.agentId}`);
@@ -205,27 +221,14 @@ Optional: "name: Agent Name, capabilities: [cap1, cap2], email: user@example.com
         // Calculate metrics
         const reputationScore = Number(agentData.reputationScore || 0);
         const totalJobsCompleted = Number(agentData.totalJobsCompleted || 0);
-        const totalJobsFailed = Number(agentData.totalJobsFailed || 0);
-        const totalJobs = totalJobsCompleted + totalJobsFailed;
-        const successRate = totalJobs > 0
-          ? Math.round((totalJobsCompleted / totalJobs) * 100)
-          : 0;
+        // Note: totalJobsFailed not available on-chain, assume 100% success
+        const successRate = totalJobsCompleted > 0 ? 100 : 0;
 
         // Get Crossmint template ID
         const templateId = process.env.CROSSMINT_REPUTATION_TEMPLATE_ID;
         if (!templateId && request.syncToCrossmint) {
           throw new Error('CROSSMINT_REPUTATION_TEMPLATE_ID not configured');
         }
-
-        // Issue reputation credential
-        // Note: This uses Crossmint directly, not SDK (since SDK might not export this)
-        const { CrossmintVCClient } = await import('@ghostspeak/sdk');
-
-        const crossmint = new CrossmintVCClient({
-          apiKey: process.env.CROSSMINT_SECRET_KEY || '',
-          environment: process.env.CROSSMINT_ENV || 'staging',
-          chain: 'base-sepolia',
-        });
 
         const subject = {
           agent: request.agentId.toString(),
@@ -239,6 +242,16 @@ Optional: "name: Agent Name, capabilities: [cap1, cap2], email: user@example.com
         };
 
         if (request.syncToCrossmint && templateId) {
+          // Issue reputation credential via Crossmint
+          const { CrossmintVCClient } = await import('@ghostspeak/sdk');
+          const crossmintEnv = (process.env.CROSSMINT_ENV === 'production' ? 'production' : 'staging') as 'staging' | 'production';
+
+          const crossmint = new CrossmintVCClient({
+            apiKey: process.env.CROSSMINT_SECRET_KEY || '',
+            environment: crossmintEnv,
+            chain: 'base-sepolia',
+          });
+
           const crossmintResult = await crossmint.issueReputationCredential(
             templateId,
             request.recipientEmail || `agent-${request.agentId.toString().slice(0, 8)}@ghostspeak.credentials`,

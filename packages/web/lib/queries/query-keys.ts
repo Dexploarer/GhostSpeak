@@ -56,7 +56,9 @@ export const tokenKeys = {
   all: ['tokens'] as const,
   balances: () => [...tokenKeys.all, 'balances'] as const,
   balance: (address: string, mint?: string) =>
-    [...tokenKeys.balances(), address, mint].filter(Boolean) as const,
+    mint
+      ? [...tokenKeys.balances(), address, mint] as const
+      : [...tokenKeys.balances(), address] as const,
   metadata: (mint: string) => [...tokenKeys.all, 'metadata', mint] as const,
   supportedMetadata: () => [...tokenKeys.all, 'supported-metadata'] as const,
 }
@@ -121,7 +123,9 @@ export const transparencyKeys = {
 export const analyticsKeys = {
   all: ['analytics'] as const,
   metrics: (agentAddress: string, timeframe?: string) =>
-    [...analyticsKeys.all, 'metrics', agentAddress, timeframe].filter(Boolean) as const,
+    timeframe
+      ? [...analyticsKeys.all, 'metrics', agentAddress, timeframe] as const
+      : [...analyticsKeys.all, 'metrics', agentAddress] as const,
   performance: (agentAddress: string) => [...analyticsKeys.all, 'performance', agentAddress] as const,
   interactions: (agentAddress: string) =>
     [...analyticsKeys.all, 'interactions', agentAddress] as const,

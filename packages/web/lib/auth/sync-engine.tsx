@@ -55,10 +55,10 @@ export function AuthSyncEngine({ children }: { children: React.ReactNode }) {
    */
   useEffect(() => {
     // Map Crossmint auth status to our type system
-    const mappedAuthStatus =
+    const mappedAuthStatus: 'logged-in' | 'logged-out' | 'initializing' =
       authStatus === 'in-progress'
         ? 'initializing'
-        : authStatus === 'authenticated'
+        : authStatus === 'logged-in'
           ? 'logged-in'
           : 'logged-out'
 
@@ -88,13 +88,14 @@ export function AuthSyncEngine({ children }: { children: React.ReactNode }) {
         console.log('[Auth Sync] Creating new Convex user:', address)
         setUserSyncing(true)
         upsertUser({ walletAddress: address })
-          .then((newUser) => {
-            if (newUser) {
+          .then((userId) => {
+            if (userId) {
+              // upsert returns just the ID, so we sync with minimal data
               syncUserFromConvex({
-                _id: newUser._id,
+                _id: userId,
                 walletAddress: address,
-                createdAt: newUser.createdAt ?? Date.now(),
-                lastActiveAt: newUser.lastActiveAt ?? Date.now(),
+                createdAt: Date.now(),
+                lastActiveAt: Date.now(),
               })
             }
           })

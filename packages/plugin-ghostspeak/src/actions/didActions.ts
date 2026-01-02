@@ -5,19 +5,9 @@
 
 import type { Action, ActionResult, HandlerCallback, IAgentRuntime, Memory, State } from '@elizaos/core';
 import { logger } from '@elizaos/core';
-import { GhostSpeakClient } from '@ghostspeak/sdk';
 import type { Address } from '@solana/addresses';
 import { address } from '@solana/addresses';
-
-/**
- * Helper function to create GhostSpeak client
- */
-function createGhostSpeakClient(): GhostSpeakClient {
-  return new GhostSpeakClient({
-    cluster: (process.env.SOLANA_CLUSTER as 'devnet' | 'mainnet-beta' | 'testnet') || 'devnet',
-    rpcEndpoint: process.env.SOLANA_RPC_URL,
-  });
-}
+import { GhostSpeakService } from '../services/GhostSpeakService';
 
 /**
  * Create DID Document Action
@@ -92,8 +82,6 @@ export const createDidAction: Action = {
       const text = message.content.text || '';
       const nameMatch = text.match(/name[:\s]+([^\s,]+)/i);
       const didName = nameMatch ? nameMatch[1] : runtime.character?.name || 'Agent';
-
-      const client = createGhostSpeakClient();
 
       // Note: In production, this would require wallet signing
       // For now, we provide instructions on how to create DID
@@ -265,8 +253,13 @@ export const resolveDidAction: Action = {
         };
       }
 
-      const client = createGhostSpeakClient();
-      const didDocument = await client.did.resolveDidDocument({ did: targetAddress.toString() });
+      // Get the GhostSpeak service
+      const service = runtime.getService<GhostSpeakService>('ghostspeak');
+      if (!service) {
+        throw new Error('GhostSpeak service not available');
+      }
+
+      const didDocument = await service.did().resolve(targetAddress);
 
       if (!didDocument) {
         const errorMsg = `No DID document found for ${targetAddress}`;
@@ -287,15 +280,15 @@ export const resolveDidAction: Action = {
       const response = `DID Document for ${targetAddress}:
 
 📋 **DID Information:**
-- DID String: ${didDocument.didString || `did:sol:${process.env.SOLANA_CLUSTER || 'devnet'}:${targetAddress}`}
+- DID String: ${didDocument.did || `did:sol:${process.env.SOLANA_CLUSTER || 'devnet'}:${targetAddress}`}
 - Controller: ${didDocument.controller?.toString() || targetAddress}
 - Status: ${didDocument.deactivated ? '🔴 Deactivated' : '🟢 Active'}
 
 🔑 **Verification Methods:** ${didDocument.verificationMethods?.length || 0}
-${didDocument.verificationMethods?.map((vm: any, i: number) => `  ${i + 1}. ${vm.type} (ID: ${vm.id})`).join('\n') || 'None'}
+${didDocument.verificationMethods?.map((vm: any, i: number) => `  ${i + 1}. ${vm.methodType} (ID: ${vm.id})`).join('\n') || 'None'}
 
-🔌 **Service Endpoints:** ${didDocument.services?.length || 0}
-${didDocument.services?.map((s: any, i: number) => `  ${i + 1}. ${s.type}: ${s.endpoint}`).join('\n') || 'None'}
+🔌 **Service Endpoints:** ${didDocument.serviceEndpoints?.length || 0}
+${didDocument.serviceEndpoints?.map((s: any, i: number) => `  ${i + 1}. ${s.serviceType}: ${s.serviceEndpoint}`).join('\n') || 'None'}
 
 📅 **Timestamps:**
 - Created: ${didDocument.createdAt ? new Date(Number(didDocument.createdAt) * 1000).toISOString() : 'Unknown'}
@@ -313,11 +306,11 @@ ${didDocument.services?.map((s: any, i: number) => `  ${i + 1}. ${s.type}: ${s.e
         success: true,
         text: response,
         data: {
-          didString: didDocument.didString,
+          didString: didDocument.did,
           controller: didDocument.controller?.toString(),
           isActive: !didDocument.deactivated,
           verificationMethodCount: didDocument.verificationMethods?.length || 0,
-          serviceEndpointCount: didDocument.services?.length || 0,
+          serviceEndpointCount: didDocument.serviceEndpoints?.length || 0,
         },
       };
     } catch (error) {

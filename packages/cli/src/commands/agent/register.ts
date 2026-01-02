@@ -26,6 +26,7 @@ export function registerRegisterCommand(parentCommand: Command): void {
     .option('-d, --description <description>', 'Agent description')
     .option('-c, --capabilities <capabilities>', 'Comma-separated list of capabilities (e.g. automation,coding)')
     .option('--endpoint <endpoint>', 'Service endpoint URL')
+    .option('-t, --type <type>', 'Agent type: standard or compressed (default: standard)')
     .option('--no-metadata', 'Skip metadata URI prompt')
     .option('-y, --yes', 'Skip confirmation prompt')
     .action(async (_options: RegisterOptions) => {

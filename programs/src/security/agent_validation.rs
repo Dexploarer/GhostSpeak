@@ -10,7 +10,7 @@ use anchor_lang::prelude::*;
 /// Validates that the signer has authority over the agent
 pub fn validate_agent_authority(agent: &Account<Agent>, authority: &Signer) -> Result<()> {
     require!(
-        agent.owner == authority.key(),
+        agent.owner == Some(authority.key()),
         GhostSpeakError::UnauthorizedAccess
     );
 

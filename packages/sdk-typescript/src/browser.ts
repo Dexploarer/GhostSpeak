@@ -7,6 +7,7 @@
 
 // Core modules - browser safe
 export { AgentModule } from './core/modules/AgentModule.js'
+export { GhostModule } from './core/modules/GhostModule.js'
 
 export { GovernanceModule } from './modules/governance/GovernanceModule.js'
 export { MultisigModule } from './modules/multisig/MultisigModule.js'
@@ -44,6 +45,9 @@ export {
   deriveAgentPda,
   deriveUserRegistryPda
 } from './utils/pda.js'
+
+// SAS helper for Ghost claims
+export { SASAttestationHelper } from './modules/sas/SASAttestationHelper.js'
 
 // Generated types - browser safe (type only exports)
 export type {

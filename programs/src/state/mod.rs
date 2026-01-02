@@ -10,6 +10,7 @@ pub mod agent;
 pub mod audit;
 pub mod credential;
 pub mod did; // W3C-compliant decentralized identifiers (did:sol)
+pub mod external_id_mapping; // Cross-platform Ghost ID resolution (NEW FOR GHOST)
 pub mod agent_auth; // Trustless agent pre-authorization system
 pub mod ghost_protect; // B2C escrow with dispute resolution
 pub mod governance; // Multisig and governance structures
@@ -31,7 +32,16 @@ pub use agent::{
     AgentServiceData,
     AgentVerification,
     AgentVerificationData,
+    // Ghost Identity types (NEW)
+    AgentStatus,
+    ExternalIdentifier,
+    ReputationComponent,
+    ReputationSourceType,
+    // PDA Seeds (NEW - for instructions)
+    AGENT_SEED,
 };
+// External ID mapping for cross-platform resolution (NEW FOR GHOST)
+pub use external_id_mapping::ExternalIdMapping;
 // Compressed agent types
 pub use crate::instructions::agent_compressed::{
     AgentTreeConfig, CompressedAgentCreatedEvent, CompressedAgentMetadata,

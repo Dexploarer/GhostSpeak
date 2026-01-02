@@ -2,7 +2,7 @@
  * X402 Transaction Indexer - Convex Module
  *
  * On-chain transaction polling for x402 payments to eliminate webhook dependency.
- * Syncs PayAI payment events from Solana blockchain every 5 minutes.
+ * Syncs x402 payment events from Solana blockchain every 5 minutes.
  *
  * **Architecture:**
  * - Webhook = Fast path (real-time updates)
@@ -190,7 +190,7 @@ async function recordSyncEvent(
 /**
  * Mark event as received via webhook
  *
- * Called by PayAI webhook handler to track dual-source events
+ * Called by payment webhook handler to track dual-source events
  */
 export const markWebhookReceived = mutation({
   args: {
@@ -360,7 +360,7 @@ async function updateReputationFromOnChain(ctx: any, payment: any): Promise<void
     .first()
 
   // Calculate reputation change (same logic as webhook)
-  // ... (would use same calculation as PayAI webhook handler)
+  // ... (would use same calculation as payment webhook handler)
 
   console.log('[X402 Sync] Updated reputation from on-chain:', {
     agent: payment.merchant.toString(),

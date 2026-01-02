@@ -228,7 +228,9 @@ export async function airdropToAgent(
     amount,
   }, 'Requesting SOL airdrop');
 
-  const signature = await rpc.requestAirdrop(agentAddress, BigInt(amount)).send();
+  // Cast to the Lamports branded type expected by the RPC
+  const lamportsAmount = BigInt(amount) as bigint & { readonly __brand: unique symbol };
+  const signature = await rpc.requestAirdrop(agentAddress, lamportsAmount as any).send();
 
   logger.info({
     agentId: runtime.agentId,

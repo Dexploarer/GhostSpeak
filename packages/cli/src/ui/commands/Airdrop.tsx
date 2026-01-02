@@ -10,13 +10,25 @@ import Gradient from 'ink-gradient'
 import { Layout } from '../components/Layout.js'
 import { InfoRow } from '../components/InfoRow.js'
 import { StatusBadge } from '../components/StatusBadge.js'
-import { Connection, PublicKey, Keypair } from '@solana/web3.js'
+import { createSolanaRpc } from '@solana/rpc'
+import { address } from '@solana/addresses'
+import { createKeyPairSignerFromBytes } from '@solana/signers'
 import {
-  getAssociatedTokenAddress,
-  getOrCreateAssociatedTokenAccount,
-  transfer,
-  getAccount,
-} from '@solana/spl-token'
+  getCreateAssociatedTokenInstructionAsync,
+  getTransferInstruction,
+  fetchToken,
+  findAssociatedTokenPda,
+  TOKEN_PROGRAM_ADDRESS,
+} from '@solana-program/token'
+import {
+  createTransactionMessage,
+  setTransactionMessageFeePayerSigner,
+  setTransactionMessageLifetimeUsingBlockhash,
+  appendTransactionMessageInstruction,
+  pipe,
+  signTransactionMessageWithSigners,
+  sendAndConfirmTransactionFactory,
+} from '@solana/kit'
 import { readFileSync } from 'fs'
 
 const DEVNET_GHOST_MINT = 'BV4uhhMJ84zjwRomS15JMH5wdXVrMP8o9E1URS4xtYoh'
@@ -53,52 +65,83 @@ export const Airdrop: React.FC<AirdropProps> = ({ recipient }) => {
 
       // Load wallet
       const walletPath = process.env.HOME + '/.config/solana/id.json'
-      const walletData = JSON.parse(readFileSync(walletPath, 'utf-8'))
-      const wallet = Keypair.fromSecretKey(new Uint8Array(walletData))
+      const secretKeyBytes = new Uint8Array(JSON.parse(readFileSync(walletPath, 'utf-8')))
+      const wallet = await createKeyPairSignerFromBytes(secretKeyBytes)
 
-      const recipientPubkey = recipient
-        ? new PublicKey(recipient)
-        : wallet.publicKey
+      const recipientAddress = recipient
+        ? address(recipient)
+        : wallet.address
 
-      setWalletAddress(recipientPubkey.toBase58())
+      setWalletAddress(recipientAddress)
 
       // Connect
-      const connection = new Connection(
-        'https://api.devnet.solana.com',
-        'confirmed'
-      )
-      const ghostMint = new PublicKey(DEVNET_GHOST_MINT)
+      const rpc = createSolanaRpc('https://api.devnet.solana.com')
+      const ghostMintAddress = address(DEVNET_GHOST_MINT)
 
       // Get token accounts
-      const faucetTokenAccount = await getAssociatedTokenAddress(
-        ghostMint,
-        wallet.publicKey
-      )
-      const recipientTokenAccount = await getOrCreateAssociatedTokenAccount(
-        connection,
-        wallet,
-        ghostMint,
-        recipientPubkey
-      )
+      const [faucetTokenAccount] = await findAssociatedTokenPda({
+        mint: ghostMintAddress,
+        owner: wallet.address,
+        tokenProgram: TOKEN_PROGRAM_ADDRESS,
+      })
+
+      const [recipientTokenAccount] = await findAssociatedTokenPda({
+        mint: ghostMintAddress,
+        owner: recipientAddress,
+        tokenProgram: TOKEN_PROGRAM_ADDRESS,
+      })
 
       setStage('transferring')
 
-      // Transfer
+      // Build transaction
+      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send()
+
+      // Create ATA instruction (idempotent - will do nothing if already exists)
+      const createAtaInstruction = await getCreateAssociatedTokenInstructionAsync({
+        payer: wallet,
+        mint: ghostMintAddress,
+        owner: recipientAddress,
+        ata: recipientTokenAccount,
+      })
+
+      // Create transfer instruction
       const amountWithDecimals = BigInt(AIRDROP_AMOUNT) * BigInt(10 ** DECIMALS)
-      const sig = await transfer(
-        connection,
-        wallet,
-        faucetTokenAccount,
-        recipientTokenAccount.address,
-        wallet.publicKey,
-        amountWithDecimals
+      const transferInstruction = getTransferInstruction({
+        source: faucetTokenAccount,
+        destination: recipientTokenAccount,
+        authority: wallet,
+        amount: amountWithDecimals,
+      })
+
+      // Build and sign transaction using modern v5 patterns
+      const transactionMessage = await pipe(
+        createTransactionMessage({ version: 0 }),
+        (tx) => setTransactionMessageFeePayerSigner(wallet, tx),
+        (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+        (tx) => appendTransactionMessageInstruction(createAtaInstruction, tx),
+        (tx) => appendTransactionMessageInstruction(transferInstruction, tx)
       )
 
+      // Sign transaction
+      const signedTransaction = await signTransactionMessageWithSigners(transactionMessage)
+
+      // Send and confirm using factory pattern (without subscriptions for now)
+      const sendAndConfirmTransaction = sendAndConfirmTransactionFactory({
+        rpc: rpc as Parameters<typeof sendAndConfirmTransactionFactory>[0]['rpc'],
+        rpcSubscriptions: undefined as any // Subscriptions not currently available
+      })
+
+      await sendAndConfirmTransaction(signedTransaction as Parameters<typeof sendAndConfirmTransaction>[0], {
+        commitment: 'confirmed'
+      })
+
+      // Extract signature from signed transaction
+      const sig = Object.keys((signedTransaction as any).signatures || {})[0] || ''
       setSignature(sig)
 
       // Get new balance
-      const accountInfo = await getAccount(connection, recipientTokenAccount.address)
-      const newBalance = Number(accountInfo.amount) / 10 ** DECIMALS
+      const accountInfo = await fetchToken(rpc, recipientTokenAccount)
+      const newBalance = Number(accountInfo.data.amount) / 10 ** DECIMALS
 
       setBalance(newBalance)
       setStage('success')

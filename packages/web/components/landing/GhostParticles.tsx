@@ -106,7 +106,7 @@ const THEME_COLORS = {
 export function GhostParticles({ scrollProgress = 0 }: GhostParticlesProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const particles = useRef<Particle[]>([])
-  const animationFrameId = useRef<number>()
+  const animationFrameId = useRef<number | undefined>(undefined)
   const { theme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 

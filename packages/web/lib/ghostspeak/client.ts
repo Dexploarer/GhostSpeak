@@ -18,12 +18,14 @@ import { createSolanaRpc } from '@solana/rpc'
 // Import from browser-safe SDK entry point
 import {
   AgentModule,
+  GhostModule,
   GovernanceModule,
   ReputationModule,
   MultisigModule,
   CredentialsModule,
   StakingModule,
   PayAIClient,
+  SASAttestationHelper,
   GHOSTSPEAK_PROGRAM_ID,
 } from '@ghostspeak/sdk/browser'
 
@@ -49,6 +51,7 @@ export type NetworkType = keyof typeof NETWORK_ENDPOINTS
  *
  * Core Pillars:
  * - agents: Identity Registry for AI agents
+ * - ghosts: External agent claiming with SAS attestations
  * - credentials: Verifiable Credentials (VCs) module
  * - reputation: Performance-based trust layer
  * - staking: GHOST token staking for reputation boost
@@ -58,6 +61,7 @@ export interface GhostSpeakClient {
   programId: Address
   rpcUrl: string
   agents: InstanceType<typeof AgentModule>
+  ghosts: InstanceType<typeof GhostModule>
   credentials: InstanceType<typeof CredentialsModule>
   reputation: InstanceType<typeof ReputationModule>
   staking: InstanceType<typeof StakingModule>
@@ -104,6 +108,7 @@ export function createGhostSpeakClient(
     rpcUrl,
     // Core Pillars
     agents: new AgentModule(config),
+    ghosts: new GhostModule(config),
     credentials: new CredentialsModule(programIdAddress), // CredentialsModule expects programId
     reputation: new ReputationModule(config),
     staking: new StakingModule(config),

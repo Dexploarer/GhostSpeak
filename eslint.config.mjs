@@ -111,8 +111,10 @@ export default tseslint.config(
         ],
       }],
     },
-    // Apply to all TypeScript files except tests and scripts
-    files: ['!**/*.test.ts', '!**/*.spec.ts', '!**/tests/**', '!**/scripts/**'],
+    // Apply to all TypeScript files
+    files: ['**/*.ts', '**/*.tsx'],
+    // Exclude tests and scripts from this restriction
+    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**', '**/scripts/**'],
   },
   {
     // Disable type-aware linting for JavaScript files

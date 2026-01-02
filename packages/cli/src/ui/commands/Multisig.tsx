@@ -123,68 +123,37 @@ export const Multisig: React.FC<MultisigProps> = ({ multisigAddress, autoRefresh
 
       setUserAddress(wallet.address)
 
-      // Load multisigs where user is a signer
-      await simulateAPICall(800)
+      // Load multisigs where user is a signer using actual SDK
+      const userMultisigs = await safeClient.governance.listMultisigs({ creator: wallet.address })
+      const multisigWallets: MultisigWallet[] = userMultisigs.map((m: any) => ({
+        address: m.address,
+        name: m.name,
+        threshold: m.threshold,
+        signers: m.members,
+        pendingProposals: m.pendingProposals || 0,
+        executedProposals: 0, // Not tracked in current SDK
+        createdAt: Date.now() // SDK doesn't store creation timestamp yet
+      }))
 
-      // Mock data - replace with actual SDK call when ready
-      const mockMultisigs: MultisigWallet[] = [
-        {
-          address: address('Multi1111111111111111111111111111111111111'),
-          name: 'Agent Control Wallet',
-          threshold: 2,
-          signers: [
-            wallet.address,
-            address('Signer111111111111111111111111111111111111'),
-            address('Signer222222222222222222222222222222222222'),
-          ],
-          pendingProposals: 2,
-          executedProposals: 15,
-          createdAt: Date.now() - (60 * 24 * 60 * 60 * 1000), // 60 days ago
-        },
-        {
-          address: address('Multi2222222222222222222222222222222222222'),
-          name: 'Treasury Multisig',
-          threshold: 3,
-          signers: [
-            wallet.address,
-            address('Signer333333333333333333333333333333333333'),
-            address('Signer444444444444444444444444444444444444'),
-            address('Signer555555555555555555555555555555555555'),
-          ],
-          pendingProposals: 1,
-          executedProposals: 8,
-          createdAt: Date.now() - (30 * 24 * 60 * 60 * 1000), // 30 days ago
-        }
-      ]
+      // Load proposals for all multisigs
+      const allProposals: Proposal[] = []
+      for (const multisig of multisigWallets) {
+        const proposals = await safeClient.governance.listProposals({ multisigAddress: multisig.address })
+        allProposals.push(...proposals.map((p: any) => ({
+          address: p.address,
+          multisigAddress: multisig.address,
+          title: p.title,
+          description: p.description,
+          proposer: p.creator,
+          approvals: p.votesFor || 0,
+          threshold: p.threshold,
+          status: p.status,
+          createdAt: Number(p.deadline) || Date.now()
+        })))
+      }
 
-      // Mock proposals
-      const mockProposals: Proposal[] = [
-        {
-          address: address('Prop11111111111111111111111111111111111111'),
-          multisigAddress: mockMultisigs[0].address,
-          title: 'Update Agent Metadata',
-          description: 'Proposal to update agent name and service endpoints',
-          proposer: wallet.address,
-          approvals: 1,
-          threshold: 2,
-          status: 'pending',
-          createdAt: Date.now() - (2 * 24 * 60 * 60 * 1000), // 2 days ago
-        },
-        {
-          address: address('Prop22222222222222222222222222222222222222'),
-          multisigAddress: mockMultisigs[0].address,
-          title: 'Transfer 100 GHOST',
-          description: 'Send 100 GHOST tokens to development fund',
-          proposer: address('Signer111111111111111111111111111111111111'),
-          approvals: 2,
-          threshold: 2,
-          status: 'approved',
-          createdAt: Date.now() - (5 * 24 * 60 * 60 * 1000), // 5 days ago
-        }
-      ]
-
-      setMultisigs(mockMultisigs)
-      setProposals(mockProposals)
+      setMultisigs(multisigWallets)
+      setProposals(allProposals)
       setStage('ready')
       setLastUpdate(new Date())
 
@@ -200,10 +169,8 @@ export const Multisig: React.FC<MultisigProps> = ({ multisigAddress, autoRefresh
     }
 
     try {
-      await simulateAPICall(300)
-
       // Reload multisigs and proposals from SDK
-      // TODO: Implement actual refresh logic
+      await loadMultisigs()
 
       setLastUpdate(new Date())
       if (!silent) {
@@ -214,8 +181,6 @@ export const Multisig: React.FC<MultisigProps> = ({ multisigAddress, autoRefresh
       setStage('error')
     }
   }
-
-  const simulateAPICall = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
   const getStatusColor = (status: string): 'green' | 'yellow' | 'red' | 'gray' => {
     const colors: Record<string, any> = {

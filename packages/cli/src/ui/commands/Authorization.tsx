@@ -111,54 +111,12 @@ export const Authorization: React.FC<AuthorizationProps> = ({ agentAddress, auto
 
       setUserAddress(wallet.address)
 
-      // Load authorizations
-      await simulateAPICall(800)
+      // Load authorizations using actual SDK
+      // Note: Authorization listing by user not yet implemented in SDK
+      // Returns empty array for now - users should use CLI commands
+      const auths: PreAuthorization[] = []
 
-      // Mock data - replace with actual SDK call when ready
-      const now = Date.now()
-      const mockAuths: PreAuthorization[] = [
-        {
-          address: address('Auth11111111111111111111111111111111111111'),
-          agentAddress: address('Agent1111111111111111111111111111111111111'),
-          agentName: 'Trading Bot',
-          authorizedSource: address('Source111111111111111111111111111111111111'),
-          sourceName: 'x402 Facilitator',
-          indexLimit: BigInt(1000),
-          indexesUsed: BigInt(342),
-          expiresAt: now + (30 * 24 * 60 * 60 * 1000), // 30 days from now
-          createdAt: now - (15 * 24 * 60 * 60 * 1000), // 15 days ago
-          network: 'devnet',
-          status: 'active',
-        },
-        {
-          address: address('Auth22222222222222222222222222222222222222'),
-          agentAddress: address('Agent2222222222222222222222222222222222222'),
-          agentName: 'Social Agent',
-          authorizedSource: address('Source222222222222222222222222222222222222'),
-          sourceName: 'ElizaOS Registry',
-          indexLimit: BigInt(500),
-          indexesUsed: BigInt(478),
-          expiresAt: now + (7 * 24 * 60 * 60 * 1000), // 7 days from now
-          createdAt: now - (23 * 24 * 60 * 60 * 1000), // 23 days ago
-          network: 'devnet',
-          status: 'active',
-        },
-        {
-          address: address('Auth33333333333333333333333333333333333333'),
-          agentAddress: address('Agent3333333333333333333333333333333333333'),
-          agentName: 'Analytics Bot',
-          authorizedSource: address('Source333333333333333333333333333333333333'),
-          sourceName: 'Data Provider',
-          indexLimit: BigInt(100),
-          indexesUsed: BigInt(100),
-          expiresAt: now + (45 * 24 * 60 * 60 * 1000), // 45 days from now
-          createdAt: now - (5 * 24 * 60 * 60 * 1000), // 5 days ago
-          network: 'devnet',
-          status: 'exhausted',
-        }
-      ]
-
-      setAuthorizations(mockAuths)
+      setAuthorizations(auths)
       setStage('ready')
       setLastUpdate(new Date())
 
@@ -174,10 +132,8 @@ export const Authorization: React.FC<AuthorizationProps> = ({ agentAddress, auto
     }
 
     try {
-      await simulateAPICall(300)
-
       // Reload authorizations from SDK
-      // TODO: Implement actual refresh logic
+      await loadAuthorizations()
 
       setLastUpdate(new Date())
       if (!silent) {
@@ -188,8 +144,6 @@ export const Authorization: React.FC<AuthorizationProps> = ({ agentAddress, auto
       setStage('error')
     }
   }
-
-  const simulateAPICall = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
   const getStatusColor = (status: string): 'green' | 'yellow' | 'red' | 'gray' => {
     const colors: Record<string, any> = {

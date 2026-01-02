@@ -99,7 +99,6 @@ export const Ghost: React.FC<GhostProps> = ({ autoRefresh = true }) => {
       const wallet = await createKeyPairSignerFromBytes(secretKeyBytes)
 
       // Connect to Solana
-      const rpc = createSolanaRpc('https://api.devnet.solana.com')
       const client = new GhostSpeakClient({
         rpcEndpoint: 'https://api.devnet.solana.com'
       })
@@ -107,25 +106,20 @@ export const Ghost: React.FC<GhostProps> = ({ autoRefresh = true }) => {
 
       setOwnerAddress(wallet.address)
 
-      // Load ghosts owned by this wallet
-      await simulateAPICall(800)
+      // Load ghosts claimed by this wallet using actual SDK
+      const claimedGhosts = await safeClient.ghosts.getClaimedGhosts(wallet.address)
 
-      // Mock data - replace with actual SDK call when ready
-      const mockGhosts: GhostAgent[] = [
-        {
-          address: address('Ghost1111111111111111111111111111111111111'),
-          owner: wallet.address,
-          externalId: '@ai_agent_1',
-          platform: 'x402',
-          claimedAt: Date.now() - (30 * 24 * 60 * 60 * 1000), // 30 days ago
-          linkedIds: [
-            { platform: 'twitter', externalId: '@ai_agent_1' },
-            { platform: 'github', externalId: 'ai-agent-1' }
-          ]
-        }
-      ]
+      // Map SDK data to UI format
+      const ghostAgents: GhostAgent[] = claimedGhosts.map((ghost: any) => ({
+        address: ghost.address,
+        owner: ghost.data.owner || wallet.address,
+        externalId: ghost.data.x402PaymentAddress?.toString() || 'Unknown',
+        platform: 'x402',
+        claimedAt: Date.now(), // SDK doesn't store claim timestamp yet
+        linkedIds: [] // Not yet implemented in SDK
+      }))
 
-      setGhosts(mockGhosts)
+      setGhosts(ghostAgents)
       setStage('ready')
       setLastUpdate(new Date())
 

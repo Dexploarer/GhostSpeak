@@ -133,7 +133,6 @@ export const claimAgent = mutation({
       status: 'claimed',
       claimedAt: Date.now(),
       claimedBy: args.claimedBy,
-      claimTxSignature: args.claimTxSignature,
       updatedAt: Date.now(),
     })
 
@@ -142,7 +141,6 @@ export const claimAgent = mutation({
       eventType: 'agent_claimed',
       ghostAddress: args.ghostAddress,
       data: {
-        claimedBy: args.claimedBy,
         signature: args.claimTxSignature,
       },
       timestamp: Date.now(),

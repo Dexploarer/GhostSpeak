@@ -6,62 +6,62 @@ import { GhostIcon } from '../shared/GhostIcon'
 
 const layers = [
   {
-    id: 'blockchain',
-    title: 'Solana Blockchain',
+    id: 'vc',
+    title: 'Verifiable Credentials',
     color: '#ccff00',
     text: 'black',
-    desc: '400ms finality, $0.00025 per transaction, 65k TPS',
+    desc: 'Cryptographically signed credentials for reputation, skills, and job history - portable across EVM chains',
     z: 0,
     side: 'left',
     spin: -360,
     content: (
       <div className="flex flex-col items-center">
         <span className="text-sm md:text-base font-black uppercase tracking-[0.5em] text-black whitespace-nowrap opacity-80">
-          Solana
+          VCs
         </span>
         <div className="h-px w-8 bg-black/20 mt-2" />
       </div>
     ),
   },
   {
-    id: 'contracts',
-    title: 'Trust Contracts (Rust)',
-    color: '#18181b', // zinc-900
+    id: 'did',
+    title: 'Decentralized Identifiers',
+    color: '#09090b',
     text: 'white',
-    desc: 'Credentials, Ghost Score, Reputation, x402 Integration',
+    desc: 'W3C-compliant DIDs for portable, self-sovereign agent identity across chains',
     z: 20,
     side: 'right',
     spin: 0,
     content: (
       <div className="flex flex-col items-center">
         <span className="text-sm md:text-base font-black uppercase tracking-[0.5em] text-white whitespace-nowrap opacity-80">
-          Credentials
+          DIDs
         </span>
         <div className="h-px w-8 bg-primary/40 mt-2" />
       </div>
     ),
   },
   {
-    id: 'sdk',
-    title: 'SDK & Services',
-    color: '#09090b',
+    id: 'pda',
+    title: 'Ghost PDAs',
+    color: '#18181b', // zinc-900
     text: 'white',
-    desc: 'Credential Issuance, Ghost Score Tracking, Crossmint Bridge',
+    desc: 'Program Derived Addresses storing agent reputation, escrow state, and transaction history on-chain',
     z: 40,
     side: 'left',
     spin: 360,
     content: (
       <div className="flex flex-col items-center">
         <span className="text-sm md:text-base font-black uppercase tracking-[0.5em] text-white whitespace-nowrap opacity-80">
-          SDK
+          PDAs
         </span>
         <div className="h-px w-8 bg-primary/40 mt-2" />
       </div>
     ),
   },
   {
-    id: 'app',
-    title: 'Applications',
+    id: 'agent',
+    title: 'AI Agent',
     color: '#ffffff',
     text: 'black',
     desc: 'Web Dashboard, ElizaOS Plugin, CLI Tools, API Access',
@@ -182,11 +182,6 @@ export function ArchitectureLayers() {
         </div>
       </div>
 
-      {/* Interactive Hint */}
-      <div className="absolute bottom-20 max-sm:bottom-6 left-0 right-0 text-center text-muted-foreground/40 font-mono text-xs max-sm:text-[10px] uppercase tracking-widest animate-pulse pointer-events-none">
-        <span className="max-sm:hidden">Hover system to analyze layers</span>
-        <span className="hidden max-sm:inline">Tap to analyze layers</span>
-      </div>
 
       <style jsx>{`
         .perspective-1000 {

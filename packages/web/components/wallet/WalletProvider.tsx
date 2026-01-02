@@ -53,7 +53,10 @@ export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children
   return (
     <CrossmintProvider apiKey={crossmintApiKey}>
       <CrossmintAuthProvider
-        loginMethods={['email', 'web3:solana-only']} // Strict business-only login
+        loginMethods={['web3:solana-only']} // Non-custodial wallets only (Phantom, Solflare, etc.)
+        // Secure cookie configuration with custom auth routes
+        refreshRoute="/api/auth/refresh"
+        logoutRoute="/api/auth/logout"
         appearance={{
           spacingUnit: '8px',
           borderRadius: '12px',
@@ -69,14 +72,12 @@ export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children
             accent: '#ccff00', // Primary lime
           },
         }}
-        authModalTitle="Access GhostSpeak Protocol"
+        authModalTitle="Connect Your Solana Wallet"
       >
-        <CrossmintWalletProvider
-          createOnLogin={{
-            chain: 'solana',
-            signer: { type: 'email' },
-          }}
-        >
+        {/* CrossmintWalletProvider provides useWallet() hook for accessing wallet address
+            NOTE: We do NOT set createOnLogin - this ensures non-custodial wallets only
+            The wallet address comes from the user's connected wallet (Phantom, Solflare, etc.) */}
+        <CrossmintWalletProvider>
           {children}
         </CrossmintWalletProvider>
       </CrossmintAuthProvider>

@@ -4,15 +4,15 @@ import React, { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Hero } from '@/components/landing/Hero'
 import { BentoGrid } from '@/components/landing/BentoGrid'
-import dynamic from 'next/dynamic'
-import { NetworkTelemetry } from '@/components/landing/NetworkTelemetry'
-import { MascotShowcase } from '@/components/landing/MascotShowcase'
 import { GhostIcon } from '@/components/shared/GhostIcon'
 import { ManifestoSection } from '@/components/landing/ManifestoSection'
 import { ArchitectureLayers } from '@/components/landing/ArchitectureLayers'
-import { CostComparison } from '@/components/landing/CostComparison'
+import { ClaimGhost } from '@/components/landing/ClaimGhost'
 import { IntegrationMarquee } from '@/components/landing/IntegrationMarquee'
 import { IdentityBridge } from '@/components/landing/IdentityBridge'
+import { DeveloperIntegration } from '@/components/landing/DeveloperIntegration'
+import { UseCases } from '@/components/landing/UseCases'
+import { TokenomicsStaking } from '@/components/landing/TokenomicsStaking'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
@@ -20,18 +20,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
 }
-
-const AgentSwarm3D = dynamic(
-  () => import('@/components/landing/3d/AgentSwarm3D').then((mod) => mod.AgentSwarm3D),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-full flex items-center justify-center text-muted-foreground font-mono text-sm animate-pulse tracking-widest">
-        INITIALIZING NEURAL LINK...
-      </div>
-    ),
-  }
-)
 
 export default function LandingPage() {
   const pageRef = useRef<HTMLDivElement>(null)
@@ -94,24 +82,16 @@ export default function LandingPage() {
         <ManifestoSection />
       </div>
 
-      {/* 4. Live Telemetry - Proof of Performance */}
-      <section className="animate-on-scroll relative py-12 sm:py-16 md:py-24 border-b border-border">
-        <NetworkTelemetry />
-      </section>
 
-      {/* 5. The Mascot Showcase - Brand Soul */}
-      <div className="animate-on-scroll">
-        <MascotShowcase />
-      </div>
 
       {/* 6. Architecture Deep Dive */}
       <div className="animate-on-scroll">
         <ArchitectureLayers />
       </div>
 
-      {/* 7. Cost Efficiency */}
+      {/* 7. Claim Ghost */}
       <div className="animate-on-scroll">
-        <CostComparison />
+        <ClaimGhost />
       </div>
 
       {/* 8. Cross-Chain Identity Bridge */}
@@ -119,37 +99,20 @@ export default function LandingPage() {
         <IdentityBridge />
       </div>
 
-      {/* 9. Protocol Visualization - The Trust Layer */}
-      <section className="animate-on-scroll py-16 sm:py-24 md:py-32 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 mb-10 sm:mb-16 md:mb-20 text-center relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="space-y-3 sm:space-y-4"
-          >
-            <h2 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tighter">
-              The <span className="text-primary">Ghost</span> Behind Every AI.
-            </h2>
-            <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto font-light px-2">
-              Track every transaction. Issue verifiable credentials. Calculate trust scores. Built
-              on top of PayAI to add the missing trust layer.
-            </p>
-          </motion.div>
-        </div>
+      {/* 9. Use Cases */}
+      <div className="animate-on-scroll">
+        <UseCases />
+      </div>
 
-        <div className="w-full h-[400px] sm:h-[600px] md:h-[800px] border border-border rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl bg-card/40 backdrop-blur-sm relative mx-auto max-w-7xl">
-          <div className="absolute inset-0 bg-radial-gradient from-primary/5 via-transparent to-transparent opacity-50 z-0" />
-          <div className="relative z-10 w-full h-full">
-            <AgentSwarm3D />
-          </div>
-        </div>
+      {/* 10. Developer Integration */}
+      <div className="animate-on-scroll">
+        <DeveloperIntegration />
+      </div>
 
-        {/* Floating background elements */}
-        <div className="absolute top-1/2 left-0 -translate-y-1/2 w-96 h-96 bg-primary/10 rounded-full blur-[150px] -z-10" />
-      </section>
+      {/* 11. Tokenomics & Staking */}
+      <TokenomicsStaking />
 
-      {/* 10. Features Grid (Bento) */}
+      {/* 12. Features Grid (Bento) */}
       <section className="animate-on-scroll py-16 sm:py-24 md:py-32 relative border-t border-border">
         <div className="max-w-7xl mx-auto px-4 mb-10 sm:mb-16 md:mb-20 text-center">
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight">
@@ -178,8 +141,13 @@ export default function LandingPage() {
           </div>
 
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8 text-xs sm:text-sm text-muted-foreground font-mono">
-            <a href="/dashboard" className="hover:text-primary transition-colors">
-              PROTOCOL
+            <a
+              href="https://docs.ghostspeak.io"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors"
+            >
+              DOCS
             </a>
             <a
               href="https://dexscreener.com/solana/e44xj7jyjxyermlqqwrpu4nekcphawfjf3ppn2uokgdb"
@@ -189,31 +157,26 @@ export default function LandingPage() {
             >
               BUY GHOST
             </a>
-            <a href="/tokenomics" className="hover:text-primary transition-colors">
-              TOKENOMICS
+            <a
+              href="https://github.com/ghostspeak/ghostspeak"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors"
+            >
+              GITHUB
             </a>
-            <a href="/dashboard/staking" className="hover:text-primary transition-colors">
-              STAKING
-            </a>
-            <a href="/dashboard/governance" className="hover:text-primary transition-colors">
-              GOVERNANCE
+            <a
+              href="https://x.com/ghostspeak_io"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors"
+            >
+              X
             </a>
           </div>
 
-          {/* Legal Links */}
+          {/* Contact */}
           <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6 text-[10px] sm:text-xs text-muted-foreground/60">
-            <a href="/terms" className="hover:text-muted-foreground transition-colors">
-              Terms of Service
-            </a>
-            <span className="text-border hidden sm:inline">•</span>
-            <a href="/privacy" className="hover:text-muted-foreground transition-colors">
-              Privacy Policy
-            </a>
-            <span className="text-border hidden sm:inline">•</span>
-            <a href="/cookies" className="hover:text-muted-foreground transition-colors">
-              Cookie Policy
-            </a>
-            <span className="text-border hidden sm:inline">•</span>
             <a
               href="mailto:team@ghostspeak.io"
               className="hover:text-muted-foreground transition-colors"
@@ -223,7 +186,7 @@ export default function LandingPage() {
           </div>
 
           <div className="text-[9px] sm:text-[10px] text-muted-foreground/60 font-mono tracking-widest uppercase">
-            &copy; 2025 GhostSpeak Labs • Secured by Solana
+            &copy; 2026 GhostSpeak Labs • Secured by Solana
           </div>
         </div>
 

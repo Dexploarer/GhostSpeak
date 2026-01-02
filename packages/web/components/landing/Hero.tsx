@@ -72,75 +72,54 @@ export function Hero() {
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -z-10 pointer-events-none" />
 
       <div className="relative z-20 w-full max-w-[1600px] mx-auto px-6 md:px-12 lg:px-16 py-32">
-        {/* Version Badge */}
-        <div className="absolute top-8 left-8 version-badge">
-          <div className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-2 text-xs font-mono uppercase tracking-widest text-primary backdrop-blur-xl shadow-[0_0_30px_rgba(var(--primary-rgb),0.15)]">
-            <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse" />
-            v1.0.4-Stable
-          </div>
-        </div>
-
-        {/* Split Headlines */}
-        <div className="relative min-h-[70vh] flex flex-col justify-center">
-          {/* "Trust" - Top Center */}
-          <div className="hero-headline absolute top-[10%] left-1/2 -translate-x-1/2">
-            <h1 className="text-[clamp(80px,12vw,180px)] font-black tracking-tighter leading-none text-foreground">
-              Trust
+        {/* Centered Content */}
+        <div className="flex flex-col items-center justify-center text-center space-y-8">
+          {/* Main Headline */}
+          <div className="hero-headline space-y-4">
+            <h1 className="text-[clamp(60px,10vw,140px)] font-black tracking-tighter leading-none text-foreground">
+              Trust Layer
             </h1>
-          </div>
-
-          {/* "Layer" - Bottom Left */}
-          <div className="hero-headline absolute bottom-[20%] left-0">
-            <h1 className="text-[clamp(80px,12vw,180px)] font-black tracking-tighter leading-none text-foreground">
-              Layer
-            </h1>
-          </div>
-
-          {/* "for AI" - Bottom Right with lime highlight */}
-          <div className="hero-headline absolute bottom-[10%] right-0">
-            <h1 className="text-[clamp(80px,12vw,180px)] font-black tracking-tighter leading-none text-primary italic relative">
+            <h2 className="text-[clamp(60px,10vw,140px)] font-black tracking-tighter leading-none text-primary italic">
               for AI
-              <motion.span
-                initial={{ width: 0 }}
-                animate={{ width: '100%' }}
-                transition={{ delay: 1.5, duration: 1.2, ease: 'easeOut' }}
-                className="absolute -bottom-2 left-0 h-2 md:h-3 bg-primary/30 blur-sm"
-              />
-            </h1>
+            </h2>
           </div>
-        </div>
 
-        {/* CTA Section - Bottom Left */}
-        <div className="hero-cta absolute bottom-16 left-0">
-          <p className="text-xl md:text-2xl text-foreground max-w-xl mb-8 leading-relaxed">
-            The only x402 marketplace with
-            <br />
-            <span className="text-primary font-semibold">escrow, reputation, and disputes.</span>
-          </p>
+          {/* Subtitle */}
+          <div className="hero-cta">
+            <p className="text-xl md:text-2xl text-foreground/80 max-w-2xl mx-auto leading-relaxed">
+              On-chain reputation and verifiable credentials for{' '}
+              <span className="text-primary font-semibold">AI agents on Solana</span>
+            </p>
+          </div>
 
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/dashboard">
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 mt-8">
+            <Link href="https://docs.ghostspeak.io" target="_blank" rel="noopener noreferrer">
               <Button
                 size="lg"
                 className="h-14 px-8 rounded-xl text-base bg-primary hover:bg-primary/90 text-primary-foreground font-bold transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_40px_rgba(var(--primary-rgb),0.25)] group"
               >
-                Access Protocol
+                Read Our Docs
                 <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
-            <Link href="https://docs.ghostspeak.io">
+            <Link
+              href="https://dexscreener.com/solana/e44xj7jyjxyermlqqwrpu4nekcphawfjf3ppn2uokgdb"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <Button
                 variant="outline"
                 size="lg"
                 className="h-14 px-8 rounded-xl text-base border-2 border-primary/30 text-foreground hover:bg-primary/10 hover:border-primary transition-all"
               >
-                Read Our Docs
+                Buy $GHOST
               </Button>
             </Link>
           </div>
 
           {/* Stats Pills */}
-          <div className="mt-12 flex flex-wrap gap-4">
+          <div className="mt-12 flex flex-wrap gap-4 justify-center">
             {[
               { label: 'Credentials', value: 'W3C' },
               { label: 'Ghost Score', value: '0-1000' },

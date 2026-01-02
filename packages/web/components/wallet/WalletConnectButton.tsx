@@ -16,9 +16,12 @@ import {
 import { toast } from 'sonner'
 
 export function WalletConnectButton() {
-  const { login, logout, status: authStatus, user } = useAuth()
+  const { login, logout, status: authStatus } = useAuth()
   const { wallet, status: walletStatus } = useWallet()
   const [copied, setCopied] = useState(false)
+
+  // For non-custodial wallets, the wallet address comes from the connected wallet
+  const walletAddress = wallet?.address
 
   // Debug logging in development
   useEffect(() => {
@@ -28,50 +31,41 @@ export function WalletConnectButton() {
         authStatus,
         'walletStatus:',
         walletStatus,
+        'walletAddress:',
+        walletAddress,
         'wallet:',
-        wallet?.address
+        wallet
       )
     }
-  }, [authStatus, walletStatus, wallet])
+  }, [authStatus, walletStatus, walletAddress, wallet])
 
   const handleCopy = async () => {
-    if (wallet?.address) {
-      await navigator.clipboard.writeText(wallet.address)
+    if (walletAddress) {
+      await navigator.clipboard.writeText(walletAddress)
       setCopied(true)
       toast.success('Address copied to clipboard')
       setTimeout(() => setCopied(false), 2000)
     }
   }
 
-  // Loading state - auth SDK is initializing
-  if (authStatus === 'initializing') {
+  // Loading state - auth SDK is initializing or wallet is loading
+  if (authStatus === 'in-progress' || walletStatus === 'loading') {
     return (
       <Button variant="outline" disabled className="gap-2">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Loading...
+        Connecting...
       </Button>
     )
   }
 
-  // User is logged in but wallet is still loading
-  // This covers: in-progress, not-loaded, or any transitional state
-  if (authStatus === 'logged-in' && walletStatus !== 'loaded') {
-    return (
-      <Button variant="outline" disabled className="gap-2">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        {walletStatus === 'in-progress' ? 'Creating wallet...' : 'Loading wallet...'}
-      </Button>
-    )
-  }
-
-  // Connected state - user is logged in AND wallet is fully loaded with address
-  if (authStatus === 'logged-in' && wallet?.address) {
+  // Connected state - user is logged in and wallet is loaded with address
+  if (authStatus === 'logged-in' && walletStatus === 'loaded' && walletAddress) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="gap-2">
             <Wallet className="h-4 w-4 text-primary" />
-            {formatAddress(wallet.address)}
+            {formatAddress(walletAddress)}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
@@ -79,11 +73,9 @@ export function WalletConnectButton() {
             <Wallet className="h-4 w-4 text-primary" />
             Connected Wallet
           </DropdownMenuLabel>
-          {user?.email && (
-            <DropdownMenuItem disabled className="text-xs text-muted-foreground">
-              {user.email}
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem disabled className="text-xs text-muted-foreground font-mono">
+            {walletAddress}
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleCopy} className="gap-2">
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}

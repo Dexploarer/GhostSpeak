@@ -13,19 +13,35 @@
 'use client'
 
 import React, { useEffect, useRef } from 'react'
-import { useAuth as useCrossmintAuth, useWallet as useCrossmintWallet } from '@crossmint/client-sdk-react-ui'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useAuth as useCrossmintAuth } from '@crossmint/client-sdk-react-ui'
+import { useQueryClient } from '@tanstack/react-query'
+import type { QueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/lib/stores/auth.store'
 import { api } from '@/convex/_generated/api'
 import { useMutation as useConvexMutation, useQuery as useConvexQuery } from 'convex/react'
+
+/**
+ * Safe hook to get QueryClient that won't throw during SSR
+ */
+function useSafeQueryClient(): QueryClient | null {
+  try {
+    return useQueryClient()
+  } catch {
+    return null
+  }
+}
 
 /**
  * Auth Sync Engine Component
  */
 export function AuthSyncEngine({ children }: { children: React.ReactNode }) {
   // Crossmint SDK state
-  const { status: authStatus, jwt: crossmintJWT } = useCrossmintAuth()
-  const { wallet, status: walletStatus } = useCrossmintWallet()
+  const { status: authStatus, jwt: crossmintJWT, user: crossmintUser } = useCrossmintAuth()
+
+  // Extract wallet address from Crossmint user's linked accounts
+  const walletAddress = crossmintUser?.linkedAccounts?.find(
+    (account) => account.type === 'wallet'
+  )?.address ?? null
 
   // Zustand store
   const {
@@ -38,8 +54,8 @@ export function AuthSyncEngine({ children }: { children: React.ReactNode }) {
     _isUserSyncing,
   } = useAuthStore()
 
-  // TanStack Query client
-  const queryClient = useQueryClient()
+  // TanStack Query client (optional - gracefully degrades if not available)
+  const queryClient = useSafeQueryClient()
 
   // Convex mutations
   const upsertUser = useConvexMutation(api.users.upsert)
@@ -47,7 +63,7 @@ export function AuthSyncEngine({ children }: { children: React.ReactNode }) {
 
   // Track previous values to detect changes
   const prevAuthStatus = useRef(authStatus)
-  const prevWalletAddress = useRef(wallet?.address)
+  const prevWalletAddress = useRef(walletAddress)
   const prevIsAuthenticated = useRef(isAuthenticated)
 
   /**
@@ -62,13 +78,16 @@ export function AuthSyncEngine({ children }: { children: React.ReactNode }) {
           ? 'logged-in'
           : 'logged-out'
 
+    // For non-custodial wallets, walletStatus is either 'loaded' (when address is available) or 'not-loaded'
+    const walletStatus = walletAddress ? 'loaded' : 'not-loaded'
+
     syncFromCrossmint({
       jwt: crossmintJWT ?? null,
       authStatus: mappedAuthStatus,
       walletStatus,
-      walletAddress: wallet?.address ?? null,
+      walletAddress,
     })
-  }, [crossmintJWT, authStatus, walletStatus, wallet?.address, syncFromCrossmint])
+  }, [crossmintJWT, authStatus, walletAddress, syncFromCrossmint])
 
   /**
    * Sync 2: Zustand Store → Convex User Creation
@@ -132,6 +151,11 @@ export function AuthSyncEngine({ children }: { children: React.ReactNode }) {
    * Sync 4: TanStack Query Invalidation on Auth Changes
    */
   useEffect(() => {
+    // Skip if QueryClient is not available
+    if (!queryClient) {
+      return
+    }
+
     const authStatusChanged = prevAuthStatus.current !== authStatus
     const walletAddressChanged = prevWalletAddress.current !== wallet?.address
     const authenticationChanged = prevIsAuthenticated.current !== isAuthenticated
@@ -156,7 +180,7 @@ export function AuthSyncEngine({ children }: { children: React.ReactNode }) {
     }
 
     // Handle wallet address change (e.g., account switch)
-    if (walletAddressChanged && wallet?.address) {
+    if (walletAddressChanged && walletAddress) {
       console.log('[Auth Sync] Wallet address changed - refetching user data')
       queryClient.invalidateQueries({
         predicate: (query) => {
@@ -168,9 +192,9 @@ export function AuthSyncEngine({ children }: { children: React.ReactNode }) {
 
     // Update refs for next comparison
     prevAuthStatus.current = authStatus
-    prevWalletAddress.current = wallet?.address
+    prevWalletAddress.current = walletAddress
     prevIsAuthenticated.current = isAuthenticated
-  }, [authStatus, wallet?.address, isAuthenticated, queryClient])
+  }, [authStatus, walletAddress, isAuthenticated, queryClient])
 
   /**
    * Dev logging
@@ -179,7 +203,7 @@ export function AuthSyncEngine({ children }: { children: React.ReactNode }) {
     if (process.env.NODE_ENV === 'development') {
       console.log('[Auth Sync] State:', {
         crossmintAuth: authStatus,
-        crossmintWallet: walletStatus,
+        walletAddress,
         zustandAuth: isAuthenticated,
         address,
         hasUser: !!user,
@@ -187,7 +211,7 @@ export function AuthSyncEngine({ children }: { children: React.ReactNode }) {
         isUserSyncing: _isUserSyncing,
       })
     }
-  }, [authStatus, walletStatus, isAuthenticated, address, user, _isUserSyncing])
+  }, [authStatus, walletAddress, isAuthenticated, address, user, _isUserSyncing])
 
   // Render children without adding extra DOM nodes
   return <>{children}</>

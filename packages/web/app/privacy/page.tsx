@@ -1,206 +1,179 @@
-'use client'
-
-import React from 'react'
-import Link from 'next/link'
-
-export default function PrivacyPolicyPage(): React.JSX.Element {
+export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="max-w-4xl mx-auto px-4 py-16">
-        <h1 className="text-4xl font-bold mb-2">Privacy Policy</h1>
-        <p className="text-muted-foreground mb-8">Last updated: December 21, 2025</p>
+    <div className="min-h-screen bg-background text-foreground py-16 px-4">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-4xl sm:text-5xl font-black mb-4">Privacy Policy</h1>
+        <p className="text-muted-foreground mb-8">Last Updated: January 2, 2026</p>
 
         <div className="prose prose-invert max-w-none space-y-8">
           <section>
-            <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
+            <h2 className="text-2xl font-bold mb-4">1. Introduction</h2>
             <p className="text-muted-foreground leading-relaxed">
-              GhostSpeak (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to
-              protecting your privacy. This Privacy Policy explains how we collect, use, disclose,
-              and safeguard your information when you use our decentralized protocol and website.
+              GhostSpeak Labs ("we," "our," or "us") is committed to protecting your privacy. This
+              Privacy Policy explains how we collect, use, disclose, and safeguard your information
+              when you use our decentralized identity and reputation platform for AI agents on
+              Solana.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">2. Information We Collect</h2>
+            <h2 className="text-2xl font-bold mb-4">2. Information We Collect</h2>
 
-            <h3 className="text-xl font-medium mt-6 mb-3">2.1 Blockchain Data</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              As a decentralized protocol on the Solana blockchain, certain information is publicly
-              visible:
+            <h3 className="text-xl font-semibold mb-3 text-primary">2.1 On-Chain Data (Public)</h3>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              GhostSpeak indexes publicly available blockchain data:
             </p>
-            <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
-              <li>Wallet addresses</li>
-              <li>Transaction history and amounts</li>
-              <li>Agent registrations and configurations</li>
-              <li>Escrow transactions and disputes</li>
-              <li>Reputation scores and ratings</li>
-            </ul>
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              This data is stored on the public blockchain and cannot be deleted or modified by
-              GhostSpeak.
-            </p>
-
-            <h3 className="text-xl font-medium mt-6 mb-3">2.2 Website Analytics</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              We may collect anonymized usage data to improve our website, including:
-            </p>
-            <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
-              <li>Pages visited and time spent</li>
-              <li>Browser type and device information</li>
-              <li>Referring website</li>
-              <li>General geographic location (country/region level)</li>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li>Solana wallet addresses</li>
+              <li>x402 payment transactions</li>
+              <li>Agent registration data (name, capabilities, metadata)</li>
+              <li>Verifiable Credentials issued on-chain</li>
+              <li>Reputation scores and Ghost Score calculations</li>
+              <li>Staking transactions and governance votes</li>
             </ul>
 
-            <h3 className="text-xl font-medium mt-6 mb-3">2.3 Information You Provide</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              When you contact us or use certain features, you may provide:
+            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">2.2 Off-Chain Data (Optional)</h3>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              Data you choose to provide:
             </p>
-            <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
-              <li>Email address (for support inquiries)</li>
-              <li>Agent metadata and descriptions</li>
-              <li>Dispute evidence and communications</li>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li>Email address (for credential delivery via Crossmint)</li>
+              <li>External platform identities (PayAI, ElizaOS, GitHub, Twitter/X)</li>
+              <li>Service endpoint URLs</li>
+              <li>Custom metadata and descriptions</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">2.3 Usage Data</h3>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li>API usage and request logs</li>
+              <li>SDK/CLI telemetry (opt-in only)</li>
+              <li>Website analytics (anonymized via Vercel Analytics)</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">3. How We Use Your Information</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              We use the information we collect to:
-            </p>
-            <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
-              <li>Operate and maintain the GhostSpeak protocol</li>
-              <li>Process transactions and escrow services</li>
-              <li>Calculate and display reputation scores</li>
-              <li>Facilitate dispute resolution</li>
-              <li>Respond to your inquiries and support requests</li>
-              <li>Improve our website and user experience</li>
-              <li>Detect and prevent fraud or abuse</li>
+            <h2 className="text-2xl font-bold mb-4">3. How We Use Your Information</h2>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li>Calculate Ghost Scores from multi-source reputation data</li>
+              <li>Issue and verify W3C Verifiable Credentials</li>
+              <li>Provide API access and developer tools</li>
+              <li>Improve our services and user experience</li>
               <li>Comply with legal obligations</li>
+              <li>Detect and prevent fraud or abuse</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">4. Information Sharing</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              We do not sell your personal information. We may share information in the following
-              circumstances:
+            <h2 className="text-2xl font-bold mb-4">4. Data Sharing</h2>
+
+            <h3 className="text-xl font-semibold mb-3 text-primary">4.1 Public Blockchain Data</h3>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              All on-chain data is PUBLIC by design (Solana blockchain). Anyone can:
             </p>
-            <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
-              <li>
-                <strong>On-chain data:</strong> Transaction data is publicly visible on the Solana
-                blockchain
-              </li>
-              <li>
-                <strong>Service providers:</strong> Third parties who assist in operating our
-                website
-              </li>
-              <li>
-                <strong>Legal requirements:</strong> When required by law or to protect our rights
-              </li>
-              <li>
-                <strong>Business transfers:</strong> In connection with a merger, acquisition, or
-                sale of assets
-              </li>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li>View your Ghost PDA and reputation score</li>
+              <li>Read your agent registration details</li>
+              <li>Verify your credentials cryptographically</li>
+              <li>Inspect your transaction history</li>
             </ul>
+
+            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">4.2 Third-Party Services</h3>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li><strong>Crossmint:</strong> For cross-chain credential bridging (EVM chains)</li>
+              <li><strong>Helius:</strong> For Solana RPC access and transaction monitoring</li>
+              <li><strong>Turso:</strong> Optional database caching (self-hosted option available)</li>
+              <li><strong>Vercel:</strong> Website hosting and analytics</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">4.3 We DO NOT Sell Your Data</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              GhostSpeak Labs does not sell, rent, or trade your personal information to third
+              parties for marketing purposes.
+            </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">5. Data Security</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              We implement appropriate technical and organizational measures to protect your
-              information. However:
-            </p>
-            <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
-              <li>No method of transmission over the internet is 100% secure</li>
-              <li>Blockchain data is immutable and publicly accessible</li>
-              <li>You are responsible for securing your wallet and private keys</li>
-            </ul>
-          </section>
+            <h2 className="text-2xl font-bold mb-4">5. Your Rights</h2>
 
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">6. Your Rights</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Depending on your jurisdiction, you may have the right to:
+            <h3 className="text-xl font-semibold mb-3 text-primary">5.1 Access & Portability</h3>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              You have full ownership of your Ghost PDA and can:
             </p>
-            <ul className="list-disc pl-6 mt-4 space-y-2 text-muted-foreground">
-              <li>Access the personal information we hold about you</li>
-              <li>Request correction of inaccurate information</li>
-              <li>
-                Request deletion of your information (subject to legal and technical limitations)
-              </li>
-              <li>Object to or restrict certain processing</li>
-              <li>Data portability</li>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li>Export all credentials as W3C-compliant JSON</li>
+              <li>Transfer your Ghost to a new wallet</li>
+              <li>Query your data via our SDK/API</li>
             </ul>
+
+            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">5.2 Deletion & Opt-Out</h3>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              <strong>Important:</strong> Blockchain data is PERMANENT and cannot be deleted. However, you can:
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li>Deactivate your Ghost (stops future reputation updates)</li>
+              <li>Revoke credentials you've issued</li>
+              <li>Request deletion of off-chain data (email, metadata)</li>
+              <li>Opt out of SDK/CLI telemetry</li>
+            </ul>
+
             <p className="text-muted-foreground leading-relaxed mt-4">
-              Please note that blockchain data cannot be modified or deleted due to its immutable
-              nature.
+              To exercise these rights, email: <a href="mailto:privacy@ghostspeak.io" className="text-primary hover:underline">privacy@ghostspeak.io</a>
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">7. Cookies</h2>
+            <h2 className="text-2xl font-bold mb-4">6. Data Security</h2>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li>All on-chain data secured by Solana blockchain cryptography</li>
+              <li>Off-chain data encrypted at rest and in transit (TLS 1.3)</li>
+              <li>Private keys NEVER stored or transmitted by GhostSpeak</li>
+              <li>API access protected by rate limiting and authentication</li>
+              <li>Regular security audits (smart contracts audited Q1 2026)</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold mb-4">7. Children's Privacy</h2>
             <p className="text-muted-foreground leading-relaxed">
-              We use cookies and similar technologies to enhance your experience. For more
-              information, please see our{' '}
-              <Link href="/cookies" className="text-primary hover:underline">
-                Cookie Policy
-              </Link>
-              .
+              GhostSpeak is not intended for users under 18 years old. We do not knowingly collect
+              data from children. If you believe a child has provided us with personal information,
+              contact us immediately.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">8. Third-Party Services</h2>
+            <h2 className="text-2xl font-bold mb-4">8. International Users</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Our Service may contain links to third-party websites or integrate with third-party
-              services. We are not responsible for the privacy practices of these third parties. We
-              encourage you to read their privacy policies.
+              GhostSpeak operates globally. By using our services, you consent to the transfer of
+              your data to the United States and other jurisdictions where we operate. We comply
+              with applicable data protection laws, including GDPR and CCPA where applicable.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">9. Children&apos;s Privacy</h2>
+            <h2 className="text-2xl font-bold mb-4">9. Changes to This Policy</h2>
             <p className="text-muted-foreground leading-relaxed">
-              The Service is not intended for individuals under 18 years of age. We do not knowingly
-              collect personal information from children.
+              We may update this Privacy Policy periodically. Changes will be posted on this page
+              with an updated "Last Updated" date. Continued use of GhostSpeak after changes
+              constitutes acceptance.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">10. International Data Transfers</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Your information may be processed in countries other than your own. By using the
-              Service, you consent to the transfer of your information to these countries.
+            <h2 className="text-2xl font-bold mb-4">10. Contact Us</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              For privacy-related questions or concerns:
             </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">11. Changes to This Policy</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              We may update this Privacy Policy from time to time. We will notify you of any changes
-              by posting the new Privacy Policy on this page and updating the &quot;Last
-              updated&quot; date.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">12. Contact Us</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              If you have questions about this Privacy Policy or our privacy practices, please
-              contact us at:
-            </p>
-            <p className="text-primary mt-4">
-              <a href="mailto:team@ghostspeak.io" className="hover:underline">
-                team@ghostspeak.io
-              </a>
-            </p>
+            <ul className="list-none text-muted-foreground space-y-2">
+              <li><strong>Email:</strong> <a href="mailto:privacy@ghostspeak.io" className="text-primary hover:underline">privacy@ghostspeak.io</a></li>
+              <li><strong>General:</strong> <a href="mailto:team@ghostspeak.io" className="text-primary hover:underline">team@ghostspeak.io</a></li>
+              <li><strong>Website:</strong> <a href="https://ghostspeak.io" className="text-primary hover:underline">ghostspeak.io</a></li>
+            </ul>
           </section>
         </div>
 
-        <div className="mt-16 pt-8 border-t border-border">
-          <Link href="/" className="text-primary hover:underline">
-            ← Back to Home
-          </Link>
+        <div className="mt-16 pt-8 border-t border-border text-center text-sm text-muted-foreground">
+          <p>&copy; 2026 GhostSpeak Labs. All rights reserved.</p>
         </div>
       </div>
     </div>

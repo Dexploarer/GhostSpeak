@@ -3,6 +3,7 @@
 import React from 'react'
 import { Fingerprint, Globe, ArrowRightLeft, Sparkles } from 'lucide-react'
 import Link from 'next/link'
+import { GhostIcon } from '@/components/shared/GhostIcon'
 
 export function IdentityBridge() {
   return (
@@ -30,42 +31,50 @@ export function IdentityBridge() {
 
         {/* Bridge Visualization */}
         <div className="grid md:grid-cols-3 gap-6 sm:gap-8 items-center mb-10 sm:mb-12 md:mb-16">
-          {/* Solana Side */}
-          <div className="group relative p-5 sm:p-8 rounded-2xl sm:rounded-3xl bg-linear-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20 hover:border-purple-500/40 transition-all">
-            <div className="absolute -top-3 -right-3 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-purple-500/20 border border-purple-500/30">
-              <span className="text-[10px] sm:text-xs font-mono text-purple-400">Native</span>
+          {/* Solana Side - Ghost appears on hover */}
+          <div className="group relative p-5 sm:p-8 rounded-2xl sm:rounded-3xl bg-linear-to-br from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 transition-all">
+            {/* Ghost appears on hover */}
+            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-4 group-hover:translate-y-0 pointer-events-none">
+              <GhostIcon variant="circuit" size={48} className="text-primary/40" />
             </div>
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-purple-500/20 flex items-center justify-center mb-3 sm:mb-4">
+
+            <div className="absolute top-3 right-3 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-primary/20 border border-primary/30 z-10">
+              <span className="text-[10px] sm:text-xs font-mono text-primary">Native</span>
+            </div>
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-primary/20 flex items-center justify-center mb-3 sm:mb-4 relative z-10">
               <svg viewBox="0 0 128 128" className="w-6 h-6 sm:w-8 sm:h-8">
                 <path
-                  fill="#9945FF"
+                  fill="currentColor"
+                  className="text-primary"
                   d="M93.94 42.63H44.28c-.9 0-1.76.36-2.4.99l-8.41 8.41c-.32.32-.09.88.36.88h49.66c.9 0 1.76-.36 2.4-.99l8.41-8.41c.32-.32.09-.88-.36-.88z"
                 />
                 <path
-                  fill="#19FB9B"
+                  fill="currentColor"
+                  className="text-primary"
                   d="M33.83 63.96l8.41 8.41c.64.64 1.5.99 2.4.99h49.66c.45 0 .68-.55.36-.88l-8.41-8.41c-.64-.64-1.5-.99-2.4-.99H34.19c-.45 0-.68.55-.36.88z"
                 />
                 <path
-                  fill="#9945FF"
+                  fill="currentColor"
+                  className="text-primary"
                   d="M93.94 85.28H44.28c-.9 0-1.76-.36-2.4-.99l-8.41-8.41c-.32-.32-.09-.88.36-.88h49.66c.9 0 1.76.36 2.4.99l8.41 8.41c.32.32.09.88-.36.88z"
                 />
               </svg>
             </div>
-            <h3 className="text-lg sm:text-xl font-bold mb-2">Solana</h3>
-            <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
+            <h3 className="text-lg sm:text-xl font-bold mb-2 relative z-10">Solana</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 relative z-10">
               Native agent registration, on-chain reputation, escrow payments
             </p>
-            <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
+            <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm relative z-10">
               <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                 Agent PDA
               </li>
               <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                 Reputation Score
               </li>
               <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                 x402 Payments
               </li>
             </ul>
@@ -93,29 +102,34 @@ export function IdentityBridge() {
             </div>
           </div>
 
-          {/* EVM Side */}
-          <div className="group relative p-5 sm:p-8 rounded-2xl sm:rounded-3xl bg-linear-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20 hover:border-blue-500/40 transition-all">
-            <div className="absolute -top-3 -right-3 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-blue-500/20 border border-blue-500/30">
-              <span className="text-[10px] sm:text-xs font-mono text-blue-400">Synced</span>
+          {/* EVM Side - Ghost disappears on hover */}
+          <div className="group relative p-5 sm:p-8 rounded-2xl sm:rounded-3xl bg-linear-to-br from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 transition-all">
+            {/* Ghost disappears on hover */}
+            <div className="absolute top-4 right-4 opacity-100 group-hover:opacity-0 transition-all duration-500 transform group-hover:translate-y-4 pointer-events-none">
+              <GhostIcon variant="brain" size={48} className="text-primary/30" />
             </div>
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-blue-500/20 flex items-center justify-center mb-3 sm:mb-4">
-              <Globe className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400" />
+
+            <div className="absolute top-3 right-3 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-primary/20 border border-primary/30 z-10">
+              <span className="text-[10px] sm:text-xs font-mono text-primary">Synced</span>
             </div>
-            <h3 className="text-lg sm:text-xl font-bold mb-2">EVM Chains</h3>
-            <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-primary/20 flex items-center justify-center mb-3 sm:mb-4 relative z-10">
+              <Globe className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
+            </div>
+            <h3 className="text-lg sm:text-xl font-bold mb-2 relative z-10">EVM Chains</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 relative z-10">
               Identity synced via Crossmint to Base, Polygon, Ethereum
             </p>
-            <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
+            <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm relative z-10">
               <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                 Agent Identity VC
               </li>
               <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                 Reputation VC
               </li>
               <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                 Job History VC
               </li>
             </ul>

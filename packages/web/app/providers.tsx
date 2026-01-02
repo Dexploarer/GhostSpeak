@@ -1,125 +1,109 @@
 'use client'
 
-import {
-  isServer,
-  QueryClient,
-  QueryClientProvider,
-  defaultShouldDehydrateQuery,
-} from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { ReactQueryStreamedHydration } from '@tanstack/react-query-next-experimental'
 import { ThemeProvider } from '@/components/theme-provider'
-import * as React from 'react'
-import dynamic from 'next/dynamic'
-import { GhostSpeakProvider } from '@/lib/hooks/useGhostSpeak'
-import { ConvexClientProvider } from '@/components/providers/ConvexClientProvider'
-import { AuthSyncEngine } from '@/lib/auth/sync-engine'
 import { SmoothScrollProvider } from '@/components/providers/SmoothScrollProvider'
+import { WalletContextProvider } from '@/components/wallet/WalletProvider'
+import { AuthSyncEngine } from '@/lib/auth/sync-engine'
+import { ConvexProviderWithAuth } from 'convex/react'
+import { ConvexReactClient } from 'convex/react'
+import { useConvexAuthFromCrossmint } from '@/lib/hooks/useConvexAuth'
+import { QueryClient, QueryClientProvider, isServer } from '@tanstack/react-query'
+import * as React from 'react'
 
-const WalletContextProvider = dynamic(
-  () => import('@/components/wallet/WalletProvider').then((mod) => mod.WalletContextProvider),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center animate-pulse">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-          <p className="text-muted-foreground text-sm font-mono animate-pulse">
-            Initializing Protocol...
-          </p>
-        </div>
-      </div>
-    ),
-  }
-)
+// Create Convex client singleton
+const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
+/**
+ * Create a new QueryClient instance
+ *
+ * This factory function is used to create QueryClient instances with consistent configuration.
+ * On the server, a new instance is created per request to prevent data leakage.
+ * On the client, a singleton instance is reused across renders.
+ */
 function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        // Reduce stale time for more real-time feel
-        staleTime: 5 * 1000, // 5 seconds
-        // Add retry configuration
-        retry: (failureCount, error) => {
-          // Don't retry on 4xx errors
-          if (error instanceof Error && error.message.includes('4')) {
-            return false
-          }
-          return failureCount < 3
-        },
-        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-        // Cleanup configuration
-        gcTime: 5 * 60 * 1000, // 5 minutes (was cacheTime)
-        refetchOnWindowFocus: true,
-        refetchOnReconnect: true,
-      },
-      mutations: {
-        // Global mutation configuration
-        retry: 1,
-        onError: (error) => {
-          console.error('Mutation error:', error)
-        },
-      },
-      dehydrate: {
-        // include pending queries in dehydration
-        shouldDehydrateQuery: (query) =>
-          defaultShouldDehydrateQuery(query) || query.state.status === 'pending',
-        shouldRedactErrors: () => false,
+        staleTime: 60 * 1000, // 1 minute
+        refetchOnWindowFocus: false,
       },
     },
   })
 }
 
+/**
+ * Browser QueryClient singleton
+ *
+ * This is only used on the client-side to maintain a single QueryClient instance
+ * across renders for optimal performance and state management.
+ */
 let browserQueryClient: QueryClient | undefined = undefined
 
+/**
+ * Get QueryClient instance
+ *
+ * Server: Creates a new QueryClient per request (prevents data leakage between users)
+ * Client: Reuses a singleton QueryClient (maintains cache across renders)
+ */
 function getQueryClient() {
   if (isServer) {
-    // Server: always make a new query client
+    // Always create a new QueryClient on the server
     return makeQueryClient()
   } else {
-    // Browser: make a new query client if we don't already have one
-    // This is very important, so we don't re-make a new client if React
-    // suspends during the initial render. This may not be needed if we
-    // have a suspense boundary BELOW the creation of the query client
-    if (!browserQueryClient) browserQueryClient = makeQueryClient()
+    // Create the QueryClient once on the client and reuse it
+    if (!browserQueryClient) {
+      browserQueryClient = makeQueryClient()
+    }
     return browserQueryClient
   }
 }
 
-export function Providers(props: { children: React.ReactNode }) {
-  // NOTE: Avoid useState when initializing the query client if you don't
-  //       have a suspense boundary between this and the code that may
-  //       suspend because React will throw away the client on the initial
-  //       render if it suspends and there is no boundary
-  const queryClient = getQueryClient()
-
-  // Cleanup subscriptions on unmount
-  React.useEffect(() => {
-    return () => {
-      // Cancel all queries and clear cache on unmount
-      queryClient.cancelQueries()
-      queryClient.clear()
-    }
-  }, [queryClient])
+/**
+ * Convex Auth Wrapper
+ *
+ * This wrapper component uses the Crossmint → Convex auth bridge hook
+ * and provides it to ConvexProviderWithAuth
+ */
+function ConvexAuthWrapper({ children }: { children: React.ReactNode }) {
+  const convexAuth = useConvexAuthFromCrossmint()
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ReactQueryStreamedHydration>
-        <ConvexClientProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <SmoothScrollProvider>
-              <WalletContextProvider>
-                <AuthSyncEngine>
-                  <GhostSpeakProvider network="devnet">{props.children}</GhostSpeakProvider>
-                </AuthSyncEngine>
-              </WalletContextProvider>
-            </SmoothScrollProvider>
-          </ThemeProvider>
-        </ConvexClientProvider>
-      </ReactQueryStreamedHydration>
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    <ConvexProviderWithAuth client={convex} useAuth={() => convexAuth}>
+      {children}
+    </ConvexProviderWithAuth>
+  )
+}
+
+/**
+ * Root Providers Component
+ *
+ * Provider hierarchy:
+ * 1. ThemeProvider (dark/light mode)
+ * 2. SmoothScrollProvider (Lenis smooth scrolling)
+ * 3. QueryClientProvider (TanStack Query for data fetching)
+ * 4. WalletContextProvider (Crossmint auth + wallet)
+ * 5. ConvexAuthWrapper (Convex backend with Crossmint JWT)
+ * 6. AuthSyncEngine (syncs Crossmint → Zustand → Convex → TanStack Query)
+ */
+export function Providers(props: { children: React.ReactNode }) {
+  // Use the SSR-safe QueryClient getter
+  const queryClient = getQueryClient()
+
+  return (
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <SmoothScrollProvider>
+        {/* TanStack Query for data fetching and caching */}
+        <QueryClientProvider client={queryClient}>
+          {/* Crossmint Auth + Wallet Provider */}
+          <WalletContextProvider>
+            {/* Convex Backend with Crossmint JWT Authentication */}
+            <ConvexAuthWrapper>
+              {/* Auth Sync Engine (Crossmint → Zustand → Convex → TanStack Query) */}
+              <AuthSyncEngine>{props.children}</AuthSyncEngine>
+            </ConvexAuthWrapper>
+          </WalletContextProvider>
+        </QueryClientProvider>
+      </SmoothScrollProvider>
+    </ThemeProvider>
   )
 }

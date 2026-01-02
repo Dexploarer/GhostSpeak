@@ -26,6 +26,10 @@ pda-*.mjs
 test-report.json
 current_program_idl.json
 
+# === ElizaOS runtime files ===
+.eliza/
+packages/*/.eliza/
+
 # === Test ledger and blockchain state ===
 test-ledger/
 test-ledger/rocksdb.failed/

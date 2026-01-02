@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbo",
+    "dev": "bunx concurrently \"bun run dev:next\" \"bun run dev:convex\" --names \"next,convex\" --prefix-colors \"cyan,magenta\"",
+    "dev:next": "next dev --turbo",
+    "dev:convex": "bunx convex dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx",
@@ -25,6 +27,7 @@
   },
   "dependencies": {
     "@crossmint/client-sdk-react-ui": "^2.6.12",
+    "@crossmint/server-sdk": "^1.2.56",
     "@ghostspeak/sdk": "^2.0.8",
     "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.2.2",
@@ -104,6 +107,7 @@
     "@vitejs/plugin-react": "^4.7.0",
     "@vitest/coverage-v8": "4.0.16",
     "@vitest/ui": "4.0.16",
+    "concurrently": "^9.2.1",
     "eslint": "^9",
     "eslint-config-next": "15.4.5",
     "eslint-config-prettier": "^10.1.8",

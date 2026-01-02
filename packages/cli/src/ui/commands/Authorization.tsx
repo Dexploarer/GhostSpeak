@@ -447,9 +447,7 @@ export const Authorization: React.FC<AuthorizationProps> = ({ agentAddress, auto
         </Box>
 
         <Box marginTop={1}>
-          <Gradient name="rainbow">
-            <Text>Create Authorizations - Limit Access - Enable Trustless Updates</Text>
-          </Gradient>
+          <Text bold color="greenBright">Create Authorizations - Limit Access - Enable Trustless Updates</Text>
         </Box>
       </Box>
     )

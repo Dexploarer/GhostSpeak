@@ -21,9 +21,9 @@ export interface CardProps {
   footer?: ReactNode
   /**
    * Border color
-   * @default 'cyan'
+   * @default 'greenBright' (brand color)
    */
-  borderColor?: 'cyan' | 'green' | 'yellow' | 'red' | 'magenta' | 'blue' | 'white' | 'gray'
+  borderColor?: 'greenBright' | 'cyan' | 'green' | 'yellow' | 'red' | 'magenta' | 'blue' | 'white' | 'gray'
   /**
    * Border style
    * @default 'single'
@@ -49,7 +49,7 @@ export const Card: React.FC<CardProps> = ({
   children,
   title,
   footer,
-  borderColor = 'cyan',
+  borderColor = 'greenBright',
   borderStyle = 'single',
   padding = 1,
   width,

@@ -295,13 +295,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ agent, autoRefresh = true 
     if (!data) return null
 
     return (
-      <Card borderColor="cyan">
+      <Card borderColor="greenBright">
         <Box flexDirection="column">
           <Box justifyContent="space-between">
             <Box>
-              <Gradient name="rainbow">
-                <Text bold>GHOST</Text>
-              </Gradient>
+              <Text bold color="greenBright">GHOST</Text>
             </Box>
             <Box gap={2}>
               <Box>
@@ -452,7 +450,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ agent, autoRefresh = true 
 
   const renderQuickActions = () => {
     return (
-      <Card title="Quick Actions" borderColor="cyan">
+      <Card title="Quick Actions" borderColor="gray">
         <Box flexDirection="column">
           <Text>
             <Text color="yellow">[R]</Text> <Text dimColor>Reputation Dashboard</Text>

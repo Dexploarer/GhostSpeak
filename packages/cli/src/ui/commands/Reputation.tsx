@@ -253,11 +253,11 @@ export const Reputation: React.FC<ReputationProps> = ({ agent, detailed = false 
         return (
           <Box flexDirection="column">
             {/* Header Card with Agent Info */}
-            <Card borderColor="cyan">
+            <Card borderColor="gray">
               <Box flexDirection="column">
                 <Box>
                   <Text dimColor>Agent: </Text>
-                  <Text color="cyan" bold>{data.agentName}</Text>
+                  <Text color="greenBright" bold>{data.agentName}</Text>
                 </Box>
                 <Box>
                   <Text dimColor>Address: </Text>
@@ -279,9 +279,9 @@ export const Reputation: React.FC<ReputationProps> = ({ agent, detailed = false 
             <Box marginTop={1}>
               <Card borderColor={data.tierColor}>
                 <Box flexDirection="column" alignItems="center">
-                  <Gradient name="rainbow">
+                  <Text bold color="greenBright">
                     <BigText text={animatedScore.toString()} font="tiny" />
-                  </Gradient>
+                  </Text>
                   <Box marginTop={-1} marginBottom={1}>
                     <Text dimColor>out of 1000</Text>
                   </Box>

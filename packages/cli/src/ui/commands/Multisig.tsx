@@ -220,7 +220,7 @@ export const Multisig: React.FC<MultisigProps> = ({ multisigAddress, autoRefresh
 
     return (
       <Box flexDirection="column" gap={1}>
-        <Card title={`Your Multisig Wallets (${multisigs.length})`} borderColor="cyan">
+        <Card title={`Your Multisig Wallets (${multisigs.length})`} borderColor="greenBright">
           <Box flexDirection="column">
             {multisigs.map((multisig, idx) => (
               <Box key={idx} flexDirection="column" marginBottom={idx < multisigs.length - 1 ? 1 : 0}>
@@ -498,9 +498,7 @@ export const Multisig: React.FC<MultisigProps> = ({ multisigAddress, autoRefresh
         </Box>
 
         <Box marginTop={1}>
-          <Gradient name="rainbow">
-            <Text>Create Multisigs - Share Control - Enhance Security</Text>
-          </Gradient>
+          <Text bold color="greenBright">Create Multisigs - Share Control - Enhance Security</Text>
         </Box>
       </Box>
     )

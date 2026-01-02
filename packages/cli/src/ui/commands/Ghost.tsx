@@ -194,13 +194,13 @@ export const Ghost: React.FC<GhostProps> = ({ autoRefresh = true }) => {
 
     return (
       <Box flexDirection="column" gap={1}>
-        <Card title={`Your Ghost Agents (${ghosts.length})`} borderColor="cyan">
+        <Card title={`Your Ghost Agents (${ghosts.length})`} borderColor="greenBright">
           <Box flexDirection="column">
             {ghosts.map((ghost, idx) => (
               <Box key={idx} flexDirection="column" marginBottom={idx < ghosts.length - 1 ? 1 : 0}>
                 <Box alignItems="center" gap={2}>
                   <Text>{getPlatformIcon(ghost.platform)}</Text>
-                  <Text bold color="cyan">{ghost.externalId}</Text>
+                  <Text bold color="greenBright">{ghost.externalId}</Text>
                   <Badge variant="newcomer" />
                 </Box>
                 <Box marginTop={1}>
@@ -240,7 +240,7 @@ export const Ghost: React.FC<GhostProps> = ({ autoRefresh = true }) => {
     const platforms = new Set(ghosts.flatMap(g => [g.platform, ...g.linkedIds.map(l => l.platform)]))
 
     return (
-      <Card title="Ghost Network Stats" borderColor="magenta">
+      <Card title="Ghost Network Stats" borderColor="gray">
         <Box flexDirection="column">
           <InfoRow label="Total Ghosts" value={ghosts.length.toString()} color="cyan" />
           <InfoRow label="Linked Platforms" value={totalLinkedPlatforms.toString()} color="green" />
@@ -255,7 +255,7 @@ export const Ghost: React.FC<GhostProps> = ({ autoRefresh = true }) => {
 
   const renderActions = () => {
     return (
-      <Card title="Keyboard Controls" borderColor="blue">
+      <Card title="Keyboard Controls" borderColor="gray">
         <Box flexDirection="column">
           <Text>
             <Text color="yellow">[Q]</Text> <Text dimColor>or </Text>
@@ -312,7 +312,7 @@ export const Ghost: React.FC<GhostProps> = ({ autoRefresh = true }) => {
           <Text color="red">{error}</Text>
           <Box marginTop={1}>
             <Text dimColor>Press </Text>
-            <Text color="cyan">R</Text>
+            <Text color="greenBright">R</Text>
             <Text dimColor> to retry or </Text>
             <Text color="red">Q</Text>
             <Text dimColor> to quit</Text>
@@ -344,7 +344,7 @@ export const Ghost: React.FC<GhostProps> = ({ autoRefresh = true }) => {
         {ownerAddress && (
           <Box marginBottom={1}>
             <Text dimColor>Owner: </Text>
-            <Text bold color="cyan">{ownerAddress.slice(0, 8)}...{ownerAddress.slice(-8)}</Text>
+            <Text bold color="greenBright">{ownerAddress.slice(0, 8)}...{ownerAddress.slice(-8)}</Text>
           </Box>
         )}
 
@@ -380,9 +380,7 @@ export const Ghost: React.FC<GhostProps> = ({ autoRefresh = true }) => {
         </Box>
 
         <Box marginTop={1}>
-          <Gradient name="rainbow">
-            <Text>Claim Ghosts - Build Identity - Unify Reputation</Text>
-          </Gradient>
+          <Text bold color="greenBright">Claim Ghosts - Build Identity - Unify Reputation</Text>
         </Box>
       </Box>
     )

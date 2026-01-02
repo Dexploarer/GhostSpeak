@@ -336,9 +336,7 @@ export const Staking: React.FC<StakingProps> = ({ agent, autoRefresh = true }) =
 
         {stakingData.currentTier === 5 && (
           <Box marginTop={1}>
-            <Gradient name="rainbow">
-              <Text bold>Maximum Tier Reached!</Text>
-            </Gradient>
+            <Text bold color="greenBright">Maximum Tier Reached!</Text>
           </Box>
         )}
 
@@ -722,9 +720,7 @@ export const Staking: React.FC<StakingProps> = ({ agent, autoRefresh = true }) =
         </Box>
 
         <Box marginTop={1}>
-          <Gradient name="rainbow">
-            <Text>Stake GHOST - Earn Rewards - Boost Your Score</Text>
-          </Gradient>
+          <Text bold color="greenBright">Stake GHOST - Earn Rewards - Boost Your Score</Text>
         </Box>
       </Box>
     )

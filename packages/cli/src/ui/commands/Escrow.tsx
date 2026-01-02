@@ -284,9 +284,7 @@ export const Escrow: React.FC<EscrowProps> = ({ agent, status, monitor = false }
 
         {/* Footer */}
         <Box marginTop={1}>
-          <Gradient name="rainbow">
-            <Text>✨ x402 Marketplace Escrow Monitor ✨</Text>
-          </Gradient>
+          <Text bold color="greenBright">x402 Marketplace Escrow Monitor</Text>
         </Box>
       </Box>
     )

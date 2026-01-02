@@ -199,9 +199,7 @@ export const Airdrop: React.FC<AirdropProps> = ({ recipient }) => {
               <Text color="cyan">{signature.slice(0, 40)}...</Text>
             </Box>
             <Box marginTop={1}>
-              <Gradient name="rainbow">
-                <Text>🎉 Tokens delivered! Check your wallet!</Text>
-              </Gradient>
+              <Text bold color="greenBright">Tokens delivered! Check your wallet!</Text>
             </Box>
           </Box>
         )

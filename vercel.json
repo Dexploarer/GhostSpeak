@@ -1,6 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "bun install && cd packages/sdk-typescript && bun run build",
-  "buildCommand": "cd packages/web && bun run build",
-  "outputDirectory": "packages/web/.next"
+  "buildCommand": "cd packages/web && NODE_OPTIONS='--max-old-space-size=4096' NEXT_TELEMETRY_DISABLED=1 bun run build",
+  "outputDirectory": "packages/web/.next",
+  "build": {
+    "env": {
+      "NODE_OPTIONS": "--max-old-space-size=4096",
+      "NEXT_TELEMETRY_DISABLED": "1",
+      "ENABLE_SENTRY_BUILD": "false"
+    }
+  }
 }

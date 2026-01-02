@@ -17,6 +17,14 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
 
+  // Optimize memory usage during build
+  experimental: {
+    // Disable SWC minification to reduce memory usage
+    swcMinify: false,
+    // Reduce webpack cache size
+    webpackMemoryOptimizations: true,
+  },
+
   // Set basePath for GitHub Pages (uncomment if deploying to subdirectory)
   // basePath: process.env.NODE_ENV === 'production' ? '/ghostspeak' : '',
 
@@ -39,6 +47,14 @@ const nextConfig: NextConfig = {
 
   // Configure webpack to handle SDK imports properly
   webpack: (config, { isServer }) => {
+    // Reduce memory usage by disabling source maps in production
+    if (process.env.NODE_ENV === 'production') {
+      config.devtool = false
+    }
+
+    // Optimize memory by limiting concurrent compilations
+    config.parallelism = 1
+
     // Ignore markdown files which can cause issues with dynamic imports in dependencies
     config.module.rules.push({
       test: /\.md$/,
@@ -85,27 +101,26 @@ const sentryWebpackPluginOptions = {
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
 
-  // Upload source maps during build
-  widenClientFileUpload: true,
+  // Disable source map upload to reduce memory usage during build
+  disableLogger: true,
+  hideSourceMaps: true,
 
-  // Automatically annotate React components to show their full name in breadcrumbs and session replays
+  // Only upload source maps if explicitly enabled (reduces memory usage)
+  widenClientFileUpload: false,
+
+  // Disable React component annotation to save memory
   reactComponentAnnotation: {
-    enabled: true,
+    enabled: false,
   },
 
   // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
   // This can increase your server load as well as your hosting bill.
   // Note: Check that the Sentry DSN is publicly available before enabling this option.
   tunnelRoute: '/monitoring',
-
-  // Hides source maps from generated client bundles
-  hideSourceMaps: true,
-
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
 }
 
-// Export with Sentry config
-export default process.env.SENTRY_DSN
+// Export with Sentry config only if DSN is set AND not in memory-constrained build
+// Disable Sentry plugin during Vercel builds to save memory
+export default process.env.SENTRY_DSN && process.env.ENABLE_SENTRY_BUILD === 'true'
   ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
   : nextConfig

@@ -188,22 +188,40 @@ export class SafeGhostClient {
     this.client = client
   }
 
-  async claimGhost(signer: TransactionSigner, params: { externalId: string; platform: string; attestationSignature: Uint8Array }): Promise<{ ghostAddress: string; signature: string }> {
-    const result = await this.client.ghosts.claimGhost(signer, params)
-    return result
-  }
-
-  async linkExternalId(signer: TransactionSigner, params: { ghostAddress: Address; externalId: string; platform: string; attestationSignature: Uint8Array }): Promise<string> {
-    const result = await this.client.ghosts.linkExternalId(signer, params)
-    return result
-  }
-
   async getGhost(ghostAddress: Address): Promise<any> {
-    return await this.client.ghosts.getGhostAgent(ghostAddress)
+    try {
+      return await this.client.ghosts.getGhostAgent(ghostAddress)
+    } catch (error) {
+      console.warn('Failed to get ghost:', error instanceof Error ? error.message : String(error))
+      return null
+    }
   }
 
-  async getGhostsByOwner(owner: Address): Promise<any[]> {
-    return await this.client.ghosts.getGhostsByType(10) // Type 10 = Ghost agents
+  async getAllGhosts(): Promise<any[]> {
+    try {
+      return await this.client.ghosts.getAllGhosts()
+    } catch (error) {
+      console.warn('Failed to get all ghosts:', error instanceof Error ? error.message : String(error))
+      return []
+    }
+  }
+
+  async getGhostsByType(agentType: number = 10): Promise<any[]> {
+    try {
+      return await this.client.ghosts.getGhostsByType(agentType)
+    } catch (error) {
+      console.warn('Failed to get ghosts by type:', error instanceof Error ? error.message : String(error))
+      return []
+    }
+  }
+
+  async getClaimedGhosts(owner: Address): Promise<any[]> {
+    try {
+      return await this.client.ghosts.getClaimedGhosts(owner)
+    } catch (error) {
+      console.warn('Failed to get claimed ghosts:', error instanceof Error ? error.message : String(error))
+      return []
+    }
   }
 }
 

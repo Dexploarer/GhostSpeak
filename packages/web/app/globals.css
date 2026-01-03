@@ -425,6 +425,79 @@ html.lenis {
 }
 
 /* ============================================
+   Caisper Ghost Theme Animations
+   ============================================ */
+
+/* Scanline animation */
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+/* Floating particles */
+@keyframes float-particle {
+  0% {
+    transform: translateY(0px) translateX(0px);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(20px);
+    opacity: 0;
+  }
+}
+
+.animate-float {
+  animation: float-particle 25s ease-in infinite;
+}
+
+/* Ghost glow pulse */
+@keyframes ghost-glow {
+  0%, 100% {
+    opacity: 0.5;
+    filter: blur(20px);
+  }
+  50% {
+    opacity: 0.8;
+    filter: blur(30px);
+  }
+}
+
+.animate-ghost-glow {
+  animation: ghost-glow 3s ease-in-out infinite;
+}
+
+/* Typing indicator */
+@keyframes typing-dot {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-typing-dot {
+  animation: typing-dot 1.4s ease-in-out infinite;
+}
+
+/* Ghost flicker */
+@keyframes flicker {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* ============================================
    Crossmint SDK Theme Overrides
    Matches GhostSpeak's lime/dark theme
    ============================================ */

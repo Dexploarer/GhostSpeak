@@ -14,7 +14,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useTheme } from 'next-themes'
 import { BrandLogo } from '@/components/shared/BrandLogo'
-import { WalletConnectButton } from '@/components/wallet/WalletConnectButton'
+import { ConnectWalletButton } from '@/components/auth/ConnectWalletButton'
 
 const marketingNavItems = [
   { href: 'https://docs.ghostspeak.io', label: 'Docs', icon: FileText, external: true },
@@ -143,9 +143,9 @@ export const Navigation: React.FC = () => {
 
           {/* Actions Section */}
           <motion.div layout className="flex items-center gap-3 shrink-0">
-            {/* Wallet Connect Button */}
+            {/* Connect Wallet Button */}
             <div className="hidden md:block">
-              <WalletConnectButton />
+              <ConnectWalletButton variant="gradient" />
             </div>
 
             <button
@@ -185,13 +185,13 @@ export const Navigation: React.FC = () => {
             className="fixed inset-0 z-40 bg-white/95 dark:bg-black/95 backdrop-blur-xl md:hidden pt-24 px-6"
           >
             <div className="flex flex-col space-y-4">
-              {/* Wallet Connect Button in Mobile Menu */}
+              {/* Connect Wallet Button in Mobile Menu */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="mb-4"
               >
-                <WalletConnectButton />
+                <ConnectWalletButton variant="gradient" className="w-full justify-center" />
               </motion.div>
 
               {marketingNavItems.map((item, idx) => {

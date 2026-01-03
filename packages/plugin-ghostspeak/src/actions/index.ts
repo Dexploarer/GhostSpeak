@@ -24,5 +24,8 @@ export {
   createEscrowAction,
 } from './protocolActions';
 
+// Discovery Actions
+export { searchDiscoveredAgentsAction, claimDiscoveredAgentAction } from './discoveredAgents';
+
 // Note: createProposalAction and voteProposalAction have been removed
 // Governance is not a core use case for AI agents

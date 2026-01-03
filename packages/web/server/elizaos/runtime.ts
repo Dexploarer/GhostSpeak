@@ -1,0 +1,340 @@
+/**
+ * ElizaOS Agent Runtime
+ *
+ * Initializes Casper agent with GhostSpeak plugins for credential verification
+ * and AI inference via Vercel AI Gateway
+ */
+
+import { AgentRuntime, IAgentRuntime, Memory, IDatabaseAdapter } from '@elizaos/core'
+import { aiGatewayPlugin } from '@ghostspeak/plugin-gateway-ghost'
+import { ghostspeakPlugin } from '@ghostspeak/plugin-elizaos'
+import mcpPlugin from '@elizaos/plugin-mcp'
+import sqlPlugin from '@elizaos/plugin-sql'
+import CaisperCharacter from './Caisper.json' assert { type: 'json' }
+import { ConvexHttpClient } from 'convex/browser'
+import { api } from '@/convex/_generated/api'
+
+// Convex database adapter for ElizaOS
+class ConvexDatabaseAdapter implements IDatabaseAdapter {
+  private convex: ConvexHttpClient
+
+  // Required: db property
+  db: unknown
+
+  constructor() {
+    this.convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+    this.db = this.convex
+  }
+
+  // Required: lifecycle methods
+  async isReady(): Promise<boolean> {
+    return true // Convex HTTP client is always ready
+  }
+
+  async getConnection(): Promise<unknown> {
+    return this.convex
+  }
+
+  async initialize(config?: Record<string, string | number | boolean | null>): Promise<void> {
+    console.log('📦 Convex database adapter initialized')
+  }
+
+  async init(): Promise<void> {
+    console.log('📦 Convex database adapter initialized')
+  }
+
+  async close(): Promise<void> {}
+
+  // Memories are stored in Convex agentMessages table
+  async getMemories(params: any): Promise<any[]> {
+    try {
+      const { roomId, count = 10 } = params
+
+      if (!roomId) {
+        return []
+      }
+
+      // Extract wallet address from roomId (format: "user-<walletAddress>")
+      const walletAddress = roomId.replace('user-', '')
+
+      // Fetch messages from Convex
+      const messages = await this.convex.query(api.agent.getChatHistory, {
+        walletAddress,
+        limit: count,
+      })
+
+      // Convert to ElizaOS Memory format
+      return messages.map((msg: any) => ({
+        userId: walletAddress,
+        agentId: 'caisper',
+        roomId: roomId,
+        content: {
+          text: msg.content,
+          role: msg.role,
+          actionTriggered: msg.actionTriggered,
+          metadata: msg.metadata,
+        },
+        createdAt: msg.timestamp,
+      }))
+    } catch (error) {
+      console.error('Error getting memories from Convex:', error)
+      return []
+    }
+  }
+
+  async getMemoriesByRoomIds(params: any): Promise<any[]> { return [] }
+  async getMemoryById(id: string): Promise<any | null> { return null }
+  async createMemory(memory: any, tableName?: string): Promise<void> {
+    // Memories are already being stored via storeUserMessage/storeAgentResponse
+  }
+  async removeMemory(memoryId: string, tableName?: string): Promise<void> {}
+  async removeAllMemories(roomId: string, tableName?: string): Promise<void> {}
+  async countMemories(roomId: string, unique?: boolean, tableName?: string): Promise<number> { return 0 }
+
+  // Goals, rooms, participants - minimal implementation for stateless chat
+  async getGoals(params: any): Promise<any[]> { return [] }
+  async updateGoal(goal: any): Promise<void> {}
+  async createGoal(goal: any): Promise<void> {}
+  async removeGoal(goalId: string): Promise<void> {}
+  async removeAllGoals(roomId: string): Promise<void> {}
+
+  async getRoom(roomId: string): Promise<any | null> {
+    return { id: roomId }
+  }
+  async createRoom(roomId?: string): Promise<string> {
+    return roomId || `room-${Date.now()}`
+  }
+  async removeRoom(roomId: string): Promise<void> {}
+
+  async getRoomsForParticipant(userId: string): Promise<any[]> { return [] }
+  async getRoomsForParticipants(userIds: string[]): Promise<any[]> { return [] }
+  async addParticipant(userId: string, roomId: string): Promise<boolean> { return true }
+  async removeParticipant(userId: string, roomId: string): Promise<boolean> { return true }
+  async getParticipantsForAccount(userId: string): Promise<any[]> { return [] }
+  async getParticipantUserState(roomId: string, userId: string): Promise<'FOLLOWED' | 'MUTED' | null> { return null }
+  async setParticipantUserState(roomId: string, userId: string, state: 'FOLLOWED' | 'MUTED' | null): Promise<void> {}
+  async getParticipantsForRoom(roomId: string): Promise<any[]> { return [] }
+
+  async getRelationship(params: any): Promise<any | null> { return null }
+  async getRelationships(params: any): Promise<any[]> { return [] }
+  async createRelationship(params: any): Promise<boolean> { return true }
+
+  async getCache(params: any): Promise<any[]> { return [] }
+  async setCache(params: any): Promise<boolean> { return true }
+  async deleteCache(params: any): Promise<boolean> { return true }
+
+  async getAccountById(userId: string): Promise<any | null> {
+    // Users are stored in Convex users table
+    return { id: userId }
+  }
+  async createAccount(account: any): Promise<boolean> { return true }
+
+  async getActorById(params: any): Promise<any[]> { return [] }
+  async getActorDetails(params: any): Promise<any[]> { return [] }
+
+  // Additional required methods for full IDatabaseAdapter compliance
+  async getMemoriesByIds(ids: any[], tableName?: string): Promise<any[]> { return [] }
+  async searchMemories(params: any): Promise<any[]> { return [] }
+  async updateMemory(memory: any): Promise<boolean> { return true }
+  async deleteMemory(memoryId: any): Promise<void> {}
+  async deleteManyMemories(memoryIds: any[]): Promise<void> {}
+  async deleteAllMemories(roomId: string, tableName: string): Promise<void> {}
+
+  async getEntitiesByIds(entityIds: any[]): Promise<any[] | null> { return [] }
+  async getEntitiesForRoom(roomId: any, includeComponents?: boolean): Promise<any[]> { return [] }
+  async createEntities(entities: any[]): Promise<boolean> { return true }
+  async updateEntity(entity: any): Promise<void> {}
+
+  async getComponent(entityId: any, type: string, worldId?: any, sourceEntityId?: any): Promise<any | null> { return null }
+  async getComponents(entityId: any, worldId?: any, sourceEntityId?: any): Promise<any[]> { return [] }
+  async createComponent(component: any): Promise<boolean> { return true }
+  async updateComponent(component: any): Promise<void> {}
+  async deleteComponent(componentId: any): Promise<void> {}
+
+  async getAgent(agentId: any): Promise<any | null> { return { id: agentId } }
+  async getAgents(): Promise<any[]> { return [] }
+  async createAgent(agent: any): Promise<boolean> { return true }
+  async updateAgent(agentId: any, agent: any): Promise<boolean> { return true }
+  async deleteAgent(agentId: any): Promise<boolean> { return true }
+  async ensureEmbeddingDimension(dimension: number): Promise<void> {}
+
+  async log(params: any): Promise<void> {}
+  async getLogs(params: any): Promise<any[]> { return [] }
+  async deleteLog(logId: any): Promise<void> {}
+
+  async createWorld(world: any): Promise<any> { return world.id || `world-${Date.now()}` }
+  async getWorld(id: any): Promise<any | null> { return { id } }
+  async removeWorld(id: any): Promise<void> {}
+  async getAllWorlds(): Promise<any[]> { return [] }
+  async updateWorld(world: any): Promise<void> {}
+  async getRoomsByIds(roomIds: any[]): Promise<any[] | null> { return roomIds.map(id => ({ id })) }
+  async createRooms(rooms: any[]): Promise<any[]> { return rooms.map(r => r.id || `room-${Date.now()}`) }
+  async deleteRoom(roomId: any): Promise<void> {}
+
+  async getCachedEmbeddings(params: any): Promise<any[]> { return [] }
+}
+
+// Singleton instance
+let agentRuntime: IAgentRuntime | null = null
+
+/**
+ * Initialize Casper agent runtime
+ */
+export async function initializeAgent(): Promise<IAgentRuntime> {
+  if (agentRuntime) {
+    return agentRuntime
+  }
+
+  try {
+    console.log('🚀 Initializing Casper agent runtime...')
+
+    // Validate required environment variables
+    const requiredEnvVars = ['AI_GATEWAY_API_KEY']
+    for (const envVar of requiredEnvVars) {
+      if (!process.env[envVar]) {
+        throw new Error(`Missing required environment variable: ${envVar}`)
+      }
+    }
+
+    // Create Convex database adapter
+    const databaseAdapter = new ConvexDatabaseAdapter()
+    await databaseAdapter.init()
+
+    // Create runtime with Casper character and plugins
+    // Using SQL plugin (required by ElizaOS) + MCP plugin for GhostSpeak discovery
+    const runtime = new AgentRuntime({
+      // @ts-ignore - Character JSON matches ICharacter interface
+      character: CaisperCharacter,
+      plugins: [sqlPlugin, ghostspeakPlugin, aiGatewayPlugin, mcpPlugin],
+      serverUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+      token: process.env.AI_GATEWAY_API_KEY!,
+      databaseAdapter,
+
+      // MCP configuration - connect to our HTTP MCP server
+      settings: {
+        mcp: {
+          servers: {
+            ghostspeak: {
+              transport: 'http',
+              url: process.env.NEXT_PUBLIC_APP_URL
+                ? `${process.env.NEXT_PUBLIC_APP_URL}/api/mcp`
+                : 'http://localhost:3000/api/mcp',
+            }
+          }
+        }
+      }
+    })
+
+    // Initialize runtime
+    await runtime.initialize()
+
+    agentRuntime = runtime
+    console.log('✅ Casper agent initialized successfully')
+
+    return runtime
+  } catch (error) {
+    console.error('❌ Failed to initialize agent:', error)
+    throw error
+  }
+}
+
+/**
+ * Get existing agent runtime or initialize new one
+ */
+export async function getAgentRuntime(): Promise<IAgentRuntime> {
+  if (!agentRuntime) {
+    return await initializeAgent()
+  }
+  return agentRuntime
+}
+
+/**
+ * Process message with Casper agent
+ * Directly evaluates actions to bypass database adapter requirements
+ */
+export async function processAgentMessage(params: {
+  userId: string
+  message: string
+  roomId?: string
+}): Promise<{
+  text: string
+  action?: string
+  metadata?: any
+}> {
+  try {
+    const runtime = await getAgentRuntime()
+    const roomId = params.roomId || `user-${params.userId}`
+
+    // Create memory object for the current message
+    const memory: Memory = {
+      userId: params.userId,
+      agentId: runtime.agentId,
+      roomId: roomId,
+      content: {
+        text: params.message,
+        source: 'web-chat',
+      },
+      createdAt: Date.now(),
+    }
+
+    console.log('📨 Processing message:', params.message)
+    console.log('🏠 Room ID:', roomId)
+
+    // Track response
+    let responseText = ''
+    let triggeredAction: string | undefined
+
+    // Evaluate all actions directly
+    for (const action of runtime.actions) {
+      try {
+        const isValid = await action.validate(runtime, memory, undefined)
+
+        if (isValid) {
+          console.log(`✅ Action validated: ${action.name}`)
+
+          // Execute action
+          const result = await action.handler(
+            runtime,
+            memory,
+            undefined,
+            {},
+            async (response: any) => {
+              responseText = response.text || ''
+              console.log('📤 Action response:', responseText.substring(0, 100))
+              return []
+            }
+          )
+
+          if (result.success) {
+            triggeredAction = action.name
+            console.log(`🎯 Action executed: ${action.name}`)
+            break // First matching action wins
+          }
+        }
+      } catch (error) {
+        console.error(`❌ Error in action ${action.name}:`, error)
+      }
+    }
+
+    // If no action matched, generate a default response
+    if (!responseText) {
+      responseText = "I heard you, but I'm not sure how to help with that specific request. Could you rephrase or ask about claimable agents or Ghost Score?"
+    }
+
+    console.log('✅ Message processed:', {
+      hasAction: !!triggeredAction,
+      action: triggeredAction,
+    })
+
+    return {
+      text: responseText,
+      action: triggeredAction,
+      metadata: {
+        triggeredAction,
+      },
+    }
+  } catch (error) {
+    console.error('❌ Error processing agent message:', error)
+    throw new Error('Failed to process message with agent')
+  }
+}

@@ -18,8 +18,13 @@ export default defineSchema({
     email: v.optional(v.string()),
     // Display name
     name: v.optional(v.string()),
+    username: v.optional(v.string()),
+    bio: v.optional(v.string()),
+    avatar: v.optional(v.string()),
     // Avatar URL
     avatarUrl: v.optional(v.string()),
+    // Auth tracking
+    lastLoginAt: v.optional(v.number()),
     // User preferences
     preferences: v.optional(
       v.object({
@@ -44,7 +49,7 @@ export default defineSchema({
     createdAt: v.number(),
     lastActiveAt: v.number(),
   })
-    .index('by_wallet', ['walletAddress'])
+    .index('by_wallet_address', ['walletAddress'])
     .index('by_email', ['email'])
     .index('by_usdc_account', ['usdcTokenAccount'])
     .index('by_ghost_account', ['ghostTokenAccount']),
@@ -1019,4 +1024,21 @@ export default defineSchema({
     .index('by_event_type', ['eventType'])
     .index('by_ghost', ['ghostAddress'])
     .index('by_timestamp', ['timestamp']),
+
+  //
+  // ─── CASPER AI AGENT: CHAT MESSAGES ────────────────────────────────────────
+  // Chat messages with Casper agent for credential verification
+  //
+  agentMessages: defineTable({
+    userId: v.id('users'),
+    role: v.string(), // 'user' | 'agent'
+    content: v.string(),
+    // Optional action/metadata from agent response
+    actionTriggered: v.optional(v.string()), // Action name if an action was triggered
+    metadata: v.optional(v.any()), // Additional metadata from agent
+    // Timestamp
+    timestamp: v.number(),
+  })
+    .index('by_user', ['userId'])
+    .index('by_user_timestamp', ['userId', 'timestamp']),
 })

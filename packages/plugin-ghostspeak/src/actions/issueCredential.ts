@@ -20,6 +20,55 @@ import { GhostSpeakService } from '../services/GhostSpeakService';
 import { getAgentSigner, ensureFundedWallet } from '../wallet';
 
 /**
+ * Verify that the runtime is actually ElizaOS
+ *
+ * This prevents spoofing of the frameworkOrigin field by checking
+ * for ElizaOS-specific runtime properties that cannot be easily faked.
+ *
+ * @param runtime - The agent runtime to verify
+ * @returns true if this is a genuine ElizaOS runtime
+ */
+function verifyElizaOSRuntime(runtime: IAgentRuntime): boolean {
+  try {
+    // Check for core ElizaOS runtime properties
+    const hasCharacter = runtime.character !== undefined && runtime.character !== null;
+    const hasPlugins = Array.isArray(runtime.plugins);
+    const hasProcessActions = typeof runtime.processActions === 'function';
+    const hasEvaluate = typeof runtime.evaluate === 'function';
+    const hasComposeState = typeof runtime.composeState === 'function';
+
+    // Check for ElizaOS-specific method signatures
+    const hasAgentId = typeof runtime.agentId === 'string';
+    const hasLogger = runtime.logger !== undefined;
+
+    // All checks must pass for ElizaOS verification
+    const isElizaOS = hasCharacter &&
+                     hasPlugins &&
+                     hasProcessActions &&
+                     hasEvaluate &&
+                     hasComposeState &&
+                     hasAgentId &&
+                     hasLogger;
+
+    logger.debug({
+      hasCharacter,
+      hasPlugins,
+      hasProcessActions,
+      hasEvaluate,
+      hasComposeState,
+      hasAgentId,
+      hasLogger,
+      isElizaOS,
+    }, 'ElizaOS runtime verification checks');
+
+    return isElizaOS;
+  } catch (error) {
+    logger.warn({ error }, 'Failed to verify ElizaOS runtime - defaulting to custom framework');
+    return false;
+  }
+}
+
+/**
  * Parse credential request from message
  */
 interface CredentialRequest {
@@ -190,13 +239,24 @@ Optional: "name: Agent Name, capabilities: [cap1, cap2], email: user@example.com
           `${request.agentId.toString()}:${signer.address.toString()}:${now}`
         );
 
+        // Verify ElizaOS runtime to prevent spoofing
+        // Only agents running in ElizaOS runtime can claim frameworkOrigin: 'elizaos'
+        const isElizaOSRuntime = verifyElizaOSRuntime(runtime);
+        const frameworkOrigin = isElizaOSRuntime ? 'elizaos' : 'custom';
+
+        logger.info({
+          agentId: runtime.agentId,
+          isElizaOSRuntime,
+          frameworkOrigin,
+        }, 'Framework origin verified for credential issuance');
+
         result = await credentialService.issueAgentIdentityCredential({
           agentId: request.agentId.toString(),
           owner: signer.address.toString(),
           name: request.subject.name || 'Unknown Agent',
           capabilities: request.subject.capabilities || [],
           serviceEndpoint: `https://ghostspeak.ai/agents/${request.agentId.toString().slice(0, 8)}`,
-          frameworkOrigin: 'elizaos',
+          frameworkOrigin,
           x402Enabled: true,
           registeredAt: now,
           verifiedAt: now,

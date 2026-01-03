@@ -32,12 +32,10 @@ import {
   checkStakingAction,
   setPrivacyModeAction,
   createEscrowAction,
-  searchDiscoveredAgentsAction,
-  claimDiscoveredAgentAction,
 } from './actions';
 
 // Providers
-import { ghostScoreProvider, agentContextProvider, discoveredAgentsProvider } from './providers';
+import { ghostScoreProvider, agentContextProvider } from './providers';
 
 // Config
 import { ghostspeakConfigSchema } from './config';
@@ -124,14 +122,10 @@ export const ghostspeakPlugin: Plugin = {
     checkStakingAction,
     setPrivacyModeAction,
     createEscrowAction,
-
-    // Discovery
-    searchDiscoveredAgentsAction,
-    claimDiscoveredAgentAction,
   ],
 
   // Providers
-  providers: [ghostScoreProvider, agentContextProvider, discoveredAgentsProvider],
+  providers: [ghostScoreProvider, agentContextProvider],
 
   // Event handlers
   events: {

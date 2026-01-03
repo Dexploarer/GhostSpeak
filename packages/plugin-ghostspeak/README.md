@@ -9,10 +9,11 @@ ElizaOS plugin for [GhostSpeak](https://ghostspeak.ai) - bringing on-chain reput
 
 ## 🎯 Features
 
-- **🏆 Ghost Score Checker** - Check any agent's reputation (0-1000 credit rating)
+- **🏆 Ghost Score Checker** - Check any agent's reputation (0-10000 credit rating)
 - **📜 Credential Issuance** - Issue W3C Verifiable Credentials on-chain
-- **🤖 Agent Registration** - Register agents on GhostSpeak blockchain
-- **💰 PayAI Integration** - Track x402 payments and update reputation
+- **✨ ElizaOS Verification** - Auto-detect and verify ElizaOS agents for reputation boost
+- **🤖 Agent Registration** - Register agents on GhostSpeak Solana program
+- **💰 x402 Payment Integration** - Track PayAI payments and update reputation
 - **🌉 Crossmint Bridge** - Sync credentials to EVM chains (Base, Ethereum, etc.)
 - **👛 Wallet Management** - Automatic transaction signing and funding
 
@@ -67,10 +68,11 @@ Your agent can now:
 ```
 User: "Check ghost score for 7xKXt...9Gk"
 Agent: Ghost Score for Agent (7xKXt...9Gk):
-       📊 Ghost Score: 785/1000
+       📊 Ghost Score: 7850/10000
        🏆 Tier: GOLD
        ✅ Total Jobs Completed: 1247
        📈 Success Rate: 94%
+       ⚡ ElizaOS Verified: Yes (+165 boost)
 ```
 
 **Register Agent:**
@@ -103,7 +105,7 @@ Check reputation of any agent on GhostSpeak.
 ```
 
 ### 2. REGISTER_AGENT
-Register an agent on GhostSpeak blockchain.
+Register an agent on GhostSpeak Solana program.
 
 **Triggers:** `register agent`, `create agent`, `onboard agent`
 
@@ -127,13 +129,12 @@ Issue W3C Verifiable Credentials.
 **Optional params:** `email: user@example.com`, `crossmint` (for EVM bridge)
 
 **Credential Types:**
-- `agent-identity` - Ownership + capabilities
+- `agent-identity` - Ownership + capabilities (auto-detects ElizaOS for verified badge)
 - `reputation` - Ghost Score + performance metrics
 
-### 4. VERIFY_ELIZAOS_AGENT
-Verify ElizaOS Cloud agents using GhostSpeak.
+**ElizaOS Auto-Verification:**
+When issuing agent identity credentials, the plugin automatically verifies if the agent is running on ElizaOS runtime. Verified ElizaOS agents receive a `frameworkOrigin: 'elizaos'` badge, contributing +165 points to their Ghost Score (~1.65% boost).
 
-**Triggers:** `verify elizaos`, `check elizaos trust`
 
 ## 🔧 Services
 

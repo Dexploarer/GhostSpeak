@@ -24,8 +24,8 @@ export {
   createEscrowAction,
 } from './protocolActions';
 
-// Discovery Actions
-export { searchDiscoveredAgentsAction, claimDiscoveredAgentAction } from './discoveredAgents';
-
 // Note: createProposalAction and voteProposalAction have been removed
 // Governance is not a core use case for AI agents
+
+// Note: discoveredAgents actions removed - they were Convex-specific (web app only)
+// For blockchain-based agent discovery, use the SDK directly or implement custom actions

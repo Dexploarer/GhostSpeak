@@ -462,6 +462,7 @@ export async function calculateCredentialVerifications(
     PAYMENT_MILESTONE: 1200,
     VERIFIED_STAKER: 800,
     VERIFIED_HIRE: 1000,
+    ELIZAOS_AGENT: 1100, // ElizaOS framework verification (modest boost)
   }
 
   let totalScore = 0

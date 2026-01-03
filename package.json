@@ -1,6 +1,6 @@
 {
   "name": "ghostspeak",
-  "version": "1.5.0",
+  "version": "0.1.1",
   "description": "Pure protocol for AI agent commerce on Solana blockchain - 2025 Production Implementation",
   "type": "module",
   "private": true,

@@ -7,6 +7,19 @@
   "bin": {
     "ghostspeak-mcp": "./dist/index.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ghostspeak/mcp-server-ghostspeak.git"
+  },
+  "homepage": "https://github.com/Ghostspeak/mcp-server-ghostspeak#readme",
+  "bugs": {
+    "url": "https://github.com/Ghostspeak/mcp-server-ghostspeak/issues"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target node --format esm",
     "dev": "bun run src/index.ts",
@@ -28,8 +41,13 @@
     "model-context-protocol",
     "ghostspeak",
     "agent-discovery",
-    "solana"
+    "solana",
+    "ai-agents",
+    "stdio"
   ],
   "author": "GhostSpeak",
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }

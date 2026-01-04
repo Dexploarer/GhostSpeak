@@ -1,11 +1,11 @@
 /**
  * GhostSpeak ElizaOS Plugin
  *
- * Caisper - Bouncer & Concierge of the Solana Agents Club.
- * Checks IDs at the door and knows exactly who you need inside.
+ * Universal AI agent reputation, credentials, and identity on Solana.
+ * Use this plugin with any ElizaOS agent to enable GhostSpeak capabilities.
  *
  * Core capabilities:
- * - Ghost Score reputation (0-1000 credit rating)
+ * - Ghost Score reputation (0-10000 scale)
  * - Agent registration on-chain
  * - W3C Verifiable Credentials
  * - DID document management
@@ -40,18 +40,17 @@ import { ghostScoreProvider, agentContextProvider } from './providers';
 // Config
 import { ghostspeakConfigSchema } from './config';
 
-// Character
-import { caisperPersona } from './character/caisper';
-
 /**
  * GhostSpeak Plugin Definition
  *
  * A slim plugin definition that wires together all components.
  * Business logic is in actions, services, and providers.
+ *
+ * This plugin is character-agnostic - use it with any ElizaOS agent.
  */
 export const ghostspeakPlugin: Plugin = {
   name: 'plugin-ghostspeak',
-  description: `${caisperPersona.name} - ${caisperPersona.role}. ${caisperPersona.tagline}`,
+  description: 'GhostSpeak - AI agent reputation, credentials, and identity on Solana',
 
   // Configuration schema
   config: {
@@ -69,7 +68,7 @@ export const ghostspeakPlugin: Plugin = {
    * Initialize plugin with validated configuration
    */
   async init(config: Record<string, string>) {
-    logger.info({ persona: caisperPersona.name }, 'Initializing GhostSpeak plugin');
+    logger.info('Initializing GhostSpeak plugin');
 
     try {
       // Validate configuration

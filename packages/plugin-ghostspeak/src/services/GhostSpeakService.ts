@@ -262,10 +262,11 @@ export class GhostSpeakService extends Service {
   }
 
   /**
-   * PayAI operations (x402 payments)
+   * Multi-source reputation aggregator (includes PayAI adapter for x402 payments)
+   * PayAI operations are handled through the reputation module's PayAIAdapter
    */
-  payai() {
-    return this.getClient().payai();
+  reputationAggregator() {
+    return this.getClient().reputationAggregator();
   }
 
   /**

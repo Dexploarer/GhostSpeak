@@ -8,7 +8,6 @@ import { agentCommand } from './commands/agent/index.js'
 import { configCommand } from './commands/config.js'
 import { setupFaucetCommand } from './commands/faucet.js'
 import { airdropCommand } from './commands/airdrop.js'
-import { airdropUICommand } from './commands/airdrop-ui.js'
 import { sdkCommand } from './commands/sdk.js'
 import { updateCommand } from './commands/update.js'
 import { governanceCommand } from './commands/governance/index.js'
@@ -16,9 +15,7 @@ import { quickstartCommand } from './commands/quickstart.js'
 import { walletCommand } from './commands/wallet.js'
 import { credentialsCommand } from './commands/credentials.js'
 import { reputationCommand } from './commands/reputation.js'
-import { reputationUICommand } from './commands/reputation-ui.js'
 import { stakingCommand } from './commands/staking.js'
-import { stakingUICommand } from './commands/staking-ui.js'
 import { privacyCommand } from './commands/privacy.js'
 import { didCommand } from './commands/did.js'
 import { escrowCommand } from './commands/escrow.js'
@@ -28,12 +25,6 @@ import { ghostClaimCommand } from './commands/ghost-claim.js'
 // Removed: ghost-claim-test.ts - development-only test command moved to test suite
 import { multisigCommand } from './commands/multisig.js'
 import { authorizationCommand } from './commands/authorization.js'
-import { ghostUICommand } from './commands/ghost-ui.js'
-import { multisigUICommand } from './commands/multisig-ui.js'
-import { authorizationUICommand } from './commands/authorization-ui.js'
-import { privacyUICommand } from './commands/privacy-ui.js'
-import { didUICommand } from './commands/did-ui.js'
-import { escrowUICommand } from './commands/escrow-ui.js'
 import { checkForUpdates } from './utils/update-check.js'
 import { InteractiveMenu, shouldRunInteractive } from './utils/interactive-menu.js'
 import { readFileSync, existsSync } from 'fs'
@@ -58,7 +49,7 @@ function showBanner(version: string) {
     )
   )
   console.log(chalk.gray('AI Agent Commerce Protocol CLI'))
-  console.log(chalk.gray(`CLI v${version} | SDK v2.0.4\n`))
+  console.log(chalk.gray(`CLI v${version} | SDK v2.0.10\n`))
 }
 
 // Main CLI setup
@@ -68,7 +59,7 @@ async function main() {
     bootstrapServices()
     
     // Get current version
-    let currentVersion = '1.12.0' // Fallback version
+    let currentVersion = '2.0.0-beta.22' // Fallback version
     try {
       const __filename = fileURLToPath(import.meta.url)
       const __dirname = dirname(__filename)
@@ -177,8 +168,7 @@ async function main() {
     program.addCommand(walletCommand)      // Wallet management
     program.addCommand(configCommand)      // Manual setup option
     setupFaucetCommand(program)            // Get SOL to start
-    program.addCommand(airdropCommand)     // Get devnet GHOST tokens (CLI)
-    program.addCommand(airdropUICommand)   // Get devnet GHOST tokens (Interactive UI)
+    program.addCommand(airdropCommand)     // Get devnet GHOST tokens
 
     // 2. Core features - Text-based commands
     program.addCommand(agentCommand)       // Create and manage agents
@@ -190,18 +180,10 @@ async function main() {
     program.addCommand(didCommand)         // Decentralized identifiers (CLI)
     program.addCommand(escrowCommand)      // x402 marketplace escrow (CLI)
     program.addCommand(multisigCommand)    // Multisig wallets (CLI)
-    program.addCommand(authorizationCommand) // Pre-authorizations (CLI)
+    program.addCommand(authorizationCommand) // Pre-authorizations
 
-    // 2b. Interactive UI dashboards
-    program.addCommand(dashboardCommand)    // Master analytics dashboard (Beautiful UI)
-    program.addCommand(reputationUICommand) // Ghost Score dashboard (Beautiful UI)
-    program.addCommand(stakingUICommand)   // Staking dashboard (Beautiful UI)
-    program.addCommand(ghostUICommand)     // Ghost claiming dashboard (Beautiful UI)
-    program.addCommand(multisigUICommand)  // Multisig wallet dashboard (Beautiful UI)
-    program.addCommand(authorizationUICommand) // Pre-authorization dashboard (Beautiful UI)
-    program.addCommand(privacyUICommand)   // Privacy settings dashboard (Beautiful UI)
-    program.addCommand(didUICommand)       // DID document dashboard (Beautiful UI)
-    program.addCommand(escrowUICommand)    // Escrow monitor dashboard (Beautiful UI)
+    // 2b. Interactive UI dashboard
+    program.addCommand(dashboardCommand)    // Master analytics dashboard
 
     // 3. Support and advanced features
     program.addCommand(governanceCommand)  // Protocol governance

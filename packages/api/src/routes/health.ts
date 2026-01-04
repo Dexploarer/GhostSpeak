@@ -7,7 +7,8 @@
 
 import type { GhostService } from '../services/ghost-service';
 import type { RateLimiter } from '../middleware/rate-limiter';
-import type { HealthResponse, StatsResponse, GhostSpeakConvexClient } from '@ghostspeak/shared';
+import type { HealthResponse, StatsResponse } from '../types';
+import type { GhostSpeakConvexClient } from '../utils/convex';
 
 const startTime = Date.now();
 const VERSION = '0.1.0';

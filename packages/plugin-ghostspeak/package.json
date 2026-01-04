@@ -1,7 +1,7 @@
 {
   "name": "@ghostspeak/plugin-elizaos",
   "description": "Caisper - ElizaOS plugin for GhostSpeak reputation and credentials. Bouncer & Concierge of the Solana Agents Club.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -49,7 +49,7 @@
   ],
   "dependencies": {
     "@elizaos/core": "1.7.0",
-    "@ghostspeak/sdk": "^2.0.8",
+    "@ghostspeak/sdk": "^2.0.10",
     "@solana/addresses": "^5.1.0",
     "@solana/rpc": "^5.1.0",
     "@solana/signers": "^5.1.0",

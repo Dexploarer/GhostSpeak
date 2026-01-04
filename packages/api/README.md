@@ -129,7 +129,7 @@ RATE_WINDOW_MS=60000     # Window duration in milliseconds
   }[];
 
   // Reputation
-  ghostScore: number;  // 0-1000
+  ghostScore: number;  // 0-10,000
   reputationScore: number;
   reputationComponents: {
     source: string;
@@ -157,8 +157,8 @@ RATE_WINDOW_MS=60000     # Window duration in milliseconds
 ```typescript
 {
   address: string;
-  score: number;        // 0-1000
-  maxScore: number;     // 1000
+  score: number;        // 0-10,000
+  maxScore: number;     // 10,000
   components: {
     source: string;
     score: number;

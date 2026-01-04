@@ -541,14 +541,21 @@ export async function migrateToCompressedAgent(
   // Fetch the regular agent data
   const { fetchAgent } = await import('../generated/accounts/agent.js')
   const regularAgent = await fetchAgent(rpc as unknown as Parameters<typeof fetchAgent>[0], regularAgentAddress)
-  
-  if (regularAgent.data.owner.toString() !== signer.address.toString()) {
+
+  // Extract owner from Option type
+  const ownerOption = regularAgent.data.owner as { __option: 'Some' | 'None'; value?: Address }
+  if (ownerOption.__option !== 'Some' || !ownerOption.value) {
+    throw new Error('Agent has no owner set')
+  }
+  const owner = ownerOption.value
+
+  if (owner.toString() !== signer.address.toString()) {
     throw new Error('Only the agent owner can migrate their agent')
   }
-  
+
   // Create compressed version with same data
   const compressedParams: CompressedAgentParams = {
-    owner: regularAgent.data.owner,
+    owner,
     agentId: `compressed_${regularAgentAddress.toString().slice(0, 8)}`,
     agentType: 0, // Default agent type
     metadataUri: regularAgent.data.metadataUri,

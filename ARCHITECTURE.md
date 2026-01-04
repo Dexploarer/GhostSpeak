@@ -11,7 +11,6 @@
 | **web** | Next.js frontend | `packages/web/` |
 | **@ghostspeak/api** | REST API | `packages/api/` |
 | **@ghostspeak/plugin-elizaos** | ElizaOS integration | `packages/plugin-ghostspeak/` |
-| **@ghostspeak/solana-agent-kit-plugin** | Solana Agent Kit integration | `packages/solana-agent-kit-plugin/` |
 | **@ghostspeak/shared** | Shared types & utilities | `packages/shared/` |
 | **ghostspeak-marketplace** | Anchor program (Rust) | `programs/ghostspeak-marketplace/` |
 
@@ -425,8 +424,6 @@ GhostSpeak/
 │   │       ├── actions/      # Agent actions
 │   │       ├── providers/    # Data providers
 │   │       └── character/    # Agent persona
-│   │
-│   ├── solana-agent-kit-plugin/  # SAK integration
 │   │
 │   └── shared/               # Shared utilities
 │       └── src/

@@ -11,13 +11,13 @@ import { address } from '@solana/addresses';
 import { GhostSpeakService } from '../services/GhostSpeakService';
 
 /**
- * Get Ghost Score tier from score (0-1000 scale)
+ * Get Ghost Score tier from score (0-10000 scale)
  */
 function getGhostScoreTier(ghostScore: number): string {
-  if (ghostScore >= 900) return 'PLATINUM';
-  if (ghostScore >= 750) return 'GOLD';
-  if (ghostScore >= 500) return 'SILVER';
-  if (ghostScore >= 200) return 'BRONZE';
+  if (ghostScore >= 9000) return 'PLATINUM';
+  if (ghostScore >= 7500) return 'GOLD';
+  if (ghostScore >= 5000) return 'SILVER';
+  if (ghostScore >= 2000) return 'BRONZE';
   return 'NEWCOMER';
 }
 
@@ -25,7 +25,7 @@ function getGhostScoreTier(ghostScore: number): string {
  * Ghost Score Provider
  *
  * Supplies reputation context for agent reasoning:
- * - Ghost Score (0-1000)
+ * - Ghost Score (0-10000)
  * - Tier (PLATINUM/GOLD/SILVER/BRONZE/NEWCOMER)
  * - Job completion stats
  * - Active status
@@ -103,12 +103,12 @@ export const ghostScoreProvider: Provider = {
         };
       }
 
-      // Calculate Ghost Score from on-chain data
+      // Calculate Ghost Score from on-chain data (0-10000 scale)
       const onChainGhostScore = Number((agentData as any).ghostScore || 0);
       const reputationScore = Number(agentData.reputationScore || 0);
       const ghostScore = onChainGhostScore > 0
-        ? Math.min(1000, Math.round(onChainGhostScore / 1_000_000))
-        : Math.min(1000, Math.round(reputationScore / 100));
+        ? Math.min(10000, Math.round(onChainGhostScore / 100_000))
+        : Math.min(10000, Math.round(reputationScore / 10));
       const tier = getGhostScoreTier(ghostScore);
       const totalJobs = Number(agentData.totalJobsCompleted || 0);
       // Note: totalJobsFailed is not stored on-chain
@@ -135,7 +135,7 @@ export const ghostScoreProvider: Provider = {
       logger.debug({ ghostScore, tier, totalJobs }, 'Ghost Score Provider: Calculated reputation data');
 
       return {
-        text: `Ghost Score: ${ghostScore}/1000 (${tier} tier) - ${totalJobs} jobs completed, ${successRate}% success rate`,
+        text: `Ghost Score: ${ghostScore}/10000 (${tier} tier) - ${totalJobs} jobs completed, ${successRate}% success rate`,
         values: {
           ghostScore,
           tier,

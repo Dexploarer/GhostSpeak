@@ -2,27 +2,24 @@
   "$schema": "https://turbo.build/schema.json",
   "globalEnv": [
     "NODE_ENV",
-    "CROSSMINT_SECRET_KEY",
-    "CROSSMINT_API_URL",
-    "CROSSMINT_AGENT_TEMPLATE_ID",
-    "CROSSMINT_REPUTATION_TEMPLATE_ID",
-    "CROSSMINT_JOB_TEMPLATE_ID",
     "NEXT_PUBLIC_APP_URL",
     "NEXT_PUBLIC_SOLANA_RPC_URL",
     "NEXT_PUBLIC_SOLANA_NETWORK",
-    "NEXT_PUBLIC_CROSSMINT_API_KEY",
     "NEXT_PUBLIC_GHOSTSPEAK_PROGRAM_ID",
-    "RESEND_API_KEY",
-    "TURSO_DATABASE_URL",
-    "TURSO_AUTH_TOKEN",
-    "CROSSMINT_AGENTIDENTITY_TYPE_ID",
-    "CROSSMINT_REPUTATION_TYPE_ID",
-    "CROSSMINT_JOBCOMPLETION_TYPE_ID",
-    "CROSSMINT_DELEGATEDSIGNER_TYPE_ID",
-    "CROSSMINT_AGENTIDENTITY_TEMPLATE_ID",
+    "NEXT_PUBLIC_CONVEX_URL",
+    "CONVEX_DEPLOYMENT",
+    "CONVEX_URL",
+    "AI_GATEWAY_API_KEY",
+    "CROSSMINT_SECRET_KEY",
+    "CROSSMINT_API_URL",
+    "CROSSMINT_ENV",
+    "CROSSMINT_AGENT_TEMPLATE_ID",
     "CROSSMINT_REPUTATION_TEMPLATE_ID",
-    "CROSSMINT_JOBCOMPLETION_TEMPLATE_ID",
-    "CROSSMINT_DELEGATEDSIGNER_TEMPLATE_ID",
+    "CROSSMINT_JOB_TEMPLATE_ID",
+    "NEXT_PUBLIC_CROSSMINT_API_KEY",
+    "SOLANA_CLUSTER",
+    "SOLANA_RPC_URL",
+    "AGENT_WALLET_PRIVATE_KEY",
     "GHOSTSPEAK_NETWORK",
     "GHOSTSPEAK_RPC_URL",
     "GHOSTSPEAK_PROGRAM_ID_MAINNET",
@@ -34,30 +31,20 @@
     "GHOSTSPEAK_USDC_MINT_MAINNET",
     "GHOSTSPEAK_API_KEY",
     "GHOSTSPEAK_API_SECRET",
-    "GHOSTSPEAK_ENCRYPTION_SALT",
-    "GHOSTSPEAK_KEY_DERIVATION_ITERATIONS",
     "DEVNET_ADMIN_KEY",
     "DEVNET_UPGRADE_AUTHORITY",
     "DEVNET_FEE_RECEIVER",
-    "TESTNET_ADMIN_KEY",
-    "TESTNET_UPGRADE_AUTHORITY",
-    "TESTNET_FEE_RECEIVER",
-    "GHOSTSPEAK_MONITORING_ENABLED",
-    "GHOSTSPEAK_MONITORING_ENDPOINT",
-    "GHOSTSPEAK_DEBUG",
-    "GHOSTSPEAK_LOG_LEVEL",
-    "SAS_PAYER_KEYPAIR",
-    "SAS_AUTHORITY_KEYPAIR",
-    "SAS_AUTHORIZED_SIGNER_KEYPAIR",
-    "SAS_API_KEY",
-    "SOLANA_CLUSTER",
     "SKIP_ENV_VALIDATION"
   ],
   "tasks": {
     "build": {
-      "inputs": ["{app,packages,programs}/**/*"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**", "lib/**"],
+      "inputs": ["src/**", "package.json", "tsconfig.json"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
       "dependsOn": ["^build"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
     },
     "test": {
       "outputs": ["coverage/**"],
@@ -66,9 +53,8 @@
     "lint": {
       "dependsOn": []
     },
-    "dev": {
-      "cache": false,
-      "persistent": true
+    "type-check": {
+      "dependsOn": []
     },
     "clean": {
       "cache": false

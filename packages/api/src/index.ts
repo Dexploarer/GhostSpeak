@@ -9,7 +9,7 @@ import { GhostService } from './services/ghost-service';
 import { RateLimiter, getClientIdentifier, createRateLimitResponse } from './middleware/rate-limiter';
 import { createGhostRoutes } from './routes/ghosts';
 import { createHealthRoutes } from './routes/health';
-import { createConvexClient } from '@ghostspeak/shared';
+import { createConvexClient } from './utils/convex';
 
 // Configuration
 const PORT = process.env.PORT || 3001;

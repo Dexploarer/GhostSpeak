@@ -1,7 +1,5 @@
 /**
- * GhostSpeak Shared Type Definitions
- *
- * Types used across API, web app, and other packages
+ * GhostSpeak API Type Definitions
  */
 
 export enum AgentStatus {
@@ -26,42 +24,27 @@ export interface ReputationComponent {
 }
 
 export interface Ghost {
-  // Core identity
   address: string;
   owner: string | null;
   status: AgentStatus;
-
-  // Discovery provenance
   firstTxSignature: string;
   firstSeenTimestamp: number;
   discoverySource: string;
   claimedAt: number | null;
-
-  // Metadata
   agentId: string;
   name: string;
   description: string;
   metadataUri: string;
   serviceEndpoint: string;
-
-  // Cross-platform identity
   externalIdentifiers: ExternalIdentifier[];
-
-  // Reputation
   ghostScore: number;
   reputationScore: number;
   reputationComponents: ReputationComponent[];
-
-  // Credentials
   didAddress: string | null;
   credentials: string[];
-
-  // Status
   isActive: boolean;
   isVerified: boolean;
   verificationTimestamp: number;
-
-  // Timestamps
   createdAt: number;
   updatedAt: number;
 }
@@ -125,22 +108,4 @@ export interface StatsResponse {
   totalExternalIds: number;
   averageGhostScore: number;
   topSources: string[];
-}
-
-// Convex-specific types
-export interface DiscoveredAgent {
-  _id: string;
-  _creationTime: number;
-  ghostAddress: string;
-  firstTxSignature: string;
-  firstSeenTimestamp: number;
-  discoverySource: string;
-  facilitatorAddress: string;
-  blockTime: number;
-  slot: number;
-  status: 'discovered' | 'claimed' | 'verified';
-  claimedBy?: string;
-  claimedAt?: number;
-  createdAt: number;
-  updatedAt: number;
 }

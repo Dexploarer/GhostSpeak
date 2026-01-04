@@ -1,6 +1,6 @@
 {
   "name": "@ghostspeak/sdk",
-  "version": "2.0.8",
+  "version": "2.0.10",
   "description": "TypeScript SDK for GhostSpeak AI Agent Commerce Protocol - Production Ready Beta",
   "type": "module",
   "main": "./dist/index.js",
@@ -100,10 +100,11 @@
   "homepage": "https://www.ghostspeak.io/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Ghostspeak/sdk.git"
+    "url": "https://github.com/ghostspeak/ghostspeak.git",
+    "directory": "packages/sdk-typescript"
   },
   "bugs": {
-    "url": "https://github.com/Ghostspeak/sdk/issues"
+    "url": "https://github.com/ghostspeak/ghostspeak/issues"
   },
   "publishConfig": {
     "access": "public"

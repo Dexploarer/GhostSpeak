@@ -60,7 +60,8 @@ function serializeAttestationData(x402PaymentAddress: Address): Uint8Array {
   // For Ghost ownership, we just need to prove we control the address
   // Data = 32 bytes of the x402 payment address
   const addressBytes = getAddressEncoder().encode(x402PaymentAddress)
-  return addressBytes
+  // Convert ReadonlyUint8Array to Uint8Array
+  return new Uint8Array(addressBytes)
 }
 
 export const ghostClaimCommand = new Command('claim-ghost')
@@ -172,7 +173,7 @@ export const ghostClaimCommand = new Command('claim-ghost')
 
       // Initialize client and wallet
       s.start('Initializing Solana client...')
-      const { client, rpc } = initializeClient()
+      const { client, rpc } = await initializeClient()
       s.stop('✅ Client initialized')
 
       // Load user's wallet (claimer)
@@ -309,8 +310,8 @@ export const ghostClaimCommand = new Command('claim-ghost')
         } = await import('@solana/kit')
 
         const ghostClient = new GhostSpeakClient({
-          network: 'devnet',
-          rpcUrl: process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
+          rpc: rpc as any,
+          cluster: 'devnet',
         })
 
         // Get latest blockhash
@@ -362,8 +363,8 @@ export const ghostClaimCommand = new Command('claim-ghost')
         // Import and initialize GhostModule
         const { GhostSpeakClient } = await import('@ghostspeak/sdk')
         const ghostClient = new GhostSpeakClient({
-          network: 'devnet',
-          rpcUrl: process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
+          rpc: rpc as any,
+          cluster: 'devnet',
         })
 
         // Claim the Ghost

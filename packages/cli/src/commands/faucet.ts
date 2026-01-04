@@ -163,9 +163,10 @@ async function requestFromRpcAirdrop(
 
     // Request airdrop via RPC using Gill
     const lamports = BigInt(Math.floor(amount * 1_000_000_000)) // Convert SOL to lamports
-    const airdropResult = await client.rpc.requestAirdrop(
+    // Cast to any since requestAirdrop is only available on devnet/testnet
+    const rpc = client.rpc as any
+    const airdropResult = await rpc.requestAirdrop(
       address(walletAddress),
-      // @ts-expect-error Lamports type may differ between versions
       lamports
     ).send()
     const signature = airdropResult

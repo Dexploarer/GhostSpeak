@@ -9,18 +9,20 @@ import { address, type Address } from '@solana/addresses';
 import {
   agentCodec,
   externalIdMappingCodec,
-  type BorshAgent,
   type BorshExternalIdMapping,
-  AgentStatus as BorshAgentStatus,
+  type BorshExternalIdentifier,
+  type BorshReputationComponent,
+  BorshAgentStatus,
   ReputationSourceType,
-  deriveAgentAddress,
   deriveExternalIdMappingAddress,
-  type Ghost,
-  type GhostScore,
-  type GhostReputation,
-  type ExternalIdLookupResult,
-  type AgentStatus,
-} from '@ghostspeak/shared';
+} from '../utils/solana';
+import type {
+  Ghost,
+  GhostScore,
+  GhostReputation,
+  ExternalIdLookupResult,
+  AgentStatus,
+} from '../types';
 
 export class GhostService {
   private rpc: Rpc<any>;
@@ -35,7 +37,9 @@ export class GhostService {
   async getGhost(ghostAddress: string): Promise<Ghost | null> {
     try {
       const addr = address(ghostAddress);
-      const accountInfo = await this.rpc.getAccountInfo(addr, { encoding: 'base64' }).send();
+      const accountInfo: { value: { data: [string, string] } | null } = await (this.rpc as any)
+        .getAccountInfo(addr, { encoding: 'base64' })
+        .send();
 
       if (!accountInfo.value) {
         return null;
@@ -59,7 +63,7 @@ export class GhostService {
   ): Promise<ExternalIdLookupResult | null> {
     try {
       const mappingAddress = await deriveExternalIdMappingAddress(platform, externalId);
-      const accountInfo = await this.rpc
+      const accountInfo: { value: { data: [string, string] } | null } = await (this.rpc as any)
         .getAccountInfo(mappingAddress, { encoding: 'base64' })
         .send();
 
@@ -103,7 +107,7 @@ export class GhostService {
     return {
       address: ghostAddress,
       score: ghost.ghostScore,
-      maxScore: 1000,
+      maxScore: 10000,
       components: ghost.reputationComponents,
       lastUpdated: ghost.updatedAt,
     };
@@ -152,7 +156,7 @@ export class GhostService {
   async checkHealth(): Promise<{ connected: boolean; latency: number }> {
     const startTime = Date.now();
     try {
-      await this.rpc.getHealth().send();
+      await (this.rpc as any).getHealth().send();
       const latency = Date.now() - startTime;
       return { connected: true, latency };
     } catch (error) {
@@ -198,7 +202,7 @@ export class GhostService {
 
     // Map AgentStatus enum to string
     const statusToString = (status: number): AgentStatus => {
-      const mapping = {
+      const mapping: Record<number, AgentStatus> = {
         [BorshAgentStatus.Unregistered]: 'Unregistered' as AgentStatus,
         [BorshAgentStatus.Registered]: 'Registered' as AgentStatus,
         [BorshAgentStatus.Claimed]: 'Claimed' as AgentStatus,
@@ -230,7 +234,7 @@ export class GhostService {
       serviceEndpoint: agent.serviceEndpoint,
 
       // Cross-platform identity
-      externalIdentifiers: agent.externalIdentifiers.map((ext) => ({
+      externalIdentifiers: agent.externalIdentifiers.map((ext: BorshExternalIdentifier) => ({
         platform: ext.platform,
         externalId: ext.externalId,
         verified: ext.verified,
@@ -240,7 +244,7 @@ export class GhostService {
       // Reputation
       ghostScore: Number(agent.ghostScore),
       reputationScore: agent.reputationScore,
-      reputationComponents: agent.reputationComponents.map((comp) => ({
+      reputationComponents: agent.reputationComponents.map((comp: BorshReputationComponent) => ({
         source: reputationSourceTypeToString(comp.sourceType),
         score: Number(comp.score),
         weight: comp.weight,

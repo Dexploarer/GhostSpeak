@@ -92,11 +92,6 @@ GhostSpeak/
 │   │   ├── Purpose: Shared types, utilities, Convex helpers
 │   │   └── Status: Workspace-only (not published)
 │   │
-│   ├── solana-agent-kit-plugin/   # @ghostspeak/solana-agent-kit-plugin
-│   │   ├── Runtime: Node 20+
-│   │   ├── Purpose: Plugin for solana-agent-kit framework
-│   │   └── Status: Unpublished (under development)
-│   │
 │   └── web/                       # GhostSpeak Web App
 │       ├── Runtime: Next.js 15 + Convex
 │       ├── Purpose: Ghost Score dashboard, agent registry
@@ -119,8 +114,6 @@ cli ─────────────> sdk
 api ─────────────> shared
 
 plugin-ghostspeak ─> sdk
-
-solana-agent-kit-plugin ─> sdk
 ```
 
 **Key Points**:

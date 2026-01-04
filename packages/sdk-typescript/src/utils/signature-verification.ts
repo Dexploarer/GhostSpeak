@@ -214,18 +214,9 @@ export async function createSignedAuthorization(
  * @returns 32-byte random nonce as hex string
  */
 export function generateNonce(): string {
-  // Use global crypto if available (browser/modern Node.js)
-  if (globalThis.crypto) {
-    const buffer = new Uint8Array(32)
-    globalThis.crypto.getRandomValues(buffer)
-    return Buffer.from(buffer).toString('hex')
-  }
-
-  // Fallback for Node.js < 19 (though we require Node 24+)
-  // This branch should rarely execute but provides compatibility
-  const nodeCrypto = eval('require')('crypto')
+  // Node 24+ always has globalThis.crypto
   const buffer = new Uint8Array(32)
-  nodeCrypto.webcrypto.getRandomValues(buffer)
+  globalThis.crypto.getRandomValues(buffer)
   return Buffer.from(buffer).toString('hex')
 }
 
@@ -297,15 +288,8 @@ export async function getAuthorizationId(authorization: ReputationAuthorization)
   const encoder = new TextEncoder()
   const data = encoder.encode(json)
 
-  // Use global crypto if available
-  let crypto: Crypto
-  if (globalThis.crypto) {
-    crypto = globalThis.crypto
-  } else {
-    // Fallback for Node.js < 19
-    const nodeCrypto = eval('require')('crypto')
-    crypto = nodeCrypto.webcrypto as Crypto
-  }
+  // Node 24+ always has globalThis.crypto
+  const crypto = globalThis.crypto
 
   // SHA-256 hash
   const hashBuffer = await crypto.subtle.digest('SHA-256', data)

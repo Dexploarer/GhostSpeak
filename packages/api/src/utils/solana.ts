@@ -1,16 +1,16 @@
 /**
- * Borsh Codecs for GhostSpeak Program Accounts
+ * Solana Utilities for GhostSpeak API
  *
- * Uses Solana Web3.js v5 codec system
- * Matches the Rust structs in programs/src/state/
+ * PDA derivation and Borsh codecs for on-chain data
  */
 
+import { address, type Address, getProgramDerivedAddress } from '@solana/addresses';
+import { getUtf8Codec } from '@solana/codecs-strings';
 import {
   getStructCodec,
   getArrayCodec,
   getBooleanCodec,
 } from '@solana/codecs-data-structures';
-import { getUtf8Codec } from '@solana/codecs-strings';
 import {
   getU8Codec,
   getU32Codec,
@@ -18,11 +18,16 @@ import {
   getI64Codec,
 } from '@solana/codecs-numbers';
 import { getOptionCodec } from '@solana/options';
-import { getAddressCodec, type Address } from '@solana/addresses';
+import { getAddressCodec } from '@solana/addresses';
+
+// Program ID - matches SDK
+export const PROGRAM_ID = '4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB' as Address;
+export const AGENT_SEED = 'agent';
+export const EXTERNAL_ID_SEED = 'external_id';
 
 // ========== ENUMS ==========
 
-export enum AgentStatus {
+export enum BorshAgentStatus {
   Unregistered = 0,
   Registered = 1,
   Claimed = 2,
@@ -40,53 +45,39 @@ export enum ReputationSourceType {
   SkillEndorsements = 7,
 }
 
-export enum PricingModel {
-  Fixed = 0,
-  Dynamic = 1,
-}
+// ========== BORSH TYPES ==========
 
-// ========== TYPES ==========
-
-export type ExternalIdentifier = {
+export type BorshExternalIdentifier = {
   platform: string;
   externalId: string;
   verified: boolean;
   verifiedAt: bigint;
 };
 
-export type ReputationComponent = {
-  sourceType: number; // ReputationSourceType enum
+export type BorshReputationComponent = {
+  sourceType: number;
   score: bigint;
   weight: number;
   lastUpdated: bigint;
   dataPoints: bigint;
 };
 
-export type Agent = {
-  // Ghost Identity Core
+export type BorshAgent = {
   owner: Address | null;
-  status: number; // AgentStatus enum
+  status: number;
   agentId: string;
-
-  // Discovery Provenance
   firstTxSignature: string;
   firstSeenTimestamp: bigint;
   discoverySource: string;
   claimedAt: bigint | null;
-
-  // Basic Metadata
   agentType: number;
   name: string;
   description: string;
   capabilities: string[];
-  pricingModel: number; // PricingModel enum
-
-  // Legacy Reputation
+  pricingModel: number;
   reputationScore: number;
   totalJobsCompleted: number;
   totalEarnings: bigint;
-
-  // Timestamps
   isActive: boolean;
   createdAt: bigint;
   updatedAt: bigint;
@@ -98,8 +89,6 @@ export type Agent = {
   isVerified: boolean;
   verificationTimestamp: bigint;
   metadataUri: string;
-
-  // Additional fields
   frameworkOrigin: string;
   supportedTokens: Address[];
   cnftMint: Address | null;
@@ -108,8 +97,6 @@ export type Agent = {
   transferHook: Address | null;
   parentAgent: Address | null;
   generation: number;
-
-  // x402 fields
   x402Enabled: boolean;
   x402PaymentAddress: Address;
   x402AcceptedTokens: Address[];
@@ -118,25 +105,17 @@ export type Agent = {
   x402TotalPayments: bigint;
   x402TotalCalls: bigint;
   lastPaymentTimestamp: bigint;
-
-  // Cross-platform Identity
-  externalIdentifiers: ExternalIdentifier[];
-
-  // Multi-source Reputation
+  externalIdentifiers: BorshExternalIdentifier[];
   ghostScore: bigint;
-  reputationComponents: ReputationComponent[];
-
-  // Credentials
+  reputationComponents: BorshReputationComponent[];
   didAddress: Address | null;
   credentials: Address[];
-
-  // API Schema
   apiSpecUri: string;
   apiVersion: string;
   bump: number;
 };
 
-export type ExternalIdMapping = {
+export type BorshExternalIdMapping = {
   ghostPubkey: Address;
   platform: string;
   externalId: string;
@@ -163,32 +142,23 @@ const reputationComponentCodec = getStructCodec([
   ['dataPoints', getU64Codec()],
 ]);
 
-// @ts-expect-error - Codec type inference not portable across module boundaries
-export const agentCodec = getStructCodec([
-  // Ghost Identity Core
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const agentCodec: any = getStructCodec([
   ['owner', getOptionCodec(getAddressCodec())],
   ['status', getU8Codec()],
   ['agentId', getUtf8Codec()],
-
-  // Discovery Provenance
   ['firstTxSignature', getUtf8Codec()],
   ['firstSeenTimestamp', getI64Codec()],
   ['discoverySource', getUtf8Codec()],
   ['claimedAt', getOptionCodec(getI64Codec())],
-
-  // Basic Metadata
   ['agentType', getU8Codec()],
   ['name', getUtf8Codec()],
   ['description', getUtf8Codec()],
   ['capabilities', getArrayCodec(getUtf8Codec())],
   ['pricingModel', getU8Codec()],
-
-  // Legacy Reputation
   ['reputationScore', getU32Codec()],
   ['totalJobsCompleted', getU32Codec()],
   ['totalEarnings', getU64Codec()],
-
-  // Timestamps
   ['isActive', getBooleanCodec()],
   ['createdAt', getI64Codec()],
   ['updatedAt', getI64Codec()],
@@ -200,8 +170,6 @@ export const agentCodec = getStructCodec([
   ['isVerified', getBooleanCodec()],
   ['verificationTimestamp', getI64Codec()],
   ['metadataUri', getUtf8Codec()],
-
-  // Additional fields
   ['frameworkOrigin', getUtf8Codec()],
   ['supportedTokens', getArrayCodec(getAddressCodec())],
   ['cnftMint', getOptionCodec(getAddressCodec())],
@@ -210,8 +178,6 @@ export const agentCodec = getStructCodec([
   ['transferHook', getOptionCodec(getAddressCodec())],
   ['parentAgent', getOptionCodec(getAddressCodec())],
   ['generation', getU32Codec()],
-
-  // x402 fields
   ['x402Enabled', getBooleanCodec()],
   ['x402PaymentAddress', getAddressCodec()],
   ['x402AcceptedTokens', getArrayCodec(getAddressCodec())],
@@ -220,26 +186,18 @@ export const agentCodec = getStructCodec([
   ['x402TotalPayments', getU64Codec()],
   ['x402TotalCalls', getU64Codec()],
   ['lastPaymentTimestamp', getI64Codec()],
-
-  // Cross-platform Identity
   ['externalIdentifiers', getArrayCodec(externalIdentifierCodec)],
-
-  // Multi-source Reputation
   ['ghostScore', getU64Codec()],
   ['reputationComponents', getArrayCodec(reputationComponentCodec)],
-
-  // Credentials
   ['didAddress', getOptionCodec(getAddressCodec())],
   ['credentials', getArrayCodec(getAddressCodec())],
-
-  // API Schema
   ['apiSpecUri', getUtf8Codec()],
   ['apiVersion', getUtf8Codec()],
   ['bump', getU8Codec()],
 ]);
 
-// @ts-expect-error - Codec type inference not portable across module boundaries
-export const externalIdMappingCodec = getStructCodec([
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const externalIdMappingCodec: any = getStructCodec([
   ['ghostPubkey', getAddressCodec()],
   ['platform', getUtf8Codec()],
   ['externalId', getUtf8Codec()],
@@ -248,3 +206,34 @@ export const externalIdMappingCodec = getStructCodec([
   ['verifiedAt', getOptionCodec(getI64Codec())],
   ['bump', getU8Codec()],
 ]);
+
+// ========== PDA DERIVATION ==========
+
+export async function deriveAgentAddress(owner: string, agentId: string): Promise<Address> {
+  const utf8Codec = getUtf8Codec();
+  const [pda] = await getProgramDerivedAddress({
+    programAddress: PROGRAM_ID,
+    seeds: [
+      utf8Codec.encode(AGENT_SEED),
+      address(owner),
+      utf8Codec.encode(agentId),
+    ],
+  });
+  return pda;
+}
+
+export async function deriveExternalIdMappingAddress(
+  platform: string,
+  externalId: string
+): Promise<Address> {
+  const utf8Codec = getUtf8Codec();
+  const [pda] = await getProgramDerivedAddress({
+    programAddress: PROGRAM_ID,
+    seeds: [
+      utf8Codec.encode(EXTERNAL_ID_SEED),
+      utf8Codec.encode(platform),
+      utf8Codec.encode(externalId),
+    ],
+  });
+  return pda;
+}

@@ -415,7 +415,6 @@ export class GhostSpeakHelpers {
     try {
       // Get transaction details
       // Access the internal RPC method - SimpleRpcClient doesn't expose getTransaction directly
-      // @ts-expect-error Accessing internal rpc property
       const rpcWithGetTransaction = this.rpcClient.rpc as { 
         getTransaction(signature: string, options: { encoding: string; maxSupportedTransactionVersion: number }): { send(): Promise<TransactionDetails | null> }
       }

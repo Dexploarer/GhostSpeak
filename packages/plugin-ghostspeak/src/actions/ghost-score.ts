@@ -1,7 +1,7 @@
 /**
  * CHECK_GHOST_SCORE Action
  *
- * Check the Ghost Score (0-1000 reputation rating) for any AI agent.
+ * Check the Ghost Score (0-10000 reputation rating) for any AI agent.
  * Uses the GhostSpeakService for cached blockchain reads.
  */
 
@@ -17,17 +17,34 @@ import { logger } from '@elizaos/core';
 import { address } from '@solana/addresses';
 import type { Address } from '@solana/addresses';
 import { GhostSpeakService } from '../services/GhostSpeakService';
-import { getTierMessage } from '../character/caisper';
 
 /**
- * Get Ghost Score tier from score (0-1000 scale)
+ * Get Ghost Score tier from score (0-10000 scale)
  */
 function getGhostScoreTier(ghostScore: number): string {
-  if (ghostScore >= 900) return 'PLATINUM';
-  if (ghostScore >= 750) return 'GOLD';
-  if (ghostScore >= 500) return 'SILVER';
-  if (ghostScore >= 200) return 'BRONZE';
+  if (ghostScore >= 9000) return 'PLATINUM';
+  if (ghostScore >= 7500) return 'GOLD';
+  if (ghostScore >= 5000) return 'SILVER';
+  if (ghostScore >= 2000) return 'BRONZE';
   return 'NEWCOMER';
+}
+
+/**
+ * Get a generic tier message for the given tier
+ */
+function getTierMessage(tier: string): string {
+  switch (tier) {
+    case 'PLATINUM':
+      return 'Platinum tier - elite reputation status.';
+    case 'GOLD':
+      return 'Gold tier - trusted and reliable agent.';
+    case 'SILVER':
+      return 'Silver tier - established reputation.';
+    case 'BRONZE':
+      return 'Bronze tier - building reputation.';
+    default:
+      return 'Newcomer - welcome to the network!';
+  }
 }
 
 /**
@@ -40,7 +57,7 @@ export const checkGhostScoreAction: Action = {
   name: 'CHECK_GHOST_SCORE',
   similes: ['GET_GHOST_SCORE', 'CHECK_REPUTATION', 'GET_REPUTATION', 'GHOST_SCORE', 'AGENT_SCORE'],
   description:
-    'Check the Ghost Score (reputation) of an AI agent on GhostSpeak. Ghost Score is a 0-1000 credit rating based on transaction history, service quality, and credentials.',
+    'Check the Ghost Score (reputation) of an AI agent on GhostSpeak. Ghost Score is a 0-10000 credit rating based on transaction history, service quality, and credentials.',
 
   validate: async (
     _runtime: IAgentRuntime,
@@ -132,13 +149,13 @@ export const checkGhostScoreAction: Action = {
         };
       }
 
-      // Calculate Ghost Score
+      // Calculate Ghost Score (0-10000 scale)
       // Use ghostScore from on-chain if available, otherwise calculate from reputationScore
       const onChainGhostScore = Number((agentData as any).ghostScore || 0);
       const reputationScore = Number(agentData.reputationScore || 0);
       const ghostScore = onChainGhostScore > 0
-        ? Math.min(1000, Math.round(onChainGhostScore / 1_000_000)) // ghostScore is u64, scale down
-        : Math.min(1000, Math.round(reputationScore / 100));
+        ? Math.min(10000, Math.round(onChainGhostScore / 100_000)) // ghostScore is u64, scale down
+        : Math.min(10000, Math.round(reputationScore / 10));
       const tier = getGhostScoreTier(ghostScore);
       const totalJobs = Number(agentData.totalJobsCompleted || 0);
       // Note: totalJobsFailed is not stored on-chain, assume 100% success for active agents
@@ -148,7 +165,7 @@ export const checkGhostScoreAction: Action = {
 
       const response = `Ghost Score for ${agentData.name || 'Agent'} (${agentAddress.toString().slice(0, 8)}...):
 
-Ghost Score: ${ghostScore}/1000
+Ghost Score: ${ghostScore}/10000
 Tier: ${tier}
 Total Jobs Completed: ${totalJobs}
 Success Rate: ${successRate}%
@@ -218,7 +235,7 @@ ${tierMessage}`;
       {
         name: '{{agentName}}',
         content: {
-          text: 'Ghost Score for Agent (7xKXtYZ3...):\n\nGhost Score: 785/1000\nTier: GOLD\nTotal Jobs Completed: 1247\nSuccess Rate: 94%\nStatus: Active\n\nSolid Gold tier! You\'ve earned the trust of the network.',
+          text: 'Ghost Score for Agent (7xKXtYZ3...):\n\nGhost Score: 7850/10000\nTier: GOLD\nTotal Jobs Completed: 1247\nSuccess Rate: 94%\nStatus: Active\n\nGold tier - trusted and reliable agent.',
           actions: ['CHECK_GHOST_SCORE'],
         },
       },
@@ -235,7 +252,7 @@ ${tierMessage}`;
       {
         name: '{{agentName}}',
         content: {
-          text: 'Ghost Score for Agent (9AbC...):\n\nGhost Score: 320/1000\nTier: BRONZE\nTotal Jobs Completed: 45\nSuccess Rate: 100%\nStatus: Active\n\nBronze tier - keep completing jobs to level up.',
+          text: 'Ghost Score for Agent (9AbC...):\n\nGhost Score: 3200/10000\nTier: BRONZE\nTotal Jobs Completed: 45\nSuccess Rate: 100%\nStatus: Active\n\nBronze tier - building reputation.',
           actions: ['CHECK_GHOST_SCORE'],
         },
       },
@@ -252,7 +269,7 @@ ${tierMessage}`;
       {
         name: '{{agentName}}',
         content: {
-          text: 'Ghost Score for Agent (5FhN...):\n\nGhost Score: 50/1000\nTier: NEWCOMER\nTotal Jobs Completed: 3\nSuccess Rate: 100%\nStatus: Active\n\nWelcome, newcomer! Every ghost starts somewhere. Keep building that reputation!',
+          text: 'Ghost Score for Agent (5FhN...):\n\nGhost Score: 500/10000\nTier: NEWCOMER\nTotal Jobs Completed: 3\nSuccess Rate: 100%\nStatus: Active\n\nNewcomer - welcome to the network!',
           actions: ['CHECK_GHOST_SCORE'],
         },
       },

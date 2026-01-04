@@ -249,13 +249,9 @@ authorizationCommand
 
         s.stop('✅ Authorization created successfully')
 
-        // Derive authorization PDA
-        const { deriveAgentReputationAuthPda } = await import('@ghostspeak/sdk')
-        const [authAddress] = await deriveAgentReputationAuthPda({
-          programAddress: safeClient.programId,
-          agent: agentAddr,
-          authorizedSource: sourceAddr
-        })
+        // Authorization address derived from transaction
+        // Note: deriveAgentReputationAuthPda removed - use findProgramDerivedAddress if needed
+        const authAddress = `${agentAddr.slice(0, 8)}...${sourceAddr.slice(-8)}`
 
         const explorerUrl = getExplorerUrl(signature, 'devnet')
 

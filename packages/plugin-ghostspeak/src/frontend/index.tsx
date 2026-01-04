@@ -293,7 +293,7 @@ function GhostScoreDisplay({ apiBase }: { apiBase: string }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <div className="text-xs text-muted-foreground">Ghost Score</div>
-              <div className="text-3xl font-bold">{scoreData.ghostScore}<span className="text-lg text-muted-foreground">/1000</span></div>
+              <div className="text-3xl font-bold">{scoreData.ghostScore}<span className="text-lg text-muted-foreground">/10000</span></div>
             </div>
             <div className="space-y-1">
               <div className="text-xs text-muted-foreground">Total Jobs</div>
@@ -649,7 +649,7 @@ function AgentSearch({ apiBase }: { apiBase: string }) {
                 <div className="text-right">
                   {agent.ghostScore !== undefined && (
                     <div className={cn("font-bold", getTierColor(agent.tier))}>
-                      {agent.ghostScore}/1000
+                      {agent.ghostScore}/10000
                     </div>
                   )}
                   {agent.tier && (
@@ -1264,7 +1264,7 @@ function TrustScoreboard({ apiBase }: { apiBase: string }) {
                         {agent.tier}
                       </div>
                       <div className="text-muted-foreground">
-                        Score: <span className="font-semibold text-foreground">{agent.ghostScore}/1000</span>
+                        Score: <span className="font-semibold text-foreground">{agent.ghostScore}/10000</span>
                       </div>
                       <div className="text-muted-foreground">
                         Jobs: <span className="font-semibold text-foreground">{agent.totalJobs}</span>
@@ -1507,7 +1507,7 @@ function ElizaOSRegistration({ apiBase }: { apiBase: string }) {
             <span>👻</span>
             <div>
               <div className="font-medium">Ghost Score Reputation</div>
-              <div>On-chain reputation tracking (0-1000) with Platinum/Gold/Silver/Bronze tiers</div>
+              <div>On-chain reputation tracking (0-10000) with Platinum/Gold/Silver/Bronze tiers</div>
             </div>
           </div>
           <div className="flex items-start gap-2">
@@ -1606,7 +1606,7 @@ function ElizaOSRegistration({ apiBase }: { apiBase: string }) {
               {result.ghostScore !== undefined && (
                 <div className="text-xs">
                   <div className="text-muted-foreground">Initial Ghost Score:</div>
-                  <div className="font-semibold">{result.ghostScore}/1000 ({result.tier})</div>
+                  <div className="font-semibold">{result.ghostScore}/10000 ({result.tier})</div>
                 </div>
               )}
               <div className="text-xs text-muted-foreground pt-2 border-t">

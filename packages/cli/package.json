@@ -1,6 +1,6 @@
 {
   "name": "@ghostspeak/cli",
-  "version": "2.0.0-beta.21",
+  "version": "2.0.0-beta.22",
   "description": "Command-line interface for GhostSpeak AI Agent Commerce Protocol - Beautiful terminal UI dashboards - Production Ready Beta",
   "type": "module",
   "bin": {
@@ -51,10 +51,11 @@
   "homepage": "https://www.ghostspeak.io/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Ghostspeak/cli.git"
+    "url": "https://github.com/ghostspeak/ghostspeak.git",
+    "directory": "packages/cli"
   },
   "bugs": {
-    "url": "https://github.com/Ghostspeak/cli/issues"
+    "url": "https://github.com/ghostspeak/ghostspeak/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -62,7 +63,7 @@
   "dependencies": {
     "@clack/core": "^0.5.0",
     "@clack/prompts": "^0.11.0",
-    "@ghostspeak/sdk": "^2.0.5",
+    "@ghostspeak/sdk": "^2.0.10",
     "@metaplex-foundation/mpl-bubblegum": "^5.0.2",
     "@metaplex-foundation/umi": "^1.2.0",
     "@metaplex-foundation/umi-bundle-defaults": "^1.2.0",
@@ -98,6 +99,7 @@
     "pino-pretty": "13.1.1",
     "react": "^19.2.3",
     "rxjs": "^7.8.2",
+    "sas-lib": "^1.0.10",
     "tweetnacl": "^1.0.3",
     "zustand": "^5.0.9"
   },
@@ -106,6 +108,7 @@
     "@types/bip39": "^3.0.4",
     "@types/node": "^24.0.15",
     "@types/node-fetch": "^2.6.11",
+    "@types/react": "^19.2.7",
     "@typescript-eslint/eslint-plugin": "^8.37.0",
     "@typescript-eslint/parser": "^8.37.0",
     "@vitest/coverage-v8": "^3.2.4",
@@ -119,6 +122,6 @@
     "vitest": "^3.2.4"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=24.0.0"
   }
 }

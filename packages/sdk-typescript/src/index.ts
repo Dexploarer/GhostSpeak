@@ -68,8 +68,23 @@ export { AuthorizationModule } from './modules/authorization/index.js'
 // API module - REST API wrappers
 export { ExternalIdResolver, type ApiResolverConfig } from './modules/api/index.js'
 
-// Escrow module
+// Staking module
+export {
+  StakingModule,
+  type StakeParams,
+  type UnstakeParams,
+  type InitializeStakingConfigParams
+} from './modules/staking/StakingModule.js'
 
+// Escrow module (B2C protection via GhostProtect)
+export {
+  EscrowModule,
+  type CreateEscrowParams,
+  type SubmitDeliveryParams,
+  type ApproveDeliveryParams,
+  type FileDisputeParams,
+  type ArbitrateDisputeParams,
+} from './modules/escrow/index.js'
 
 // Channel module - REMOVED (use A2A for agent communication)
 

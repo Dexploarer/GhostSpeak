@@ -19,7 +19,14 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, walletAddress, sessionToken } = await req.json()
+    const body = await req.json()
+
+    // Support both AI SDK format (messages array) and legacy format (message string)
+    const messages = body.messages || []
+    const lastMessage = messages[messages.length - 1]
+    const message = lastMessage?.content || body.message
+    const walletAddress = body.walletAddress
+    const sessionToken = body.sessionToken
 
     if (!message || !walletAddress) {
       return NextResponse.json(
@@ -69,11 +76,26 @@ export async function POST(req: NextRequest) {
       metadata: agentResponse.metadata,
     })
 
+    // Return in AI SDK compatible format
+    // Note: AI SDK's useChat hook will look for messages in the response
+    // We need to return a single message object in AI SDK format
+    const responseMessage = {
+      id: `msg-${Date.now()}`,
+      role: 'assistant' as const,
+      content: agentResponse.text,
+      // Include metadata for custom rendering
+      metadata: agentResponse.metadata,
+    }
+
     return NextResponse.json({
+      // AI SDK expects messages array or a single message
+      messages: [responseMessage],
+      // Also include at root level for compatibility
+      ...responseMessage,
+      // Legacy fields for backward compatibility
       success: true,
       response: agentResponse.text,
       actionTriggered: agentResponse.action,
-      metadata: agentResponse.metadata,
     })
   } catch (error) {
     console.error('❌ Agent API error:', error)

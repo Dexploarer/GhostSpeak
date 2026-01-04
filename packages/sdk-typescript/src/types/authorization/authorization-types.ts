@@ -216,12 +216,6 @@ export interface CreateAuthorizationParams {
   metadata?: AuthorizationMetadata
 
   /**
-   * Whether to store authorization on-chain (default: false)
-   * @deprecated Use onChainStorage.enabled instead
-   */
-  storeOnChain?: boolean
-
-  /**
    * On-chain storage configuration
    * If not provided, defaults to off-chain (free) storage
    */

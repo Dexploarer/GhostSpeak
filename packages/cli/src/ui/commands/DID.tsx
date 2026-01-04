@@ -13,7 +13,7 @@ import { Table } from '../components/Table.js'
 import { Alert } from '../components/Alert.js'
 import { Spinner } from '../components/Spinner.js'
 import { Badge } from '../components/Badge.js'
-import { createSolanaRpc } from '@solana/rpc'
+import { createCustomClient } from '../../core/solana-client.js'
 import { address } from '@solana/addresses'
 import type { Address } from '@solana/addresses'
 import { createKeyPairSignerFromBytes } from '@solana/signers'
@@ -156,8 +156,8 @@ export const DID: React.FC<DIDProps> = ({ agent, did: providedDid }) => {
       const agentAddr = agent ? address(agent) : wallet.address
       setAgentAddress(agentAddr)
 
-      // Connect to network
-      const rpc = createSolanaRpc('https://api.devnet.solana.com')
+      // Connect to network using Gill
+      const solanaClient = createCustomClient('https://api.devnet.solana.com')
 
       // Generate DID identifier
       const did = providedDid || `did:ghostspeak:devnet:${agentAddr.toString()}`

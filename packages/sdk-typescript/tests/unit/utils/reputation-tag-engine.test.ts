@@ -4,7 +4,7 @@
  * Tests auto-tagging logic, decay, merging, and filtering functionality
  */
 
-import { test, expect, describe, beforeEach } from 'bun:test'
+import { it, expect, describe, beforeEach, test } from 'vitest'
 
 // Mock types based on the reputation tag engine
 interface TagScore {

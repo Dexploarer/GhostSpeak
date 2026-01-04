@@ -8,7 +8,6 @@
  */
 
 import { Command } from 'commander'
-import { createSolanaRpc, type Rpc } from '@solana/rpc'
 import { address, type Address } from '@solana/addresses'
 import {
   getCreateAssociatedTokenInstructionAsync,
@@ -27,6 +26,7 @@ import {
   sendAndConfirmTransactionFactory,
 } from '@solana/kit'
 import { createKeyPairSignerFromBytes } from '@solana/signers'
+import { createCustomClient } from '../core/solana-client.js'
 import fs from 'fs'
 import path from 'path'
 import ora from 'ora'
@@ -134,11 +134,12 @@ export const airdropCommand = new Command('airdrop')
         process.exit(1)
       }
 
-      // Connect to devnet
+      // Connect to devnet using Gill
       spinner.start('Connecting to devnet...')
-      const rpc = createSolanaRpc(
+      const client = createCustomClient(
         process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com'
       )
+      const rpc = client.rpc
 
       const ghostMintAddress = address(DEVNET_GHOST_MINT)
 

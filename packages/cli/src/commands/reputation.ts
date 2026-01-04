@@ -17,7 +17,8 @@ import {
   log,
   note
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, handleTransactionError } from '../utils/client.js'
+import { initializeClient, getExplorerUrl } from '../utils/client.js'
+import { handleError } from '../utils/error-handler.js'
 import { createSafeSDKClient } from '../utils/sdk-helpers.js'
 import { address } from '@solana/addresses'
 import type { Address } from '@solana/addresses'

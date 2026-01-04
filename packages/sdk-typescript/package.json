@@ -133,6 +133,7 @@
     "@solana/spl-account-compression": "^0.4.1",
     "@solana/sysvars": "^5.1.0",
     "bs58": "^6.0.0",
+    "gill": "^0.14.0",
     "kubo-rpc-client": "^5.2.0",
     "lru-cache": "^11.2.4"
   },

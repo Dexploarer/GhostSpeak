@@ -1,8 +1,22 @@
 /**
  * Utilities Index - Tree-shakeable Exports
- * 
+ *
  * Import only the utilities you need for optimal bundle size.
  */
+
+// Solana Client utilities (Gill-powered)
+export {
+  createSolanaClient,
+  getDefaultSolanaClient,
+  resetDefaultClient,
+  createNetworkClient,
+  isNetworkMoniker,
+  getDefaultEndpoint,
+  detectNetworkFromEndpoint,
+  type SolanaClientConfig,
+  type NetworkMoniker,
+  type SolanaClient
+} from './solana-client.js'
 
 // Most commonly used utilities
 export { sol, lamportsToSol } from './common.js'

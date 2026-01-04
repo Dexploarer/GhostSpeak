@@ -135,8 +135,7 @@ export default function TermsPage() {
               GHOST is a utility token used for:
             </p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
-              <li>Staking to access premium features</li>
-              <li>Earning revenue share from protocol fees</li>
+              <li>Staking to access premium features (unlimited verifications, priority support)</li>
               <li>Governance voting (future)</li>
             </ul>
 
@@ -146,10 +145,10 @@ export default function TermsPage() {
               Cryptocurrency investments carry risk. Only invest what you can afford to lose.
             </p>
 
-            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">8.3 Variable APY</h3>
+            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">8.3 Staking Benefits</h3>
             <p className="text-muted-foreground leading-relaxed">
-              Staking rewards are based on actual protocol revenue and vary. We do not promise fixed
-              or guaranteed returns. APY is calculated from revenue share pools and may fluctuate.
+              Staking GHOST tokens provides access to premium features including unlimited verifications,
+              priority support, and enhanced reputation boosts. Staking tiers unlock progressively more benefits.
             </p>
           </section>
 

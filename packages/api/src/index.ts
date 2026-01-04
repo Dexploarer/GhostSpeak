@@ -9,20 +9,26 @@ import { GhostService } from './services/ghost-service';
 import { RateLimiter, getClientIdentifier, createRateLimitResponse } from './middleware/rate-limiter';
 import { createGhostRoutes } from './routes/ghosts';
 import { createHealthRoutes } from './routes/health';
+import { createConvexClient } from '@ghostspeak/shared';
 
 // Configuration
 const PORT = process.env.PORT || 3001;
 const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com';
+const CONVEX_URL = process.env.CONVEX_URL;
+if (!CONVEX_URL) {
+  throw new Error('CONVEX_URL environment variable is required');
+}
 const RATE_LIMIT = parseInt(process.env.RATE_LIMIT || '100', 10);
 const RATE_WINDOW_MS = parseInt(process.env.RATE_WINDOW_MS || '60000', 10);
 
 // Initialize services
 const ghostService = new GhostService(SOLANA_RPC_URL);
 const rateLimiter = new RateLimiter(RATE_LIMIT, RATE_WINDOW_MS);
+const convexClient = createConvexClient(CONVEX_URL);
 
 // Create route handlers
 const ghostRoutes = createGhostRoutes(ghostService);
-const healthRoutes = createHealthRoutes(ghostService, rateLimiter);
+const healthRoutes = createHealthRoutes(ghostService, rateLimiter, convexClient);
 
 /**
  * Main HTTP server

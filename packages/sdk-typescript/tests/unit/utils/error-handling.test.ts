@@ -7,8 +7,6 @@ import {
   GhostSpeakError,
   NetworkError,
   ValidationError,
-  RpcError,
-  InstructionError,
   RetryHandler,
   CircuitBreaker,
   TimeoutHandler,
@@ -29,27 +27,6 @@ describe('Error Handling Utilities', () => {
   afterEach(() => {
     console.warn = originalWarn
   })
-  describe('Backward Compatibility Classes', () => {
-    it('should create RpcError with correct properties', () => {
-      const error = new RpcError('Connection failed', 'https://api.example.com')
-      
-      expect(error.message).toBe('Connection failed')
-      expect(error.name).toBe('RpcError')
-      expect(error.endpoint).toBe('https://api.example.com')
-      expect(error).toBeInstanceOf(NetworkError)
-    })
-
-    it('should create InstructionError with correct properties', () => {
-      const cause = new Error('Invalid account')
-      const error = new InstructionError('Instruction failed', 3, cause)
-      
-      expect(error.message).toBe('Instruction failed')
-      expect(error.name).toBe('InstructionError')
-      expect(error.instructionIndex).toBe(3)
-      expect(error).toBeInstanceOf(ValidationError)
-    })
-  })
-
   describe('RetryHandler', () => {
     let retryHandler: RetryHandler
     let mockOperation: any

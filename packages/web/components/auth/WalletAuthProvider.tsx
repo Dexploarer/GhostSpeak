@@ -1,45 +1,34 @@
 'use client'
 
-import React, { useMemo } from 'react'
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base'
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
-import { SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
-import { clusterApiUrl } from '@solana/web3.js'
-
-// Import default wallet adapter styles
-import '@solana/wallet-adapter-react-ui/styles.css'
+import React from 'react'
+import { WalletStandardProvider } from '@/lib/wallet/WalletStandardProvider'
 
 interface WalletAuthProviderProps {
   children: React.ReactNode
 }
 
+/**
+ * Modern Wallet Auth Provider using Wallet Standard
+ *
+ * Features:
+ * - Auto-detects all Wallet Standard compatible wallets (Phantom, Solflare, Backpack, etc.)
+ * - Pure Solana v5 API - no legacy dependencies
+ * - Auto-reconnect to last connected wallet
+ * - Full TypeScript support
+ *
+ * Usage:
+ * ```tsx
+ * import { useWallet } from '@/lib/wallet/WalletStandardProvider'
+ *
+ * const { publicKey, connected, connect, disconnect } = useWallet()
+ * ```
+ */
 export function WalletAuthProvider({ children }: WalletAuthProviderProps) {
-  // Use mainnet-beta or devnet based on environment
-  const network = (process.env.NEXT_PUBLIC_SOLANA_NETWORK as WalletAdapterNetwork) || WalletAdapterNetwork.Mainnet
-
-  // RPC endpoint from environment or default to public endpoint
-  const endpoint = useMemo(() => {
-    if (process.env.NEXT_PUBLIC_SOLANA_RPC_URL) {
-      return process.env.NEXT_PUBLIC_SOLANA_RPC_URL
-    }
-    return clusterApiUrl(network)
-  }, [network])
-
-  // Configure supported wallets
-  // Note: Phantom auto-detects via Wallet Standard, so we only need to add non-standard wallets
-  const wallets = useMemo(
-    () => [
-      new SolflareWalletAdapter(),
-    ],
-    []
-  )
+  const endpoint = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>{children}</WalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+    <WalletStandardProvider endpoint={endpoint} autoConnect={true}>
+      {children}
+    </WalletStandardProvider>
   )
 }

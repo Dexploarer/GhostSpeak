@@ -17,7 +17,8 @@ import {
   log,
   note
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
+import { initializeClient, getExplorerUrl, toSDKSigner } from '../utils/client.js'
+import { handleError } from '../utils/error-handler.js'
 import { createSafeSDKClient } from '../utils/sdk-helpers.js'
 import { address } from '@solana/addresses'
 import type { Address } from '@solana/addresses'
@@ -208,7 +209,7 @@ ghostCommand
 
       } catch (error) {
         s.stop('❌ Failed to claim ghost')
-        handleTransactionError(error as Error)
+        handleError(error)
       }
 
     } catch (error) {
@@ -376,7 +377,7 @@ ghostCommand
 
       } catch (error) {
         s.stop('❌ Failed to link external ID')
-        handleTransactionError(error as Error)
+        handleError(error)
       }
 
     } catch (error) {

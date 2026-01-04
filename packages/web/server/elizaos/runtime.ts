@@ -14,6 +14,10 @@ import CaisperCharacter from './Caisper.json' assert { type: 'json' }
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 
+// Web-app-specific actions
+import { discoverAgentsAction } from './actions/discoverAgents'
+import { claimAgentAction } from './actions/claimAgent'
+
 // Convex database adapter for ElizaOS
 class ConvexDatabaseAdapter implements IDatabaseAdapter {
   private convex: ConvexHttpClient
@@ -228,6 +232,11 @@ export async function initializeAgent(): Promise<IAgentRuntime> {
     // Initialize runtime
     await runtime.initialize()
 
+    // Register web-app-specific actions
+    runtime.registerAction(discoverAgentsAction)
+    runtime.registerAction(claimAgentAction)
+    console.log('📝 Registered web-app actions: discoverAgents, claimAgent')
+
     agentRuntime = runtime
     console.log('✅ Casper agent initialized successfully')
 
@@ -283,6 +292,7 @@ export async function processAgentMessage(params: {
     // Track response
     let responseText = ''
     let triggeredAction: string | undefined
+    let actionMetadata: any = {}
 
     // Evaluate all actions directly
     for (const action of runtime.actions) {
@@ -300,6 +310,10 @@ export async function processAgentMessage(params: {
             {},
             async (response: any) => {
               responseText = response.text || ''
+              // Capture full metadata from action response (includes UI metadata)
+              if (response.ui) {
+                actionMetadata = response.ui
+              }
               console.log('📤 Action response:', responseText.substring(0, 100))
               return []
             }
@@ -307,6 +321,10 @@ export async function processAgentMessage(params: {
 
           if (result.success) {
             triggeredAction = action.name
+            // Also capture metadata from result.data if available
+            if (result.data) {
+              actionMetadata = { ...actionMetadata, ...result.data }
+            }
             console.log(`🎯 Action executed: ${action.name}`)
             break // First matching action wins
           }
@@ -316,9 +334,30 @@ export async function processAgentMessage(params: {
       }
     }
 
-    // If no action matched, generate a default response
+    // If no action matched, generate a conversational response using the LLM
     if (!responseText) {
-      responseText = "I heard you, but I'm not sure how to help with that specific request. Could you rephrase or ask about claimable agents or Ghost Score?"
+      console.log('💬 No action triggered, generating conversational response...')
+
+      try {
+        // Get recent conversation history for context
+        const recentMemories = await runtime.databaseAdapter.getMemories({
+          roomId,
+          count: 10,
+        })
+
+        // Generate response using runtime's LLM
+        const response = await runtime.generateText({
+          context: `You are ${runtime.character.name}. ${runtime.character.system}`,
+          messages: recentMemories,
+          currentMessage: memory,
+        })
+
+        responseText = response || "I'm having trouble formulating a response. Try asking me something specific about agents, credentials, or reputation!"
+        console.log('✅ Generated conversational response')
+      } catch (error) {
+        console.error('❌ Error generating LLM response:', error)
+        responseText = "I'm having some technical difficulties right now. Try asking me about available agents or credential verification!"
+      }
     }
 
     console.log('✅ Message processed:', {
@@ -331,6 +370,7 @@ export async function processAgentMessage(params: {
       action: triggeredAction,
       metadata: {
         triggeredAction,
+        ...actionMetadata,
       },
     }
   } catch (error) {

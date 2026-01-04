@@ -1,14 +1,13 @@
 /**
  * Modern RPC Client for Solana Web3.js v2
- * July 2025 Best Practices
- * 
+ * January 2026 - Gill Migration
+ *
  * This implementation uses TypeScript's advanced features and
- * leverages the new patterns from @solana/web3.js v2
+ * leverages the new patterns from @solana/web3.js v2.
+ * Now powered by Gill for simplified client management.
  */
 
 import {
-  createSolanaRpc,
-  createSolanaRpcSubscriptions,
   type Rpc,
   type RpcSubscriptions,
   type Address,
@@ -68,6 +67,7 @@ import {
   type TransactionMessage,
   type Base64EncodedWireTransaction
 } from '@solana/kit'
+import { createSolanaClient, type SolanaClient } from './solana-client.js'
 
 import type {
   Commitment,
@@ -269,6 +269,7 @@ interface TokenAccountInfo {
  * ```
  */
 export class SolanaRpcClient {
+  private readonly client: SolanaClient<any>
   private readonly rpc: SolanaRpcApi
   private readonly rpcSubscriptions?: SolanaRpcSubscriptionsApi
   private readonly commitment: Commitment
@@ -282,13 +283,15 @@ export class SolanaRpcClient {
     this.endpoint = config.endpoint
     this.useConnectionPool = config.useConnectionPool ?? false
     this.disableCache = config.disableCache ?? false
-    
-    // Create RPC client with proper typing
-    this.rpc = createSolanaRpc(config.endpoint) as SolanaRpcApi
-    
-    // Create subscription client if WebSocket endpoint provided
-    if (config.wsEndpoint) {
-      this.rpcSubscriptions = createSolanaRpcSubscriptions(config.wsEndpoint) as SolanaRpcSubscriptionsApi
+
+    // Use Gill's createSolanaClient for unified client management
+    this.client = createSolanaClient({ urlOrMoniker: config.endpoint })
+    // Access the rpc object from Gill's client for backward compatibility
+    this.rpc = this.client.rpc as SolanaRpcApi
+
+    // Access subscription client from Gill's client if available
+    if (this.client.rpcSubscriptions) {
+      this.rpcSubscriptions = this.client.rpcSubscriptions as SolanaRpcSubscriptionsApi
     }
 
     // Create send and confirm transaction helper
@@ -297,11 +300,18 @@ export class SolanaRpcClient {
       rpcSubscriptions: this.rpcSubscriptions ?? (null as never)
     }
     this.sendAndConfirmTransaction = sendAndConfirmTransactionFactory(factoryConfig)
-    
+
     // Initialize connection pool if enabled
     if (this.useConnectionPool) {
       this.initializeConnectionPool(config)
     }
+  }
+
+  /**
+   * Get the underlying Gill client for advanced operations
+   */
+  getGillClient(): SolanaClient<any> {
+    return this.client
   }
 
   /**

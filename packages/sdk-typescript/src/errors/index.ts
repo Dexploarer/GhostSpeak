@@ -413,38 +413,6 @@ export class TimeoutError extends GhostSpeakError {
 }
 
 /**
- * Deprecated error classes for backward compatibility
- * @deprecated Use the new error classes above
- */
-export class InvalidInstructionError extends ValidationError {
-  constructor(message = 'Invalid instruction data', logs?: string[]) {
-    super(message, { field: 'instruction', logs })
-    this.name = 'InvalidInstructionError'
-  }
-}
-
-export class StateChangeError extends TransactionError {
-  constructor(message = 'Account state has changed', logs?: string[]) {
-    super(message, { logs, retryable: true })
-    this.name = 'StateChangeError'
-  }
-}
-
-export class DeadlineError extends ValidationError {
-  constructor(message = 'Deadline must be in the future', logs?: string[]) {
-    super(message, { field: 'deadline', logs })
-    this.name = 'DeadlineError'
-  }
-}
-
-export class CustomProgramError extends ProgramError {
-  constructor(code: GhostspeakMarketplaceError, message?: string, logs?: string[]) {
-    super(code, { logs })
-    this.name = 'CustomProgramError'
-  }
-}
-
-/**
  * Enhanced error parsing with better error detection and categorization
  */
 export function parseErrorFromLogs(logs: string[], context?: Partial<ErrorContext>): GhostSpeakError | null {

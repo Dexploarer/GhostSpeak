@@ -1,9 +1,10 @@
 /**
  * Shared SDK client initialization for CLI commands - July 2025 Standards
  * Enhanced with connection pooling for optimal performance
+ * Migrated to Gill for Solana RPC operations
  */
 
-import { createSolanaRpc, createKeyPairSignerFromBytes, address, type TransactionSigner, type KeyPairSigner } from '@solana/kit'
+import { createKeyPairSignerFromBytes, address, type TransactionSigner, type KeyPairSigner } from '@solana/kit'
 import {
   GhostSpeakClient,
   GHOSTSPEAK_PROGRAM_ID,
@@ -20,6 +21,7 @@ import { loadConfig } from './config.js'
 import { WalletService } from '../services/wallet-service.js'
 import { connectionPoolManager as _connectionPoolManager, type NetworkType } from '../core/connection-pool.js'
 import { rpcPoolManager } from '../services/blockchain/rpc-pool-manager.js'
+import { getSolanaClient, createCustomClient, type SolanaClient } from '../core/solana-client.js'
 
 
 /**
@@ -168,11 +170,12 @@ export function toSDKSigner(signer: KeyPairSigner): TransactionSigner {
 
 /**
  * Initialize GhostSpeak SDK client with connection pooling for optimal performance
+ * Now uses Gill for Solana RPC operations
  */
 export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet-beta'): Promise<{
   client: GhostSpeakClient
   wallet: KeyPairSigner
-  rpc: ReturnType<typeof createSolanaRpc>
+  rpc: SolanaClient<any>['rpc']
   pooledRpc?: any // PooledRpcClient instance
 }> {
   const config = loadConfig()
@@ -215,8 +218,9 @@ export async function initializeClient(network?: 'devnet' | 'testnet' | 'mainnet
   const networkType = (selectedNetwork === 'localnet' ? 'devnet' : selectedNetwork) as NetworkType
   const pooledRpcClient = rpcPoolManager.getClient(networkType)
 
-  // Create traditional RPC client for compatibility
-  const rpc = createSolanaRpc(rpcUrl)
+  // Create Solana client using Gill
+  const solanaClient = createCustomClient(rpcUrl)
+  const rpc = solanaClient.rpc
 
   // Note: RPC subscriptions are not currently available in @solana/kit
   // Transaction confirmations will use polling instead
@@ -321,25 +325,3 @@ export function getAddressExplorerUrl(address: string, network = 'devnet'): stri
   return `https://explorer.solana.com/address/${address}${cluster}`
 }
 
-/**
- * Handle transaction errors with user-friendly messages
- * @deprecated Use handleError from error-handler.ts instead
- */
-export function handleTransactionError(error: Error | unknown): string {
-  const message = error instanceof Error ? error.message : String(error)
-
-  if (message.includes('insufficient funds')) {
-    return 'Insufficient SOL balance. Run: npx ghostspeak faucet --save'
-  }
-
-  if (message.includes('blockhash not found')) {
-    return 'Transaction expired. Please try again.'
-  }
-
-  if (message.includes('already in use')) {
-    return 'Account already exists. Try a different ID.'
-  }
-
-  // Return original error if no specific handling
-  return message || 'Transaction failed'
-}

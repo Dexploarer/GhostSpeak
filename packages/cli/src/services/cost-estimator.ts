@@ -4,9 +4,9 @@
  */
 
 import chalk from 'chalk'
-import { createSolanaRpc } from '@solana/kit'
 import type { Address } from '@solana/addresses'
 import { formatSOL, warningBox, infoBox } from '../utils/format-helpers.js'
+import { createCustomClient } from '../core/solana-client.js'
 
 export interface CostEstimate {
   operation: string
@@ -98,8 +98,9 @@ export class CostEstimator {
    */
   async getWalletBalance(address: Address): Promise<bigint> {
     try {
-      const rpc = createSolanaRpc(this.rpcUrl)
-      const response = await rpc.getBalance(address).send()
+      // Use Gill's createCustomClient instead of createSolanaRpc
+      const client = createCustomClient(this.rpcUrl)
+      const response = await client.rpc.getBalance(address).send()
       return response.value
     } catch (error) {
       console.warn('Failed to fetch balance:', error)

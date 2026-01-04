@@ -10,7 +10,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 import { initializeClient } from './client.js'
-import { createSolanaRpc } from '@solana/kit'
+import { getSolanaClient, createCustomClient } from '../core/solana-client.js'
 import { address } from '@solana/addresses'
 import { container, ServiceTokens } from '../core/Container.js'
 import { type IAgentService } from '../types/services.js'
@@ -284,8 +284,9 @@ export class InteractiveMenu {
       const { loadConfig } = await import('./config.js')
       const cfg = loadConfig()
       const rpcUrl = cfg.rpcUrl ?? 'https://api.devnet.solana.com'
-      const rpc = createSolanaRpc(rpcUrl)
-      const { value: balance } = await rpc.getBalance(address(wallet.address)).send()
+      // Use Gill's createCustomClient instead of createSolanaRpc
+      const client = createCustomClient(rpcUrl)
+      const { value: balance } = await client.rpc.getBalance(address(wallet.address)).send()
       status.balance = `${(Number(balance) / 1e9).toFixed(4)} SOL`
 
       try {

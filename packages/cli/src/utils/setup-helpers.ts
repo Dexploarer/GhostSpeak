@@ -4,11 +4,12 @@
 
 import chalk from 'chalk'
 import { spinner } from '@clack/prompts'
-import { createSolanaRpc, address, createKeyPairSignerFromBytes } from '@solana/kit'
+import { address, createKeyPairSignerFromBytes } from '@solana/kit'
 import { existsSync, readFileSync } from 'fs'
 import { homedir } from 'os'
 import { FaucetService } from '../services/faucet-service.js'
 import { WalletService } from '../services/wallet-service.js'
+import { createCustomClient } from '../core/solana-client.js'
 import type { KeyPairSigner } from '@solana/kit'
 interface MinimalClient {
   config: { programId: string }
@@ -120,16 +121,17 @@ export async function loadExistingWallet(walletPath: string): Promise<WalletInfo
  * Check wallet balance
  */
 export async function checkWalletBalance(
-  walletAddress: string, 
+  walletAddress: string,
   network: 'devnet' | 'testnet'
 ): Promise<number> {
   try {
-    const rpcUrl = network === 'devnet' 
+    const rpcUrl = network === 'devnet'
       ? 'https://api.devnet.solana.com'
       : 'https://api.testnet.solana.com'
-    
-    const rpc = createSolanaRpc(rpcUrl)
-    const { value: balance } = await rpc.getBalance(address(walletAddress)).send()
+
+    // Use Gill's createCustomClient instead of createSolanaRpc
+    const client = createCustomClient(rpcUrl)
+    const { value: balance } = await client.rpc.getBalance(address(walletAddress)).send()
     return Number(balance) / 1_000_000_000 // Convert lamports to SOL
   } catch (error) {
     console.warn('Failed to check balance:', error)
@@ -205,15 +207,15 @@ export async function fundWallet(
           error: data.error
         }
       } else {
-        // RPC airdrop
+        // RPC airdrop using Gill
         const rpcUrl = network === 'devnet'
           ? 'https://api.devnet.solana.com'
           : 'https://api.testnet.solana.com'
-        
-        const rpc = createSolanaRpc(rpcUrl)
+
+        const client = createCustomClient(rpcUrl)
         try {
-          const lamports = 1_000_000_000n as unknown as Parameters<typeof rpc.requestAirdrop>[1]
-          const signature = await rpc.requestAirdrop(
+          const lamports = 1_000_000_000n as unknown as Parameters<typeof client.rpc.requestAirdrop>[1]
+          const signature = await client.rpc.requestAirdrop(
             address(walletAddress),
             lamports
           ).send()

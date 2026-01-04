@@ -1,0 +1,66 @@
+{
+  "name": "@ghostspeak/shared",
+  "version": "0.1.0",
+  "description": "Shared utilities, types, and clients for GhostSpeak platform",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./convex": {
+      "import": {
+        "types": "./dist/convex/index.d.ts",
+        "default": "./dist/convex/index.js"
+      }
+    },
+    "./types": {
+      "import": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/types/index.js"
+      }
+    },
+    "./solana": {
+      "import": {
+        "types": "./dist/solana/index.d.ts",
+        "default": "./dist/solana/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --clean",
+    "dev": "tsup src/index.ts --format esm --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@solana/addresses": "^5.1.0",
+    "@solana/codecs": "^5.1.0",
+    "@solana/codecs-core": "^5.1.0",
+    "@solana/codecs-data-structures": "^5.1.0",
+    "@solana/codecs-numbers": "^5.1.0",
+    "@solana/codecs-strings": "^5.1.0",
+    "@solana/keys": "^5.1.0",
+    "@solana/options": "^5.1.0",
+    "@solana/rpc": "^5.1.0",
+    "convex": "^1.31.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.3"
+  },
+  "keywords": [
+    "ghostspeak",
+    "solana",
+    "convex",
+    "shared",
+    "utilities"
+  ],
+  "author": "GhostSpeak",
+  "license": "MIT"
+}

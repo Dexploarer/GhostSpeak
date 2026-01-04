@@ -225,36 +225,47 @@ export class X402TransactionIndexer {
    * Check if transaction is an x402 payment
    *
    * x402 payments are characterized by:
-   * - SPL token transfer (TokenProgram or Token2022Program)
+   * - SPL token transfer (TokenProgram or Token2022Program) for USDC
+   * - Native SOL transfer (System Program)
    * - Transfer TO the facilitator address
    * - Optional memo instruction with payment metadata
+   *
+   * Supports both devnet and mainnet for all payment types
    */
   private isX402Payment(transaction: any): boolean {
     try {
       const instructions = transaction.transaction?.message?.instructions || []
 
-      // Look for SPL token transfer instruction
-      const hasTokenTransfer = instructions.some((ix: any) => {
-        // Check if this is a token program instruction
+      // Look for SPL token transfer OR native SOL transfer
+      const hasPaymentTransfer = instructions.some((ix: any) => {
         const programId = ix.programId?.toString()
+
+        // Check for SPL token transfer (USDC on mainnet/devnet)
         const isTokenProgram =
           programId === 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' || // SPL Token
           programId === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' // Token-2022
 
-        if (!isTokenProgram) return false
+        if (isTokenProgram) {
+          const parsed = ix.parsed
+          if (parsed?.type === 'transfer' || parsed?.type === 'transferChecked') {
+            const destination = parsed.info?.destination
+            return destination === this.facilitatorAddress.toString()
+          }
+        }
 
-        // Check if this is a transfer instruction
-        const parsed = ix.parsed
-        if (parsed?.type === 'transfer' || parsed?.type === 'transferChecked') {
-          // Verify destination is the facilitator
-          const destination = parsed.info?.destination
-          return destination === this.facilitatorAddress.toString()
+        // Check for native SOL transfer (devnet and mainnet)
+        if (programId === '11111111111111111111111111111111') {
+          const parsed = ix.parsed
+          if (parsed?.type === 'transfer') {
+            const destination = parsed.info?.destination
+            return destination === this.facilitatorAddress.toString()
+          }
         }
 
         return false
       })
 
-      return hasTokenTransfer
+      return hasPaymentTransfer
     } catch (error) {
       console.error('[X402 Indexer] Error checking if x402 payment:', error)
       return false
@@ -268,10 +279,17 @@ export class X402TransactionIndexer {
     try {
       const instructions = transaction.transaction?.message?.instructions || []
 
-      // Find token transfer instruction
+      // Find transfer instruction (token or system)
       const transferIx = instructions.find((ix: any) => {
         const parsed = ix.parsed
-        return parsed?.type === 'transfer' || parsed?.type === 'transferChecked'
+        const programId = ix.programId?.toString()
+
+        // Token transfer
+        if (parsed?.type === 'transfer' || parsed?.type === 'transferChecked') {
+          return true
+        }
+
+        return false
       })
 
       if (!transferIx) {
@@ -283,7 +301,9 @@ export class X402TransactionIndexer {
       // Extract basic payment data
       const merchant = transferInfo.destination as Address
       const payer = transferInfo.source as Address
-      const amount = transferInfo.amount || transferInfo.tokenAmount?.amount || '0'
+
+      // For token transfers, use tokenAmount; for SOL, use lamports
+      const amount = transferInfo.amount || transferInfo.tokenAmount?.amount || transferInfo.lamports || '0'
       const success = transaction.meta?.err === null
 
       // Extract timestamp from block time
@@ -298,14 +318,23 @@ export class X402TransactionIndexer {
       let responseTimeMs: number | undefined
       let metadata: Record<string, unknown> | undefined
 
-      if (memoIx && memoIx.data) {
+      if (memoIx) {
         try {
-          // Decode memo data
-          const memoText = Buffer.from(memoIx.data, 'base64').toString('utf-8')
-          const memoData = JSON.parse(memoText)
+          // Memo data can be in parsed field or data field
+          let memoText: string
+          if (memoIx.parsed) {
+            memoText = memoIx.parsed
+          } else if (memoIx.data) {
+            memoText = Buffer.from(memoIx.data, 'base64').toString('utf-8')
+          } else {
+            memoText = ''
+          }
 
-          responseTimeMs = memoData.responseTimeMs
-          metadata = memoData
+          if (memoText) {
+            const memoData = JSON.parse(memoText)
+            responseTimeMs = memoData.responseTimeMs
+            metadata = memoData
+          }
         } catch {
           // Memo is not JSON, ignore
         }

@@ -17,7 +17,8 @@ import {
   log,
   note
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
+import { initializeClient, getExplorerUrl, toSDKSigner } from '../utils/client.js'
+import { handleError } from '../utils/error-handler.js'
 import { createSafeSDKClient } from '../utils/sdk-helpers.js'
 import { address } from '@solana/addresses'
 import type { Address } from '@solana/addresses'
@@ -260,7 +261,7 @@ didCommand
 
       } catch (error) {
         s.stop('❌ Failed to create DID document')
-        handleTransactionError(error as Error)
+        handleError(error)
       }
 
     } catch (error) {
@@ -484,7 +485,7 @@ didCommand
 
       } catch (error) {
         s.stop('❌ Failed to update DID document')
-        handleTransactionError(error as Error)
+        handleError(error)
       }
 
     } catch (error) {
@@ -733,7 +734,7 @@ didCommand
 
       } catch (error) {
         s.stop('❌ Failed to deactivate DID document')
-        handleTransactionError(error as Error)
+        handleError(error)
       }
 
     } catch (error) {

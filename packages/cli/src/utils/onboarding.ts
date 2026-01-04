@@ -6,22 +6,23 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 import chalk from 'chalk'
-import { 
-  intro, 
-  outro, 
-  text, 
-  select, 
-  confirm, 
-  spinner, 
-  cancel, 
-  isCancel 
+import {
+  intro,
+  outro,
+  text,
+  select,
+  confirm,
+  spinner,
+  cancel,
+  isCancel
 } from '@clack/prompts'
 import { WalletService } from '../services/wallet-service.js'
 import { initializeClient } from './client.js'
-import { createSolanaRpc, type Lamports } from '@solana/kit'
-import { 
-  divider, 
-  stepIndicator 
+import { createCustomClient } from '../core/solana-client.js'
+import type { Lamports } from '@solana/kit'
+import {
+  divider,
+  stepIndicator
 } from './ui-helpers.js'
 import { warningBox, successBox, infoBox } from './format-helpers.js'
 import { estimateAndDisplay } from '../services/cost-estimator.js'
@@ -427,14 +428,14 @@ export class OnboardingService {
         if (!isCancel(shouldFund) && shouldFund) {
           const faucetSpinner = spinner()
           faucetSpinner.start('Requesting SOL from faucet...')
-          
+
           try {
-            // Use RPC airdrop directly
+            // Use Gill's createCustomClient for RPC airdrop
             const rpcUrl = 'https://api.devnet.solana.com'
-            const rpc = createSolanaRpc(rpcUrl)
+            const client = createCustomClient(rpcUrl)
             const lamports = BigInt(1_000_000_000) // 1 SOL
-            // Request airdrop
-            await rpc.requestAirdrop(activeWallet.metadata.address as Address, lamports as Lamports).send()
+            // Request airdrop using Gill's rpc client
+            await client.rpc.requestAirdrop(activeWallet.metadata.address as Address, lamports as Lamports).send()
             
             faucetSpinner.stop('✅ Received 1 SOL from faucet!')
             

@@ -748,34 +748,3 @@ export function parseTransferFeeConfig(
   }
 }
 
-/**
- * Fetch transfer fee configuration for a Token-2022 mint via RPC
- * 
- * @deprecated Token-2022 extension functions removed - not aligned with VC/Reputation pivot
- * @param _rpc - RPC client for making requests
- * @param mint - The mint address to query
- * @returns Promise<TransferFeeConfig | null> - Always returns null (deprecated)
- */
-export async function fetchTransferFeeConfig(
-  _rpc: unknown,
-  mint: Address
-): Promise<TransferFeeConfig | null> {
-  console.warn(`Token-2022 fetchTransferFeeConfig is deprecated: mint ${mint}`)
-  return null
-}
-
-/**
- * Check if a mint has transfer fees enabled
- * 
- * @deprecated Token-2022 extension functions removed - not aligned with VC/Reputation pivot
- * @param _rpc - RPC client for making requests  
- * @param mint - The mint address to check
- * @returns Promise<boolean> - Always returns false (deprecated)
- */
-export async function hasTransferFees(
-  _rpc: unknown,
-  mint: Address
-): Promise<boolean> {
-  console.warn(`Token-2022 hasTransferFees is deprecated: mint ${mint}`)
-  return false
-}

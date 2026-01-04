@@ -6,27 +6,27 @@
 
 import { createSolanaRpc, type Rpc } from '@solana/rpc';
 import { address, type Address } from '@solana/addresses';
-import type {
-  Ghost,
-  GhostScore,
-  GhostReputation,
-  ExternalIdLookupResult,
-  AgentStatus,
-  ExternalIdentifier,
-  ReputationComponent,
-} from '../types/ghost';
-
-const PROGRAM_ID = '4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB';
-const AGENT_SEED = 'agent';
-const EXTERNAL_ID_SEED = 'external_id';
+import {
+  agentCodec,
+  externalIdMappingCodec,
+  type BorshAgent,
+  type BorshExternalIdMapping,
+  AgentStatus as BorshAgentStatus,
+  ReputationSourceType,
+  deriveAgentAddress,
+  deriveExternalIdMappingAddress,
+  type Ghost,
+  type GhostScore,
+  type GhostReputation,
+  type ExternalIdLookupResult,
+  type AgentStatus,
+} from '@ghostspeak/shared';
 
 export class GhostService {
-  private rpc: Rpc;
-  private programId: Address;
+  private rpc: Rpc<any>;
 
   constructor(rpcUrl: string) {
     this.rpc = createSolanaRpc(rpcUrl);
-    this.programId = address(PROGRAM_ID);
   }
 
   /**
@@ -58,7 +58,7 @@ export class GhostService {
     externalId: string
   ): Promise<ExternalIdLookupResult | null> {
     try {
-      const mappingAddress = await this.deriveExternalIdMappingAddress(platform, externalId);
+      const mappingAddress = await deriveExternalIdMappingAddress(platform, externalId);
       const accountInfo = await this.rpc
         .getAccountInfo(mappingAddress, { encoding: 'base64' })
         .send();
@@ -68,7 +68,23 @@ export class GhostService {
       }
 
       const data = Buffer.from(accountInfo.value.data[0], 'base64');
-      return this.decodeExternalIdMapping(data, platform, externalId);
+      const mapping = this.decodeExternalIdMapping(data);
+
+      // Fetch the full Ghost data
+      const ghost = await this.getGhost(mapping.ghostPubkey);
+
+      if (!ghost) {
+        return null;
+      }
+
+      return {
+        platform: mapping.platform,
+        externalId: mapping.externalId,
+        ghostAddress: mapping.ghostPubkey,
+        verified: mapping.verified,
+        verifiedAt: mapping.verifiedAt ? Number(mapping.verifiedAt) : null,
+        createdAt: Number(mapping.createdAt),
+      };
     } catch (error) {
       console.error(`Error fetching external ID mapping ${platform}:${externalId}:`, error);
       return null;
@@ -145,83 +161,115 @@ export class GhostService {
   }
 
   /**
-   * Derive Agent PDA address
-   */
-  private async deriveAgentAddress(owner: string, agentId: string): Promise<Address> {
-    // TODO: Implement PDA derivation using @solana/addresses
-    // This requires the program ID and seeds
-    throw new Error('Not implemented - requires @solana/addresses PDA derivation');
-  }
-
-  /**
-   * Derive ExternalIdMapping PDA address
-   */
-  private async deriveExternalIdMappingAddress(
-    platform: string,
-    externalId: string
-  ): Promise<Address> {
-    // TODO: Implement PDA derivation
-    // Seeds: [b"external_id", platform.as_bytes(), external_id.as_bytes()]
-    throw new Error('Not implemented - requires @solana/addresses PDA derivation');
-  }
-
-  /**
    * Decode Agent account data from Borsh serialization
    */
   private decodeAgentAccount(data: Buffer, ghostAddress: string): Ghost {
-    // TODO: Implement full Borsh deserialization
-    // For now, return mock data structure
-    // In production, use @coral-xyz/borsh or custom decoder
+    // Skip 8-byte discriminator
+    const accountData = data.subarray(8);
 
-    // Discriminator (8 bytes) + account data
-    let offset = 8;
+    // Decode using Solana v5 codecs
+    const agent = agentCodec.decode(new Uint8Array(accountData));
 
-    // Mock decoding - replace with actual Borsh deserialization
+    // Helper to unwrap Option
+    const unwrapOption = (opt: any): any => {
+      if (!opt || (typeof opt === 'object' && opt.__option === 'None')) {
+        return null;
+      }
+      if (typeof opt === 'object' && opt.__option === 'Some') {
+        return opt.value;
+      }
+      return opt;
+    };
+
+    // Map ReputationSourceType enum to string
+    const reputationSourceTypeToString = (type: number): string => {
+      const mapping: Record<number, string> = {
+        [ReputationSourceType.AccountAge]: 'AccountAge',
+        [ReputationSourceType.X402Transactions]: 'X402Transactions',
+        [ReputationSourceType.UserReviews]: 'UserReviews',
+        [ReputationSourceType.ElizaOSReputation]: 'ElizaOSReputation',
+        [ReputationSourceType.CrossmintVerification]: 'CrossmintVerification',
+        [ReputationSourceType.EndpointReliability]: 'EndpointReliability',
+        [ReputationSourceType.JobCompletions]: 'JobCompletions',
+        [ReputationSourceType.SkillEndorsements]: 'SkillEndorsements',
+      };
+      return mapping[type] || 'Unknown';
+    };
+
+    // Map AgentStatus enum to string
+    const statusToString = (status: number): AgentStatus => {
+      const mapping = {
+        [BorshAgentStatus.Unregistered]: 'Unregistered' as AgentStatus,
+        [BorshAgentStatus.Registered]: 'Registered' as AgentStatus,
+        [BorshAgentStatus.Claimed]: 'Claimed' as AgentStatus,
+        [BorshAgentStatus.Verified]: 'Verified' as AgentStatus,
+      };
+      return mapping[status] || 'Unregistered';
+    };
+
+    const owner = unwrapOption(agent.owner);
+    const claimedAt = unwrapOption(agent.claimedAt);
+    const didAddress = unwrapOption(agent.didAddress);
+
     return {
       address: ghostAddress,
-      owner: null, // Parse from data
-      status: AgentStatus.Unregistered,
-      firstTxSignature: '',
-      firstSeenTimestamp: 0,
-      discoverySource: '',
-      claimedAt: null,
-      agentId: '',
-      name: '',
-      description: '',
-      metadataUri: '',
-      serviceEndpoint: '',
-      externalIdentifiers: [],
-      ghostScore: 0,
-      reputationScore: 0,
-      reputationComponents: [],
-      didAddress: null,
-      credentials: [],
-      isActive: true,
-      isVerified: false,
-      verificationTimestamp: 0,
-      createdAt: 0,
-      updatedAt: 0,
+      owner: owner || null,
+      status: statusToString(agent.status),
+
+      // Discovery provenance
+      firstTxSignature: agent.firstTxSignature,
+      firstSeenTimestamp: Number(agent.firstSeenTimestamp),
+      discoverySource: agent.discoverySource,
+      claimedAt: claimedAt ? Number(claimedAt) : null,
+
+      // Metadata
+      agentId: agent.agentId,
+      name: agent.name,
+      description: agent.description,
+      metadataUri: agent.metadataUri,
+      serviceEndpoint: agent.serviceEndpoint,
+
+      // Cross-platform identity
+      externalIdentifiers: agent.externalIdentifiers.map((ext) => ({
+        platform: ext.platform,
+        externalId: ext.externalId,
+        verified: ext.verified,
+        verifiedAt: Number(ext.verifiedAt),
+      })),
+
+      // Reputation
+      ghostScore: Number(agent.ghostScore),
+      reputationScore: agent.reputationScore,
+      reputationComponents: agent.reputationComponents.map((comp) => ({
+        source: reputationSourceTypeToString(comp.sourceType),
+        score: Number(comp.score),
+        weight: comp.weight,
+        lastUpdated: Number(comp.lastUpdated),
+      })),
+
+      // Credentials
+      didAddress: didAddress || null,
+      credentials: agent.credentials as string[],
+
+      // Status
+      isActive: agent.isActive,
+      isVerified: agent.isVerified,
+      verificationTimestamp: Number(agent.verificationTimestamp),
+
+      // Timestamps
+      createdAt: Number(agent.createdAt),
+      updatedAt: Number(agent.updatedAt),
     };
   }
 
   /**
    * Decode ExternalIdMapping account data
    */
-  private decodeExternalIdMapping(
-    data: Buffer,
-    platform: string,
-    externalId: string
-  ): ExternalIdLookupResult {
-    // TODO: Implement Borsh deserialization
-    let offset = 8; // Skip discriminator
+  private decodeExternalIdMapping(data: Buffer): BorshExternalIdMapping {
+    // Skip 8-byte discriminator
+    const accountData = data.subarray(8);
 
-    return {
-      platform,
-      externalId,
-      ghostAddress: '',
-      verified: false,
-      verifiedAt: null,
-      createdAt: 0,
-    };
+    // Decode using Solana v5 codecs
+    return externalIdMappingCodec.decode(new Uint8Array(accountData)) as BorshExternalIdMapping;
   }
 }

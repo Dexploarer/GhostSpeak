@@ -5,9 +5,9 @@
 import {
   createKeyPairSignerFromBytes,
   address,
-  createSolanaRpc,
   type KeyPairSigner
 } from '@solana/kit'
+import { createCustomClient } from '../core/solana-client.js'
 import type { Address } from '@solana/addresses'
 import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync, renameSync } from 'fs'
 import { join } from 'path'
@@ -393,8 +393,9 @@ export class WalletService implements IWalletService {
           ? 'https://api.testnet.solana.com'
           : 'https://api.mainnet-beta.solana.com'
 
-      const rpc = createSolanaRpc(rpcUrl)
-      const { value: balance } = await rpc.getBalance(address(walletAddress)).send()
+      // Use Gill's createCustomClient instead of createSolanaRpc
+      const client = createCustomClient(rpcUrl)
+      const { value: balance } = await client.rpc.getBalance(address(walletAddress)).send()
       return Number(balance) / 1_000_000_000 // Convert lamports to SOL
     } catch (error) {
       return 0

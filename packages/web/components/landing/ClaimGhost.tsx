@@ -7,7 +7,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Sparkles, ArrowRight, Shield, Zap, Trophy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import Image from 'next/image'
+import { MeshGradientGhost } from '@/components/shared/MeshGradientGhost'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
@@ -175,7 +175,7 @@ export function ClaimGhost() {
 
       <div className="max-w-7xl mx-auto px-4 relative z-10">
         <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
-          {/* Left side - Dramatic coin visual with scroll zoom */}
+          {/* Left side - Animated Ghost with scroll effects */}
           <div className="relative flex items-center justify-center lg:justify-end">
             <motion.div
               ref={coinRef}
@@ -185,25 +185,20 @@ export function ClaimGhost() {
                 scale: coinScale,
                 rotate: coinRotate,
               }}
-              className="relative w-[280px] h-[280px] sm:w-[400px] sm:h-[400px] flex items-center justify-center"
+              className="relative w-[280px] h-[350px] sm:w-[400px] sm:h-[500px] flex items-center justify-center"
             >
               {/* Glow rings */}
               <div className="absolute inset-0 rounded-full bg-primary/20 blur-3xl" />
               <div className="absolute inset-4 rounded-full border-2 border-primary/30" />
               <div className="absolute inset-8 rounded-full border border-primary/20" />
 
-              {/* Coin image */}
-              <div className="relative z-10 w-[200px] h-[200px] sm:w-[280px] sm:h-[280px]">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent rounded-full blur-2xl" />
-                <Image
-                  src="/ghost-coin.png"
-                  alt="Ghost Coin"
-                  width={280}
-                  height={280}
+              {/* Animated Ghost */}
+              <div className="relative z-10 w-[220px] h-[280px] sm:w-[300px] sm:h-[380px]">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent blur-2xl" />
+                <MeshGradientGhost
                   className="relative z-10 drop-shadow-[0_0_60px_rgba(204,255,0,0.4)]"
-                  style={{
-                    filter: 'drop-shadow(0 0 40px rgba(204, 255, 0, 0.6))',
-                  }}
+                  animated={true}
+                  interactive={true}
                 />
               </div>
 

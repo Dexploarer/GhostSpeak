@@ -7,6 +7,7 @@ import { RpcClient } from './rpc-client.js'
 import { createTransactionResult } from '../utils/transaction-urls.js'
 import { logEnhancedError, createErrorContext } from '../utils/enhanced-client-errors.js'
 import { DevTools, type TransactionAnalysis } from './DevTools.js'
+import { createSolanaClient } from '../utils/solana-client.js'
 import {
   pipe,
   createTransactionMessage,
@@ -539,10 +540,9 @@ export class InstructionBuilder {
           console.log('🔍 No status found, trying transaction details...')
           // Fallback: try to get transaction details directly
           try {
-            // Try to import and create a direct RPC connection for transaction lookup
-            const { createSolanaRpc } = await import('@solana/kit')
-            const directRpc = createSolanaRpc(this.config.rpcEndpoint ?? 'https://api.devnet.solana.com')
-            const transaction = await directRpc.getTransaction(signature, {
+            // Use Gill's createSolanaClient for direct RPC connection
+            const directClient = createSolanaClient({ urlOrMoniker: this.config.rpcEndpoint ?? 'https://api.devnet.solana.com' })
+            const transaction = await directClient.rpc.getTransaction(signature, {
               commitment: this.config.commitment ?? 'confirmed',
               encoding: 'json',
               maxSupportedTransactionVersion: 0
@@ -579,9 +579,9 @@ export class InstructionBuilder {
       // Before giving up, do one final check with direct transaction lookup
       console.log('🔍 Final confirmation attempt via transaction lookup...')
       try {
-        const { createSolanaRpc } = await import('@solana/kit')
-        const directRpc = createSolanaRpc(this.config.rpcEndpoint ?? 'https://api.devnet.solana.com')
-        const transaction = await directRpc.getTransaction(signature, {
+        // Use Gill's createSolanaClient for direct RPC connection
+        const directClient = createSolanaClient({ urlOrMoniker: this.config.rpcEndpoint ?? 'https://api.devnet.solana.com' })
+        const transaction = await directClient.rpc.getTransaction(signature, {
           commitment: this.config.commitment ?? 'confirmed',
           encoding: 'json',
           maxSupportedTransactionVersion: 0

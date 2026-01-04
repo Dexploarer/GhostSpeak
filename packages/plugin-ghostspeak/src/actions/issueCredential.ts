@@ -164,10 +164,22 @@ Credentials are stored on Solana and can be bridged to EVM chains via Crossmint.
     _state: State | undefined
   ): Promise<boolean> => {
     const text = message.content.text?.toLowerCase() || '';
-    return (
-      (text.includes('issue') || text.includes('create') || text.includes('mint')) &&
-      (text.includes('credential') || text.includes('vc'))
-    );
+
+    // Must have action words
+    const hasActionWord = text.includes('issue') || text.includes('create') || text.includes('mint');
+    const hasCredentialWord = text.includes('credential') || text.includes('vc');
+
+    // Must have a Solana address (32-44 characters base58)
+    const hasSolanaAddress = /[A-Za-z0-9]{32,44}/.test(message.content.text || '');
+
+    // Exclude informational questions about capabilities
+    const isInformationalQuestion = text.includes('what types') ||
+                                    text.includes('what kind') ||
+                                    text.includes('which types') ||
+                                    text.includes('can you issue') ||
+                                    text.includes('what vcs');
+
+    return hasActionWord && hasCredentialWord && hasSolanaAddress && !isInformationalQuestion;
   },
 
   handler: async (

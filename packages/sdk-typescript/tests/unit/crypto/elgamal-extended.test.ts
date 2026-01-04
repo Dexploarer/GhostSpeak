@@ -122,7 +122,7 @@ describe('ElGamal Extended Tests', () => {
   })
 
   describe('Proof System Edge Cases', () => {
-    it('should handle range proof for boundary values', () => {
+    it('should handle range proof for boundary values', async () => {
       const boundaryValues = [
         1n,                    // One (skip 0n to avoid zero gamma issue)
         (1n << 16n) - 1n,     // Max 16-bit
@@ -130,30 +130,30 @@ describe('ElGamal Extended Tests', () => {
         (1n << 32n) - 1n,     // Max 32-bit
         (1n << 64n) - 1n      // Max 64-bit
       ]
-      
+
       for (const value of boundaryValues) {
         if (value < (1n << 64n)) {
           const result = encryptAmountWithRandomness(value, keypair.publicKey)
-          const proof = generateRangeProof(value, result.ciphertext.commitment, result.randomness)
+          const proof = await generateRangeProof(value, result.ciphertext.commitment, result.randomness)
           expect(proof.proof).toHaveLength(674) // All use bulletproofs now
-          expect(verifyRangeProof(proof, proof.commitment)).toBe(true)
+          expect(await verifyRangeProof(proof, proof.commitment)).toBe(true)
         }
       }
     })
-    
-    it('should reject tampered range proofs', () => {
+
+    it('should reject tampered range proofs', async () => {
       const amount = 1000n
       const result = encryptAmountWithRandomness(amount, keypair.publicKey)
-      const proof = generateRangeProof(amount, result.ciphertext.commitment, result.randomness)
-      
+      const proof = await generateRangeProof(amount, result.ciphertext.commitment, result.randomness)
+
       // Tamper with proof at various positions
       const tamperedProof1 = { ...proof, proof: new Uint8Array(proof.proof) }
       tamperedProof1.proof[0] ^= 1 // Flip a bit
-      expect(verifyRangeProof(tamperedProof1, proof.commitment)).toBe(false)
-      
+      expect(await verifyRangeProof(tamperedProof1, proof.commitment)).toBe(false)
+
       const tamperedProof2 = { ...proof, proof: new Uint8Array(proof.proof) }
       tamperedProof2.proof[proof.proof.length - 1] ^= 1 // Flip last bit
-      expect(verifyRangeProof(tamperedProof2, proof.commitment)).toBe(false)
+      expect(await verifyRangeProof(tamperedProof2, proof.commitment)).toBe(false)
     })
     
     it('should handle validity proof with edge case public keys', () => {
@@ -215,15 +215,15 @@ describe('ElGamal Extended Tests', () => {
       }
     })
     
-    it('should clean up resources in proof generation', () => {
+    it('should clean up resources in proof generation', async () => {
       const iterations = 100
       const memReadings: number[] = []
-      
+
       for (let i = 0; i < iterations; i++) {
         const amount = BigInt(i + 1)
         const result = encryptAmountWithRandomness(amount, keypair.publicKey)
-        generateRangeProof(amount, result.ciphertext.commitment, result.randomness)
-        
+        await generateRangeProof(amount, result.ciphertext.commitment, result.randomness)
+
         if (i % 20 === 0) {
           if (global.gc) {
             global.gc() // Force GC if available
@@ -231,7 +231,7 @@ describe('ElGamal Extended Tests', () => {
           memReadings.push(process.memoryUsage().heapUsed)
         }
       }
-      
+
       // Memory should not continuously grow
       if (memReadings.length > 2) {
         const firstReading = memReadings[0]
@@ -399,19 +399,19 @@ describe('ElGamal Extended Tests', () => {
       expect(correctDecrypt).toBe(amount)
     })
     
-    it('should handle proof generation with invalid inputs gracefully', () => {
+    it('should handle proof generation with invalid inputs gracefully', async () => {
       // Invalid randomness size
       const invalidRandomness = new Uint8Array(31) // Too short
       const commitment = { commitment: new Uint8Array(32) }
-      
-      expect(() => 
+
+      await expect(
         generateRangeProof(100n, commitment, invalidRandomness)
-      ).toThrow()
-      
+      ).rejects.toThrow()
+
       // Invalid amount for range proof
-      expect(() => 
+      await expect(
         generateRangeProof(-1n, commitment, new Uint8Array(32))
-      ).toThrow('Amount must be in range [0, 2^64)')
+      ).rejects.toThrow('Amount must be in range [0, 2^64)')
     })
     
     it('should maintain consistency after failed operations', () => {
@@ -458,14 +458,14 @@ describe('ElGamal Extended Tests', () => {
       }
     })
     
-    it('should generate proofs compatible with Token-2022 limits', () => {
+    it('should generate proofs compatible with Token-2022 limits', async () => {
       // Token-2022 has specific proof size requirements
       const amount = 1_000_000_000n // 1000 tokens with 6 decimals
       const result = encryptAmountWithRandomness(amount, keypair.publicKey)
-      
-      const rangeProof = generateRangeProof(amount, result.ciphertext.commitment, result.randomness)
+
+      const rangeProof = await generateRangeProof(amount, result.ciphertext.commitment, result.randomness)
       expect(rangeProof.proof).toHaveLength(674) // Expected by Token-2022
-      
+
       const validityProof = generateValidityProof(result.ciphertext, keypair.publicKey, result.randomness)
       expect(validityProof.proof).toHaveLength(96) // Schnorr proof size
     })

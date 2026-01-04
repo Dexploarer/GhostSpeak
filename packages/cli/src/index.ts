@@ -11,7 +11,7 @@ import { airdropCommand } from './commands/airdrop.js'
 import { airdropUICommand } from './commands/airdrop-ui.js'
 import { sdkCommand } from './commands/sdk.js'
 import { updateCommand } from './commands/update.js'
-import { governanceCommand } from './commands/governance.js'
+import { governanceCommand } from './commands/governance/index.js'
 import { quickstartCommand } from './commands/quickstart.js'
 import { walletCommand } from './commands/wallet.js'
 import { credentialsCommand } from './commands/credentials.js'
@@ -25,7 +25,7 @@ import { escrowCommand } from './commands/escrow.js'
 import { dashboardCommand } from './commands/dashboard.js'
 import { ghostCommand } from './commands/ghost.js'
 import { ghostClaimCommand } from './commands/ghost-claim.js'
-import { ghostClaimTestCommand } from './commands/ghost-claim-test.js'
+// Removed: ghost-claim-test.ts - development-only test command moved to test suite
 import { multisigCommand } from './commands/multisig.js'
 import { authorizationCommand } from './commands/authorization.js'
 import { ghostUICommand } from './commands/ghost-ui.js'
@@ -184,7 +184,6 @@ async function main() {
     program.addCommand(agentCommand)       // Create and manage agents
     program.addCommand(ghostCommand)       // Claim external agents (CLI)
     program.addCommand(ghostClaimCommand)  // Simplified Ghost claiming (Auto-attestation)
-    program.addCommand(ghostClaimTestCommand) // Test Ghost claiming (Development only)
     program.addCommand(reputationCommand)  // Ghost Score reputation (CLI)
     program.addCommand(stakingCommand)     // GHOST token staking (CLI)
     program.addCommand(privacyCommand)     // Privacy settings (CLI)

@@ -56,7 +56,8 @@ export class ReputationCalculator {
           const recentCategories = data.categoryReputations
             .sort((a, b) => b.lastActivity - a.lastActivity)
             .slice(0, 5)
-          const daysSinceOldest = (Date.now() - recentCategories[4].lastActivity) / (1000 * 60 * 60 * 24)
+          // lastActivity is in seconds, so use Date.now() / 1000 for consistency
+          const daysSinceOldest = (Date.now() / 1000 - recentCategories[4].lastActivity) / 86400
           return daysSinceOldest < 7 // 5 different categories in 7 days
         }
       },

@@ -265,3 +265,410 @@ pub struct TierUpdatedEvent {
     pub daily_api_calls: u32,
     pub voting_power: u64,
 }
+
+// =====================================================
+// UNIT TESTS (Fast Mollusk-style tests for state logic)
+// =====================================================
+// These tests verify staking state machine logic without full instruction execution.
+// Run with: cargo test state::staking::tests
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Helper to create a test staking account with default values
+    fn create_test_staking_account() -> StakingAccount {
+        StakingAccount {
+            owner: Pubkey::new_unique(),
+            amount_staked: 0,
+            staked_at: 0,
+            lock_duration: 0,
+            unlock_at: 0,
+            reputation_boost_bps: 0,
+            has_verified_badge: false,
+            has_premium_benefits: false,
+            total_slashed: 0,
+            tier: AccessTier::None,
+            api_calls_remaining: 0,
+            last_quota_reset: 0,
+            voting_power: 0,
+            bump: 0,
+        }
+    }
+
+    // =====================================================
+    // TIER CALCULATION TESTS
+    // =====================================================
+
+    #[test]
+    fn test_tier_none_below_minimum() {
+        let mut account = create_test_staking_account();
+
+        // Below minimum stake (< 1,000 GHOST with 6 decimals = 1_000_000_000)
+        account.amount_staked = 500_000_000; // 500 GHOST
+        account.calculate_boost();
+
+        assert_eq!(account.tier, AccessTier::None);
+        assert_eq!(account.reputation_boost_bps, 0);
+        assert!(!account.has_verified_badge);
+        assert!(!account.has_premium_benefits);
+        assert_eq!(account.api_calls_remaining, 0);
+        assert_eq!(account.voting_power, 500_000_000);
+    }
+
+    #[test]
+    fn test_tier_basic_at_minimum() {
+        let mut account = create_test_staking_account();
+
+        // Exactly at Basic minimum (1,000 GHOST with 6 decimals)
+        account.amount_staked = 1_000_000_000; // 1K GHOST
+        account.calculate_boost();
+
+        assert_eq!(account.tier, AccessTier::Basic);
+        assert_eq!(account.reputation_boost_bps, 500); // 5% boost
+        assert!(!account.has_verified_badge);
+        assert!(!account.has_premium_benefits);
+        assert_eq!(account.api_calls_remaining, 100); // 100 calls/day
+        assert_eq!(account.voting_power, 1_000_000_000);
+    }
+
+    #[test]
+    fn test_tier_verified() {
+        let mut account = create_test_staking_account();
+
+        // Verified tier (5,000+ GHOST with 6 decimals)
+        account.amount_staked = 5_000_000_000; // 5K GHOST
+        account.calculate_boost();
+
+        assert_eq!(account.tier, AccessTier::Verified);
+        assert_eq!(account.reputation_boost_bps, 1000); // 10% boost
+        assert!(account.has_verified_badge);
+        assert!(!account.has_premium_benefits);
+        assert_eq!(account.api_calls_remaining, 1_000); // 1K calls/day
+        assert_eq!(account.voting_power, 5_000_000_000);
+    }
+
+    #[test]
+    fn test_tier_pro() {
+        let mut account = create_test_staking_account();
+
+        // Pro tier (50,000+ GHOST with 6 decimals)
+        account.amount_staked = 50_000_000_000; // 50K GHOST
+        account.calculate_boost();
+
+        assert_eq!(account.tier, AccessTier::Pro);
+        assert_eq!(account.reputation_boost_bps, 1500); // 15% boost
+        assert!(account.has_verified_badge);
+        assert!(account.has_premium_benefits);
+        assert_eq!(account.api_calls_remaining, 10_000); // 10K calls/day
+        assert_eq!(account.voting_power, 50_000_000_000);
+    }
+
+    #[test]
+    fn test_tier_whale() {
+        let mut account = create_test_staking_account();
+
+        // Whale tier (500,000+ GHOST with 6 decimals)
+        account.amount_staked = 500_000_000_000; // 500K GHOST
+        account.calculate_boost();
+
+        assert_eq!(account.tier, AccessTier::Whale);
+        assert_eq!(account.reputation_boost_bps, 2000); // 20% boost
+        assert!(account.has_verified_badge);
+        assert!(account.has_premium_benefits);
+        assert_eq!(account.api_calls_remaining, u32::MAX); // Unlimited
+        assert_eq!(account.voting_power, 500_000_000_000);
+    }
+
+    #[test]
+    fn test_tier_boundary_just_below_whale() {
+        let mut account = create_test_staking_account();
+
+        // Just below Whale (should be Pro)
+        account.amount_staked = 499_999_999_999; // Just under 500K GHOST
+        account.calculate_boost();
+
+        assert_eq!(account.tier, AccessTier::Pro);
+    }
+
+    // =====================================================
+    // API QUOTA TESTS
+    // =====================================================
+
+    #[test]
+    fn test_consume_api_call_basic() {
+        let mut account = create_test_staking_account();
+        account.amount_staked = 1_000_000_000; // Basic tier
+        account.calculate_boost();
+
+        assert_eq!(account.api_calls_remaining, 100);
+
+        // Consume one call
+        assert!(account.consume_api_call());
+        assert_eq!(account.api_calls_remaining, 99);
+
+        // Consume all remaining
+        for _ in 0..99 {
+            assert!(account.consume_api_call());
+        }
+        assert_eq!(account.api_calls_remaining, 0);
+
+        // Next call should fail
+        assert!(!account.consume_api_call());
+    }
+
+    #[test]
+    fn test_consume_api_call_whale_unlimited() {
+        let mut account = create_test_staking_account();
+        account.amount_staked = 500_000_000_000; // Whale tier
+        account.calculate_boost();
+
+        assert_eq!(account.api_calls_remaining, u32::MAX);
+
+        // Consume calls - should stay at MAX (unlimited)
+        for _ in 0..100 {
+            assert!(account.consume_api_call());
+        }
+        assert_eq!(account.api_calls_remaining, u32::MAX);
+    }
+
+    #[test]
+    fn test_should_reset_quota() {
+        let account = create_test_staking_account();
+
+        // Less than 24 hours - no reset needed
+        let current_time = 86000; // 23.9 hours
+        assert!(!account.should_reset_quota(current_time));
+
+        // Exactly 24 hours - reset needed
+        let current_time = 86400; // 24 hours
+        assert!(account.should_reset_quota(current_time));
+
+        // More than 24 hours - reset needed
+        let current_time = 100000;
+        assert!(account.should_reset_quota(current_time));
+    }
+
+    #[test]
+    fn test_reset_daily_quota_all_tiers() {
+        let test_cases = [
+            (0u64, AccessTier::None, 0u32),
+            (1_000_000_000u64, AccessTier::Basic, 100u32),
+            (5_000_000_000u64, AccessTier::Verified, 1_000u32),
+            (50_000_000_000u64, AccessTier::Pro, 10_000u32),
+            (500_000_000_000u64, AccessTier::Whale, u32::MAX),
+        ];
+
+        for (stake, expected_tier, expected_quota) in test_cases {
+            let mut account = create_test_staking_account();
+            account.amount_staked = stake;
+            account.calculate_boost();
+
+            assert_eq!(account.tier, expected_tier, "Failed for stake {}", stake);
+
+            // Reset and check quota
+            account.api_calls_remaining = 0;
+            account.reset_daily_quota(86400);
+            assert_eq!(
+                account.api_calls_remaining, expected_quota,
+                "Quota mismatch for tier {:?}",
+                expected_tier
+            );
+        }
+    }
+
+    // =====================================================
+    // API ACCESS TESTS
+    // =====================================================
+
+    #[test]
+    fn test_has_api_access() {
+        let mut account = create_test_staking_account();
+
+        // None tier - no access
+        account.tier = AccessTier::None;
+        assert!(!account.has_api_access());
+
+        // All other tiers - has access
+        for tier in [AccessTier::Basic, AccessTier::Verified, AccessTier::Pro, AccessTier::Whale] {
+            account.tier = tier;
+            assert!(account.has_api_access(), "Tier {:?} should have access", tier);
+        }
+    }
+
+    #[test]
+    fn test_get_daily_api_limit() {
+        let mut account = create_test_staking_account();
+
+        let test_cases = [
+            (AccessTier::None, 0u32),
+            (AccessTier::Basic, 100),
+            (AccessTier::Verified, 1_000),
+            (AccessTier::Pro, 10_000),
+            (AccessTier::Whale, u32::MAX),
+        ];
+
+        for (tier, expected_limit) in test_cases {
+            account.tier = tier;
+            assert_eq!(
+                account.get_daily_api_limit(),
+                expected_limit,
+                "Limit mismatch for tier {:?}",
+                tier
+            );
+        }
+    }
+
+    // =====================================================
+    // VOTING POWER TESTS
+    // =====================================================
+
+    #[test]
+    fn test_voting_power_equals_stake() {
+        let mut account = create_test_staking_account();
+
+        let test_amounts = [
+            0u64,
+            1_000_000_000,
+            5_000_000_000,
+            50_000_000_000,
+            500_000_000_000,
+            1_000_000_000_000,
+        ];
+
+        for amount in test_amounts {
+            account.amount_staked = amount;
+            account.calculate_boost();
+            assert_eq!(
+                account.voting_power, amount,
+                "Voting power should equal staked amount"
+            );
+        }
+    }
+
+    // =====================================================
+    // ACCOUNT SIZE TESTS
+    // =====================================================
+
+    #[test]
+    fn test_staking_config_len() {
+        let expected_len = 8 +  // discriminator
+            32 + // authority
+            8 +  // min_stake
+            8 +  // min_lock_duration
+            2 +  // fraud_slash_bps
+            2 +  // dispute_slash_bps
+            32 + // treasury
+            1;   // bump
+
+        assert_eq!(StakingConfig::LEN, expected_len);
+    }
+
+    #[test]
+    fn test_staking_account_len() {
+        let expected_len = 8 +  // discriminator
+            32 + // owner
+            8 +  // amount_staked
+            8 +  // staked_at
+            8 +  // lock_duration
+            8 +  // unlock_at
+            2 +  // reputation_boost_bps
+            1 +  // has_verified_badge
+            1 +  // has_premium_benefits
+            8 +  // total_slashed
+            1 +  // tier (enum)
+            4 +  // api_calls_remaining
+            8 +  // last_quota_reset
+            8 +  // voting_power
+            1;   // bump
+
+        assert_eq!(StakingAccount::LEN, expected_len);
+    }
+
+    // =====================================================
+    // EDGE CASE TESTS
+    // =====================================================
+
+    #[test]
+    fn test_tier_transitions_on_recalculation() {
+        let mut account = create_test_staking_account();
+
+        // Start at Whale tier
+        account.amount_staked = 500_000_000_000;
+        account.calculate_boost();
+        assert_eq!(account.tier, AccessTier::Whale);
+
+        // Simulate slash - drop to Pro tier
+        account.amount_staked = 100_000_000_000;
+        account.calculate_boost();
+        assert_eq!(account.tier, AccessTier::Pro);
+
+        // Drop to Verified
+        account.amount_staked = 10_000_000_000;
+        account.calculate_boost();
+        assert_eq!(account.tier, AccessTier::Verified);
+
+        // Drop to Basic
+        account.amount_staked = 2_000_000_000;
+        account.calculate_boost();
+        assert_eq!(account.tier, AccessTier::Basic);
+
+        // Drop below minimum
+        account.amount_staked = 500_000_000;
+        account.calculate_boost();
+        assert_eq!(account.tier, AccessTier::None);
+        assert_eq!(account.reputation_boost_bps, 0);
+        assert!(!account.has_verified_badge);
+        assert!(!account.has_premium_benefits);
+    }
+
+    #[test]
+    fn test_zero_stake_handling() {
+        let mut account = create_test_staking_account();
+
+        account.amount_staked = 0;
+        account.calculate_boost();
+
+        assert_eq!(account.tier, AccessTier::None);
+        assert_eq!(account.reputation_boost_bps, 0);
+        assert_eq!(account.voting_power, 0);
+        assert_eq!(account.api_calls_remaining, 0);
+    }
+
+    #[test]
+    fn test_max_stake_handling() {
+        let mut account = create_test_staking_account();
+
+        // Max u64 stake
+        account.amount_staked = u64::MAX;
+        account.calculate_boost();
+
+        assert_eq!(account.tier, AccessTier::Whale);
+        assert_eq!(account.reputation_boost_bps, 2000); // 20%
+        assert_eq!(account.voting_power, u64::MAX);
+    }
+
+    #[test]
+    fn test_reputation_boost_values() {
+        let mut account = create_test_staking_account();
+
+        // Test all tiers have correct boost percentages
+        let test_cases = [
+            (0u64, 0u16),                      // None: 0%
+            (1_000_000_000u64, 500u16),        // Basic: 5%
+            (5_000_000_000u64, 1000u16),       // Verified: 10%
+            (50_000_000_000u64, 1500u16),      // Pro: 15%
+            (500_000_000_000u64, 2000u16),     // Whale: 20%
+        ];
+
+        for (stake, expected_boost) in test_cases {
+            account.amount_staked = stake;
+            account.calculate_boost();
+            assert_eq!(
+                account.reputation_boost_bps, expected_boost,
+                "Boost mismatch for stake {}",
+                stake
+            );
+        }
+    }
+}

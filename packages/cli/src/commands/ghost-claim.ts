@@ -21,7 +21,8 @@ import {
 import { address, type Address } from '@solana/addresses'
 import { createKeyPairSignerFromBytes, type TransactionSigner } from '@solana/signers'
 import { getAddressEncoder, getUtf8Encoder, getProgramDerivedAddress } from '@solana/kit'
-import { initializeClient, getExplorerUrl, handleTransactionError } from '../utils/client.js'
+import { initializeClient, getExplorerUrl } from '../utils/client.js'
+import { handleError } from '../utils/error-handler.js'
 import { getConvexClient, queryDiscoveredAgents, markGhostClaimed, getGhostScore } from '../utils/convex-client.js'
 import { loadSASConfig, createGhostOwnershipAttestation } from '../utils/sas-helpers.js'
 import fs from 'fs'
@@ -74,8 +75,9 @@ export const ghostClaimCommand = new Command('claim-ghost')
       const convexUrl = process.env.CONVEX_URL || process.env.NEXT_PUBLIC_CONVEX_URL
       if (!convexUrl) {
         log.error('CONVEX_URL environment variable not set')
-        log.info('\n💡 Set CONVEX_URL to query discovered agents:')
-        log.info(chalk.cyan('export CONVEX_URL=https://lovely-cobra-639.convex.cloud'))
+        log.info('\n💡 Set CONVEX_URL in your .env file or export it:')
+        log.info(chalk.cyan('export CONVEX_URL=<your-convex-url>'))
+        log.info(chalk.gray('\nFor devnet testing, ask your team for the dev deployment URL'))
         outro(chalk.red('Configuration required'))
         return
       }
@@ -464,7 +466,7 @@ export const ghostClaimCommand = new Command('claim-ghost')
           log.info(chalk.gray('  4. Try again in a few moments'))
         }
 
-        await handleTransactionError(error, 'claim Ghost')
+        handleError(error, { operation: 'claim Ghost' })
         outro(chalk.red('Claim failed'))
         return
       }

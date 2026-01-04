@@ -10,7 +10,7 @@ import Gradient from 'ink-gradient'
 import { Layout } from '../components/Layout.js'
 import { InfoRow } from '../components/InfoRow.js'
 import { StatusBadge } from '../components/StatusBadge.js'
-import { createSolanaRpc } from '@solana/rpc'
+import { createCustomClient } from '../../core/solana-client.js'
 import { address } from '@solana/addresses'
 import { createKeyPairSignerFromBytes } from '@solana/signers'
 import {
@@ -74,8 +74,9 @@ export const Airdrop: React.FC<AirdropProps> = ({ recipient }) => {
 
       setWalletAddress(recipientAddress)
 
-      // Connect
-      const rpc = createSolanaRpc('https://api.devnet.solana.com')
+      // Connect using Gill
+      const solanaClient = createCustomClient('https://api.devnet.solana.com')
+      const rpc = solanaClient.rpc
       const ghostMintAddress = address(DEVNET_GHOST_MINT)
 
       // Get token accounts

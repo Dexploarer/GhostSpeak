@@ -8,7 +8,7 @@
  */
 
 import type { GhostService } from '../services/ghost-service';
-import type { ApiError } from '../types/ghost';
+import type { ApiError } from '@ghostspeak/shared';
 
 export function createGhostRoutes(ghostService: GhostService) {
   return {

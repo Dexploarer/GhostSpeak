@@ -19,8 +19,13 @@
  */
 
 import { EventEmitter } from 'events'
-import { createSolanaRpc, type SolanaRpcApi } from '@solana/kit'
+import { createSolanaClient, type SolanaClient } from 'gill'
 import { EventBus } from './event-system'
+
+/**
+ * Extended RPC API type from Gill client
+ */
+type SolanaRpcApi = SolanaClient<any>['rpc']
 
 /**
  * Network types supported by the connection pool
@@ -318,9 +323,11 @@ export class ConnectionPool extends EventEmitter {
    */
   private async createConnection(): Promise<PooledConnection> {
     const endpoint = this.selectEndpoint()
-    
+
     try {
-      const rpc = createSolanaRpc(endpoint.url) as unknown as SolanaRpcApi as unknown as SolanaRpcApi
+      // Use Gill's createSolanaClient which requires urlOrMoniker object
+      const client = createSolanaClient({ urlOrMoniker: endpoint.url })
+      const rpc = client.rpc as unknown as SolanaRpcApi
       const connection = new PooledConnection(rpc, endpoint, this)
       
       // Setup connection event handlers
@@ -436,11 +443,11 @@ export class ConnectionPool extends EventEmitter {
    */
   private async checkEndpointHealth(endpoint: RpcEndpoint): Promise<void> {
     const startTime = Date.now()
-    
+
     try {
-      // Simple health check - get latest blockhash
-      const rpc = createSolanaRpc(endpoint.url) as unknown as SolanaRpcApi
-      await (rpc as any).getLatestBlockhash?.()
+      // Simple health check - get latest blockhash using Gill
+      const client = createSolanaClient({ urlOrMoniker: endpoint.url })
+      await client.rpc.getLatestBlockhash().send()
       
       const responseTime = Date.now() - startTime
       endpoint.responseTime.current = responseTime

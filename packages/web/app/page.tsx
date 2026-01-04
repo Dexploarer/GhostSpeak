@@ -12,7 +12,7 @@ import { IntegrationMarquee } from '@/components/landing/IntegrationMarquee'
 import { IdentityBridge } from '@/components/landing/IdentityBridge'
 import { DeveloperIntegration } from '@/components/landing/DeveloperIntegration'
 import { UseCases } from '@/components/landing/UseCases'
-import { TokenomicsStaking } from '@/components/landing/TokenomicsStaking'
+import { FlyingGhost } from '@/components/landing/FlyingGhost'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
@@ -109,8 +109,8 @@ export default function LandingPage() {
         <DeveloperIntegration />
       </div>
 
-      {/* 11. Tokenomics & Staking */}
-      <TokenomicsStaking />
+      {/* 11. Flying Ghost Section */}
+      <FlyingGhost />
 
       {/* 12. Features Grid (Bento) */}
       <section className="animate-on-scroll py-16 sm:py-24 md:py-32 relative border-t border-border">

@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { governanceCommand } from '../../src/commands/governance.js'
+import { governanceCommand } from '../../src/commands/governance/index.js'
 
 // Mock dependencies
 vi.mock('@clack/prompts', () => ({

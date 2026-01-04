@@ -9,10 +9,12 @@
  */
 
 import type * as agent from "../agent.js";
+import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
 import type * as ghostDiscovery from "../ghostDiscovery.js";
 import type * as ghostScoreCalculator from "../ghostScoreCalculator.js";
 import type * as solanaAuth from "../solanaAuth.js";
+import type * as x402Indexer from "../x402Indexer.js";
 
 import type {
   ApiFromModules,
@@ -22,10 +24,12 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   agent: typeof agent;
+  crons: typeof crons;
   dashboard: typeof dashboard;
   ghostDiscovery: typeof ghostDiscovery;
   ghostScoreCalculator: typeof ghostScoreCalculator;
   solanaAuth: typeof solanaAuth;
+  x402Indexer: typeof x402Indexer;
 }>;
 
 /**

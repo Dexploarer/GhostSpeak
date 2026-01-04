@@ -126,8 +126,8 @@ describe('Reputation Benchmarking Framework', () => {
 
       const result = simulator.simulateAgentProgression(expertProfile, 10)
 
-      // Expert agent should achieve high reputation
-      expect(result.finalTier).toBe(ReputationTier.Gold)
+      // Expert agent should achieve highest reputation (98% completion, 92 quality exceeds Gold threshold)
+      expect(result.finalTier).toBe(ReputationTier.Platinum)
       expect(result.successfulJobs).toBeGreaterThan(result.failedJobs * 10)
     })
 

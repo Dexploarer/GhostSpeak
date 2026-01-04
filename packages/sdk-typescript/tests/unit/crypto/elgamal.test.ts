@@ -251,51 +251,51 @@ describe('ElGamal Encryption', () => {
 
   describe('Zero-Knowledge Proofs', () => {
     describe('Range Proofs', () => {
-      it('should generate and verify valid range proof', () => {
+      it('should generate and verify valid range proof', async () => {
         const amount = 1000n
-        
+
         // Generate randomness explicitly (formatted like in encryptAmountWithRandomness)
         const randomness = randomBytes(32)
         randomness[0] &= 248
         randomness[31] &= 127
         randomness[31] |= 64
-        
-        // Generate range proof directly
-        const rangeProof = generateRangeProof(
+
+        // Generate range proof directly (async function)
+        const rangeProof = await generateRangeProof(
           amount,
           { commitment: new Uint8Array(32) }, // dummy commitment, not used
           randomness
         )
-        
+
         expect(rangeProof.proof).toBeInstanceOf(Uint8Array)
         // All amounts now use full bulletproofs for consistency with Solana
         expect(rangeProof.proof).toHaveLength(674) // Standard bulletproof size for 64-bit range
         expect(rangeProof.commitment).toBeInstanceOf(Uint8Array)
         expect(rangeProof.commitment).toHaveLength(32)
-        
+
         // Verify the range proof using the commitment from the proof
-        const isValid = verifyRangeProof(rangeProof, rangeProof.commitment)
+        const isValid = await verifyRangeProof(rangeProof, rangeProof.commitment)
         expect(isValid).toBe(true)
       })
-      
-      it('should reject range proof for negative amount', () => {
-        expect(() => {
+
+      it('should reject range proof for negative amount', async () => {
+        await expect(
           generateRangeProof(-1n, { commitment: new Uint8Array(32) }, new Uint8Array(32))
-        }).toThrow('Amount must be in range [0, 2^64)')
+        ).rejects.toThrow('Amount must be in range [0, 2^64)')
       })
-      
-      it('should reject range proof for amount exceeding 64 bits', () => {
+
+      it('should reject range proof for amount exceeding 64 bits', async () => {
         const tooLarge = 1n << 64n
-        expect(() => {
+        await expect(
           generateRangeProof(tooLarge, { commitment: new Uint8Array(32) }, new Uint8Array(32))
-        }).toThrow('Amount must be in range [0, 2^64)')
+        ).rejects.toThrow('Amount must be in range [0, 2^64)')
       })
       
-      it('should generate and verify full bulletproof for larger amounts', () => {
+      it('should generate and verify full bulletproof for larger amounts', async () => {
         const amount = 100000n // Larger than 2^16 = 65536, will use full bulletproof
         const result = encryptAmountWithRandomness(amount, keypair.publicKey)
-        
-        const rangeProof = generateRangeProof(
+
+        const rangeProof = await generateRangeProof(
           amount,
           result.ciphertext.commitment,
           result.randomness
@@ -305,19 +305,19 @@ describe('ElGamal Encryption', () => {
         expect(rangeProof.proof).toHaveLength(674) // All amounts use 674-byte bulletproofs
         expect(rangeProof.commitment).toBeInstanceOf(Uint8Array)
         expect(rangeProof.commitment).toHaveLength(32)
-        
+
         // Verify the range proof using the commitment from the proof
-        const isValid = verifyRangeProof(rangeProof, rangeProof.commitment)
+        const isValid = await verifyRangeProof(rangeProof, rangeProof.commitment)
         expect(isValid).toBe(true)
       })
-      
-      it('should fail verification with incorrect proof size', () => {
+
+      it('should fail verification with incorrect proof size', async () => {
         const invalidProof = {
           proof: new Uint8Array(100), // Wrong size
           commitment: new Uint8Array(32)
         }
-        
-        const isValid = verifyRangeProof(invalidProof, new Uint8Array(32))
+
+        const isValid = await verifyRangeProof(invalidProof, new Uint8Array(32))
         expect(isValid).toBe(false)
       })
     })
@@ -664,14 +664,14 @@ describe('ElGamal Encryption', () => {
       expect(batchTime).toBeLessThan(1000) // Less than 1 second for 5 encryptions
     })
     
-    it('should batch verify range proofs', () => {
+    it('should batch verify range proofs', async () => {
       const proofs: Array<{ proof: { proof: Uint8Array; commitment: Uint8Array }; commitment: Uint8Array }> = []
-      
+
       // Generate multiple range proofs
       for (let i = 0; i < 3; i++) {
         const amount = BigInt(100 * (i + 1))
         const result = encryptAmountWithRandomness(amount, keypair.publicKey)
-        const rangeProof = generateRangeProof(
+        const rangeProof = await generateRangeProof(
           amount,
           result.ciphertext.commitment,
           result.randomness
@@ -681,10 +681,10 @@ describe('ElGamal Encryption', () => {
           commitment: result.ciphertext.commitment.commitment
         })
       }
-      
+
       // Verify each proof individually
       for (const { proof, commitment } of proofs) {
-        const isValid = verifyRangeProof(proof, commitment)
+        const isValid = await verifyRangeProof(proof, commitment)
         expect(isValid).toBe(true)
       }
     })
@@ -715,25 +715,25 @@ describe('ElGamal Encryption', () => {
       expect(decryptTime).toBeLessThan(5) // Lookup should be very fast
     })
     
-    it('should benchmark proof generation times', () => {
+    it('should benchmark proof generation times', async () => {
       const timer = new PerformanceTimer()
       const amount = 1000n
       const result = encryptAmountWithRandomness(amount, keypair.publicKey)
-      
+
       // Benchmark range proof
       timer.start()
-      generateRangeProof(amount, result.ciphertext.commitment, result.randomness)
+      await generateRangeProof(amount, result.ciphertext.commitment, result.randomness)
       const rangeProofTime = timer.measure('range_proof')
-      
+
       // Benchmark validity proof
       timer.start()
       generateValidityProof(result.ciphertext, keypair.publicKey, result.randomness)
       const validityProofTime = timer.measure('validity_proof')
-      
+
       // Log times for visibility
       console.log(`Range proof generation: ${rangeProofTime.toFixed(2)}ms`)
       console.log(`Validity proof generation: ${validityProofTime.toFixed(2)}ms`)
-      
+
       // Range proofs should be under 100ms (target is <50ms with WASM)
       expect(rangeProofTime).toBeLessThan(100)
       // Validity proofs should be faster
@@ -765,26 +765,26 @@ describe('ElGamal Encryption', () => {
       expect(decrypted).toBe(amount)
     })
     
-    it('should work with Token-2022 program expectations', () => {
+    it('should work with Token-2022 program expectations', async () => {
       // Token-2022 expects specific formats
       const amount = 1_000_000n // 1 token with 6 decimals
       const cipher = encryptAmount(amount, keypair.publicKey)
-      
+
       // Commitment should be 32 bytes
       expect(cipher.commitment.commitment).toHaveLength(32)
       // Handle should be 32 bytes
       expect(cipher.handle.handle).toHaveLength(32)
-      
+
       // Range proof for Token-2022
       const result = encryptAmountWithRandomness(amount, keypair.publicKey)
-      const rangeProof = generateRangeProof(
+      const rangeProof = await generateRangeProof(
         amount,
         result.ciphertext.commitment,
         result.randomness
       )
-      
+
       // Proof should be valid
-      expect(verifyRangeProof(rangeProof, result.ciphertext.commitment.commitment)).toBe(true)
+      expect(await verifyRangeProof(rangeProof, result.ciphertext.commitment.commitment)).toBe(true)
     })
   })
 
@@ -827,22 +827,22 @@ describe('ElGamal Encryption', () => {
       expect(decrypted === null || decrypted !== amount).toBe(true)
     })
     
-    it('should maintain proof soundness', () => {
+    it('should maintain proof soundness', async () => {
       // Try to create proof for wrong value
       const actualAmount = 100n
       const claimedAmount = 200n
       const result = encryptAmountWithRandomness(actualAmount, keypair.publicKey)
-      
+
       // Try to generate range proof for wrong amount
       // This should either fail or produce invalid proof
       try {
-        const wrongProof = generateRangeProof(
+        const wrongProof = await generateRangeProof(
           claimedAmount,
           result.ciphertext.commitment,
           result.randomness
         )
         // If it doesn't throw, verification should fail
-        const isValid = verifyRangeProof(wrongProof, result.ciphertext.commitment.commitment)
+        const isValid = await verifyRangeProof(wrongProof, result.ciphertext.commitment.commitment)
         expect(isValid).toBe(false)
       } catch {
         // Expected: proof generation should fail for wrong amount

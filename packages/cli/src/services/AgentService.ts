@@ -22,15 +22,15 @@ import {
 import { randomUUID } from 'crypto'
 import { toSDKSigner } from '../utils/client.js'
 import { getCurrentProgramId } from '../../../../config/program-ids.js'
-import { createSolanaRpc } from '@solana/kit'
+import { createCustomClient } from '../core/solana-client.js'
 import { AgentModule, type GhostSpeakClient, type RpcClient, decodeAgent } from '@ghostspeak/sdk'
 import { getErrorMessage } from '../utils/type-guards.js'
 import { uploadMetadataToIPFS } from '../utils/ipfs.js'
 
 /**
- * Wrap Solana RPC with additional methods required by RpcClient interface
+ * Wrap Gill Solana RPC with additional methods required by RpcClient interface
  */
-function wrapRpcClient(rpc: ReturnType<typeof createSolanaRpc>): RpcClient {
+function wrapRpcClient(rpc: ReturnType<typeof createCustomClient>['rpc']): RpcClient {
   return {
     getBalance: async (address: Address) => rpc.getBalance(address).send(),
     getAccountInfo: async (address: Address) => {
@@ -132,7 +132,9 @@ export class AgentService implements IAgentService {
         ],
       })
 
-      const rpc = wrapRpcClient(createSolanaRpc('https://api.devnet.solana.com'))
+      // Use Gill's createCustomClient instead of createSolanaRpc
+      const client = createCustomClient('https://api.devnet.solana.com')
+      const rpc = wrapRpcClient(client.rpc)
       this.deps.logger.info('Creating AgentModule instance...')
       const agentModule = new AgentModule({
         programId: getCurrentProgramId(),

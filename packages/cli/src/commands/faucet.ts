@@ -6,9 +6,10 @@
  */
 
 import type { Command } from 'commander'
-import { createSolanaRpc, address } from '@solana/kit'
+import { address } from '@solana/kit'
 import { FaucetService } from '../services/faucet-service.js'
 import { WalletService } from '../services/wallet-service.js'
+import { createCustomClient } from '../core/solana-client.js'
 import chalk from 'chalk'
 
 // Node.js globals
@@ -152,16 +153,17 @@ async function requestFromRpcAirdrop(
 ): Promise<FaucetResult> {
   try {
     console.log(`🌐 Requesting ${amount} SOL via RPC airdrop...`)
-    
+
     const rpcUrl = network === 'devnet'
       ? 'https://api.devnet.solana.com'
       : 'https://api.testnet.solana.com'
 
-    const rpc = createSolanaRpc(rpcUrl)
+    // Use Gill's createCustomClient instead of createSolanaRpc
+    const client = createCustomClient(rpcUrl)
 
-    // Request airdrop via RPC
+    // Request airdrop via RPC using Gill
     const lamports = BigInt(Math.floor(amount * 1_000_000_000)) // Convert SOL to lamports
-    const airdropResult = await rpc.requestAirdrop(
+    const airdropResult = await client.rpc.requestAirdrop(
       address(walletAddress),
       // @ts-expect-error Lamports type may differ between versions
       lamports
@@ -196,12 +198,13 @@ async function checkBalance(walletAddress: string, network: 'devnet' | 'testnet'
       ? 'https://api.devnet.solana.com'
       : 'https://api.testnet.solana.com'
 
-    const rpc = createSolanaRpc(rpcUrl)
+    // Use Gill's createCustomClient instead of createSolanaRpc
+    const client = createCustomClient(rpcUrl)
 
-    const { value: balance } = await rpc.getBalance(address(walletAddress)).send()
+    const { value: balance } = await client.rpc.getBalance(address(walletAddress)).send()
     return Number(balance) / 1_000_000_000 // Convert lamports to SOL
   } catch (error) {
-    console.warn('⚠️ Failed to check balance:', error)
+    console.warn('Failed to check balance:', error)
     return 0
   }
 }

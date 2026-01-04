@@ -1,21 +1,23 @@
 import type { RpcApi } from '../types/index.js'
-import { createSolanaRpc } from '@solana/kit'
+import { createSolanaClient } from './solana-client.js'
 
 /**
  * Utility functions for connection management
+ *
+ * Now powered by Gill for simplified client management.
  */
 
 /**
  * Create a connection with recommended settings for GhostSpeak
+ *
+ * @param endpoint - RPC endpoint URL or network moniker (devnet, mainnet, etc.)
+ * @returns RPC API object
  */
 export function createRecommendedConnection(endpoint: string): RpcApi {
-  
-  // Create RPC with optimized settings for GhostSpeak protocol
-  const rpc = createSolanaRpc(endpoint, {
-    // Add any specific configuration for optimal performance
-  })
-  
-  return rpc
+  // Use Gill's createSolanaClient for unified client management
+  const client = createSolanaClient({ urlOrMoniker: endpoint })
+  // Return the rpc object for backward compatibility
+  return client.rpc as RpcApi
 }
 
 /**

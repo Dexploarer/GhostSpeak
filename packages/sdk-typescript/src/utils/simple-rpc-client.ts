@@ -1,11 +1,14 @@
 /**
  * Simplified RPC Client for Core Functionality
- * July 2025 - Working Implementation
+ * January 2026 - Gill Migration
+ *
+ * Now powered by Gill for simplified client management while maintaining
+ * full backward compatibility with the existing API.
  */
 
 import type { Address } from '@solana/addresses'
-import { createSolanaRpc, createSolanaRpcSubscriptions } from '@solana/kit'
 import type { Signature } from '@solana/kit'
+import { createSolanaClient, type SolanaClient } from './solana-client.js'
 import type {
   Commitment,
   AccountInfo,
@@ -19,26 +22,28 @@ export interface SimpleRpcClientConfig {
   commitment?: Commitment
 }
 
-// RPC configuration interfaces
-// Note: These may be used for future WebSocket configuration
-
 /**
  * Simplified RPC client focusing on core functionality
+ *
+ * Now powered by Gill for unified client management.
  */
 export class SimpleRpcClient {
-  private rpc: ReturnType<typeof createSolanaRpc>
-  private rpcSubscriptions?: ReturnType<typeof createSolanaRpcSubscriptions>
+  private client: SolanaClient<any>
   private commitment: Commitment
   private endpoint: string
 
   constructor(config: SimpleRpcClientConfig) {
     this.endpoint = config.endpoint
-    this.rpc = createSolanaRpc(config.endpoint)
+    // Use Gill's createSolanaClient for unified client management
+    this.client = createSolanaClient({ urlOrMoniker: config.endpoint })
     this.commitment = config.commitment ?? 'confirmed'
-    
-    if (config.wsEndpoint) {
-      this.rpcSubscriptions = createSolanaRpcSubscriptions(config.wsEndpoint)
-    }
+  }
+
+  /**
+   * Get the underlying RPC client for direct access
+   */
+  get rpc() {
+    return this.client.rpc
   }
 
   /**

@@ -17,7 +17,8 @@ import {
   log,
   note
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
+import { initializeClient, getExplorerUrl, toSDKSigner } from '../utils/client.js'
+import { handleError } from '../utils/error-handler.js'
 import { createSafeSDKClient } from '../utils/sdk-helpers.js'
 import { address } from '@solana/addresses'
 import type { Address } from '@solana/addresses'
@@ -308,7 +309,7 @@ escrowCommand
 
       } catch (error) {
         s.stop('❌ Failed to create escrow')
-        handleTransactionError(error as Error)
+        handleError(error)
       }
 
     } catch (error) {
@@ -441,7 +442,7 @@ escrowCommand
 
       } catch (error) {
         s.stop('❌ Failed to approve escrow')
-        handleTransactionError(error as Error)
+        handleError(error)
       }
 
     } catch (error) {
@@ -627,7 +628,7 @@ escrowCommand
 
       } catch (error) {
         s.stop('❌ Failed to submit dispute')
-        handleTransactionError(error as Error)
+        handleError(error)
       }
 
     } catch (error) {

@@ -7,12 +7,16 @@
 
 import type { GhostService } from '../services/ghost-service';
 import type { RateLimiter } from '../middleware/rate-limiter';
-import type { HealthResponse, StatsResponse } from '../types/ghost';
+import type { HealthResponse, StatsResponse, GhostSpeakConvexClient } from '@ghostspeak/shared';
 
 const startTime = Date.now();
 const VERSION = '0.1.0';
 
-export function createHealthRoutes(ghostService: GhostService, rateLimiter: RateLimiter) {
+export function createHealthRoutes(
+  ghostService: GhostService,
+  rateLimiter: RateLimiter,
+  convexClient: GhostSpeakConvexClient
+) {
   return {
     /**
      * GET /health
@@ -38,15 +42,17 @@ export function createHealthRoutes(ghostService: GhostService, rateLimiter: Rate
     async getStats(): Promise<Response> {
       const rateLimitStats = rateLimiter.getStats();
 
-      // TODO: Implement actual Ghost counting via program accounts
+      // Get discovery stats from Convex
+      const discoveryStats = await convexClient.getDiscoveryStats();
+
       const stats: StatsResponse = {
-        totalGhosts: 0, // Count all Agent PDAs
-        claimedGhosts: 0, // Count Agents with status=Claimed|Verified
-        verifiedGhosts: 0, // Count Agents with status=Verified
-        totalPlatforms: 0, // Count unique platforms in ExternalIdMapping
-        totalExternalIds: 0, // Count all ExternalIdMapping PDAs
-        averageGhostScore: 0, // Average ghost_score field
-        topSources: [], // Most common reputation sources
+        totalGhosts: discoveryStats.total,
+        claimedGhosts: discoveryStats.totalClaimed,
+        verifiedGhosts: discoveryStats.totalVerified,
+        totalPlatforms: 0, // TODO: Count unique platforms when we add external ID mapping
+        totalExternalIds: 0, // TODO: Count ExternalIdMapping PDAs
+        averageGhostScore: 0, // TODO: Calculate average from Convex ghost scores
+        topSources: [], // TODO: Most common reputation sources
       };
 
       return jsonResponse({

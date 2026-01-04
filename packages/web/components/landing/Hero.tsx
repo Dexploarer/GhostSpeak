@@ -7,6 +7,9 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { GhostParticles } from './GhostParticles'
 import gsap from 'gsap'
+import { useWallet } from '@/lib/wallet/WalletStandardProvider'
+import { useWalletModal } from '@/lib/wallet/WalletModal'
+import { useRouter } from 'next/navigation'
 
 /**
  * Hero - Premium split-layout hero section
@@ -27,6 +30,10 @@ import gsap from 'gsap'
  */
 export function Hero() {
   const containerRef = useRef<HTMLDivElement>(null)
+  const { publicKey } = useWallet()
+  const { setVisible } = useWalletModal()
+  const router = useRouter()
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ['start start', 'end start'],
@@ -35,6 +42,16 @@ export function Hero() {
   const particleScroll = useTransform(scrollYProgress, [0, 1], [0, 1])
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
   const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.8])
+
+  const handlePortalClick = () => {
+    if (publicKey) {
+      // User is authenticated, go to dashboard
+      router.push('/dashboard')
+    } else {
+      // User is not authenticated, open wallet selection modal
+      setVisible(true)
+    }
+  }
 
   // GSAP text reveal animations
   useEffect(() => {
@@ -103,19 +120,14 @@ export function Hero() {
                 <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
-            <Link
-              href="https://dexscreener.com/solana/e44xj7jyjxyermlqqwrpu4nekcphawfjf3ppn2uokgdb"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Button
+              onClick={handlePortalClick}
+              variant="outline"
+              size="lg"
+              className="h-14 px-8 rounded-xl text-base border-2 border-primary/30 text-foreground hover:bg-primary/10 hover:border-primary transition-all"
             >
-              <Button
-                variant="outline"
-                size="lg"
-                className="h-14 px-8 rounded-xl text-base border-2 border-primary/30 text-foreground hover:bg-primary/10 hover:border-primary transition-all"
-              >
-                Buy $GHOST
-              </Button>
-            </Link>
+              Portal
+            </Button>
           </div>
 
           {/* Stats Pills */}

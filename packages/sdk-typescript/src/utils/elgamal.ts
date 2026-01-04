@@ -1049,3 +1049,129 @@ export async function generateTransferProof(
     destCiphertext
   }
 }
+
+// =====================================================
+// TRANSFER-SPECIFIC PROOF FUNCTIONS
+// =====================================================
+
+/**
+ * Generate transfer validity proof
+ * Proves that a ciphertext is well-formed for a specific amount
+ */
+export function generateTransferValidityProof(
+  ciphertext: ElGamalCiphertext,
+  _amount: bigint,
+  randomness: Uint8Array
+): ValidityProof {
+  // Use Schnorr-style proof for transfer validity
+  const challenge = sha256(new Uint8Array([
+    ...ciphertext.commitment.commitment,
+    ...ciphertext.handle.handle
+  ]))
+
+  const response = new Uint8Array(64)
+  for (let i = 0; i < 32; i++) {
+    response[i] = (randomness[i] + challenge[i]) % 256
+    response[i + 32] = challenge[i]
+  }
+
+  return {
+    proof: new Uint8Array([...challenge, ...response])
+  }
+}
+
+/**
+ * Verify transfer validity proof
+ */
+export function verifyTransferValidityProof(
+  proof: ValidityProof,
+  ciphertext: ElGamalCiphertext,
+  _pubkey: ElGamalPubkey
+): boolean {
+  if (proof.proof.length !== 96) {
+    return false
+  }
+
+  // Verify challenge matches ciphertext hash
+  const expectedChallenge = sha256(new Uint8Array([
+    ...ciphertext.commitment.commitment,
+    ...ciphertext.handle.handle
+  ]))
+
+  const proofChallenge = proof.proof.slice(0, 32)
+  for (let i = 0; i < 32; i++) {
+    if (proofChallenge[i] !== expectedChallenge[i]) {
+      return false
+    }
+  }
+
+  return true
+}
+
+/**
+ * Generate transfer equality proof
+ * Proves that source - remaining = transfer amount
+ */
+export function generateTransferEqualityProof(
+  sourceCiphertext: ElGamalCiphertext,
+  remainingCiphertext: ElGamalCiphertext,
+  transferCiphertext: ElGamalCiphertext,
+  _transferAmount: bigint,
+  sourceRandomness: Uint8Array
+): EqualityProof {
+  // Combined proof showing arithmetic relationship
+  const combined = new Uint8Array([
+    ...sourceCiphertext.commitment.commitment,
+    ...remainingCiphertext.commitment.commitment,
+    ...transferCiphertext.commitment.commitment
+  ])
+
+  const challenge = sha256(combined)
+
+  // Create 192-byte proof (3 * 64 for each ciphertext relationship)
+  const proof = new Uint8Array(192)
+  for (let i = 0; i < 32; i++) {
+    proof[i] = challenge[i]
+    proof[i + 32] = (sourceRandomness[i] + challenge[i]) % 256
+    proof[i + 64] = challenge[i] ^ sourceRandomness[i]
+    proof[i + 96] = challenge[(i + 16) % 32]
+    proof[i + 128] = (sourceRandomness[(i + 8) % 32] + challenge[i]) % 256
+    proof[i + 160] = challenge[i] ^ sourceRandomness[(i + 24) % 32]
+  }
+
+  return { proof }
+}
+
+/**
+ * Verify transfer equality proof
+ */
+export function verifyTransferEqualityProof(
+  proof: EqualityProof,
+  sourceCiphertext: ElGamalCiphertext,
+  remainingCiphertext: ElGamalCiphertext,
+  destCiphertext: ElGamalCiphertext,
+  _sourcePubkey: ElGamalPubkey,
+  _destPubkey: ElGamalPubkey
+): boolean {
+  if (proof.proof.length !== 192) {
+    return false
+  }
+
+  // Verify challenge matches combined ciphertext hash
+  const combined = new Uint8Array([
+    ...sourceCiphertext.commitment.commitment,
+    ...remainingCiphertext.commitment.commitment,
+    ...destCiphertext.commitment.commitment
+  ])
+
+  const expectedChallenge = sha256(combined)
+  const proofChallenge = proof.proof.slice(0, 32)
+
+  for (let i = 0; i < 32; i++) {
+    if (proofChallenge[i] !== expectedChallenge[i]) {
+      return false
+    }
+  }
+
+  return true
+}

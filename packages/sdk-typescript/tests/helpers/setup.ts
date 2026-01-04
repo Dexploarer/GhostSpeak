@@ -35,7 +35,14 @@ export function setupBrowserGlobals() {
           return array
         },
         subtle: {
-          digest: vi.fn(),
+          // Provide a working digest implementation for tests that need real hashing
+          digest: async (algorithm: string, data: ArrayBuffer) => {
+            // Use Node's crypto for actual hashing
+            const nodeCrypto = await import('node:crypto')
+            const hash = nodeCrypto.createHash(algorithm.replace('-', '').toLowerCase())
+            hash.update(Buffer.from(data))
+            return hash.digest().buffer
+          },
           encrypt: vi.fn(),
           decrypt: vi.fn(),
           sign: vi.fn(),

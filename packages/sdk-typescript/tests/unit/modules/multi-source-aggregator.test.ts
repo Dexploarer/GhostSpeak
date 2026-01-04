@@ -4,7 +4,7 @@
  * Tests weighted scoring, conflict detection, and source adapters
  */
 
-import { test, expect, describe, beforeEach } from 'bun:test'
+import { it, expect, describe, beforeEach } from 'vitest'
 
 interface SourceReputationData {
   source: string
@@ -101,7 +101,7 @@ describe('MultiSourceAggregator', () => {
   })
 
   describe('calculateWeightedScore', () => {
-    test('should calculate weighted score from multiple sources', () => {
+    it('should calculate weighted score from multiple sources', () => {
       aggregator.addSource('payai', { enabled: true, weight: 5000, reliability: 9000 })
       aggregator.addSource('github', { enabled: true, weight: 3000, reliability: 8500 })
       aggregator.addSource('custom', { enabled: true, weight: 2000, reliability: 8000 })
@@ -118,12 +118,12 @@ describe('MultiSourceAggregator', () => {
       expect(score).toBeLessThan(850)
     })
 
-    test('should return 0 for empty source list', () => {
+    it('should return 0 for empty source list', () => {
       const score = aggregator.calculateWeightedScore([])
       expect(score).toBe(0)
     })
 
-    test('should handle single source', () => {
+    it('should handle single source', () => {
       aggregator.addSource('payai', { enabled: true, weight: 10000, reliability: 10000 })
 
       const sourceData: SourceReputationData[] = [
@@ -134,7 +134,7 @@ describe('MultiSourceAggregator', () => {
       expect(score).toBe(800)
     })
 
-    test('should weight high-reliability sources more', () => {
+    it('should weight high-reliability sources more', () => {
       aggregator.addSource('reliable', { enabled: true, weight: 5000, reliability: 10000 })
       aggregator.addSource('unreliable', { enabled: true, weight: 5000, reliability: 5000 })
 
@@ -144,12 +144,13 @@ describe('MultiSourceAggregator', () => {
       ]
 
       const score = aggregator.calculateWeightedScore(sourceData)
-      expect(score).toBeGreaterThan(800) // Should be closer to reliable source
+      // With equal weights but 2:1 reliability, weighted average = (900*1.0 + 600*0.5) / (1.0 + 0.5) = 800
+      expect(score).toBeGreaterThanOrEqual(800) // Should be closer to reliable source
     })
   })
 
   describe('detectConflicts', () => {
-    test('should detect conflict when variance > 30%', () => {
+    it('should detect conflict when variance > 30%', () => {
       const sourceData: SourceReputationData[] = [
         { source: 'high', score: 900, dataPoints: 100, reliability: 0.9, timestamp: new Date() },
         { source: 'low', score: 400, dataPoints: 50, reliability: 0.9, timestamp: new Date() },
@@ -164,7 +165,7 @@ describe('MultiSourceAggregator', () => {
       expect(conflicts[0]).toContain('low')
     })
 
-    test('should not detect conflict when variance < 30%', () => {
+    it('should not detect conflict when variance < 30%', () => {
       const sourceData: SourceReputationData[] = [
         { source: 'source1', score: 800, dataPoints: 100, reliability: 0.9, timestamp: new Date() },
         { source: 'source2', score: 850, dataPoints: 80, reliability: 0.9, timestamp: new Date() },
@@ -176,7 +177,7 @@ describe('MultiSourceAggregator', () => {
       expect(conflicts.length).toBe(0)
     })
 
-    test('should not detect conflict with single source', () => {
+    it('should not detect conflict with single source', () => {
       const sourceData: SourceReputationData[] = [
         { source: 'only', score: 800, dataPoints: 100, reliability: 0.9, timestamp: new Date() },
       ]
@@ -185,7 +186,7 @@ describe('MultiSourceAggregator', () => {
       expect(hasConflicts).toBe(false)
     })
 
-    test('should provide detailed conflict message', () => {
+    it('should provide detailed conflict message', () => {
       const sourceData: SourceReputationData[] = [
         { source: 'payai', score: 850, dataPoints: 100, reliability: 0.9, timestamp: new Date() },
         { source: 'github', score: 400, dataPoints: 50, reliability: 0.8, timestamp: new Date() },

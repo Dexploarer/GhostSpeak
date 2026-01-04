@@ -1,10 +1,18 @@
 {
   "name": "@ghostspeak/api",
   "version": "0.1.0",
-  "description": "GhostSpeak Public REST API - Universal Agent Identity Lookup",
+  "description": "GhostSpeak Public REST API - Universal Agent Identity & Reputation Lookup for AI Agents on Solana",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "src/index.ts",
   "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Dexploarer/api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Dexploarer/api/issues"
+  },
+  "homepage": "https://github.com/Dexploarer/api#readme",
   "scripts": {
     "dev": "bun --hot src/index.ts",
     "start": "bun src/index.ts",
@@ -13,10 +21,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@solana/rpc": "^5.1.0",
-    "@solana/addresses": "^5.1.0",
-    "@solana/codecs": "^5.1.0",
-    "@solana/kit": "^5.1.0"
+    "@ghostspeak/shared": "workspace:*",
+    "@solana/rpc": "^5.1.0"
   },
   "devDependencies": {
     "@types/bun": "latest",

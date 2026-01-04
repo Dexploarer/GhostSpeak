@@ -17,7 +17,8 @@ import {
   log,
   note
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
+import { initializeClient, getExplorerUrl, toSDKSigner } from '../utils/client.js'
+import { handleError } from '../utils/error-handler.js'
 import { createSafeSDKClient } from '../utils/sdk-helpers.js'
 import { address } from '@solana/addresses'
 import type { Address } from '@solana/addresses'
@@ -232,7 +233,7 @@ privacyCommand
 
       } catch (error) {
         s.stop('❌ Failed to update privacy settings')
-        handleTransactionError(error as Error)
+        handleError(error)
       }
 
     } catch (error) {
@@ -461,7 +462,7 @@ privacyCommand
 
       } catch (error) {
         s.stop('❌ Failed to apply preset')
-        handleTransactionError(error as Error)
+        handleError(error)
       }
 
     } catch (error) {

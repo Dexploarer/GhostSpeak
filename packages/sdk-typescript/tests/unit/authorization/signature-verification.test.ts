@@ -4,9 +4,11 @@
  * Tests for GhostSpeak's agent authorization signature creation and verification
  */
 
-import { describe, test, expect, beforeEach } from 'bun:test'
-import { Keypair } from '@solana/web3.js'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { address } from '@solana/addresses'
 import type { Address } from '@solana/addresses'
+import nacl from 'tweetnacl'
+import bs58 from 'bs58'
 import {
   createAuthorizationMessage,
   signAuthorizationMessage,
@@ -19,6 +21,7 @@ import {
   isAuthorizationExpired,
   isAuthorizationExhausted,
   validateAuthorizationNetwork,
+  type SigningKeypair,
 } from '../../../src/utils/signature-verification'
 import type {
   AuthorizationMessage,
@@ -26,18 +29,37 @@ import type {
   CreateAuthorizationParams,
 } from '../../../src/types/authorization/authorization-types'
 
+/**
+ * Create a test keypair compatible with SigningKeypair interface
+ */
+function createTestKeypair(): SigningKeypair {
+  const keypair = nacl.sign.keyPair()
+  const publicKeyBase58 = bs58.encode(keypair.publicKey)
+
+  return {
+    publicKey: {
+      toBase58: () => publicKeyBase58,
+      toBytes: () => keypair.publicKey,
+    },
+    secretKey: keypair.secretKey,
+  }
+}
+
 describe('Authorization Signature Verification', () => {
-  let agentKeypair: Keypair
+  let agentKeypair: SigningKeypair
   let facilitatorPubkey: Address
 
   beforeEach(() => {
+    // Clear any mocks from other tests that might pollute our test
+    vi.restoreAllMocks()
+
     // Generate a test agent keypair
-    agentKeypair = Keypair.generate()
-    facilitatorPubkey = Keypair.generate().publicKey.toBase58() as Address
+    agentKeypair = createTestKeypair()
+    facilitatorPubkey = bs58.encode(nacl.sign.keyPair().publicKey) as Address
   })
 
   describe('createAuthorizationMessage', () => {
-    test('should create deterministic message buffer', () => {
+    it('should create deterministic message buffer', () => {
       const message: AuthorizationMessage = {
         agentAddress: agentKeypair.publicKey.toBase58() as Address,
         authorizedSource: facilitatorPubkey,
@@ -52,7 +74,7 @@ describe('Authorization Signature Verification', () => {
       expect(buffer1).toEqual(buffer2)
     })
 
-    test('should create different buffers for different messages', () => {
+    it('should create different buffers for different messages', () => {
       const baseMessage: AuthorizationMessage = {
         agentAddress: agentKeypair.publicKey.toBase58() as Address,
         authorizedSource: facilitatorPubkey,
@@ -70,7 +92,7 @@ describe('Authorization Signature Verification', () => {
       expect(buffer1).not.toEqual(buffer2)
     })
 
-    test('should include nonce in message if provided', () => {
+    it('should include nonce in message if provided', () => {
       const messageWithoutNonce: AuthorizationMessage = {
         agentAddress: agentKeypair.publicKey.toBase58() as Address,
         authorizedSource: facilitatorPubkey,
@@ -93,7 +115,7 @@ describe('Authorization Signature Verification', () => {
   })
 
   describe('signAuthorizationMessage', () => {
-    test('should create valid signature', async () => {
+    it('should create valid signature', async () => {
       const message: AuthorizationMessage = {
         agentAddress: agentKeypair.publicKey.toBase58() as Address,
         authorizedSource: facilitatorPubkey,
@@ -108,8 +130,8 @@ describe('Authorization Signature Verification', () => {
       expect(signature.length).toBe(64) // Ed25519 signature is 64 bytes
     })
 
-    test('should throw if keypair does not match agent address', async () => {
-      const wrongKeypair = Keypair.generate()
+    it('should throw if keypair does not match agent address', async () => {
+      const wrongKeypair = createTestKeypair()
       const message: AuthorizationMessage = {
         agentAddress: agentKeypair.publicKey.toBase58() as Address, // Different from wrongKeypair
         authorizedSource: facilitatorPubkey,
@@ -121,7 +143,7 @@ describe('Authorization Signature Verification', () => {
       await expect(signAuthorizationMessage(message, wrongKeypair)).rejects.toThrow()
     })
 
-    test('should create different signatures for different messages', async () => {
+    it('should create different signatures for different messages', async () => {
       const message1: AuthorizationMessage = {
         agentAddress: agentKeypair.publicKey.toBase58() as Address,
         authorizedSource: facilitatorPubkey,
@@ -143,7 +165,7 @@ describe('Authorization Signature Verification', () => {
   })
 
   describe('verifyAuthorizationSignature', () => {
-    test('should verify valid authorization signature', async () => {
+    it('should verify valid authorization signature', async () => {
       const params: CreateAuthorizationParams = {
         authorizedSource: facilitatorPubkey,
         indexLimit: 1000,
@@ -157,7 +179,7 @@ describe('Authorization Signature Verification', () => {
       expect(isValid).toBe(true)
     })
 
-    test('should reject authorization with modified data', async () => {
+    it('should reject authorization with modified data', async () => {
       const params: CreateAuthorizationParams = {
         authorizedSource: facilitatorPubkey,
         indexLimit: 1000,
@@ -178,7 +200,7 @@ describe('Authorization Signature Verification', () => {
       expect(isValid).toBe(false)
     })
 
-    test('should reject authorization with wrong signature', async () => {
+    it('should reject authorization with wrong signature', async () => {
       const params: CreateAuthorizationParams = {
         authorizedSource: facilitatorPubkey,
         indexLimit: 1000,
@@ -201,7 +223,7 @@ describe('Authorization Signature Verification', () => {
   })
 
   describe('createSignedAuthorization', () => {
-    test('should create complete authorization with valid signature', async () => {
+    it('should create complete authorization with valid signature', async () => {
       const params: CreateAuthorizationParams = {
         authorizedSource: facilitatorPubkey,
         indexLimit: 1000,
@@ -223,7 +245,7 @@ describe('Authorization Signature Verification', () => {
       expect(isValid).toBe(true)
     })
 
-    test('should use default values when not provided', async () => {
+    it('should use default values when not provided', async () => {
       const params: CreateAuthorizationParams = {
         authorizedSource: facilitatorPubkey,
       }
@@ -235,7 +257,7 @@ describe('Authorization Signature Verification', () => {
       expect(authorization.network).toBe('devnet') // Default
     })
 
-    test('should include metadata if provided', async () => {
+    it('should include metadata if provided', async () => {
       const params: CreateAuthorizationParams = {
         authorizedSource: facilitatorPubkey,
         metadata: {
@@ -254,7 +276,7 @@ describe('Authorization Signature Verification', () => {
   })
 
   describe('serializeAuthorization and deserializeAuthorization', () => {
-    test('should serialize and deserialize authorization', async () => {
+    it('should serialize and deserialize authorization', async () => {
       const params: CreateAuthorizationParams = {
         authorizedSource: facilitatorPubkey,
         indexLimit: 1000,
@@ -280,7 +302,7 @@ describe('Authorization Signature Verification', () => {
   })
 
   describe('getAuthorizationId', () => {
-    test('should generate deterministic ID', async () => {
+    it('should generate deterministic ID', async () => {
       const params: CreateAuthorizationParams = {
         authorizedSource: facilitatorPubkey,
         nonce: 'fixed-nonce-for-testing',
@@ -294,7 +316,7 @@ describe('Authorization Signature Verification', () => {
       expect(id1).toBe(id2)
     })
 
-    test('should generate different IDs for different authorizations', async () => {
+    it('should generate different IDs for different authorizations', async () => {
       const params1: CreateAuthorizationParams = {
         authorizedSource: facilitatorPubkey,
         nonce: 'nonce-1',
@@ -316,7 +338,7 @@ describe('Authorization Signature Verification', () => {
   })
 
   describe('isAuthorizationExpired', () => {
-    test('should return false for non-expired authorization', () => {
+    it('should return false for non-expired authorization', () => {
       const authorization: ReputationAuthorization = {
         agentAddress: agentKeypair.publicKey.toBase58() as Address,
         authorizedSource: facilitatorPubkey,
@@ -329,7 +351,7 @@ describe('Authorization Signature Verification', () => {
       expect(isAuthorizationExpired(authorization)).toBe(false)
     })
 
-    test('should return true for expired authorization', () => {
+    it('should return true for expired authorization', () => {
       const authorization: ReputationAuthorization = {
         agentAddress: agentKeypair.publicKey.toBase58() as Address,
         authorizedSource: facilitatorPubkey,
@@ -344,7 +366,7 @@ describe('Authorization Signature Verification', () => {
   })
 
   describe('isAuthorizationExhausted', () => {
-    test('should return false when index is below limit', () => {
+    it('should return false when index is below limit', () => {
       const authorization: ReputationAuthorization = {
         agentAddress: agentKeypair.publicKey.toBase58() as Address,
         authorizedSource: facilitatorPubkey,
@@ -357,7 +379,7 @@ describe('Authorization Signature Verification', () => {
       expect(isAuthorizationExhausted(authorization, 500)).toBe(false)
     })
 
-    test('should return true when index reaches limit', () => {
+    it('should return true when index reaches limit', () => {
       const authorization: ReputationAuthorization = {
         agentAddress: agentKeypair.publicKey.toBase58() as Address,
         authorizedSource: facilitatorPubkey,
@@ -373,7 +395,7 @@ describe('Authorization Signature Verification', () => {
   })
 
   describe('validateAuthorizationNetwork', () => {
-    test('should return true for matching networks', () => {
+    it('should return true for matching networks', () => {
       const authorization: ReputationAuthorization = {
         agentAddress: agentKeypair.publicKey.toBase58() as Address,
         authorizedSource: facilitatorPubkey,
@@ -386,7 +408,7 @@ describe('Authorization Signature Verification', () => {
       expect(validateAuthorizationNetwork(authorization, 'devnet')).toBe(true)
     })
 
-    test('should return false for mismatched networks', () => {
+    it('should return false for mismatched networks', () => {
       const authorization: ReputationAuthorization = {
         agentAddress: agentKeypair.publicKey.toBase58() as Address,
         authorizedSource: facilitatorPubkey,
@@ -401,7 +423,7 @@ describe('Authorization Signature Verification', () => {
   })
 
   describe('generateNonce', () => {
-    test('should generate random nonce', () => {
+    it('should generate random nonce', () => {
       const nonce1 = generateNonce()
       const nonce2 = generateNonce()
 

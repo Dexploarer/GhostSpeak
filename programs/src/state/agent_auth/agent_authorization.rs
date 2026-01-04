@@ -421,7 +421,7 @@ mod tests {
         // Check network string is included
         assert!(message.windows(6).any(|w| w == b"devnet"));
 
-        // Check nonce is included
-        assert!(message.windows(17).any(|w| w == b"test-nonce-12345"));
+        // Check nonce is included (16 characters)
+        assert!(message.windows(16).any(|w| w == b"test-nonce-12345"));
     }
 }

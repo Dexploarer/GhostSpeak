@@ -17,7 +17,8 @@ import {
   log,
   note
 } from '@clack/prompts'
-import { initializeClient, getExplorerUrl, handleTransactionError, toSDKSigner } from '../utils/client.js'
+import { initializeClient, getExplorerUrl, toSDKSigner } from '../utils/client.js'
+import { handleError } from '../utils/error-handler.js'
 import { createSafeSDKClient } from '../utils/sdk-helpers.js'
 import { address } from '@solana/addresses'
 import type { Address } from '@solana/addresses'
@@ -289,7 +290,7 @@ authorizationCommand
 
       } catch (error) {
         s.stop('❌ Failed to create authorization')
-        handleTransactionError(error as Error)
+        handleError(error)
       }
 
     } catch (error) {
@@ -395,7 +396,7 @@ authorizationCommand
 
       } catch (error) {
         s.stop('❌ Failed to revoke authorization')
-        handleTransactionError(error as Error)
+        handleError(error)
       }
 
     } catch (error) {

@@ -16,7 +16,12 @@ import {
   signTransactionMessageWithSigners,
   getSignatureFromTransaction
 } from '@solana/web3.js'
-import { getSetComputeUnitLimitInstruction } from '@solana-program/compute-budget'
+// Mock compute budget instruction since @solana-program/compute-budget is not installed
+const getSetComputeUnitLimitInstruction = ({ units }: { units: number }) => ({
+  programAddress: '11111111111111111111111111111111',
+  accounts: [],
+  data: new Uint8Array([0, units & 0xff, (units >> 8) & 0xff, (units >> 16) & 0xff, (units >> 24) & 0xff])
+})
 import type { Address, Rpc } from '@solana/web3.js'
 import { GhostSpeakClient } from '../../src/client/GhostSpeakClient.js'
 import { MarketplaceInstructions } from '../../src/client/instructions/MarketplaceInstructions.js'
@@ -123,13 +128,11 @@ describe('Escrow Integration Tests', () => {
         }
       )
 
-      const message = await pipe(
+      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send()
+      const message = pipe(
         createTransactionMessage({ version: 0 }),
         tx => setTransactionMessageFeePayer(buyer.address, tx),
-        tx => setTransactionMessageLifetimeUsingBlockhash(
-          await rpc.getLatestBlockhash().then(b => b.value),
-          tx
-        ),
+        tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
         tx => appendTransactionMessageInstructions(
           [
             getSetComputeUnitLimitInstruction({ units: 300000 }),
@@ -168,13 +171,11 @@ describe('Escrow Integration Tests', () => {
         }
       )
 
-      const message = await pipe(
+      const { value: blockhash2 } = await rpc.getLatestBlockhash().send()
+      const message = pipe(
         createTransactionMessage({ version: 0 }),
         tx => setTransactionMessageFeePayer(buyer.address, tx),
-        tx => setTransactionMessageLifetimeUsingBlockhash(
-          await rpc.getLatestBlockhash().then(b => b.value),
-          tx
-        ),
+        tx => setTransactionMessageLifetimeUsingBlockhash(blockhash2, tx),
         tx => appendTransactionMessageInstructions(
           [
             getSetComputeUnitLimitInstruction({ units: 300000 }),
@@ -213,13 +214,11 @@ describe('Escrow Integration Tests', () => {
         }
       )
 
-      const message = await pipe(
+      const { value: blockhash3 } = await rpc.getLatestBlockhash().send()
+      const message = pipe(
         createTransactionMessage({ version: 0 }),
         tx => setTransactionMessageFeePayer(buyer.address, tx),
-        tx => setTransactionMessageLifetimeUsingBlockhash(
-          await rpc.getLatestBlockhash().then(b => b.value),
-          tx
-        ),
+        tx => setTransactionMessageLifetimeUsingBlockhash(blockhash3, tx),
         tx => appendTransactionMessageInstructions(
           [
             getSetComputeUnitLimitInstruction({ units: 300000 }),
@@ -231,7 +230,7 @@ describe('Escrow Integration Tests', () => {
 
       const signedTx = await signTransactionMessageWithSigners(message)
       const signature = getSignatureFromTransaction(signedTx)
-      
+
       await rpc.sendTransaction(signedTx, { skipPreflight: false })
       await confirmTransaction(rpc, signature)
 
@@ -697,19 +696,17 @@ async function executeTransaction(
   payer: Keypair,
   instructions: any[]
 ) {
-  const message = await pipe(
+  const { value: blockhash } = await rpc.getLatestBlockhash().send()
+  const message = pipe(
     createTransactionMessage({ version: 0 }),
     tx => setTransactionMessageFeePayer(payer.address, tx),
-    tx => setTransactionMessageLifetimeUsingBlockhash(
-      await rpc.getLatestBlockhash().then(b => b.value),
-      tx
-    ),
+    tx => setTransactionMessageLifetimeUsingBlockhash(blockhash, tx),
     tx => appendTransactionMessageInstructions(instructions, tx)
   )
 
   const signedTx = await signTransactionMessageWithSigners(message)
   const signature = getSignatureFromTransaction(signedTx)
-  
+
   await rpc.sendTransaction(signedTx, { skipPreflight: false })
   await confirmTransaction(rpc, signature)
 }

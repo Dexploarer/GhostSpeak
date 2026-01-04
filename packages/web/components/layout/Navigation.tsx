@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 import {
   Menu,
@@ -31,6 +32,7 @@ export const Navigation: React.FC = () => {
   const [mounted, setMounted] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const pathname = usePathname()
 
   const { scrollY } = useScroll()
 
@@ -42,8 +44,12 @@ export const Navigation: React.FC = () => {
     setMounted(true)
   }, [])
 
-  // We're now always on the landing/marketing page
-  const isMarketingPage = true
+  // Check if we're on dashboard or other authenticated pages
+  const isDashboardPage = pathname?.startsWith('/dashboard') || pathname?.startsWith('/caisper') || pathname?.startsWith('/settings')
+  const isMarketingPage = !isDashboardPage
+
+  // Show marketing nav items only on marketing pages
+  const navItems = isDashboardPage ? [] : marketingNavItems
 
   const toggleDarkMode = (): void => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
@@ -107,11 +113,12 @@ export const Navigation: React.FC = () => {
           </motion.div>
 
           {/* Desktop Navigation */}
-          <motion.div
-            layout
-            className="hidden md:flex items-center justify-center absolute left-1/2 -translate-x-1/2"
-          >
-            {marketingNavItems.map((item) => {
+          {navItems.length > 0 && (
+            <motion.div
+              layout
+              className="hidden md:flex items-center justify-center absolute left-1/2 -translate-x-1/2"
+            >
+              {navItems.map((item) => {
               const Icon = item.icon
               const LinkComponent = item.external ? 'a' : Link
 
@@ -139,7 +146,8 @@ export const Navigation: React.FC = () => {
                 </LinkComponent>
               )
             })}
-          </motion.div>
+            </motion.div>
+          )}
 
           {/* Actions Section */}
           <motion.div layout className="flex items-center gap-3 shrink-0">
@@ -194,7 +202,7 @@ export const Navigation: React.FC = () => {
                 <ConnectWalletButton variant="gradient" className="w-full justify-center" />
               </motion.div>
 
-              {marketingNavItems.map((item, idx) => {
+              {navItems.map((item, idx) => {
                 const LinkComponent = item.external ? 'a' : Link
 
                 return (

@@ -14,7 +14,7 @@ import { Card } from '../components/Card.js'
 import { Badge } from '../components/Badge.js'
 import { Alert } from '../components/Alert.js'
 import { ProgressBar } from '../components/ProgressBar.js'
-import { createSolanaRpc } from '@solana/rpc'
+import { createCustomClient } from '../../core/solana-client.js'
 import { address, type Address } from '@solana/addresses'
 import { createKeyPairSignerFromBytes } from '@solana/signers'
 import { createSafeSDKClient } from '../../utils/sdk-helpers.js'
@@ -114,8 +114,8 @@ export const Multisig: React.FC<MultisigProps> = ({ multisigAddress, autoRefresh
       const secretKeyBytes = new Uint8Array(JSON.parse(readFileSync(walletPath, 'utf-8')))
       const wallet = await createKeyPairSignerFromBytes(secretKeyBytes)
 
-      // Connect to Solana
-      const rpc = createSolanaRpc('https://api.devnet.solana.com')
+      // Connect to Solana using Gill
+      const solanaClient = createCustomClient('https://api.devnet.solana.com')
       const client = new GhostSpeakClient({
         rpcEndpoint: 'https://api.devnet.solana.com'
       })

@@ -2,6 +2,8 @@
 
 > Universal Agent Identity & Reputation Lookup for AI Agents on Solana
 
+**Status: 🚧 Work In Progress - Deployment Coming Soon**
+
 Free tier public API for querying Ghost identities, scores, and cross-platform reputation.
 
 ## 🚀 Quick Start
@@ -87,6 +89,9 @@ NODE_ENV=development
 # Solana Network
 SOLANA_NETWORK=devnet
 SOLANA_RPC_URL=https://api.devnet.solana.com
+
+# Convex Database
+CONVEX_URL=https://lovely-cobra-639.convex.cloud
 
 # Rate Limiting
 RATE_LIMIT=100           # Requests per window
@@ -198,12 +203,14 @@ src/
 │   ├── ghosts.ts         # Ghost lookup routes
 │   └── health.ts         # Health & stats routes
 ├── services/
-│   └── ghost-service.ts  # Solana RPC interaction
-├── middleware/
-│   └── rate-limiter.ts   # Rate limiting logic
-└── types/
-    └── ghost.ts          # TypeScript definitions
+│   └── ghost-service.ts  # Solana RPC interaction & Borsh decoding
+└── middleware/
+    └── rate-limiter.ts   # Rate limiting logic
 ```
+
+**Dependencies:**
+- `@ghostspeak/shared` - Shared types, Convex client, and Solana utilities
+- `@solana/rpc` - Solana RPC client (v5)
 
 ## 🔧 Technology Stack
 
@@ -225,45 +232,118 @@ Access real-time stats at `/stats` endpoint.
 
 ## 🚢 Deployment
 
-### Local Development
+### Railway (Recommended)
+
+Railway provides native Bun support with zero configuration.
+
+**1. Install Railway CLI:**
 ```bash
-bun dev
+npm install -g @railway/cli
 ```
 
-### Production (Railway, Fly.io, etc.)
+**2. Login and Deploy:**
 ```bash
-# Set environment variables
-export SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
-export SOLANA_NETWORK=mainnet
-export PORT=3001
-
-# Start server
-bun start
+railway login
+railway init
+railway up
 ```
 
-### Docker
-```dockerfile
-FROM oven/bun:1
-WORKDIR /app
-COPY package.json bun.lockb ./
-RUN bun install --production
-COPY src ./src
-CMD ["bun", "src/index.ts"]
+**3. Set Environment Variables** (in Railway dashboard):
+```env
+PORT=3001
+SOLANA_RPC_URL=https://api.devnet.solana.com
+CONVEX_URL=https://lovely-cobra-639.convex.cloud
+SOLANA_NETWORK=devnet
+RATE_LIMIT=100
+RATE_WINDOW_MS=60000
+NODE_ENV=production
 ```
 
-## 📝 Notes
+**4. Generate Public Domain:**
+```bash
+railway domain
+```
 
-- The API currently returns mock data from `GhostService` (Borsh deserialization not yet implemented)
-- PDA derivation functions need implementation for cross-platform lookups
-- Stats endpoint counts need implementation via program account queries
-- Production deployment should use a load balancer for horizontal scaling
+**Configuration:** Railway automatically detects `railway.json` and uses Railpack builder for optimal Bun performance.
+
+---
+
+### Docker (Fly.io, Render, etc.)
+
+For platforms that use Docker:
+
+**Deploy to Fly.io:**
+```bash
+fly launch  # Auto-detects Bun and creates Dockerfile
+fly deploy
+```
+
+**Deploy to Render:**
+1. Connect your GitHub repo
+2. Select "Docker" as environment
+3. Set environment variables in dashboard
+4. Deploy automatically on push
+
+The included `Dockerfile` uses Bun's official slim image for production.
+
+---
+
+### Local Production Test
+```bash
+# Build (optional - for testing compiled version)
+bun build src/index.ts --outdir dist --target bun --minify
+
+# Run production mode
+NODE_ENV=production bun start
+```
+
+---
+
+### Why Not Vercel?
+
+⚠️ **Vercel does not support `Bun.serve()` applications**. Vercel's Bun runtime only works with framework adapters (Next.js, Express, Hono). This API uses pure `Bun.serve()` which requires a long-running server, incompatible with Vercel's serverless architecture.
+
+**Recommended platforms:** Railway, Fly.io, Render, Koyeb
+
+## 📝 Implementation Status
+
+✅ **Completed:**
+- Solana RPC integration with Web3.js v5
+- Borsh deserialization for on-chain Agent accounts
+- PDA derivation for Agent and ExternalIdMapping accounts
+- Convex integration for discovery statistics (52 discovered ghosts)
+- Real-time stats from Convex database
+- Health monitoring with RPC latency tracking
+- Rate limiting with per-IP tracking
+
+🚧 **In Progress:**
+- External ID mapping endpoints (waiting for on-chain ExternalIdMapping accounts)
+- On-chain Agent PDA queries (discovery tracked in Convex, claiming coming soon)
+
+💡 **Production Notes:**
+- Use a load balancer for horizontal scaling
+- Consider Redis for distributed rate limiting
+- Monitor RPC latency and switch endpoints if needed
 
 ## 🔗 Links
 
+- **GitHub:** https://github.com/Dexploarer/api
 - **Program ID (Devnet):** `4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB`
-- **Documentation:** https://docs.ghostspeak.ai/api
-- **GitHub:** https://github.com/ghostspeak-ai/ghostspeak
+- **Live API:** 🚧 Deployment in progress (Railway/Zeabur)
 - **Website:** https://ghostspeak.ai
+
+## 🚧 Deployment Status
+
+The API is fully functional locally and ready for deployment. Deployment to production hosting (Railway or Zeabur) is scheduled for the coming weeks.
+
+**To test locally:**
+```bash
+git clone https://github.com/Dexploarer/api.git
+cd api
+bun install
+bun dev
+# API available at http://localhost:3001
+```
 
 ## 📜 License
 

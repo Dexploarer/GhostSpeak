@@ -33,36 +33,6 @@ export type {
 } from '../errors/index.js'
 
 /**
- * Deprecated aliases for backward compatibility
- * @deprecated Use the new error classes from '../errors/index.js'
- */
-export class RpcError extends NetworkError {
-  constructor(
-    message: string,
-    public endpoint?: string,
-    cause?: Error
-  ) {
-    super(message, { context: { metadata: { endpoint } }, cause })
-    this.name = 'RpcError'
-  }
-}
-
-export class InstructionError extends ValidationError {
-  constructor(
-    message: string,
-    public instructionIndex?: number,
-    cause?: Error
-  ) {
-    super(message, { 
-      field: 'instruction', 
-      context: { metadata: { instructionIndex } }, 
-      cause 
-    })
-    this.name = 'InstructionError'
-  }
-}
-
-/**
  * Enhanced retry configuration with comprehensive settings
  */
 export interface RetryConfig {

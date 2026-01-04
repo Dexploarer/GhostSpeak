@@ -15,8 +15,8 @@ describe('GhostSpeakClient', () => {
     
     expect(client).toBeDefined()
     expect(client.agent).toBeDefined()
-    expect(client.marketplace).toBeDefined()
-    expect(client.escrow).toBeDefined()
+    expect(client.agents).toBeDefined()
+    expect(client.reputation).toBeDefined()
     expect(client.governance).toBeDefined()
   })
   

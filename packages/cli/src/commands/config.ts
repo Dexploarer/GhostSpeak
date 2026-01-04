@@ -1,18 +1,19 @@
 import { Command } from 'commander'
 import chalk from 'chalk'
-import { 
-  intro, 
-  outro, 
-  text, 
-  select, 
-  confirm, 
+import {
+  intro,
+  outro,
+  text,
+  select,
+  confirm,
   spinner,
   isCancel,
   cancel
 } from '@clack/prompts'
 import { loadConfig, saveConfig, resetConfig, getConfigPath } from '../utils/config.js'
 import { existsSync, readFileSync } from 'fs'
-import { createSolanaRpc, createKeyPairSignerFromBytes } from '@solana/kit'
+import { createKeyPairSignerFromBytes } from '@solana/kit'
+import { createCustomClient } from '../core/solana-client.js'
 import { lamportsToSol } from '../utils/helpers.js'
 import { homedir } from 'os'
 
@@ -131,18 +132,19 @@ configCommand
       if (existsSync(config.walletPath)) {
         const s = spinner()
         s.start('Checking wallet balance...')
-        
+
         try {
-          const rpc = createSolanaRpc(
-            config.rpcUrl ?? 
-            (config.network === 'devnet' ? 'https://api.devnet.solana.com' : 
-             config.network === 'testnet' ? 'https://api.testnet.solana.com' : 
+          // Use Gill's createCustomClient instead of createSolanaRpc
+          const client = createCustomClient(
+            config.rpcUrl ??
+            (config.network === 'devnet' ? 'https://api.devnet.solana.com' :
+             config.network === 'testnet' ? 'https://api.testnet.solana.com' :
              'https://api.mainnet-beta.solana.com')
           )
-          
+
           const walletData = readFileSync(config.walletPath, 'utf-8')
           const signer = await createKeyPairSignerFromBytes(new Uint8Array(JSON.parse(walletData)))
-          const balanceResponse = await rpc.getBalance(signer.address).send()
+          const balanceResponse = await client.rpc.getBalance(signer.address).send()
           const balance = balanceResponse.value
           
           s.stop('')

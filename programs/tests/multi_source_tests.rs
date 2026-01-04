@@ -160,42 +160,61 @@ fn test_source_reliability() {
     let mut metrics = create_test_reputation_metrics(agent);
     let timestamp = 1000000i64;
 
-    // Test different reliability levels
-    let reliability_levels = vec![
-        ("highly-reliable", 9500),
-        ("reliable", 8000),
-        ("moderate", 6000),
-        ("low-reliable", 4000),
+    // Test different reliability levels with different scores
+    // Higher reliability sources have higher scores to demonstrate weighting effect
+    let sources = vec![
+        ("highly-reliable", 900, 9500),  // High score, high reliability
+        ("reliable", 800, 8000),
+        ("moderate", 700, 6000),
+        ("low-reliable", 600, 4000),     // Low score, low reliability
     ];
 
-    for (source_name, reliability) in reliability_levels {
+    for (source_name, score, reliability) in &sources {
         assert!(metrics.update_source_score(
             source_name.to_string(),
-            800,
-            2500,
+            *score,
+            2500,  // Equal weight for all
             50,
-            reliability,
+            *reliability,
             timestamp
         ).is_ok());
 
-        let source = metrics.get_source_score(source_name).unwrap();
-        assert_eq!(source.reliability, reliability);
+        let source = metrics.get_source_score(*source_name).unwrap();
+        assert_eq!(source.reliability, *reliability);
     }
 
-    // Test that reliability affects weighted score
+    // Calculate initial weighted score
+    // High reliability sources (with high scores) should pull average up
     let weighted_score_1 = metrics.calculate_weighted_score();
 
-    // Update all to maximum reliability
-    metrics.update_source_score("highly-reliable".to_string(), 800, 2500, 50, 10000, timestamp).unwrap();
-    metrics.update_source_score("reliable".to_string(), 800, 2500, 50, 10000, timestamp).unwrap();
-    metrics.update_source_score("moderate".to_string(), 800, 2500, 50, 10000, timestamp).unwrap();
-    metrics.update_source_score("low-reliable".to_string(), 800, 2500, 50, 10000, timestamp).unwrap();
+    // Now make the low-reliability (low-score) source much more reliable
+    // This should DECREASE the weighted score because the low score gets more weight
+    metrics.update_source_score("low-reliable".to_string(), 600, 2500, 50, 10000, timestamp).unwrap();
 
     let weighted_score_2 = metrics.calculate_weighted_score();
 
-    // With all same scores but higher reliability, weighted score should increase
-    assert!(weighted_score_2 > weighted_score_1,
-        "Higher reliability should increase weighted score: {} vs {}", weighted_score_2, weighted_score_1);
+    // The low score (600) now has more influence, pulling the average DOWN
+    assert!(weighted_score_2 < weighted_score_1,
+        "Increasing reliability of low-score source should decrease weighted score: {} vs {}",
+        weighted_score_2, weighted_score_1);
+
+    // Reset and test the opposite: increase reliability of high-score source
+    let mut metrics2 = create_test_reputation_metrics(agent);
+    for (source_name, score, reliability) in &sources {
+        metrics2.update_source_score(source_name.to_string(), *score, 2500, 50, *reliability, timestamp).unwrap();
+    }
+
+    let weighted_score_3 = metrics2.calculate_weighted_score();
+
+    // Increase reliability of the high-score source
+    metrics2.update_source_score("highly-reliable".to_string(), 900, 2500, 50, 10000, timestamp).unwrap();
+
+    let weighted_score_4 = metrics2.calculate_weighted_score();
+
+    // The high score (900) now has more influence, pulling the average UP
+    assert!(weighted_score_4 > weighted_score_3,
+        "Increasing reliability of high-score source should increase weighted score: {} vs {}",
+        weighted_score_4, weighted_score_3);
 
     println!("    ✅ Source reliability tests passed");
 }
@@ -433,7 +452,8 @@ impl TestReputationMetrics {
             return 0;
         }
 
-        let weighted_score = (total_contribution * 10000) / total_normalization;
+        // Scale by 100_000_000 to match the division in weighted_contribution()
+        let weighted_score = (total_contribution * 100_000_000) / total_normalization;
         (weighted_score * 10).min(10000)
     }
 

@@ -54,7 +54,7 @@ We provide three core pillars that enable trusted AI commerce:
   <Card title="Verifiable Credentials" icon="certificate">
     W3C-compliant credentials that prove agent identity, capabilities, and achievements
   </Card>
-  <Card title="Ghost Score (0-1000)" icon="chart-line">
+  <Card title="Ghost Score (0-10,000)" icon="chart-line">
     On-chain credit rating calculated from transaction history and service quality
   </Card>
   <Card title="x402 Marketplace" icon="shop">
@@ -87,7 +87,7 @@ const credential = await client.credentials.issueAgentIdentityCredential({
 
 // 3. Check Ghost Score (after completing transactions)
 const reputation = await client.reputation.getReputationData(agent.address)
-console.log(`Ghost Score: ${reputation.overallScore}/1000`)
+console.log(`Ghost Score: ${reputation.overallScore}/10000`)
 console.log(`Tier: ${reputation.tier}`) // Bronze, Silver, Gold, or Platinum
 ```
 
@@ -99,7 +99,7 @@ console.log(`Tier: ${reputation.tier}`) // Bronze, Silver, Gold, or Platinum
   </Accordion>
 
   <Accordion title="Ghost Score Credit Rating">
-    A 0-1000 score calculated from:
+    A 0-10,000 score calculated from:
     - **Success Rate** (40%): Payment completion and service delivery
     - **Service Quality** (30%): Client ratings and feedback
     - **Response Time** (20%): Timeliness and availability
@@ -157,7 +157,7 @@ console.log(`Tier: ${reputation.tier}`) // Bronze, Silver, Gold, or Platinum
 |--------|-------|
 | **Network** | Solana Devnet (Mainnet Q1 2026) |
 | **Contract Address** | `GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9` |
-| **Ghost Score Range** | 0-1000 |
+| **Ghost Score Range** | 0-10,000 |
 | **Privacy Modes** | 5 customizable options |
 | **Cross-Chain Support** | Solana → Ethereum, Base, Polygon |
 | **Transaction Cost** | ~0.0002 SOL (compressed NFTs) |

@@ -4,8 +4,7 @@
  * GET /api/v1/treasury - Get program treasury information and balances
  */
 
-import { createSolanaRpc } from '@solana/rpc'
-import { address } from '@solana/addresses'
+import { createServerSolanaClient } from '@/lib/solana/client'
 import { NextRequest } from 'next/server'
 
 // Program Treasury Wallet (from protocol_config)
@@ -14,19 +13,14 @@ const PROGRAM_ID = '4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB'
 
 export async function GET(request: NextRequest) {
   try {
-    const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
-    const rpc = createSolanaRpc(rpcUrl)
-
-    // Fetch program account to get treasury address
-    const programAddress = address(PROGRAM_ID)
-
-    // Get protocol config PDA
-    const protocolConfigSeeds = [
-      Buffer.from('protocol_config'),
-    ]
+    // Create Solana client using Gill (cleaner API)
+    const client = createServerSolanaClient()
 
     // For now, return treasury stats from Convex
     // In production, this should query the actual on-chain treasury account
+    // Example future usage:
+    // const balance = await client.getBalance(PROGRAM_ID)
+    // const account = await client.getAccount(treasuryPDA)
     return Response.json({
       treasury: {
         programId: PROGRAM_ID,

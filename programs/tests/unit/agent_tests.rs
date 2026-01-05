@@ -6,11 +6,7 @@
  */
 
 use super::test_harness::*;
-use solana_sdk::{
-    instruction::AccountMeta,
-    pubkey::Pubkey,
-    system_program,
-};
+use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey, system_program};
 
 /// Test agent registration instruction structure
 #[test]
@@ -28,11 +24,17 @@ fn test_register_agent_accounts_structure() {
     assert_eq!(agent_pda, agent_pda_2, "Agent PDA should be deterministic");
 
     let (staking_pda_2, _) = derive_staking_pda(&signer);
-    assert_eq!(staking_pda, staking_pda_2, "Staking PDA should be deterministic");
+    assert_eq!(
+        staking_pda, staking_pda_2,
+        "Staking PDA should be deterministic"
+    );
 
     // Different agent IDs should produce different PDAs
     let (agent_pda_different, _) = derive_agent_pda(&signer, "different-agent");
-    assert_ne!(agent_pda, agent_pda_different, "Different agent IDs should have different PDAs");
+    assert_ne!(
+        agent_pda, agent_pda_different,
+        "Different agent IDs should have different PDAs"
+    );
 }
 
 /// Test agent discriminator computation
@@ -44,9 +46,18 @@ fn test_agent_instruction_discriminators() {
     let status_disc = compute_discriminator("update_agent_status");
 
     // Discriminators should be unique
-    assert_ne!(register_disc, update_disc, "register and update should have different discriminators");
-    assert_ne!(update_disc, status_disc, "update and status should have different discriminators");
-    assert_ne!(register_disc, status_disc, "register and status should have different discriminators");
+    assert_ne!(
+        register_disc, update_disc,
+        "register and update should have different discriminators"
+    );
+    assert_ne!(
+        update_disc, status_disc,
+        "update and status should have different discriminators"
+    );
+    assert_ne!(
+        register_disc, status_disc,
+        "register and status should have different discriminators"
+    );
 
     // Discriminators should be 8 bytes and non-zero
     assert_eq!(register_disc.len(), 8);
@@ -89,14 +100,18 @@ fn test_agent_account_size() {
 
     assert!(
         agent_size >= min_size,
-        "Agent account size {} should be at least {}", agent_size, min_size
+        "Agent account size {} should be at least {}",
+        agent_size,
+        min_size
     );
 
     // Maximum reasonable size (shouldn't be excessively large)
     let max_size = 10_000;
     assert!(
         agent_size <= max_size,
-        "Agent account size {} should not exceed {}", agent_size, max_size
+        "Agent account size {} should not exceed {}",
+        agent_size,
+        max_size
     );
 }
 
@@ -106,10 +121,10 @@ fn test_staking_requirement_structure() {
     // Verify staking PDA structure for agent registration
     let owner = Pubkey::new_unique();
 
-    let (staking_pda, bump) = derive_staking_pda(&owner);
+    let (staking_pda, _bump) = derive_staking_pda(&owner);
 
     // Bump should be valid
-    assert!(bump <= 255);
+    // assert!(bump <= 255); // Redundant for u8
 
     // PDA should be off-curve (cannot sign)
     assert!(
@@ -146,9 +161,9 @@ fn test_register_agent_instruction_data() {
     let (staking_pda, _) = derive_staking_pda(&signer);
 
     let accounts = vec![
-        AccountMeta::new(agent_pda, false),      // agent_account (init, writable)
+        AccountMeta::new(agent_pda, false), // agent_account (init, writable)
         AccountMeta::new_readonly(staking_pda, false), // staking_account (readonly)
-        AccountMeta::new(signer, true),          // signer (mut, signer)
+        AccountMeta::new(signer, true),     // signer (mut, signer)
         AccountMeta::new_readonly(system_program::ID, false), // system_program
         AccountMeta::new_readonly(solana_sdk::sysvar::clock::ID, false), // clock
     ];
@@ -158,7 +173,10 @@ fn test_register_agent_instruction_data() {
     // Verify instruction structure
     assert_eq!(instruction.program_id, PROGRAM_ID);
     assert_eq!(instruction.accounts.len(), 5);
-    assert!(instruction.data.len() >= 8, "Should have at least discriminator");
+    assert!(
+        instruction.data.len() >= 8,
+        "Should have at least discriminator"
+    );
 }
 
 /// Test update_agent instruction structure
@@ -170,8 +188,8 @@ fn test_update_agent_instruction_structure() {
     let (agent_pda, _) = derive_agent_pda(&signer, agent_id);
 
     let accounts = vec![
-        AccountMeta::new(agent_pda, false),      // agent_account (mut)
-        AccountMeta::new(signer, true),          // signer (mut, signer)
+        AccountMeta::new(agent_pda, false), // agent_account (mut)
+        AccountMeta::new(signer, true),     // signer (mut, signer)
         AccountMeta::new_readonly(solana_sdk::sysvar::clock::ID, false), // clock
     ];
 
@@ -183,8 +201,14 @@ fn test_update_agent_instruction_structure() {
     assert_eq!(instruction.accounts.len(), 3);
 
     // Verify account metas
-    assert!(instruction.accounts[0].is_writable, "Agent account should be writable");
-    assert!(instruction.accounts[1].is_signer, "Signer should be marked as signer");
+    assert!(
+        instruction.accounts[0].is_writable,
+        "Agent account should be writable"
+    );
+    assert!(
+        instruction.accounts[1].is_signer,
+        "Signer should be marked as signer"
+    );
 }
 
 /// Test update_agent_status instruction structure
@@ -196,8 +220,8 @@ fn test_update_agent_status_instruction_structure() {
     let (agent_pda, _) = derive_agent_pda(&signer, agent_id);
 
     let accounts = vec![
-        AccountMeta::new(agent_pda, false),      // agent_account (mut)
-        AccountMeta::new(signer, true),          // signer (mut, signer)
+        AccountMeta::new(agent_pda, false), // agent_account (mut)
+        AccountMeta::new(signer, true),     // signer (mut, signer)
         AccountMeta::new_readonly(solana_sdk::sysvar::clock::ID, false), // clock
     ];
 

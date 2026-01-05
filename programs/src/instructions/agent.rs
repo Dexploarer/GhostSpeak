@@ -291,7 +291,7 @@ pub fn register_agent(
     emit!(crate::AgentRegisteredEvent {
         agent: agent.key(),
         owner: agent.owner.unwrap(), // Safe: we just set it
-        name, // Use actual validated name
+        name,                        // Use actual validated name
         timestamp: sys_clock.unix_timestamp,
     });
 
@@ -316,11 +316,11 @@ pub fn register_agent(
 /// - Input validation with detailed error reporting
 pub fn update_agent(
     ctx: Context<UpdateAgent>,
-    agent_type: u8,
+    _agent_type: u8,
     name: Option<String>,
     description: Option<String>,
     metadata_uri: String,
-    agent_id: String,
+    _agent_id: String,
     pricing_model: Option<PricingModel>,
 ) -> Result<()> {
     // Process agent update
@@ -426,7 +426,7 @@ pub fn verify_agent(
     Ok(())
 }
 
-pub fn deactivate_agent(ctx: Context<UpdateAgentStatus>, agent_id: String) -> Result<()> {
+pub fn deactivate_agent(ctx: Context<UpdateAgentStatus>, _agent_id: String) -> Result<()> {
     let agent = &mut ctx.accounts.agent_account;
 
     require!(agent.is_active, GhostSpeakError::AgentNotActive);
@@ -436,7 +436,7 @@ pub fn deactivate_agent(ctx: Context<UpdateAgentStatus>, agent_id: String) -> Re
     Ok(())
 }
 
-pub fn activate_agent(ctx: Context<UpdateAgentStatus>, agent_id: String) -> Result<()> {
+pub fn activate_agent(ctx: Context<UpdateAgentStatus>, _agent_id: String) -> Result<()> {
     let agent = &mut ctx.accounts.agent_account;
 
     require!(!agent.is_active, GhostSpeakError::AgentAlreadyActive);
@@ -448,7 +448,7 @@ pub fn activate_agent(ctx: Context<UpdateAgentStatus>, agent_id: String) -> Resu
 
 pub fn update_agent_reputation(
     ctx: Context<UpdateAgentReputation>,
-    agent_id: String,
+    _agent_id: String,
     reputation_score: u64,
 ) -> Result<()> {
     let agent = &mut ctx.accounts.agent_account;

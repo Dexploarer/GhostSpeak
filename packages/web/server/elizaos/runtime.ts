@@ -18,6 +18,10 @@ import { api } from '@/convex/_generated/api'
 import { discoverAgentsAction } from './actions/discoverAgents'
 import { claimAgentAction } from './actions/claimAgent'
 import { queryX402AgentAction } from './actions/queryX402Agent'
+import { ghostScoreAction } from './actions/ghostScore'
+import { getCredentialsAction } from './actions/getCredentials'
+import { issueCredentialAction } from './actions/issueCredential'
+import { trustAssessmentAction } from './actions/trustAssessment'
 
 // Convex database adapter for ElizaOS
 class ConvexDatabaseAdapter implements IDatabaseAdapter {
@@ -274,7 +278,11 @@ export async function initializeAgent(): Promise<IAgentRuntime> {
     runtime.registerAction(discoverAgentsAction)
     runtime.registerAction(claimAgentAction)
     runtime.registerAction(queryX402AgentAction)
-    console.log('📝 Registered web-app actions: discoverAgents, claimAgent, queryX402Agent')
+    runtime.registerAction(ghostScoreAction)
+    runtime.registerAction(getCredentialsAction)
+    runtime.registerAction(issueCredentialAction)
+    runtime.registerAction(trustAssessmentAction)
+    console.log('📝 Registered 7 web-app actions: discoverAgents, claimAgent, queryX402Agent, ghostScore, getCredentials, issueCredential, trustAssessment')
 
     agentRuntime = runtime
     console.log('✅ Casper agent initialized successfully')
@@ -343,31 +351,38 @@ export async function processAgentMessage(params: {
         if (isValid) {
           console.log(`✅ Action validated: ${action.name}`)
 
+          // Track temporary response from callback
+          let tempResponseText = ''
+          let tempMetadata = {}
+
           // Execute action
           const result = await action.handler(
             runtime,
             memory,
             undefined,
             {},
-            async (response: any) => {
-              responseText = response.text || ''
-              // Capture full metadata from action response (includes UI metadata)
+            async (response: { text?: string; ui?: Record<string, unknown> }) => {
+              tempResponseText = response.text || ''
               if (response.ui) {
-                actionMetadata = response.ui
+                tempMetadata = response.ui
               }
-              console.log('📤 Action response:', responseText.substring(0, 100))
+              console.log('📤 Action callback response:', tempResponseText.substring(0, 100))
               return []
             }
           )
 
+          // Only keep the response if action succeeded
           if (result && result.success) {
+            responseText = tempResponseText
+            actionMetadata = tempMetadata
             triggeredAction = action.name
-            // Also capture metadata from result.data if available
             if (result.data) {
               actionMetadata = { ...actionMetadata, ...result.data }
             }
-            console.log(`🎯 Action executed: ${action.name}`)
-            break // First matching action wins
+            console.log(`🎯 Action executed successfully: ${action.name}`)
+            break // First successful action wins
+          } else {
+            console.log(`⚠️ Action ${action.name} executed but returned success: false`)
           }
         }
       } catch (error) {
@@ -380,16 +395,37 @@ export async function processAgentMessage(params: {
       console.log('💬 No action triggered, generating conversational response...')
 
       try {
-        // Get recent conversation history for context
-        // v1.7.0 uses 'adapter' property instead of 'databaseAdapter'
-        const recentMemories = await (runtime as any).adapter?.getMemories({
-          roomId,
-          count: 10,
-        }) || []
+        // Build a rich prompt with context about Caisper's knowledge
+        const prompt = `You are Caisper, GhostSpeak's credential and reputation verification ghost. 
+Answer this user question conversationally, with personality. You know about:
 
-        // Generate response using runtime's LLM
-        // v1.7.0 generateText takes (input: string, options?: GenerateTextOptions)
-        const prompt = `User message: ${params.message}`
+**Ghost Score System (0-10000):**
+- NEWCOMER: 0-1999 pts
+- BRONZE: 2000-4999 pts
+- SILVER: 5000-7499 pts  
+- GOLD: 7500-8999 pts
+- PLATINUM: 9000-10000 pts
+- Score sources: payment history, credentials, staking, endpoint quality, fraud clearance
+
+**Credential Types (W3C Verifiable Credentials):**
+1. Identity Credential - proves who the agent is
+2. Capability Credential - proves what they can do
+3. Reputation Credential - proves Ghost Score tier
+4. Payment Credential - proves payment settlement history
+5. Endorsement Credential - proves other agents vouch for them
+
+**What you can do:**
+- Check Ghost Scores for specific agents
+- Verify credentials for agents
+- Issue new credentials
+- Run trust assessments (vibe checks)
+- Discover available agents
+- Query x402 endpoints
+
+User message: ${params.message}
+
+Respond in character as Caisper - be helpful, slightly sarcastic, use ghost puns sparingly. If they're asking HOW something works, explain it. If they want to CHECK something specific, ask for an agent address.`
+
         const result = await runtime.generateText(prompt, {
           includeCharacter: true,
         })

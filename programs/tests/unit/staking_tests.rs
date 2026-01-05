@@ -6,14 +6,11 @@
  */
 
 use super::test_harness::*;
-use solana_sdk::{
-    instruction::AccountMeta,
-    pubkey::Pubkey,
-    system_program,
-};
+use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey, system_program};
 
 /// SPL Token program ID
-const SPL_TOKEN_PROGRAM_ID: Pubkey = solana_sdk::pubkey!("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+const SPL_TOKEN_PROGRAM_ID: Pubkey =
+    solana_sdk::pubkey!("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 
 /// Staking tier thresholds (in lamports, assuming 9 decimals for GHOST)
 mod tiers {
@@ -35,7 +32,7 @@ fn test_staking_pda_derivation() {
     let (staking_pda, bump) = derive_staking_pda(&owner);
 
     // Verify PDA is valid
-    assert!(bump <= 255);
+    // assert!(bump <= 255); // Redundant for u8
     assert!(!staking_pda.is_on_curve(), "PDA should be off-curve");
 
     // Verify determinism
@@ -87,8 +84,16 @@ fn test_tier_thresholds() {
     // Verify specific tier values
     assert_eq!(tiers::BASIC, 1_000_000_000_000, "Basic = 1K GHOST");
     assert_eq!(tiers::STANDARD, 5_000_000_000_000, "Standard = 5K GHOST");
-    assert_eq!(tiers::PROFESSIONAL, 10_000_000_000_000, "Professional = 10K GHOST");
-    assert_eq!(tiers::ENTERPRISE, 100_000_000_000_000, "Enterprise = 100K GHOST");
+    assert_eq!(
+        tiers::PROFESSIONAL,
+        10_000_000_000_000,
+        "Professional = 10K GHOST"
+    );
+    assert_eq!(
+        tiers::ENTERPRISE,
+        100_000_000_000_000,
+        "Enterprise = 100K GHOST"
+    );
 }
 
 /// Test stake instruction structure
@@ -103,11 +108,11 @@ fn test_stake_instruction_structure() {
     let vault_token_account = Pubkey::new_unique();
 
     let accounts = vec![
-        AccountMeta::new(staking_pda, false),           // staking_account (init/mut)
-        AccountMeta::new_readonly(ghost_mint, false),   // ghost_mint
-        AccountMeta::new(user_token_account, false),    // user_token_account
-        AccountMeta::new(vault_token_account, false),   // vault_token_account
-        AccountMeta::new(owner, true),                  // owner (signer)
+        AccountMeta::new(staking_pda, false), // staking_account (init/mut)
+        AccountMeta::new_readonly(ghost_mint, false), // ghost_mint
+        AccountMeta::new(user_token_account, false), // user_token_account
+        AccountMeta::new(vault_token_account, false), // vault_token_account
+        AccountMeta::new(owner, true),        // owner (signer)
         AccountMeta::new_readonly(SPL_TOKEN_PROGRAM_ID, false), // token_program
         AccountMeta::new_readonly(system_program::ID, false), // system_program
     ];
@@ -122,7 +127,10 @@ fn test_stake_instruction_structure() {
 
     assert_eq!(instruction.program_id, PROGRAM_ID);
     assert_eq!(instruction.accounts.len(), 7);
-    assert!(instruction.data.len() >= 8 + 16, "Should have discriminator + amount + lockup");
+    assert!(
+        instruction.data.len() >= 8 + 16,
+        "Should have discriminator + amount + lockup"
+    );
 }
 
 /// Test unstake instruction structure
@@ -137,11 +145,11 @@ fn test_unstake_instruction_structure() {
     let vault_token_account = Pubkey::new_unique();
 
     let accounts = vec![
-        AccountMeta::new(staking_pda, false),           // staking_account
-        AccountMeta::new_readonly(ghost_mint, false),   // ghost_mint
-        AccountMeta::new(user_token_account, false),    // user_token_account
-        AccountMeta::new(vault_token_account, false),   // vault_token_account
-        AccountMeta::new(owner, true),                  // owner (signer)
+        AccountMeta::new(staking_pda, false),         // staking_account
+        AccountMeta::new_readonly(ghost_mint, false), // ghost_mint
+        AccountMeta::new(user_token_account, false),  // user_token_account
+        AccountMeta::new(vault_token_account, false), // vault_token_account
+        AccountMeta::new(owner, true),                // owner (signer)
         AccountMeta::new_readonly(SPL_TOKEN_PROGRAM_ID, false), // token_program
         AccountMeta::new_readonly(solana_sdk::sysvar::clock::ID, false), // clock
     ];
@@ -165,10 +173,10 @@ fn test_slash_stake_instruction_structure() {
     let treasury_token_account = Pubkey::new_unique();
 
     let accounts = vec![
-        AccountMeta::new(staking_pda, false),           // staking_account
-        AccountMeta::new(vault_token_account, false),   // vault_token_account
+        AccountMeta::new(staking_pda, false),         // staking_account
+        AccountMeta::new(vault_token_account, false), // vault_token_account
         AccountMeta::new(treasury_token_account, false), // treasury_token_account
-        AccountMeta::new(admin, true),                  // admin (signer)
+        AccountMeta::new(admin, true),                // admin (signer)
         AccountMeta::new_readonly(SPL_TOKEN_PROGRAM_ID, false), // token_program
     ];
 
@@ -191,7 +199,11 @@ fn test_lockup_periods() {
     for lockup in valid_lockups {
         // Convert to seconds
         let lockup_seconds = lockup as u64 * 24 * 60 * 60;
-        assert!(lockup_seconds > 0, "Lockup period {} days should convert to positive seconds", lockup);
+        assert!(
+            lockup_seconds > 0,
+            "Lockup period {} days should convert to positive seconds",
+            lockup
+        );
     }
 
     // Minimum lockup (7 days in seconds)
@@ -208,18 +220,15 @@ fn test_lockup_periods() {
 fn test_reputation_boost_calculation() {
     // Boost percentages by tier
     let boosts = [
-        (tiers::BASIC, 0u8),           // Basic: No boost (just API access)
-        (tiers::STANDARD, 5u8),        // Standard: 5% boost
-        (tiers::PROFESSIONAL, 10u8),   // Professional: 10% boost
-        (tiers::ENTERPRISE, 15u8),     // Enterprise: 15% boost
+        (tiers::BASIC, 0u8),         // Basic: No boost (just API access)
+        (tiers::STANDARD, 5u8),      // Standard: 5% boost
+        (tiers::PROFESSIONAL, 10u8), // Professional: 10% boost
+        (tiers::ENTERPRISE, 15u8),   // Enterprise: 15% boost
     ];
 
     for (_stake_amount, expected_boost) in boosts {
         // In actual implementation, calculate_boost(stake_amount) -> expected_boost
-        assert!(
-            expected_boost <= 100,
-            "Boost should be a percentage <= 100"
-        );
+        assert!(expected_boost <= 100, "Boost should be a percentage <= 100");
     }
 }
 

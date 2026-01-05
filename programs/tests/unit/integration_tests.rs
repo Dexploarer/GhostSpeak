@@ -16,19 +16,26 @@ use solana_instruction::{AccountMeta as MolluskAccountMeta, Instruction as Mollu
 fn to_mollusk_instruction(ix: &solana_sdk::instruction::Instruction) -> MolluskInstruction {
     MolluskInstruction {
         program_id: to_mollusk_pubkey(&ix.program_id),
-        accounts: ix.accounts.iter().map(|meta| {
-            MolluskAccountMeta {
+        accounts: ix
+            .accounts
+            .iter()
+            .map(|meta| MolluskAccountMeta {
                 pubkey: to_mollusk_pubkey(&meta.pubkey),
                 is_signer: meta.is_signer,
                 is_writable: meta.is_writable,
-            }
-        }).collect(),
+            })
+            .collect(),
         data: ix.data.clone(),
     }
 }
 
 /// Create a Mollusk-compatible account
-fn create_mollusk_account(lamports: u64, data: Vec<u8>, owner: &MolluskPubkey, executable: bool) -> MolluskAccount {
+fn create_mollusk_account(
+    lamports: u64,
+    data: Vec<u8>,
+    owner: &MolluskPubkey,
+    executable: bool,
+) -> MolluskAccount {
     MolluskAccount {
         lamports,
         data,
@@ -68,15 +75,24 @@ fn test_auto_create_ghost_execution() {
     // Setup accounts for Mollusk
     let system_program_id = to_mollusk_pubkey(&solana_sdk::system_program::ID);
     let native_loader_id = to_mollusk_pubkey(&solana_sdk::native_loader::ID);
-    let program_id = program_id_mollusk();
+    let _program_id = program_id_mollusk();
 
     let account_entries: &[(MolluskPubkey, MolluskAccount)] = &[
         // Ghost PDA (uninitialized)
-        (to_mollusk_pubkey(&ghost_pda), create_mollusk_account(0, vec![], &system_program_id, false)),
+        (
+            to_mollusk_pubkey(&ghost_pda),
+            create_mollusk_account(0, vec![], &system_program_id, false),
+        ),
         // Owner with funds
-        (to_mollusk_pubkey(&owner), create_mollusk_account(10_000_000_000, vec![], &system_program_id, false)),
+        (
+            to_mollusk_pubkey(&owner),
+            create_mollusk_account(10_000_000_000, vec![], &system_program_id, false),
+        ),
         // System program
-        (system_program_id.clone(), create_mollusk_account(1, vec![], &native_loader_id, true)),
+        (
+            system_program_id.clone(),
+            create_mollusk_account(1, vec![], &native_loader_id, true),
+        ),
     ];
 
     // Process instruction
@@ -97,10 +113,8 @@ fn test_ghost_pda_matches_program() {
     let (ghost_pda, bump) = derive_ghost_pda(&owner);
 
     // Verify our PDA derivation uses the correct seeds: ["ghost", owner]
-    let (expected_pda, expected_bump) = Pubkey::find_program_address(
-        &[b"ghost", owner.as_ref()],
-        &PROGRAM_ID,
-    );
+    let (expected_pda, expected_bump) =
+        Pubkey::find_program_address(&[b"ghost", owner.as_ref()], &PROGRAM_ID);
 
     assert_eq!(ghost_pda, expected_pda);
     assert_eq!(bump, expected_bump);
@@ -117,10 +131,8 @@ fn test_staking_pda_matches_program() {
     let (staking_pda, bump) = derive_staking_pda(&owner);
 
     // Seeds: ["staking", owner]
-    let (expected_pda, expected_bump) = Pubkey::find_program_address(
-        &[b"staking", owner.as_ref()],
-        &PROGRAM_ID,
-    );
+    let (expected_pda, expected_bump) =
+        Pubkey::find_program_address(&[b"staking", owner.as_ref()], &PROGRAM_ID);
 
     assert_eq!(staking_pda, expected_pda);
     assert_eq!(bump, expected_bump);
@@ -185,10 +197,8 @@ fn test_reputation_pda_matches_program() {
     let (reputation_pda, bump) = derive_reputation_pda(&agent);
 
     // Seeds: ["reputation", agent]
-    let (expected_pda, expected_bump) = Pubkey::find_program_address(
-        &[b"reputation", agent.as_ref()],
-        &PROGRAM_ID,
-    );
+    let (expected_pda, expected_bump) =
+        Pubkey::find_program_address(&[b"reputation", agent.as_ref()], &PROGRAM_ID);
 
     assert_eq!(reputation_pda, expected_pda);
     assert_eq!(bump, expected_bump);

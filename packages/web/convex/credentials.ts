@@ -8,7 +8,7 @@
  */
 
 import { v } from 'convex/values'
-import { mutation, internalMutation, internalQuery } from './_generated/server'
+import { query, mutation, internalMutation, internalQuery } from './_generated/server'
 import { internal } from './_generated/api'
 
 /**
@@ -869,5 +869,85 @@ export const getAgentCredentials = internalQuery({
         ),
       ],
     }
+  },
+})
+
+// Public query version for web app access
+export const getAgentCredentialsPublic = query({
+  args: { agentAddress: v.string() },
+  handler: async (ctx, args) => {
+    const [
+      identity,
+      reputation,
+      paymentMilestones,
+      staking,
+      verifiedHires,
+      capabilityVerification,
+      uptimeAttestation,
+      apiQualityGrade,
+      teeAttestation,
+      modelProvenance,
+    ] = await Promise.all([
+      ctx.db
+        .query('agentIdentityCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('payaiCredentialsIssued')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('paymentMilestoneCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('stakingCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('verifiedHireCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('capabilityVerificationCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('uptimeAttestationCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('apiQualityGradeCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('teeAttestationCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('modelProvenanceCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+    ])
+
+    const now = Date.now()
+    const validCapability = capabilityVerification.filter((c) => c.validUntil > now)
+    const validTee = teeAttestation.filter((c) => c.validUntil > now)
+
+    // Flatten all credentials into a simple array for chat display
+    const allCredentials = [
+      ...identity.map((c) => ({ type: 'identity', credentialId: c.credentialId, issuedAt: c.issuedAt, isValid: true })),
+      ...reputation.map((c) => ({ type: 'reputation', credentialId: c.credentialId, tier: c.tier, issuedAt: c.issuedAt, isValid: true })),
+      ...paymentMilestones.map((c) => ({ type: 'paymentMilestone', credentialId: c.credentialId, milestone: c.milestone, issuedAt: c.issuedAt, isValid: true })),
+      ...staking.map((c) => ({ type: 'staking', credentialId: c.credentialId, tier: c.tier, issuedAt: c.issuedAt, isValid: true })),
+      ...verifiedHires.map((c) => ({ type: 'verifiedHire', credentialId: c.credentialId, rating: c.rating, issuedAt: c.issuedAt, isValid: true })),
+      ...validCapability.map((c) => ({ type: 'capability', credentialId: c.credentialId, issuedAt: c.issuedAt, isValid: true, validUntil: c.validUntil })),
+      ...uptimeAttestation.map((c) => ({ type: 'uptime', credentialId: c.credentialId, tier: c.tier, issuedAt: c.issuedAt, isValid: true })),
+      ...apiQualityGrade.map((c) => ({ type: 'apiQuality', credentialId: c.credentialId, grade: c.grade, issuedAt: c.issuedAt, isValid: true })),
+      ...validTee.map((c) => ({ type: 'tee', credentialId: c.credentialId, teeType: c.teeType, issuedAt: c.issuedAt, isValid: true, validUntil: c.validUntil })),
+      ...modelProvenance.map((c) => ({ type: 'modelProvenance', credentialId: c.credentialId, modelName: c.modelName, issuedAt: c.issuedAt, isValid: true })),
+    ]
+
+    return allCredentials
   },
 })

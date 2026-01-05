@@ -10,6 +10,7 @@
  */
 
 use mollusk_svm::Mollusk;
+use sha2::{Digest, Sha256};
 use solana_sdk::{
     account::AccountSharedData,
     instruction::{AccountMeta, Instruction},
@@ -17,7 +18,6 @@ use solana_sdk::{
     rent::Rent,
     system_program,
 };
-use sha2::{Digest, Sha256};
 use std::path::Path;
 
 // Re-export the v4 Pubkey type for Mollusk integration
@@ -125,12 +125,14 @@ pub mod sizes {
     pub const AGENT: usize = 8 + 32 + 68 + 68 + 260 + 260 + 50 + 1 + 40 + 16 + 260 + 1;
 
     /// Staking account size (based on StakingAccount::SPACE)
+    #[allow(dead_code)]
     pub const STAKING: usize = 8 + 32 + 8 + 8 + 8 + 8 + 8 + 1 + 1 + 8 + 8 + 4 + 1;
 
     /// Ghost account size (based on Ghost struct)
     pub const GHOST: usize = 8 + 32 + 68 + 8 + 8 + 8 + 8 + 1 + 1;
 
     /// Reputation metrics size
+    #[allow(dead_code)]
     pub const REPUTATION: usize = 8 + 32 + 8 + 8 + 8 + 8 + 8 + 1;
 }
 
@@ -147,8 +149,12 @@ pub fn create_pda_account(size: usize) -> AccountSharedData {
 }
 
 /// Create the system program account
+#[allow(dead_code)]
 pub fn system_program_account() -> (Pubkey, AccountSharedData) {
-    (system_program::ID, AccountSharedData::new(1, 0, &solana_sdk::native_loader::ID))
+    (
+        system_program::ID,
+        AccountSharedData::new(1, 0, &solana_sdk::native_loader::ID),
+    )
 }
 
 #[cfg(test)]

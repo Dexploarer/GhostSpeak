@@ -6,34 +6,31 @@
  */
 
 use super::test_harness::*;
-use solana_sdk::{
-    instruction::AccountMeta,
-    pubkey::Pubkey,
-};
+use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey};
 
 /// Reputation tier thresholds (0-10000 basis points)
 mod tiers {
-    pub const BRONZE: u64 = 2000;   // 20%
-    pub const SILVER: u64 = 5000;   // 50%
-    pub const GOLD: u64 = 7500;     // 75%
+    pub const BRONZE: u64 = 2000; // 20%
+    pub const SILVER: u64 = 5000; // 50%
+    pub const GOLD: u64 = 7500; // 75%
     pub const PLATINUM: u64 = 9000; // 90%
 }
 
 /// Reputation source weights (in basis points, total = 10000)
 mod weights {
     // Activity Sources (60% total)
-    pub const ACCOUNT_AGE: u32 = 3000;         // 30%
-    pub const X402_TRANSACTIONS: u32 = 3000;  // 30%
+    pub const ACCOUNT_AGE: u32 = 3000; // 30%
+    pub const X402_TRANSACTIONS: u32 = 3000; // 30%
 
     // Platform Sources (30% total)
-    pub const USER_REVIEWS: u32 = 1000;        // 10%
+    pub const USER_REVIEWS: u32 = 1000; // 10%
     pub const ELIZAOS_REPUTATION: u32 = 1000; // 10%
     pub const CROSSMINT_VERIFICATION: u32 = 500; // 5%
-    pub const ENDPOINT_RELIABILITY: u32 = 500;   // 5%
+    pub const ENDPOINT_RELIABILITY: u32 = 500; // 5%
 
     // Achievement Sources (10% total)
-    pub const JOB_COMPLETIONS: u32 = 500;     // 5%
-    pub const SKILL_ENDORSEMENTS: u32 = 500;  // 5%
+    pub const JOB_COMPLETIONS: u32 = 500; // 5%
+    pub const SKILL_ENDORSEMENTS: u32 = 500; // 5%
 }
 
 /// Test reputation PDA derivation
@@ -44,7 +41,7 @@ fn test_reputation_pda_derivation() {
     let (reputation_pda, bump) = derive_reputation_pda(&agent);
 
     // Verify PDA is valid
-    assert!(bump <= 255);
+    // assert!(bump <= 255); // Redundant for u8
     assert!(!reputation_pda.is_on_curve(), "PDA should be off-curve");
 
     // Verify determinism
@@ -109,7 +106,10 @@ fn test_reputation_weight_distribution() {
 
     // Total should be 100%
     let total = activity_total + platform_total + achievement_total;
-    assert_eq!(total, 10000, "Total weights should be 100% (10000 basis points)");
+    assert_eq!(
+        total, 10000,
+        "Total weights should be 100% (10000 basis points)"
+    );
 }
 
 /// Test tier calculation from score
@@ -157,14 +157,14 @@ fn test_weighted_score_calculation() {
     // Score = sum(source_score * weight) / 10000
 
     let sources = [
-        (80u64, weights::ACCOUNT_AGE),         // Account age: 80/100 score
-        (90u64, weights::X402_TRANSACTIONS),   // x402 txs: 90/100 score
-        (75u64, weights::USER_REVIEWS),         // Reviews: 75/100 score
-        (85u64, weights::ELIZAOS_REPUTATION),  // ElizaOS: 85/100 score
+        (80u64, weights::ACCOUNT_AGE),             // Account age: 80/100 score
+        (90u64, weights::X402_TRANSACTIONS),       // x402 txs: 90/100 score
+        (75u64, weights::USER_REVIEWS),            // Reviews: 75/100 score
+        (85u64, weights::ELIZAOS_REPUTATION),      // ElizaOS: 85/100 score
         (100u64, weights::CROSSMINT_VERIFICATION), // Crossmint: 100/100 score
         (95u64, weights::ENDPOINT_RELIABILITY),    // Endpoint: 95/100 score
-        (70u64, weights::JOB_COMPLETIONS),     // Jobs: 70/100 score
-        (60u64, weights::SKILL_ENDORSEMENTS),  // Skills: 60/100 score
+        (70u64, weights::JOB_COMPLETIONS),         // Jobs: 70/100 score
+        (60u64, weights::SKILL_ENDORSEMENTS),      // Skills: 60/100 score
     ];
 
     let mut weighted_sum: u64 = 0;
@@ -190,13 +190,14 @@ fn test_init_reputation_instruction_structure() {
     let (reputation_pda, _) = derive_reputation_pda(&agent);
 
     let accounts = vec![
-        AccountMeta::new(reputation_pda, false),        // reputation_metrics (init)
-        AccountMeta::new_readonly(agent, false),        // agent
-        AccountMeta::new(authority, true),              // authority (signer)
+        AccountMeta::new(reputation_pda, false), // reputation_metrics (init)
+        AccountMeta::new_readonly(agent, false), // agent
+        AccountMeta::new(authority, true),       // authority (signer)
         AccountMeta::new_readonly(solana_sdk::system_program::ID, false), // system_program
     ];
 
-    let instruction = build_anchor_instruction("initialize_reputation_metrics", accounts.clone(), vec![]);
+    let instruction =
+        build_anchor_instruction("initialize_reputation_metrics", accounts.clone(), vec![]);
 
     assert_eq!(instruction.program_id, PROGRAM_ID);
     assert_eq!(instruction.accounts.len(), 4);
@@ -211,9 +212,9 @@ fn test_update_reputation_tags_instruction_structure() {
     let (reputation_pda, _) = derive_reputation_pda(&agent);
 
     let accounts = vec![
-        AccountMeta::new(reputation_pda, false),        // reputation_metrics
-        AccountMeta::new_readonly(agent, false),        // agent
-        AccountMeta::new(authority, true),              // authority (signer)
+        AccountMeta::new(reputation_pda, false), // reputation_metrics
+        AccountMeta::new_readonly(agent, false), // agent
+        AccountMeta::new(authority, true),       // authority (signer)
     ];
 
     // Tag update data: tag_id (u8) + score (u64)
@@ -237,9 +238,9 @@ fn test_record_x402_payment_instruction_structure() {
     let (reputation_pda, _) = derive_reputation_pda(&agent);
 
     let accounts = vec![
-        AccountMeta::new(reputation_pda, false),        // reputation_metrics
-        AccountMeta::new_readonly(agent, false),        // agent
-        AccountMeta::new(payer, true),                  // payer (signer)
+        AccountMeta::new(reputation_pda, false), // reputation_metrics
+        AccountMeta::new_readonly(agent, false), // agent
+        AccountMeta::new(payer, true),           // payer (signer)
         AccountMeta::new_readonly(solana_sdk::sysvar::clock::ID, false), // clock
     ];
 
@@ -249,7 +250,8 @@ fn test_record_x402_payment_instruction_structure() {
     let mut data = amount.to_le_bytes().to_vec();
     data.push(success);
 
-    let instruction = build_anchor_instruction("record_x402_payment_reputation", accounts.clone(), data);
+    let instruction =
+        build_anchor_instruction("record_x402_payment_reputation", accounts.clone(), data);
 
     assert_eq!(instruction.program_id, PROGRAM_ID);
     assert_eq!(instruction.accounts.len(), 4);
@@ -277,11 +279,11 @@ fn test_reputation_decay() {
 fn test_reputation_badges() {
     // Badge categories and their thresholds
     let badges = [
-        ("HighVolume", 100u64),        // 100+ transactions
-        ("Reliable", 95u64),           // 95%+ completion rate
-        ("FastResponder", 500u64),     // <500ms avg response time
-        ("TrustedProvider", 9000u64),  // Platinum tier score
-        ("EarlyAdopter", 1000u64),     // Account age > 1000 days
+        ("HighVolume", 100u64),       // 100+ transactions
+        ("Reliable", 95u64),          // 95%+ completion rate
+        ("FastResponder", 500u64),    // <500ms avg response time
+        ("TrustedProvider", 9000u64), // Platinum tier score
+        ("EarlyAdopter", 1000u64),    // Account age > 1000 days
     ];
 
     for (badge_name, threshold) in badges {

@@ -10,7 +10,6 @@
  */
 
 use anchor_lang::prelude::*;
-use std::collections::HashSet;
 
 #[tokio::test]
 async fn test_reputation_tags_comprehensive() {
@@ -40,13 +39,21 @@ fn test_tag_assignment() {
     assert_eq!(metrics.skill_tags.len(), 1);
 
     // Test behavior tag assignment
-    assert!(metrics.add_behavior_tag("fast-responder".to_string()).is_ok());
-    assert!(metrics.behavior_tags.contains(&"fast-responder".to_string()));
+    assert!(metrics
+        .add_behavior_tag("fast-responder".to_string())
+        .is_ok());
+    assert!(metrics
+        .behavior_tags
+        .contains(&"fast-responder".to_string()));
     assert_eq!(metrics.behavior_tags.len(), 1);
 
     // Test compliance tag assignment
-    assert!(metrics.add_compliance_tag("kyc-verified".to_string()).is_ok());
-    assert!(metrics.compliance_tags.contains(&"kyc-verified".to_string()));
+    assert!(metrics
+        .add_compliance_tag("kyc-verified".to_string())
+        .is_ok());
+    assert!(metrics
+        .compliance_tags
+        .contains(&"kyc-verified".to_string()));
     assert_eq!(metrics.compliance_tags.len(), 1);
 
     // Test duplicate tag rejection
@@ -64,12 +71,14 @@ fn test_tag_confidence_scoring() {
     let timestamp = 1000000i64;
 
     // Test tag confidence creation
-    assert!(metrics.update_tag_confidence(
-        "fast-responder".to_string(),
-        9500, // 95% confidence
-        100,  // 100 evidence points
-        timestamp
-    ).is_ok());
+    assert!(metrics
+        .update_tag_confidence(
+            "fast-responder".to_string(),
+            9500, // 95% confidence
+            100,  // 100 evidence points
+            timestamp
+        )
+        .is_ok());
 
     // Verify tag score was created
     let confidence = metrics.get_tag_confidence("fast-responder");
@@ -77,12 +86,14 @@ fn test_tag_confidence_scoring() {
     assert_eq!(confidence.unwrap(), 9500);
 
     // Test updating existing tag confidence
-    assert!(metrics.update_tag_confidence(
-        "fast-responder".to_string(),
-        9800, // Updated to 98%
-        150,  // More evidence
-        timestamp + 100
-    ).is_ok());
+    assert!(metrics
+        .update_tag_confidence(
+            "fast-responder".to_string(),
+            9800, // Updated to 98%
+            150,  // More evidence
+            timestamp + 100
+        )
+        .is_ok());
 
     let updated_confidence = metrics.get_tag_confidence("fast-responder");
     assert_eq!(updated_confidence.unwrap(), 9800);
@@ -117,8 +128,17 @@ fn test_tag_decay() {
     let mut metrics = create_test_reputation_metrics(agent);
 
     // Add a mix of fresh and stale tags
-    metrics.update_tag_confidence("fresh".to_string(), 8000, 10, timestamp_now).unwrap();
-    metrics.update_tag_confidence("stale".to_string(), 8000, 10, timestamp_now - NINETY_DAYS - 1).unwrap();
+    metrics
+        .update_tag_confidence("fresh".to_string(), 8000, 10, timestamp_now)
+        .unwrap();
+    metrics
+        .update_tag_confidence(
+            "stale".to_string(),
+            8000,
+            10,
+            timestamp_now - NINETY_DAYS - 1,
+        )
+        .unwrap();
     metrics.add_skill_tag("fresh".to_string()).unwrap();
     metrics.add_skill_tag("stale".to_string()).unwrap();
 
@@ -142,14 +162,20 @@ fn test_tag_category_management() {
     let mut metrics = create_test_reputation_metrics(agent);
 
     // Add tags to each category
-    metrics.add_skill_tag("code-generation".to_string()).unwrap();
+    metrics
+        .add_skill_tag("code-generation".to_string())
+        .unwrap();
     metrics.add_skill_tag("defi-expert".to_string()).unwrap();
     metrics.add_skill_tag("nft-specialist".to_string()).unwrap();
 
-    metrics.add_behavior_tag("fast-responder".to_string()).unwrap();
+    metrics
+        .add_behavior_tag("fast-responder".to_string())
+        .unwrap();
     metrics.add_behavior_tag("high-volume".to_string()).unwrap();
 
-    metrics.add_compliance_tag("kyc-verified".to_string()).unwrap();
+    metrics
+        .add_compliance_tag("kyc-verified".to_string())
+        .unwrap();
 
     // Verify tag counts
     assert_eq!(metrics.skill_tags.len(), 3);
@@ -197,23 +223,26 @@ fn test_tag_limits() {
 
     // Test compliance tags limit (MAX_COMPLIANCE_TAGS = 10)
     for i in 0..10 {
-        assert!(metrics.add_compliance_tag(format!("compliance-{}", i)).is_ok());
+        assert!(metrics
+            .add_compliance_tag(format!("compliance-{}", i))
+            .is_ok());
     }
     assert_eq!(metrics.compliance_tags.len(), 10);
-    assert!(metrics.add_compliance_tag("compliance-11".to_string()).is_err());
+    assert!(metrics
+        .add_compliance_tag("compliance-11".to_string())
+        .is_err());
 
     // Test tag scores limit (MAX_TAG_SCORES = 50)
     let timestamp = 1000000i64;
     for i in 0..50 {
-        assert!(metrics.update_tag_confidence(
-            format!("tag-score-{}", i),
-            5000,
-            10,
-            timestamp
-        ).is_ok());
+        assert!(metrics
+            .update_tag_confidence(format!("tag-score-{}", i), 5000, 10, timestamp)
+            .is_ok());
     }
     assert_eq!(metrics.tag_scores.len(), 50);
-    assert!(metrics.update_tag_confidence("tag-score-51".to_string(), 5000, 10, timestamp).is_err());
+    assert!(metrics
+        .update_tag_confidence("tag-score-51".to_string(), 5000, 10, timestamp)
+        .is_err());
 
     println!("    ✅ Tag limit tests passed");
 }
@@ -227,13 +256,13 @@ fn test_tag_staleness() {
 
     // Test various ages
     let ages_and_staleness = vec![
-        (0, false),                      // Just created
-        (ONE_DAY, false),                // 1 day old
-        (30 * ONE_DAY, false),           // 30 days old
-        (89 * ONE_DAY, false),           // 89 days old (not yet stale)
-        (NINETY_DAYS, false),            // Exactly 90 days (boundary)
-        (NINETY_DAYS + 1, true),         // 90 days + 1 second (stale)
-        (180 * ONE_DAY, true),           // 180 days old (very stale)
+        (0, false),              // Just created
+        (ONE_DAY, false),        // 1 day old
+        (30 * ONE_DAY, false),   // 30 days old
+        (89 * ONE_DAY, false),   // 89 days old (not yet stale)
+        (NINETY_DAYS, false),    // Exactly 90 days (boundary)
+        (NINETY_DAYS + 1, true), // 90 days + 1 second (stale)
+        (180 * ONE_DAY, true),   // 180 days old (very stale)
     ];
 
     for (age, should_be_stale) in ages_and_staleness {
@@ -258,18 +287,34 @@ fn test_tag_evidence_tracking() {
     let timestamp = 1000000i64;
 
     // Test evidence accumulation
-    metrics.update_tag_confidence("well-evidenced".to_string(), 8000, 1, timestamp).unwrap();
-    metrics.update_tag_confidence("well-evidenced".to_string(), 8500, 5, timestamp + 100).unwrap();
-    metrics.update_tag_confidence("well-evidenced".to_string(), 9000, 20, timestamp + 200).unwrap();
+    metrics
+        .update_tag_confidence("well-evidenced".to_string(), 8000, 1, timestamp)
+        .unwrap();
+    metrics
+        .update_tag_confidence("well-evidenced".to_string(), 8500, 5, timestamp + 100)
+        .unwrap();
+    metrics
+        .update_tag_confidence("well-evidenced".to_string(), 9000, 20, timestamp + 200)
+        .unwrap();
 
     // Verify evidence count increased
-    let tag_score = metrics.tag_scores.iter().find(|ts| ts.tag_name == "well-evidenced").unwrap();
+    let tag_score = metrics
+        .tag_scores
+        .iter()
+        .find(|ts| ts.tag_name == "well-evidenced")
+        .unwrap();
     assert_eq!(tag_score.evidence_count, 20);
     assert_eq!(tag_score.confidence, 9000);
 
     // Test low evidence tag
-    metrics.update_tag_confidence("low-evidence".to_string(), 5000, 1, timestamp).unwrap();
-    let low_evidence_tag = metrics.tag_scores.iter().find(|ts| ts.tag_name == "low-evidence").unwrap();
+    metrics
+        .update_tag_confidence("low-evidence".to_string(), 5000, 1, timestamp)
+        .unwrap();
+    let low_evidence_tag = metrics
+        .tag_scores
+        .iter()
+        .find(|ts| ts.tag_name == "low-evidence")
+        .unwrap();
     assert_eq!(low_evidence_tag.evidence_count, 1);
 
     println!("    ✅ Tag evidence tracking tests passed");
@@ -300,7 +345,9 @@ fn test_tag_validation() {
     assert!(create_test_tag_score("test", 10000, 10, timestamp).confidence == 10000);
 
     // Test that implementation validates bounds
-    assert!(metrics.update_tag_confidence("test".to_string(), 10000, 1, timestamp).is_ok());
+    assert!(metrics
+        .update_tag_confidence("test".to_string(), 10000, 1, timestamp)
+        .is_ok());
 
     println!("    ✅ Tag validation tests passed");
 }
@@ -310,6 +357,7 @@ fn test_tag_validation() {
 // ============================================================================
 
 #[derive(Clone, Debug)]
+#[allow(dead_code)]
 struct TestReputationMetrics {
     agent: Pubkey,
     successful_payments: u64,
@@ -398,7 +446,11 @@ impl TestReputationMetrics {
         evidence_count: u32,
         timestamp: i64,
     ) -> std::result::Result<(), &'static str> {
-        if let Some(tag_score) = self.tag_scores.iter_mut().find(|ts| ts.tag_name == tag_name) {
+        if let Some(tag_score) = self
+            .tag_scores
+            .iter_mut()
+            .find(|ts| ts.tag_name == tag_name)
+        {
             tag_score.confidence = confidence;
             tag_score.evidence_count = evidence_count;
             tag_score.last_updated = timestamp;
@@ -406,7 +458,8 @@ impl TestReputationMetrics {
             if self.tag_scores.len() >= Self::MAX_TAG_SCORES {
                 return Err("MaxTagScoresReached");
             }
-            let new_tag_score = create_test_tag_score(&tag_name, confidence, evidence_count, timestamp);
+            let new_tag_score =
+                create_test_tag_score(&tag_name, confidence, evidence_count, timestamp);
             self.tag_scores.push(new_tag_score);
         }
 
@@ -422,7 +475,8 @@ impl TestReputationMetrics {
     }
 
     fn remove_stale_tags(&mut self, current_timestamp: i64) {
-        let stale_tags: Vec<String> = self.tag_scores
+        let stale_tags: Vec<String> = self
+            .tag_scores
             .iter()
             .filter(|ts| ts.is_stale(current_timestamp))
             .map(|ts| ts.tag_name.clone())
@@ -438,9 +492,9 @@ impl TestReputationMetrics {
     }
 
     fn has_tag(&self, tag: &str) -> bool {
-        self.skill_tags.contains(&tag.to_string()) ||
-        self.behavior_tags.contains(&tag.to_string()) ||
-        self.compliance_tags.contains(&tag.to_string())
+        self.skill_tags.contains(&tag.to_string())
+            || self.behavior_tags.contains(&tag.to_string())
+            || self.compliance_tags.contains(&tag.to_string())
     }
 }
 

@@ -6,7 +6,6 @@
  */
 
 use anchor_lang::prelude::*;
-use super::MAX_GENERAL_STRING_LENGTH;
 
 // PDA Seeds
 pub const EXTERNAL_ID_MAPPING_SEED: &[u8] = b"external_id";
@@ -68,7 +67,11 @@ impl ExternalIdMapping {
         self.external_id = external_id;
         self.created_at = clock.unix_timestamp;
         self.verified = verified;
-        self.verified_at = if verified { Some(clock.unix_timestamp) } else { None };
+        self.verified_at = if verified {
+            Some(clock.unix_timestamp)
+        } else {
+            None
+        };
         self.bump = bump;
 
         Ok(())

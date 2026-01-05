@@ -2,13 +2,22 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useWallet } from '@/lib/wallet/WalletStandardProvider'
-import { useRouter } from 'next/navigation'
-import { Send, Loader2, Plus, ArrowLeft } from 'lucide-react'
+import { useWalletModal } from '@/lib/wallet/WalletModal'
+import {
+  Send,
+  Loader2,
+  Plus,
+  ArrowLeft,
+  Sparkles,
+  MessageSquare,
+  Shield,
+  Search,
+} from 'lucide-react'
 import Link from 'next/link'
 import { MeshGradientGhost } from '@/components/shared/MeshGradientGhost'
 import { AgentListResponse } from '@/components/chat/AgentListResponse'
 import { AgentToolsPanel, caisperTools } from '@/components/chat/AgentToolsPanel'
-import { useQuery } from 'convex/react'
+import { useQuery, useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 
 interface Message {
@@ -19,9 +28,31 @@ interface Message {
   timestamp: number
 }
 
+// Starter prompts for empty state
+const starterPrompts = [
+  {
+    icon: Search,
+    label: 'Discover Agents',
+    prompt: 'What agents are available to claim?',
+    color: 'text-blue-400',
+  },
+  {
+    icon: Shield,
+    label: 'Learn About VCs',
+    prompt: 'What types of Verifiable Credentials can you issue?',
+    color: 'text-lime-400',
+  },
+  {
+    icon: MessageSquare,
+    label: 'Get Started',
+    prompt: 'How does GhostSpeak work?',
+    color: 'text-purple-400',
+  },
+]
+
 export default function CaisperPage() {
   const { publicKey } = useWallet()
-  const router = useRouter()
+  const { setVisible: setWalletModalVisible } = useWalletModal()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -32,6 +63,10 @@ export default function CaisperPage() {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [localMessages, setLocalMessages] = useState<Message[]>([])
+  const [isNewSession, setIsNewSession] = useState(false)
+
+  // Convex mutations
+  const clearChatHistoryMutation = useMutation(api.agent.clearChatHistory)
 
   // Fetch chat history from Convex to get metadata
   const convexMessages = useQuery(
@@ -39,14 +74,14 @@ export default function CaisperPage() {
     publicKey ? { walletAddress: publicKey, limit: 50 } : 'skip'
   )
 
-  // Update local messages when chat history loads
+  // Update local messages when chat history loads (but not during a new session)
   useEffect(() => {
-    if (convexMessages) {
+    if (convexMessages && !isNewSession) {
       setLocalMessages(convexMessages as Message[])
       // When loading history, scroll to bottom
       shouldAutoScrollRef.current = true
     }
-  }, [convexMessages])
+  }, [convexMessages, isNewSession])
 
   // Handle claim button click - send claim prompt as new message
   const handleClaimClick = (claimPrompt: string) => {
@@ -66,36 +101,36 @@ export default function CaisperPage() {
   const isNearBottom = () => {
     const container = messagesContainerRef.current
     if (!container) return true
-    
+
     const threshold = 100 // pixels from bottom
     const scrollTop = container.scrollTop
     const scrollHeight = container.scrollHeight
     const clientHeight = container.clientHeight
-    
+
     return scrollHeight - scrollTop - clientHeight < threshold
   }
 
   // Handle scroll events to detect manual scrolling
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const container = e.currentTarget
-    
+
     // Mark that user is actively scrolling
     isUserScrollingRef.current = true
-    
+
     // Clear any existing timeout
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current)
     }
-    
+
     // Reset user scrolling flag after scroll ends (longer delay to prevent interference)
     scrollTimeoutRef.current = setTimeout(() => {
       isUserScrollingRef.current = false
     }, 300)
-    
+
     // Update auto-scroll preference based on position
     const isNear = isNearBottom()
     shouldAutoScrollRef.current = isNear
-    
+
     // Debug: Log scroll info to verify it's working
     // console.log('Scroll:', {
     //   scrollTop: container.scrollTop,
@@ -109,11 +144,11 @@ export default function CaisperPage() {
   const scrollToBottom = (smooth = false) => {
     const container = messagesContainerRef.current
     if (!container) return
-    
+
     if (smooth) {
       container.scrollTo({
         top: container.scrollHeight,
-        behavior: 'smooth'
+        behavior: 'smooth',
       })
     } else {
       container.scrollTop = container.scrollHeight
@@ -124,16 +159,16 @@ export default function CaisperPage() {
   useEffect(() => {
     // Don't auto-scroll if user is actively scrolling
     if (isUserScrollingRef.current) return
-    
+
     // Only auto-scroll if user is near bottom
     if (!shouldAutoScrollRef.current) return
-    
+
     const container = messagesContainerRef.current
     if (!container) return
-    
+
     // Check if content actually overflows
     if (container.scrollHeight <= container.clientHeight) return
-    
+
     // Use a small delay to ensure DOM is updated
     const timer = setTimeout(() => {
       // Double-check conditions before scrolling
@@ -144,10 +179,10 @@ export default function CaisperPage() {
         }
       }
     }, 50)
-    
+
     return () => clearTimeout(timer)
   }, [localMessages.length]) // Only trigger on length change
-  
+
   // Cleanup scroll timeout on unmount
   useEffect(() => {
     return () => {
@@ -156,13 +191,6 @@ export default function CaisperPage() {
       }
     }
   }, [])
-
-  // Redirect if not connected
-  useEffect(() => {
-    if (!publicKey) {
-      router.push('/')
-    }
-  }, [publicKey, router])
 
   // Auto-focus input on mount
   useEffect(() => {
@@ -181,7 +209,7 @@ export default function CaisperPage() {
         console.warn('Scroll container may not be properly constrained:', {
           scrollHeight: container.scrollHeight,
           clientHeight: container.clientHeight,
-          offsetHeight: container.offsetHeight
+          offsetHeight: container.offsetHeight,
         })
       }
     }
@@ -191,13 +219,15 @@ export default function CaisperPage() {
     return () => clearTimeout(timer)
   }, [localMessages.length])
 
-  if (!publicKey) {
-    return null
-  }
-
   const handleSend = async (messageOverride?: string) => {
     const messageToSend = messageOverride || input.trim()
     if (!messageToSend || isLoading) return
+
+    // Prompt for wallet connection if not connected
+    if (!publicKey) {
+      setWalletModalVisible(true)
+      return
+    }
 
     setInput('')
     setIsLoading(true)
@@ -261,13 +291,33 @@ export default function CaisperPage() {
     }
   }
 
-  const handleNewSession = () => {
+  const handleNewSession = async () => {
+    if (!publicKey) return
+
+    // Set flag to prevent re-population from Convex
+    setIsNewSession(true)
     setLocalMessages([])
+
+    try {
+      // Clear chat history in Convex
+      await clearChatHistoryMutation({ walletAddress: publicKey })
+    } catch (error) {
+      console.error('Error clearing chat history:', error)
+    }
+
     inputRef.current?.focus()
+
+    // Reset the flag after a short delay to allow new messages to be saved
+    setTimeout(() => {
+      setIsNewSession(false)
+    }, 500)
   }
 
   return (
-    <div className="flex h-full w-full overflow-hidden" style={{ height: '100%', position: 'relative' }}>
+    <div
+      className="flex h-full w-full overflow-hidden"
+      style={{ height: '100%', position: 'relative' }}
+    >
       {/* Left Sidebar - Actions */}
       <div className="w-64 border-r border-white/10 flex flex-col bg-[rgb(29,29,29)] overflow-hidden">
         {/* Header */}
@@ -305,50 +355,77 @@ export default function CaisperPage() {
       {/* Main Chat Area */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden" style={{ height: '100%' }}>
         {/* Messages Container - Properly isolated scroll area */}
-        <div 
+        <div
           ref={messagesContainerRef}
           onScroll={handleScroll}
           data-lenis-prevent
           className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6"
-          style={{ 
+          style={{
             minHeight: 0,
             WebkitOverflowScrolling: 'touch',
-            overscrollBehavior: 'contain'
+            overscrollBehavior: 'contain',
           }}
         >
           {localMessages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full">
-              <h2 className="text-2xl font-light text-white mb-2">
-                Caisper AI
-              </h2>
-              <p className="text-white/60 text-center max-w-md">
-                AI-powered credential verification and reputation analysis
+            <div className="flex flex-col items-center justify-center h-full px-4">
+              {/* Ghost Avatar */}
+              <div className="w-24 h-28 mb-6">
+                <MeshGradientGhost animated={true} interactive={true} variant="yellow" />
+              </div>
+
+              <h2 className="text-2xl font-light text-white mb-2">Hi, I'm Caisper</h2>
+              <p className="text-white/60 text-center max-w-md mb-8">
+                Your AI-powered trust detective. I can help you discover agents, verify credentials,
+                and check reputation scores.
               </p>
+
+              {/* Starter Prompts */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl w-full">
+                {starterPrompts.map((starter) => (
+                  <button
+                    key={starter.label}
+                    onClick={() => handleSend(starter.prompt)}
+                    className="group flex flex-col items-start gap-2 p-4 bg-white/5 border border-white/10 rounded-xl hover:border-white/20 hover:bg-white/10 transition-all text-left"
+                  >
+                    <div className={`p-2 rounded-lg bg-white/5 ${starter.color}`}>
+                      <starter.icon className="w-4 h-4" />
+                    </div>
+                    <span className="text-sm font-medium text-white">{starter.label}</span>
+                    <span className="text-xs text-white/50 line-clamp-2">"{starter.prompt}"</span>
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="space-y-6 max-w-3xl mx-auto">
               {localMessages.map((msg, idx) => (
                 <div key={idx} className="flex items-start gap-4">
                   <div className="shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                    <span className="text-xs text-white">
-                      {msg.role === 'user' ? 'You' : 'AI'}
-                    </span>
+                    <span className="text-xs text-white">{msg.role === 'user' ? 'You' : 'AI'}</span>
                   </div>
                   <div className="flex-1 min-w-0">
+                    {/* Action Badge */}
+                    {msg.role === 'agent' && msg.actionTriggered && (
+                      <div className="mb-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-lime-500/10 border border-lime-500/20 text-xs text-lime-400">
+                        <Sparkles className="w-3 h-3" />
+                        <span className="capitalize">{msg.actionTriggered.replace(/_/g, ' ')}</span>
+                      </div>
+                    )}
+
                     <p className="text-white/90 leading-relaxed whitespace-pre-wrap">
                       {msg.content}
                     </p>
 
                     {/* Render custom agent list if metadata indicates agent-list type */}
                     {msg.metadata?.type === 'agent-list' &&
-                     msg.metadata?.agents &&
-                     msg.metadata?.agents.length > 0 && (
-                      <AgentListResponse
-                        agents={msg.metadata.agents}
-                        totalCount={msg.metadata.totalCount || msg.metadata.agents.length}
-                        onClaimClick={handleClaimClick}
-                      />
-                    )}
+                      msg.metadata?.agents &&
+                      msg.metadata?.agents.length > 0 && (
+                        <AgentListResponse
+                          agents={msg.metadata.agents}
+                          totalCount={msg.metadata.totalCount || msg.metadata.agents.length}
+                          onClaimClick={handleClaimClick}
+                        />
+                      )}
                   </div>
                 </div>
               ))}
@@ -360,9 +437,18 @@ export default function CaisperPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      <div
+                        className="w-2 h-2 bg-white/40 rounded-full animate-bounce"
+                        style={{ animationDelay: '0ms' }}
+                      />
+                      <div
+                        className="w-2 h-2 bg-white/40 rounded-full animate-bounce"
+                        style={{ animationDelay: '150ms' }}
+                      />
+                      <div
+                        className="w-2 h-2 bg-white/40 rounded-full animate-bounce"
+                        style={{ animationDelay: '300ms' }}
+                      />
                     </div>
                   </div>
                 </div>

@@ -39,7 +39,11 @@ fn test_did_creation() {
 
     for network in networks {
         let did_string = format!("did:sol:{}:{}", network, controller);
-        assert!(validate_did_format(&did_string), "DID format should be valid for {}", network);
+        assert!(
+            validate_did_format(&did_string),
+            "DID format should be valid for {}",
+            network
+        );
     }
 
     // Test DID document initialization
@@ -161,23 +165,32 @@ fn test_did_authorization() {
     assert!(can_perform_action(&did_doc, &controller, "Authentication"));
 
     // Test unauthorized cannot perform actions
-    assert!(!can_perform_action(&did_doc, &unauthorized, "Authentication"));
+    assert!(!can_perform_action(
+        &did_doc,
+        &unauthorized,
+        "Authentication"
+    ));
 
     // Test verification method authorization
     let mut did_doc_with_methods = create_test_did_document(controller);
     let delegate_key = Pubkey::new_unique();
-    let method = create_test_verification_method_with_key(
-        "key-delegate",
-        "Authentication",
-        &delegate_key
-    );
+    let method =
+        create_test_verification_method_with_key("key-delegate", "Authentication", &delegate_key);
     add_verification_method(&mut did_doc_with_methods, method).unwrap();
 
     // Delegate should now be able to perform authentication
-    assert!(can_perform_action(&did_doc_with_methods, &delegate_key, "Authentication"));
+    assert!(can_perform_action(
+        &did_doc_with_methods,
+        &delegate_key,
+        "Authentication"
+    ));
 
     // But not other relationships
-    assert!(!can_perform_action(&did_doc_with_methods, &delegate_key, "AssertionMethod"));
+    assert!(!can_perform_action(
+        &did_doc_with_methods,
+        &delegate_key,
+        "AssertionMethod"
+    ));
 
     println!("    ✅ DID authorization tests passed");
 }
@@ -199,13 +212,13 @@ fn test_did_validation() {
 
     // Test invalid DID formats
     let invalid_dids = vec![
-        "",                                    // Empty
-        "did:sol:",                           // Incomplete
-        "did:eth:mainnet:0x123",              // Wrong method
-        "did:sol:invalidnet:5VKz...",         // Invalid network
-        "did:sol:devnet",                     // Missing identifier
-        "did:sol:devnet:invalid!@#",          // Invalid base58
-        "sol:devnet:5VKz...",                 // Missing did: prefix
+        "",                           // Empty
+        "did:sol:",                   // Incomplete
+        "did:eth:mainnet:0x123",      // Wrong method
+        "did:sol:invalidnet:5VKz...", // Invalid network
+        "did:sol:devnet",             // Missing identifier
+        "did:sol:devnet:invalid!@#",  // Invalid base58
+        "sol:devnet:5VKz...",         // Missing did: prefix
     ];
 
     for did in invalid_dids {
@@ -231,7 +244,7 @@ fn test_did_edge_cases() {
     assert!(service.service_endpoint.len() <= 256);
 
     // Test context array limits (3 entries)
-    let mut did_doc = create_test_did_document(controller);
+    let did_doc = create_test_did_document(controller);
     assert!(did_doc.context.len() <= 3);
 
     // Test also_known_as limits (2 entries)
@@ -239,7 +252,9 @@ fn test_did_edge_cases() {
 
     // Test empty verification methods and services
     let minimal_did = create_test_did_document(controller);
-    assert!(minimal_did.verification_methods.len() == 0 || minimal_did.verification_methods.len() > 0);
+    assert!(
+        minimal_did.verification_methods.len() == 0 || minimal_did.verification_methods.len() > 0
+    );
     assert!(minimal_did.service_endpoints.len() == 0 || minimal_did.service_endpoints.len() > 0);
 
     println!("    ✅ DID edge case tests passed");
@@ -253,23 +268,20 @@ fn test_did_pda_uniqueness() {
     let controller2 = Pubkey::new_unique();
 
     // DID document PDAs
-    let (pda1, _bump1) = Pubkey::find_program_address(
-        &[b"did_document", controller1.as_ref()],
-        &program_id,
-    );
+    let (pda1, _bump1) =
+        Pubkey::find_program_address(&[b"did_document", controller1.as_ref()], &program_id);
 
-    let (pda2, _bump2) = Pubkey::find_program_address(
-        &[b"did_document", controller2.as_ref()],
-        &program_id,
-    );
+    let (pda2, _bump2) =
+        Pubkey::find_program_address(&[b"did_document", controller2.as_ref()], &program_id);
 
-    assert_ne!(pda1, pda2, "DIDs for different controllers should have unique PDAs");
+    assert_ne!(
+        pda1, pda2,
+        "DIDs for different controllers should have unique PDAs"
+    );
 
     // Same controller should produce same PDA
-    let (pda1_again, _) = Pubkey::find_program_address(
-        &[b"did_document", controller1.as_ref()],
-        &program_id,
-    );
+    let (pda1_again, _) =
+        Pubkey::find_program_address(&[b"did_document", controller1.as_ref()], &program_id);
 
     assert_eq!(pda1, pda1_again, "Same controller should produce same PDA");
 
@@ -281,6 +293,7 @@ fn test_did_pda_uniqueness() {
 // ============================================================================
 
 #[derive(Clone, Debug)]
+#[allow(dead_code)]
 struct TestDidDocument {
     did: String,
     controller: Pubkey,
@@ -302,6 +315,7 @@ impl TestDidDocument {
 }
 
 #[derive(Clone, Debug)]
+#[allow(dead_code)]
 struct TestVerificationMethod {
     id: String,
     method_type: String,
@@ -313,6 +327,7 @@ struct TestVerificationMethod {
 }
 
 #[derive(Clone, Debug)]
+#[allow(dead_code)]
 struct TestServiceEndpoint {
     id: String,
     service_type: String,
@@ -388,7 +403,11 @@ fn add_verification_method(
         return Err("TooManyVerificationMethods");
     }
 
-    if did_doc.verification_methods.iter().any(|m| m.id == method.id) {
+    if did_doc
+        .verification_methods
+        .iter()
+        .any(|m| m.id == method.id)
+    {
         return Err("DuplicateMethodId");
     }
 
@@ -467,11 +486,7 @@ fn deactivate_did(did_doc: &mut TestDidDocument) -> std::result::Result<(), &'st
     Ok(())
 }
 
-fn can_perform_action(
-    did_doc: &TestDidDocument,
-    public_key: &Pubkey,
-    relationship: &str,
-) -> bool {
+fn can_perform_action(did_doc: &TestDidDocument, public_key: &Pubkey, relationship: &str) -> bool {
     // Controller can always perform actions
     if public_key == &did_doc.controller {
         return true;

@@ -6,11 +6,7 @@
  */
 
 use super::test_harness::*;
-use solana_sdk::{
-    instruction::AccountMeta,
-    pubkey::Pubkey,
-    system_program,
-};
+use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey, system_program};
 
 /// Test ghost PDA derivation
 #[test]
@@ -58,8 +54,8 @@ fn test_auto_create_ghost_instruction_structure() {
     let (ghost_pda, _) = derive_ghost_pda(&owner);
 
     let accounts = vec![
-        AccountMeta::new(ghost_pda, false),        // ghost (init)
-        AccountMeta::new(owner, true),             // owner (signer)
+        AccountMeta::new(ghost_pda, false), // ghost (init)
+        AccountMeta::new(owner, true),      // owner (signer)
         AccountMeta::new_readonly(system_program::ID, false), // system_program
     ];
 
@@ -67,7 +63,10 @@ fn test_auto_create_ghost_instruction_structure() {
 
     assert_eq!(instruction.program_id, PROGRAM_ID);
     assert_eq!(instruction.accounts.len(), 3);
-    assert!(instruction.accounts[0].is_writable, "Ghost account should be writable");
+    assert!(
+        instruction.accounts[0].is_writable,
+        "Ghost account should be writable"
+    );
     assert!(instruction.accounts[1].is_signer, "Owner should be signer");
 }
 
@@ -78,8 +77,8 @@ fn test_claim_ghost_instruction_structure() {
     let (ghost_pda, _) = derive_ghost_pda(&owner);
 
     let accounts = vec![
-        AccountMeta::new(ghost_pda, false),        // ghost
-        AccountMeta::new(owner, true),             // claimer (signer)
+        AccountMeta::new(ghost_pda, false), // ghost
+        AccountMeta::new(owner, true),      // claimer (signer)
         AccountMeta::new_readonly(solana_sdk::sysvar::clock::ID, false), // clock
     ];
 
@@ -96,8 +95,8 @@ fn test_link_external_id_instruction_structure() {
     let (ghost_pda, _) = derive_ghost_pda(&owner);
 
     let accounts = vec![
-        AccountMeta::new(ghost_pda, false),        // ghost
-        AccountMeta::new(owner, true),             // owner (signer)
+        AccountMeta::new(ghost_pda, false), // ghost
+        AccountMeta::new(owner, true),      // owner (signer)
     ];
 
     // External ID data: platform (u8) + id (string)
@@ -124,11 +123,17 @@ fn test_ghost_identity_uniqueness() {
     let (ghost_2, _) = derive_ghost_pda(&wallet_2);
 
     // Different wallets = different ghosts
-    assert_ne!(ghost_1, ghost_2, "Different wallets should have different ghosts");
+    assert_ne!(
+        ghost_1, ghost_2,
+        "Different wallets should have different ghosts"
+    );
 
     // Same wallet = same ghost (deterministic)
     let (ghost_1_again, _) = derive_ghost_pda(&wallet_1);
-    assert_eq!(ghost_1, ghost_1_again, "Same wallet should always produce same ghost");
+    assert_eq!(
+        ghost_1, ghost_1_again,
+        "Same wallet should always produce same ghost"
+    );
 }
 
 /// Test ghost account size
@@ -141,14 +146,18 @@ fn test_ghost_account_size() {
 
     assert!(
         ghost_size >= min_size,
-        "Ghost account size {} should be at least {}", ghost_size, min_size
+        "Ghost account size {} should be at least {}",
+        ghost_size,
+        min_size
     );
 
     // Maximum reasonable size
     let max_size = 1000;
     assert!(
         ghost_size <= max_size,
-        "Ghost account size {} should not exceed {}", ghost_size, max_size
+        "Ghost account size {} should not exceed {}",
+        ghost_size,
+        max_size
     );
 }
 
@@ -165,9 +174,9 @@ fn test_external_id_platforms() {
         (5u8, "Phone"),
     ];
 
-    for (platform_id, _name) in platforms {
+    for (_platform_id, _name) in platforms {
         // Each platform should have a unique ID
-        assert!(platform_id <= 255, "Platform ID should fit in u8");
+        // assert!(platform_id <= 255, "Platform ID should fit in u8"); // Redundant for u8
     }
 }
 

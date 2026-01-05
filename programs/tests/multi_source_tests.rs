@@ -35,27 +35,31 @@ fn test_source_score_management() {
     let timestamp = 1000000i64;
 
     // Test adding source scores
-    assert!(metrics.update_source_score(
-        "payai".to_string(),
-        800,  // score 0-1000
-        5000, // weight 50%
-        100,  // 100 data points
-        9000, // 90% reliability
-        timestamp
-    ).is_ok());
+    assert!(metrics
+        .update_source_score(
+            "payai".to_string(),
+            800,  // score 0-1000
+            5000, // weight 50%
+            100,  // 100 data points
+            9000, // 90% reliability
+            timestamp
+        )
+        .is_ok());
 
     assert_eq!(metrics.source_scores.len(), 1);
     assert!(metrics.get_source_score("payai").is_some());
 
     // Test updating existing source
-    assert!(metrics.update_source_score(
-        "payai".to_string(),
-        850,  // updated score
-        5000,
-        150,  // more data points
-        9200, // improved reliability
-        timestamp + 100
-    ).is_ok());
+    assert!(metrics
+        .update_source_score(
+            "payai".to_string(),
+            850, // updated score
+            5000,
+            150,  // more data points
+            9200, // improved reliability
+            timestamp + 100
+        )
+        .is_ok());
 
     assert_eq!(metrics.source_scores.len(), 1); // Should not create duplicate
     let payai_source = metrics.get_source_score("payai").unwrap();
@@ -63,8 +67,12 @@ fn test_source_score_management() {
     assert_eq!(payai_source.data_points, 150);
 
     // Test multiple sources
-    assert!(metrics.update_source_score("github".to_string(), 750, 3000, 50, 8500, timestamp).is_ok());
-    assert!(metrics.update_source_score("custom".to_string(), 820, 2000, 30, 8000, timestamp).is_ok());
+    assert!(metrics
+        .update_source_score("github".to_string(), 750, 3000, 50, 8500, timestamp)
+        .is_ok());
+    assert!(metrics
+        .update_source_score("custom".to_string(), 820, 2000, 30, 8000, timestamp)
+        .is_ok());
     assert_eq!(metrics.source_scores.len(), 3);
 
     println!("    ✅ Source score management tests passed");
@@ -79,13 +87,19 @@ fn test_weighted_score_calculation() {
 
     // Add multiple sources with different weights and reliability
     // PayAI: score=800, weight=50%, reliability=90%
-    metrics.update_source_score("payai".to_string(), 800, 5000, 100, 9000, timestamp).unwrap();
+    metrics
+        .update_source_score("payai".to_string(), 800, 5000, 100, 9000, timestamp)
+        .unwrap();
 
     // GitHub: score=700, weight=30%, reliability=85%
-    metrics.update_source_score("github".to_string(), 700, 3000, 50, 8500, timestamp).unwrap();
+    metrics
+        .update_source_score("github".to_string(), 700, 3000, 50, 8500, timestamp)
+        .unwrap();
 
     // Custom: score=750, weight=20%, reliability=80%
-    metrics.update_source_score("custom".to_string(), 750, 2000, 30, 8000, timestamp).unwrap();
+    metrics
+        .update_source_score("custom".to_string(), 750, 2000, 30, 8000, timestamp)
+        .unwrap();
 
     // Calculate weighted score
     let weighted_score = metrics.calculate_weighted_score();
@@ -99,11 +113,17 @@ fn test_weighted_score_calculation() {
     // Weighted score: 658.5 / 0.865 ≈ 761
     // Converted to basis points (0-10000): 761 × 10 = 7610
 
-    assert!(weighted_score > 7500 && weighted_score < 7700, "Weighted score should be ~7610, got {}", weighted_score);
+    assert!(
+        weighted_score > 7500 && weighted_score < 7700,
+        "Weighted score should be ~7610, got {}",
+        weighted_score
+    );
 
     // Test single source (should return source score × 10)
     let mut single_source_metrics = create_test_reputation_metrics(agent);
-    single_source_metrics.update_source_score("payai".to_string(), 800, 10000, 100, 10000, timestamp).unwrap();
+    single_source_metrics
+        .update_source_score("payai".to_string(), 800, 10000, 100, 10000, timestamp)
+        .unwrap();
     let single_score = single_source_metrics.calculate_weighted_score();
     assert_eq!(single_score, 8000); // 800 × 10
 
@@ -122,20 +142,34 @@ fn test_conflict_detection() {
 
     // Test no conflict (scores within 30% threshold)
     let mut metrics_no_conflict = create_test_reputation_metrics(agent);
-    metrics_no_conflict.update_source_score("source1".to_string(), 800, 5000, 100, 9000, timestamp).unwrap();
-    metrics_no_conflict.update_source_score("source2".to_string(), 850, 5000, 100, 9000, timestamp).unwrap();
+    metrics_no_conflict
+        .update_source_score("source1".to_string(), 800, 5000, 100, 9000, timestamp)
+        .unwrap();
+    metrics_no_conflict
+        .update_source_score("source2".to_string(), 850, 5000, 100, 9000, timestamp)
+        .unwrap();
 
     let has_conflict = metrics_no_conflict.detect_conflicts(timestamp);
-    assert!(!has_conflict, "Variance of 50 (5%) should not trigger conflict");
+    assert!(
+        !has_conflict,
+        "Variance of 50 (5%) should not trigger conflict"
+    );
     assert_eq!(metrics_no_conflict.conflict_flags.len(), 0);
 
     // Test conflict (scores differ by >30%)
     let mut metrics_conflict = create_test_reputation_metrics(agent);
-    metrics_conflict.update_source_score("source1".to_string(), 800, 5000, 100, 9000, timestamp).unwrap();
-    metrics_conflict.update_source_score("source2".to_string(), 400, 5000, 100, 9000, timestamp).unwrap();
+    metrics_conflict
+        .update_source_score("source1".to_string(), 800, 5000, 100, 9000, timestamp)
+        .unwrap();
+    metrics_conflict
+        .update_source_score("source2".to_string(), 400, 5000, 100, 9000, timestamp)
+        .unwrap();
 
     let has_conflict = metrics_conflict.detect_conflicts(timestamp);
-    assert!(has_conflict, "Variance of 400 (40%) should trigger conflict");
+    assert!(
+        has_conflict,
+        "Variance of 400 (40%) should trigger conflict"
+    );
     assert!(metrics_conflict.conflict_flags.len() > 0);
 
     // Verify conflict message format
@@ -147,7 +181,9 @@ fn test_conflict_detection() {
 
     // Test single source (no conflict possible)
     let mut single_source = create_test_reputation_metrics(agent);
-    single_source.update_source_score("source1".to_string(), 800, 10000, 100, 9000, timestamp).unwrap();
+    single_source
+        .update_source_score("source1".to_string(), 800, 10000, 100, 9000, timestamp)
+        .unwrap();
     assert!(!single_source.detect_conflicts(timestamp));
 
     println!("    ✅ Conflict detection tests passed");
@@ -163,21 +199,23 @@ fn test_source_reliability() {
     // Test different reliability levels with different scores
     // Higher reliability sources have higher scores to demonstrate weighting effect
     let sources = vec![
-        ("highly-reliable", 900, 9500),  // High score, high reliability
+        ("highly-reliable", 900, 9500), // High score, high reliability
         ("reliable", 800, 8000),
         ("moderate", 700, 6000),
-        ("low-reliable", 600, 4000),     // Low score, low reliability
+        ("low-reliable", 600, 4000), // Low score, low reliability
     ];
 
     for (source_name, score, reliability) in &sources {
-        assert!(metrics.update_source_score(
-            source_name.to_string(),
-            *score,
-            2500,  // Equal weight for all
-            50,
-            *reliability,
-            timestamp
-        ).is_ok());
+        assert!(metrics
+            .update_source_score(
+                source_name.to_string(),
+                *score,
+                2500, // Equal weight for all
+                50,
+                *reliability,
+                timestamp
+            )
+            .is_ok());
 
         let source = metrics.get_source_score(*source_name).unwrap();
         assert_eq!(source.reliability, *reliability);
@@ -189,32 +227,58 @@ fn test_source_reliability() {
 
     // Now make the low-reliability (low-score) source much more reliable
     // This should DECREASE the weighted score because the low score gets more weight
-    metrics.update_source_score("low-reliable".to_string(), 600, 2500, 50, 10000, timestamp).unwrap();
+    metrics
+        .update_source_score("low-reliable".to_string(), 600, 2500, 50, 10000, timestamp)
+        .unwrap();
 
     let weighted_score_2 = metrics.calculate_weighted_score();
 
     // The low score (600) now has more influence, pulling the average DOWN
-    assert!(weighted_score_2 < weighted_score_1,
+    assert!(
+        weighted_score_2 < weighted_score_1,
         "Increasing reliability of low-score source should decrease weighted score: {} vs {}",
-        weighted_score_2, weighted_score_1);
+        weighted_score_2,
+        weighted_score_1
+    );
 
     // Reset and test the opposite: increase reliability of high-score source
     let mut metrics2 = create_test_reputation_metrics(agent);
     for (source_name, score, reliability) in &sources {
-        metrics2.update_source_score(source_name.to_string(), *score, 2500, 50, *reliability, timestamp).unwrap();
+        metrics2
+            .update_source_score(
+                source_name.to_string(),
+                *score,
+                2500,
+                50,
+                *reliability,
+                timestamp,
+            )
+            .unwrap();
     }
 
     let weighted_score_3 = metrics2.calculate_weighted_score();
 
     // Increase reliability of the high-score source
-    metrics2.update_source_score("highly-reliable".to_string(), 900, 2500, 50, 10000, timestamp).unwrap();
+    metrics2
+        .update_source_score(
+            "highly-reliable".to_string(),
+            900,
+            2500,
+            50,
+            10000,
+            timestamp,
+        )
+        .unwrap();
 
     let weighted_score_4 = metrics2.calculate_weighted_score();
 
     // The high score (900) now has more influence, pulling the average UP
-    assert!(weighted_score_4 > weighted_score_3,
+    assert!(
+        weighted_score_4 > weighted_score_3,
         "Increasing reliability of high-score source should increase weighted score: {} vs {}",
-        weighted_score_4, weighted_score_3);
+        weighted_score_4,
+        weighted_score_3
+    );
 
     println!("    ✅ Source reliability tests passed");
 }
@@ -227,8 +291,12 @@ fn test_primary_source_management() {
     let timestamp = 1000000i64;
 
     // Add multiple sources
-    metrics.update_source_score("payai".to_string(), 800, 5000, 100, 9000, timestamp).unwrap();
-    metrics.update_source_score("github".to_string(), 700, 3000, 50, 8500, timestamp).unwrap();
+    metrics
+        .update_source_score("payai".to_string(), 800, 5000, 100, 9000, timestamp)
+        .unwrap();
+    metrics
+        .update_source_score("github".to_string(), 700, 3000, 50, 8500, timestamp)
+        .unwrap();
 
     // Test default primary source
     assert_eq!(metrics.primary_source, "payai");
@@ -244,7 +312,9 @@ fn test_primary_source_management() {
     assert_eq!(primary.unwrap().score, 700);
 
     // Test setting non-existent source as primary (should fail)
-    assert!(metrics.set_primary_source("non-existent".to_string()).is_err());
+    assert!(metrics
+        .set_primary_source("non-existent".to_string())
+        .is_err());
 
     // Test primary source name length limit
     let long_name = "a".repeat(33);
@@ -262,10 +332,14 @@ fn test_normalization_factor() {
 
     // Add sources with known weights and reliability
     // Source 1: weight=5000 (50%), reliability=9000 (90%)
-    metrics.update_source_score("source1".to_string(), 800, 5000, 100, 9000, timestamp).unwrap();
+    metrics
+        .update_source_score("source1".to_string(), 800, 5000, 100, 9000, timestamp)
+        .unwrap();
 
     // Source 2: weight=3000 (30%), reliability=8000 (80%)
-    metrics.update_source_score("source2".to_string(), 700, 3000, 50, 8000, timestamp).unwrap();
+    metrics
+        .update_source_score("source2".to_string(), 700, 3000, 50, 8000, timestamp)
+        .unwrap();
 
     let source1 = metrics.get_source_score("source1").unwrap();
     let source2 = metrics.get_source_score("source2").unwrap();
@@ -300,27 +374,28 @@ fn test_multi_source_edge_cases() {
     // Test maximum number of sources (MAX_SOURCE_SCORES = 10)
     let mut metrics_max = create_test_reputation_metrics(agent);
     for i in 0..10 {
-        assert!(metrics_max.update_source_score(
-            format!("source-{}", i),
-            750,
-            1000,
-            10,
-            8000,
-            timestamp
-        ).is_ok());
+        assert!(metrics_max
+            .update_source_score(format!("source-{}", i), 750, 1000, 10, 8000, timestamp)
+            .is_ok());
     }
     assert_eq!(metrics_max.source_scores.len(), 10);
 
     // Test exceeding max sources
-    assert!(metrics_max.update_source_score("source-11".to_string(), 750, 1000, 10, 8000, timestamp).is_err());
+    assert!(metrics_max
+        .update_source_score("source-11".to_string(), 750, 1000, 10, 8000, timestamp)
+        .is_err());
 
     // Test source name length limit (MAX_PRIMARY_SOURCE_LENGTH = 32)
     let mut metrics_name_len = create_test_reputation_metrics(agent);
     let max_name = "a".repeat(32);
-    assert!(metrics_name_len.update_source_score(max_name.clone(), 750, 1000, 10, 8000, timestamp).is_ok());
+    assert!(metrics_name_len
+        .update_source_score(max_name.clone(), 750, 1000, 10, 8000, timestamp)
+        .is_ok());
 
     let too_long_name = "a".repeat(33);
-    assert!(metrics_name_len.update_source_score(too_long_name, 750, 1000, 10, 8000, timestamp).is_err());
+    assert!(metrics_name_len
+        .update_source_score(too_long_name, 750, 1000, 10, 8000, timestamp)
+        .is_err());
 
     // Test removing sources
     metrics_name_len.remove_source(&max_name);
@@ -328,8 +403,12 @@ fn test_multi_source_edge_cases() {
 
     // Test score bounds (0-1000)
     let mut metrics_bounds = create_test_reputation_metrics(agent);
-    assert!(metrics_bounds.update_source_score("min".to_string(), 0, 5000, 10, 5000, timestamp).is_ok());
-    assert!(metrics_bounds.update_source_score("max".to_string(), 1000, 5000, 10, 5000, timestamp).is_ok());
+    assert!(metrics_bounds
+        .update_source_score("min".to_string(), 0, 5000, 10, 5000, timestamp)
+        .is_ok());
+    assert!(metrics_bounds
+        .update_source_score("max".to_string(), 1000, 5000, 10, 5000, timestamp)
+        .is_ok());
 
     println!("    ✅ Multi-source edge case tests passed");
 }
@@ -342,16 +421,24 @@ fn test_conflict_flags_management() {
     let timestamp = 1000000i64;
 
     // Add conflicting sources to generate flags
-    metrics.update_source_score("high".to_string(), 900, 5000, 100, 9000, timestamp).unwrap();
-    metrics.update_source_score("low".to_string(), 400, 5000, 100, 9000, timestamp).unwrap();
+    metrics
+        .update_source_score("high".to_string(), 900, 5000, 100, 9000, timestamp)
+        .unwrap();
+    metrics
+        .update_source_score("low".to_string(), 400, 5000, 100, 9000, timestamp)
+        .unwrap();
 
     metrics.detect_conflicts(timestamp);
     assert!(metrics.conflict_flags.len() > 0);
 
     // Test conflict flag limit (MAX_CONFLICT_FLAGS = 10)
     for i in 0..15 {
-        metrics.update_source_score("high".to_string(), 900, 5000, 100, 9000, timestamp + i).unwrap();
-        metrics.update_source_score("low".to_string(), 400, 5000, 100, 9000, timestamp + i).unwrap();
+        metrics
+            .update_source_score("high".to_string(), 900, 5000, 100, 9000, timestamp + i)
+            .unwrap();
+        metrics
+            .update_source_score("low".to_string(), 400, 5000, 100, 9000, timestamp + i)
+            .unwrap();
         metrics.detect_conflicts(timestamp + i);
     }
 
@@ -370,6 +457,7 @@ fn test_conflict_flags_management() {
 // ============================================================================
 
 #[derive(Clone, Debug)]
+#[allow(dead_code)]
 struct TestReputationMetrics {
     agent: Pubkey,
     source_scores: Vec<TestSourceScore>,
@@ -405,7 +493,11 @@ impl TestReputationMetrics {
             return Err("InvalidPercentage");
         }
 
-        if let Some(source) = self.source_scores.iter_mut().find(|s| s.source_name == source_name) {
+        if let Some(source) = self
+            .source_scores
+            .iter_mut()
+            .find(|s| s.source_name == source_name)
+        {
             source.score = score;
             source.weight = weight;
             source.data_points = data_points;
@@ -430,7 +522,9 @@ impl TestReputationMetrics {
     }
 
     fn get_source_score(&self, source_name: &str) -> Option<&TestSourceScore> {
-        self.source_scores.iter().find(|s| s.source_name == source_name)
+        self.source_scores
+            .iter()
+            .find(|s| s.source_name == source_name)
     }
 
     fn calculate_weighted_score(&self) -> u64 {
@@ -438,12 +532,14 @@ impl TestReputationMetrics {
             return 0;
         }
 
-        let total_contribution: u64 = self.source_scores
+        let total_contribution: u64 = self
+            .source_scores
             .iter()
             .map(|s| s.weighted_contribution())
             .sum();
 
-        let total_normalization: u64 = self.source_scores
+        let total_normalization: u64 = self
+            .source_scores
             .iter()
             .map(|s| s.normalization_factor())
             .sum();
@@ -496,7 +592,11 @@ impl TestReputationMetrics {
             return Err("InputTooLong");
         }
 
-        if !self.source_scores.iter().any(|s| s.source_name == source_name) {
+        if !self
+            .source_scores
+            .iter()
+            .any(|s| s.source_name == source_name)
+        {
             return Err("InvalidInput");
         }
 

@@ -583,12 +583,78 @@ export async function calculateGovernanceParticipation(
 
 /**
  * API Quality Metrics Score
- * Based on B2B API usage patterns and error rates
+ * Based on Caisper's endpoint observation tests
+ * Falls back to legacy apiUsage data if no observation tests exist
  */
 export async function calculateAPIQualityMetrics(
   ctx: any,
   agentAddress: string
 ): Promise<SourceScore> {
+  // First, try to get observation test data (Caisper's endpoint tests)
+  const observationTests = await ctx.db
+    .query('endpointTests')
+    .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+    .order('desc')
+    .take(100)
+
+  if (observationTests.length > 0) {
+    // Use observation data from Caisper's tests
+    const successCount = observationTests.filter((t: any) => t.success).length
+    const successRate = successCount / observationTests.length
+
+    // Calculate avg response time
+    const avgResponseTime =
+      observationTests.reduce((sum: number, t: any) => sum + (t.responseTimeMs || 0), 0) / observationTests.length
+
+    // Calculate avg quality score from Caisper's judgment
+    const avgQualityScore =
+      observationTests.reduce((sum: number, t: any) => sum + (t.qualityScore || 50), 0) / observationTests.length
+
+    // Capability verification rate
+    const verifiedCount = observationTests.filter((t: any) => t.capabilityVerified).length
+    const verificationRate = verifiedCount / observationTests.length
+
+    // Composite score calculation:
+    // - 40% success rate
+    // - 20% response time
+    // - 30% capability verification
+    // - 10% quality score consistency
+    let rawScore = 0
+
+    // Success rate component (40%)
+    rawScore += successRate * 4000
+
+    // Response time component (20%)
+    // Under 500ms: full points, over 5000ms: 0 points
+    const responseTimeScore = Math.max(0, 1 - (avgResponseTime - 500) / 4500) * 2000
+    rawScore += responseTimeScore
+
+    // Capability verification component (30%)
+    rawScore += verificationRate * 3000
+
+    // Quality score component (10%)
+    rawScore += (avgQualityScore / 100) * 1000
+
+    rawScore = Math.max(0, Math.min(10000, rawScore))
+
+    // Confidence based on test count (high confidence at 25+ tests)
+    const confidence = 1 / (1 + Math.exp(-(observationTests.length - 25) / 10))
+
+    // Time decay (fast decay for API quality - 14 days)
+    const lastUpdated = observationTests[0]?.testedAt || Date.now()
+    const timeDecayFactor = calculateTimeDecayFactor(lastUpdated, DECAY_HALF_LIVES.apiQualityMetrics)
+
+    return {
+      rawScore,
+      weight: SOURCE_WEIGHTS.apiQualityMetrics,
+      confidence,
+      dataPoints: observationTests.length,
+      timeDecayFactor,
+      lastUpdated,
+    }
+  }
+
+  // Fallback: use legacy apiUsage data if no observation tests
   const apiUsage = await ctx.db
     .query('apiUsage')
     .withIndex('by_user_timestamp', (q: any) => q.eq('userId', agentAddress))

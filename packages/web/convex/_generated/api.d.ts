@@ -13,6 +13,7 @@ import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
 import type * as ghostDiscovery from "../ghostDiscovery.js";
 import type * as ghostScoreCalculator from "../ghostScoreCalculator.js";
+import type * as observation from "../observation.js";
 import type * as onboarding from "../onboarding.js";
 import type * as solanaAuth from "../solanaAuth.js";
 import type * as x402Indexer from "../x402Indexer.js";
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   dashboard: typeof dashboard;
   ghostDiscovery: typeof ghostDiscovery;
   ghostScoreCalculator: typeof ghostScoreCalculator;
+  observation: typeof observation;
   onboarding: typeof onboarding;
   solanaAuth: typeof solanaAuth;
   x402Indexer: typeof x402Indexer;

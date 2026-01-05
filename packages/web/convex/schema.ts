@@ -1145,4 +1145,105 @@ export default defineSchema({
     .index('by_wallet', ['walletAddress'])
     .index('by_confidence', ['confidence'])
     .index('by_confirmed', ['confirmedDeveloper']),
+
+  //
+  // ─── AGENT OBSERVATION SYSTEM ─────────────────────────────────────────────────
+  // Caisper tests x402 endpoints to verify agent capabilities and build trust scores
+  //
+
+  // Endpoints being monitored for testing
+  observedEndpoints: defineTable({
+    agentAddress: v.string(), // Solana wallet of the agent
+    baseUrl: v.string(), // e.g., "api.syraa.fun"
+    endpoint: v.string(), // Full URL
+    method: v.string(), // 'GET' | 'POST'
+    priceUsdc: v.number(), // Cost per call in USDC
+    description: v.string(), // Claimed capability
+    category: v.string(), // 'research' | 'market_data' | 'social' | 'utility' | 'other'
+    isActive: v.boolean(), // Currently being tested
+    addedAt: v.number(),
+    lastTestedAt: v.optional(v.number()),
+    // Aggregated stats (updated after each test)
+    totalTests: v.optional(v.number()),
+    successfulTests: v.optional(v.number()),
+    avgResponseTimeMs: v.optional(v.number()),
+    avgQualityScore: v.optional(v.number()), // 0-100
+  })
+    .index('by_agent', ['agentAddress'])
+    .index('by_active', ['isActive'])
+    .index('by_category', ['category'])
+    .index('by_price', ['priceUsdc'])
+    .index('by_last_tested', ['lastTestedAt']),
+
+  // Individual test results
+  endpointTests: defineTable({
+    endpointId: v.id('observedEndpoints'),
+    agentAddress: v.string(),
+    testedAt: v.number(),
+    // Request details
+    requestPayload: v.optional(v.string()), // JSON stringified
+    paymentSignature: v.optional(v.string()), // x402 payment tx
+    paymentAmountUsdc: v.number(),
+    // Response details
+    responseStatus: v.number(), // HTTP status code
+    responseTimeMs: v.number(),
+    responseBody: v.optional(v.string()), // Truncated/summarized (max 10KB)
+    responseError: v.optional(v.string()), // Error message if failed
+    // Judgment from Caisper
+    success: v.boolean(), // Did the request succeed?
+    capabilityVerified: v.boolean(), // Did it do what it claimed?
+    qualityScore: v.number(), // 0-100 from Caisper judgment
+    issues: v.optional(v.array(v.string())), // Problems found
+    caisperNotes: v.string(), // AI judgment notes
+  })
+    .index('by_endpoint', ['endpointId'])
+    .index('by_agent', ['agentAddress'])
+    .index('by_tested_at', ['testedAt'])
+    .index('by_success', ['success'])
+    .index('by_quality', ['qualityScore']),
+
+  // Daily compiled observation reports per agent
+  dailyObservationReports: defineTable({
+    date: v.string(), // YYYY-MM-DD format
+    agentAddress: v.string(),
+    // Aggregated metrics
+    testsRun: v.number(),
+    testsSucceeded: v.number(),
+    avgResponseTimeMs: v.number(),
+    avgQualityScore: v.number(), // 0-100
+    totalSpentUsdc: v.number(),
+    // Capability verification
+    claimedCapabilities: v.array(v.string()),
+    verifiedCapabilities: v.array(v.string()),
+    failedCapabilities: v.array(v.string()),
+    // Final judgment
+    overallGrade: v.string(), // 'A' | 'B' | 'C' | 'D' | 'F'
+    trustworthiness: v.number(), // 0-100
+    recommendation: v.string(), // Caisper's summary
+    // Fraud signals
+    fraudSignals: v.array(v.string()),
+    fraudRiskScore: v.number(), // 0-100
+    // Timestamps
+    compiledAt: v.number(),
+  })
+    .index('by_date', ['date'])
+    .index('by_agent', ['agentAddress'])
+    .index('by_agent_date', ['agentAddress', 'date'])
+    .index('by_grade', ['overallGrade'])
+    .index('by_fraud_risk', ['fraudRiskScore']),
+
+  // Fraud detection signals
+  fraudSignals: defineTable({
+    agentAddress: v.string(),
+    signalType: v.string(), // 'fake_reviews' | 'spam_activity' | 'capability_mismatch' | 'response_inconsistency'
+    severity: v.string(), // 'low' | 'medium' | 'high' | 'critical'
+    evidence: v.string(), // Description of what was detected
+    detectedAt: v.number(),
+    resolvedAt: v.optional(v.number()),
+    resolution: v.optional(v.string()), // How it was resolved
+  })
+    .index('by_agent', ['agentAddress'])
+    .index('by_type', ['signalType'])
+    .index('by_severity', ['severity'])
+    .index('by_unresolved', ['resolvedAt']),
 })

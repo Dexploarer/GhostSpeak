@@ -374,6 +374,72 @@ export const getIndexerState = query({
 })
 
 /**
+ * Bulk import discovered agents from x402 backfill
+ * Public mutation for importing historical data
+ */
+export const bulkImportDiscoveredAgents = mutation({
+  args: {
+    agents: v.array(
+      v.object({
+        ghostAddress: v.string(),
+        firstTxSignature: v.string(),
+        firstSeenTimestamp: v.number(),
+        discoverySource: v.string(),
+        facilitatorAddress: v.optional(v.string()),
+        slot: v.number(),
+        // Optional enrichment data
+        solBalance: v.optional(v.number()),
+        usdcBalance: v.optional(v.number()),
+        totalTransactions: v.optional(v.number()),
+        // Optional service data
+        serviceCount: v.optional(v.number()),
+        agentType: v.optional(v.string()), // 'payer' | 'merchant' | 'bidirectional'
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    let imported = 0
+    let skipped = 0
+
+    for (const agent of args.agents) {
+      // Check if agent already exists
+      const existing = await ctx.db
+        .query('discoveredAgents')
+        .withIndex('by_address', (q) => q.eq('ghostAddress', agent.ghostAddress))
+        .first()
+
+      if (existing) {
+        skipped++
+        continue
+      }
+
+      // Insert new discovered agent
+      await ctx.db.insert('discoveredAgents', {
+        ghostAddress: agent.ghostAddress,
+        firstTxSignature: agent.firstTxSignature,
+        firstSeenTimestamp: agent.firstSeenTimestamp,
+        discoverySource: agent.discoverySource,
+        facilitatorAddress: agent.facilitatorAddress,
+        slot: agent.slot,
+        blockTime: agent.firstSeenTimestamp,
+        status: 'discovered',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+
+      imported++
+    }
+
+    return {
+      success: true,
+      imported,
+      skipped,
+      total: args.agents.length,
+    }
+  },
+})
+
+/**
  * Get discovery stats
  */
 export const getDiscoveryStats = query({

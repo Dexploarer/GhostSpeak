@@ -148,7 +148,18 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async deleteManyMemories(memoryIds: any[]): Promise<void> {}
   async deleteAllMemories(roomId: string, tableName: string): Promise<void> {}
 
-  async getEntitiesByIds(entityIds: any[]): Promise<any[] | null> { return [] }
+  async getEntitiesByIds(entityIds: any[]): Promise<any[] | null> {
+    // Return entity objects for elizaOS v1.7.0
+    // The runtime expects to find the agent as an entity
+    return entityIds.map(id => ({
+      id,
+      name: 'Caisper',
+      type: 'agent',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      metadata: {},
+    }))
+  }
   async getEntitiesForRoom(roomId: any, includeComponents?: boolean): Promise<any[]> { return [] }
   async createEntities(entities: any[]): Promise<boolean> { return true }
   async updateEntity(entity: any): Promise<void> {}
@@ -159,7 +170,22 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async updateComponent(component: any): Promise<void> {}
   async deleteComponent(componentId: any): Promise<void> {}
 
-  async getAgent(agentId: any): Promise<any | null> { return { id: agentId } }
+  async getAgent(agentId: any): Promise<any | null> {
+    // Return a proper Agent object for elizaOS v1.7.0
+    return {
+      id: agentId,
+      name: 'Caisper',
+      username: 'caisper',
+      system: 'You are Caisper, a helpful AI assistant for GhostSpeak.',
+      bio: ['Caisper is a friendly AI assistant that helps users discover and claim AI agents.'],
+      plugins: [],
+      settings: {},
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      enabled: true,
+      status: 'active',
+    }
+  }
   async getAgents(): Promise<any[]> { return [] }
   async createAgent(agent: any): Promise<boolean> { return true }
   async updateAgent(agentId: any, agent: any): Promise<boolean> { return true }

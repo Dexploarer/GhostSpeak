@@ -84,3 +84,4 @@ vs_buildtools.exe
 node_modules/
 .vercel
 .env*.local
+data/

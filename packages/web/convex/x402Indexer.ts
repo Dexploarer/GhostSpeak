@@ -27,11 +27,12 @@ export const pollX402Transactions = action({
   handler: async (ctx, args) => {
     try {
       // Get configuration from environment
-      const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
+      // Default to mainnet for production x402 discovery
+      const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
       const facilitatorAddr =
         args.facilitatorAddress ||
         process.env.GHOSTSPEAK_MERCHANT_ADDRESS ||
-        '12wKg8BnaCRWfiho4kfHRfQQ4c6cjMwtnRUsyMTmKZnD' // PayAI test merchant
+        '2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4' // PayAI mainnet facilitator
 
       console.log(`[X402 Indexer Action] Starting poll...`)
       console.log(`  RPC: ${rpcUrl}`)
@@ -56,8 +57,9 @@ export const pollX402Transactions = action({
       console.log(`[X402 Indexer Action] Last signature: ${lastSignature || 'none'}`)
 
       // Fetch transaction signatures
+      // Default to 20 per poll to stay within rate limits (500ms * 20 = 10sec)
       const config: { limit: number; before?: any } = {
-        limit: args.limit || 100,
+        limit: args.limit || 20,
       }
 
       if (lastSignature) {
@@ -70,11 +72,19 @@ export const pollX402Transactions = action({
 
       console.log(`[X402 Indexer Action] Found ${signatures.length} transactions`)
 
-      // Process each transaction
+      // Helper function for rate limiting
+      const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+      // Process each transaction with rate limiting
+      // Mainnet public RPC has a limit of ~2 req/sec for getTransaction
       const discovered: string[] = []
+      const RATE_LIMIT_DELAY_MS = 500 // 500ms between calls = 2 req/sec
 
       for (const sig of signatures) {
         try {
+          // Rate limit: wait before fetching
+          await sleep(RATE_LIMIT_DELAY_MS)
+
           // Fetch full transaction data
           const response = await rpc
             .getTransaction(sig.signature, {
@@ -230,11 +240,11 @@ export const parseX402Transaction = action({
   },
   handler: async (ctx, args) => {
     try {
-      const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
+      const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
       const facilitatorAddr =
         args.facilitatorAddress ||
         process.env.GHOSTSPEAK_MERCHANT_ADDRESS ||
-        '12wKg8BnaCRWfiho4kfHRfQQ4c6cjMwtnRUsyMTmKZnD'
+        '2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4' // PayAI mainnet facilitator
 
       // Import Solana SDK
       const { createSolanaRpc } = await import('@solana/rpc')

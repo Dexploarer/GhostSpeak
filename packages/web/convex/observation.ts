@@ -9,6 +9,7 @@ import { v } from 'convex/values'
 import { mutation, query, action, internalMutation, internalAction } from './_generated/server'
 import { internal } from './_generated/api'
 import type { Doc, Id } from './_generated/dataModel'
+import { getNetworkMetadata } from './lib/networkMetadata'
 
 // ─── QUERIES ────────────────────────────────────────────────────────────────────
 
@@ -189,6 +190,7 @@ export const getObservatoryStats = query({
       successRate: Math.round(successRate),
       avgQualityScore: Math.round(avgQuality),
       unresolvedFraudSignals: fraudSignals.length,
+      network: getNetworkMetadata(),
     }
   },
 })
@@ -400,6 +402,16 @@ export const compileDailyReport = internalMutation({
     const avgQualityScore = Math.round(tests.reduce((sum, t) => sum + t.qualityScore, 0) / tests.length)
     const totalSpentUsdc = tests.reduce((sum, t) => sum + t.paymentAmountUsdc, 0)
 
+    // Calculate response time consistency using coefficient of variation
+    // CV = stddev / mean; lower CV = more consistent
+    const responseTimes = tests.map((t) => t.responseTimeMs)
+    const variance =
+      responseTimes.reduce((sum, t) => sum + Math.pow(t - avgResponseTimeMs, 2), 0) / responseTimes.length
+    const stdDev = Math.sqrt(variance)
+    const coefficientOfVariation = avgResponseTimeMs > 0 ? stdDev / avgResponseTimeMs : 0
+    // Convert CV to 0-100 score: CV of 0 = 100 (perfect), CV >= 1 = 0 (highly variable)
+    const responseConsistency = Math.round(Math.max(0, Math.min(100, 100 * (1 - coefficientOfVariation))))
+
     // Verified vs failed capabilities
     const verifiedCapabilities = [
       ...new Set(tests.filter((t) => t.capabilityVerified).map((t) => endpoints.find((e) => e._id === t.endpointId)?.description || '')),
@@ -465,6 +477,21 @@ export const compileDailyReport = internalMutation({
         fraudRiskScore,
         compiledAt: Date.now(),
       })
+
+      // Issue observation-based credentials on update too (not just on create)
+      await ctx.runMutation(internal.observation.issueObservationCredentials, {
+        agentAddress: args.agentAddress,
+        date: args.date,
+        testsRun: tests.length,
+        testsSucceeded,
+        avgResponseTimeMs,
+        avgQualityScore,
+        responseConsistency,
+        verifiedCapabilities,
+        overallGrade,
+        trustworthiness,
+      })
+
       return { updated: true, reportId: existing._id }
     }
 
@@ -488,7 +515,124 @@ export const compileDailyReport = internalMutation({
       compiledAt: Date.now(),
     })
 
+    // Issue observation-based credentials
+    await ctx.runMutation(internal.observation.issueObservationCredentials, {
+      agentAddress: args.agentAddress,
+      date: args.date,
+      testsRun: tests.length,
+      testsSucceeded,
+      avgResponseTimeMs,
+      avgQualityScore,
+      responseConsistency,
+      verifiedCapabilities,
+      overallGrade,
+      trustworthiness,
+    })
+
     return { created: true, reportId }
+  },
+})
+
+/**
+ * Issue credentials based on observation data
+ * Called automatically after daily report compilation
+ */
+export const issueObservationCredentials = internalMutation({
+  args: {
+    agentAddress: v.string(),
+    date: v.string(),
+    testsRun: v.number(),
+    testsSucceeded: v.number(),
+    avgResponseTimeMs: v.number(),
+    avgQualityScore: v.number(),
+    responseConsistency: v.number(), // Variance-based consistency score (0-100)
+    verifiedCapabilities: v.array(v.string()),
+    overallGrade: v.string(),
+    trustworthiness: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const results = {
+      capabilityCredential: null as any,
+      apiQualityCredential: null as any,
+      uptimeCredential: null as any,
+    }
+
+    // 1. Issue Capability Verification Credential if capabilities verified
+    if (args.verifiedCapabilities.length > 0 && args.testsRun >= 5) {
+      results.capabilityCredential = await ctx.runMutation(
+        internal.credentials.issueCapabilityVerificationCredential,
+        {
+          agentAddress: args.agentAddress,
+          capabilities: args.verifiedCapabilities,
+          testsRun: args.testsRun,
+          testsPassed: args.testsSucceeded,
+        }
+      )
+    }
+
+    // 2. Issue API Quality Grade Credential
+    if (args.testsRun >= 3) {
+      // Calculate component scores from overall quality
+      const responseQuality = Math.min(100, args.avgQualityScore)
+      const capabilityAccuracy =
+        args.testsRun > 0 ? Math.round((args.testsSucceeded / args.testsRun) * 100) : 0
+      // Use variance-based consistency passed from report compilation
+      const consistency = args.responseConsistency
+      // Documentation score: use capability accuracy as proxy (well-documented APIs tend to work correctly)
+      // TODO: Implement proper documentation scoring from endpoint descriptions/schemas
+      const documentation = Math.min(100, Math.round(capabilityAccuracy * 0.8 + responseQuality * 0.2))
+
+      results.apiQualityCredential = await ctx.runMutation(
+        internal.credentials.issueAPIQualityGradeCredential,
+        {
+          agentAddress: args.agentAddress,
+          responseQuality,
+          capabilityAccuracy,
+          consistency,
+          documentation,
+          endpointsTested: args.testsRun,
+          reportDate: args.date,
+        }
+      )
+    }
+
+    // 3. Check for Uptime Attestation Credential
+    // Look back at last 7 days of reports to calculate uptime
+    const sevenDaysAgo = new Date(args.date)
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0]
+
+    const recentReports = await ctx.db
+      .query('dailyObservationReports')
+      .withIndex('by_agent_date', (q) => q.eq('agentAddress', args.agentAddress))
+      .filter((q) => q.gte(q.field('date'), sevenDaysAgoStr))
+      .collect()
+
+    if (recentReports.length >= 7) {
+      const totalTests = recentReports.reduce((sum, r) => sum + r.testsRun, 0)
+      const successfulTests = recentReports.reduce((sum, r) => sum + r.testsSucceeded, 0)
+      const avgResponseTime =
+        recentReports.reduce((sum, r) => sum + r.avgResponseTimeMs, 0) / recentReports.length
+
+      // Get period start and end from reports
+      const sortedDates = recentReports.map((r) => r.date).sort()
+      const periodStart = new Date(sortedDates[0]).getTime()
+      const periodEnd = new Date(sortedDates[sortedDates.length - 1]).getTime() + 24 * 60 * 60 * 1000
+
+      results.uptimeCredential = await ctx.runMutation(
+        internal.credentials.issueUptimeAttestationCredential,
+        {
+          agentAddress: args.agentAddress,
+          totalTests,
+          successfulResponses: successfulTests,
+          avgResponseTimeMs: Math.round(avgResponseTime),
+          periodStart,
+          periodEnd,
+        }
+      )
+    }
+
+    return results
   },
 })
 

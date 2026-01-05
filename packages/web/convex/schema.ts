@@ -485,7 +485,7 @@ export default defineSchema({
   agentIdentityCredentials: defineTable({
     agentAddress: v.string(),
     credentialId: v.string(),
-    crossmintCredentialId: v.string(),
+    crossmintCredentialId: v.optional(v.string()), // Optional until Crossmint integration
     did: v.string(), // did:sol:network:address
     issuedAt: v.number(),
   })
@@ -499,7 +499,7 @@ export default defineSchema({
   paymentMilestoneCredentials: defineTable({
     agentAddress: v.string(),
     credentialId: v.string(),
-    crossmintCredentialId: v.string(),
+    crossmintCredentialId: v.optional(v.string()), // Optional until Crossmint integration
     milestone: v.number(), // 10, 100, 1000
     tier: v.string(), // 'Bronze', 'Silver', 'Gold'
     issuedAt: v.number(),
@@ -515,7 +515,7 @@ export default defineSchema({
   stakingCredentials: defineTable({
     agentAddress: v.string(),
     credentialId: v.string(),
-    crossmintCredentialId: v.string(),
+    crossmintCredentialId: v.optional(v.string()), // Optional until Crossmint integration
     tier: v.string(), // 'Basic', 'Premium', 'Elite'
     stakingTier: v.number(), // 1, 2, 3
     amountStaked: v.number(),
@@ -532,7 +532,7 @@ export default defineSchema({
   verifiedHireCredentials: defineTable({
     agentAddress: v.string(),
     credentialId: v.string(),
-    crossmintCredentialId: v.string(),
+    crossmintCredentialId: v.optional(v.string()), // Optional until Crossmint integration
     clientAddress: v.string(),
     rating: v.number(),
     transactionSignature: v.string(),
@@ -542,6 +542,134 @@ export default defineSchema({
     .index('by_client', ['clientAddress'])
     .index('by_transaction', ['transactionSignature'])
     .index('by_credential_id', ['credentialId']),
+
+  //
+  // ─── CAPABILITY VERIFICATION CREDENTIALS ────────────────────────────────────
+  // Issued when Caisper observation tests verify claimed capabilities work
+  //
+  capabilityVerificationCredentials: defineTable({
+    agentAddress: v.string(),
+    credentialId: v.string(),
+    crossmintCredentialId: v.optional(v.string()),
+    // Verified capabilities
+    capabilities: v.array(v.string()), // ['research', 'market_data', 'social']
+    verificationMethod: v.string(), // 'caisper_observation' | 'manual_review'
+    testsRun: v.number(),
+    testsPassed: v.number(),
+    successRate: v.number(), // 0-100
+    // Validity
+    validFrom: v.number(),
+    validUntil: v.number(), // Expires after 30 days, needs re-verification
+    issuedAt: v.number(),
+  })
+    .index('by_agent', ['agentAddress'])
+    .index('by_credential_id', ['credentialId'])
+    .index('by_valid_until', ['validUntil']),
+
+  //
+  // ─── UPTIME ATTESTATION CREDENTIALS ─────────────────────────────────────────
+  // Issued when agent maintains high availability over observation period
+  //
+  uptimeAttestationCredentials: defineTable({
+    agentAddress: v.string(),
+    credentialId: v.string(),
+    crossmintCredentialId: v.optional(v.string()),
+    // Uptime metrics
+    uptimePercentage: v.number(), // 0-100 (e.g., 99.5)
+    tier: v.string(), // 'bronze' (95%+), 'silver' (99%+), 'gold' (99.9%+)
+    observationPeriodDays: v.number(), // Usually 7 or 30 days
+    totalTests: v.number(),
+    successfulResponses: v.number(),
+    avgResponseTimeMs: v.number(),
+    // Validity
+    periodStart: v.number(),
+    periodEnd: v.number(),
+    issuedAt: v.number(),
+  })
+    .index('by_agent', ['agentAddress'])
+    .index('by_credential_id', ['credentialId'])
+    .index('by_tier', ['tier']),
+
+  //
+  // ─── API QUALITY GRADE CREDENTIALS ──────────────────────────────────────────
+  // A/B/C/D/F grades from Caisper daily observation reports
+  //
+  apiQualityGradeCredentials: defineTable({
+    agentAddress: v.string(),
+    credentialId: v.string(),
+    crossmintCredentialId: v.optional(v.string()),
+    // Grade details
+    grade: v.string(), // 'A', 'B', 'C', 'D', 'F'
+    gradeScore: v.number(), // 0-100 underlying score
+    // Breakdown
+    responseQuality: v.number(), // 0-100
+    capabilityAccuracy: v.number(), // 0-100 (does what it claims)
+    consistency: v.number(), // 0-100 (same input = similar output)
+    documentation: v.number(), // 0-100 (clear API docs/errors)
+    // Context
+    endpointsTested: v.number(),
+    reportDate: v.string(), // YYYY-MM-DD
+    issuedAt: v.number(),
+  })
+    .index('by_agent', ['agentAddress'])
+    .index('by_credential_id', ['credentialId'])
+    .index('by_grade', ['grade'])
+    .index('by_date', ['reportDate']),
+
+  //
+  // ─── TEE ATTESTATION CREDENTIALS ────────────────────────────────────────────
+  // Proves agent runs in Trusted Execution Environment (Intel TDX/SGX, Phala)
+  //
+  teeAttestationCredentials: defineTable({
+    agentAddress: v.string(),
+    credentialId: v.string(),
+    crossmintCredentialId: v.optional(v.string()),
+    // TEE details
+    teeType: v.string(), // 'intel_tdx', 'intel_sgx', 'phala', 'eigencloud'
+    teeProvider: v.string(), // 'phala_cloud', 'eigenai', 'self_hosted'
+    attestationReport: v.string(), // DCAP attestation report hash
+    enclaveId: v.optional(v.string()),
+    // Verification
+    verifiedBy: v.string(), // 'on_chain_dcap', 'phala_ra', 'manual'
+    verificationTxSignature: v.optional(v.string()),
+    // Validity
+    validFrom: v.number(),
+    validUntil: v.number(), // TEE attestations expire
+    issuedAt: v.number(),
+  })
+    .index('by_agent', ['agentAddress'])
+    .index('by_credential_id', ['credentialId'])
+    .index('by_tee_type', ['teeType'])
+    .index('by_valid_until', ['validUntil']),
+
+  //
+  // ─── MODEL PROVENANCE CREDENTIALS ───────────────────────────────────────────
+  // Documents what LLM/AI model the agent uses (EU AI Act compliance)
+  //
+  modelProvenanceCredentials: defineTable({
+    agentAddress: v.string(),
+    credentialId: v.string(),
+    crossmintCredentialId: v.optional(v.string()),
+    // Model details
+    modelName: v.string(), // 'gpt-4', 'claude-3-opus', 'llama-3.1-405b'
+    modelProvider: v.string(), // 'openai', 'anthropic', 'meta', 'local'
+    modelVersion: v.string(), // 'gpt-4-0125-preview'
+    // Parameters (optional, agent-disclosed)
+    contextWindow: v.optional(v.number()), // e.g., 128000
+    temperature: v.optional(v.number()), // e.g., 0.7
+    maxTokens: v.optional(v.number()),
+    // Framework
+    frameworkName: v.optional(v.string()), // 'elizaos', 'langchain', 'custom'
+    frameworkVersion: v.optional(v.string()),
+    // Verification
+    selfAttested: v.boolean(), // true if agent-provided, not independently verified
+    verificationMethod: v.optional(v.string()), // 'api_fingerprinting', 'manual'
+    issuedAt: v.number(),
+  })
+    .index('by_agent', ['agentAddress'])
+    .index('by_credential_id', ['credentialId'])
+    .index('by_model', ['modelName'])
+    .index('by_provider', ['modelProvider']),
 
   //
   // ─── FAILED CREDENTIAL ISSUANCES ───────────────────────────────────────────

@@ -36,4 +36,15 @@ crons.cron(
   {}
 )
 
+// ─── CREDENTIAL SYSTEM ────────────────────────────────────────────────────────────
+
+// Check for credential milestones daily at 1am UTC
+// Issues credentials for agents who have crossed payment/reputation thresholds
+crons.cron(
+  'check credential milestones',
+  '0 1 * * *', // Every day at 01:00 UTC
+  internal.credentials.checkAndIssueMilestoneCredentials,
+  {}
+)
+
 export default crons

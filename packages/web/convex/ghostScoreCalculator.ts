@@ -18,6 +18,7 @@
 import { v } from 'convex/values'
 import { query, internalMutation, internalQuery } from './_generated/server'
 import type { Doc } from './_generated/dataModel'
+import { getNetworkMetadata, type NetworkMetadata } from './lib/networkMetadata'
 
 // ============================================================================
 // Type Definitions
@@ -39,6 +40,7 @@ export interface GhostScoreResult {
   sources: Record<string, SourceScore>
   lastUpdated: number
   badges: string[]
+  network: NetworkMetadata // Network environment info (devnet/mainnet)
 }
 
 export type ReputationTier =
@@ -434,17 +436,102 @@ export async function calculateStakingCommitment(
 /**
  * Credential Verifications Score
  * Based on W3C VCs and SAS attestations issued
+ * Queries all 10 credential tables for comprehensive scoring
  */
 export async function calculateCredentialVerifications(
   ctx: any,
   agentAddress: string
 ): Promise<SourceScore> {
-  const credentials = await ctx.db
-    .query('credentialsIssued')
-    .withIndex('by_subject', (q: any) => q.eq('subject', agentAddress))
-    .collect()
+  const now = Date.now()
 
-  if (credentials.length === 0) {
+  // Query all credential tables in parallel
+  const [
+    identityCredentials,
+    reputationCredentials,
+    milestoneCredentials,
+    stakingCredentials,
+    verifiedHireCredentials,
+    // New credential types
+    capabilityCredentials,
+    uptimeCredentials,
+    apiQualityCredentials,
+    teeCredentials,
+    modelCredentials,
+  ] = await Promise.all([
+    ctx.db
+      .query('agentIdentityCredentials')
+      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .collect(),
+    ctx.db
+      .query('payaiCredentialsIssued')
+      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .collect(),
+    ctx.db
+      .query('paymentMilestoneCredentials')
+      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .collect(),
+    ctx.db
+      .query('stakingCredentials')
+      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .collect(),
+    ctx.db
+      .query('verifiedHireCredentials')
+      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .collect(),
+    // New credential queries
+    ctx.db
+      .query('capabilityVerificationCredentials')
+      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .collect(),
+    ctx.db
+      .query('uptimeAttestationCredentials')
+      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .collect(),
+    ctx.db
+      .query('apiQualityGradeCredentials')
+      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .collect(),
+    ctx.db
+      .query('teeAttestationCredentials')
+      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .collect(),
+    ctx.db
+      .query('modelProvenanceCredentials')
+      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .collect(),
+  ])
+
+  // Filter for valid (non-expired) credentials where applicable
+  const validCapability = capabilityCredentials.filter((c: any) => c.validUntil > now)
+  const validTee = teeCredentials.filter((c: any) => c.validUntil > now)
+
+  // For API Quality Grade, only count the most recent one (not historical)
+  // This prevents score inflation from daily credential accumulation
+  const mostRecentApiQuality = apiQualityCredentials.length > 0
+    ? [apiQualityCredentials.sort((a: any, b: any) => b.issuedAt - a.issuedAt)[0]]
+    : []
+
+  // For Uptime Attestation, only count the most recent (rolling credential)
+  const mostRecentUptime = uptimeCredentials.length > 0
+    ? [uptimeCredentials.sort((a: any, b: any) => b.issuedAt - a.issuedAt)[0]]
+    : []
+
+  // Combine all credentials with their types
+  const allCredentials: Array<{ type: string; issuedAt: number }> = [
+    ...identityCredentials.map((c: any) => ({ type: 'AGENT_IDENTITY', issuedAt: c.issuedAt })),
+    ...reputationCredentials.map((c: any) => ({ type: 'REPUTATION_TIER', issuedAt: c.issuedAt })),
+    ...milestoneCredentials.map((c: any) => ({ type: 'PAYMENT_MILESTONE', issuedAt: c.issuedAt })),
+    ...stakingCredentials.map((c: any) => ({ type: 'VERIFIED_STAKER', issuedAt: c.issuedAt })),
+    ...verifiedHireCredentials.map((c: any) => ({ type: 'VERIFIED_HIRE', issuedAt: c.issuedAt })),
+    // New credential types (only most recent for rolling credentials)
+    ...validCapability.map((c: any) => ({ type: 'CAPABILITY_VERIFIED', issuedAt: c.issuedAt })),
+    ...mostRecentUptime.map((c: any) => ({ type: 'UPTIME_ATTESTATION', issuedAt: c.issuedAt })),
+    ...mostRecentApiQuality.map((c: any) => ({ type: 'API_QUALITY_GRADE', issuedAt: c.issuedAt })),
+    ...validTee.map((c: any) => ({ type: 'TEE_ATTESTATION', issuedAt: c.issuedAt })),
+    ...modelCredentials.map((c: any) => ({ type: 'MODEL_PROVENANCE', issuedAt: c.issuedAt })),
+  ]
+
+  if (allCredentials.length === 0) {
     return {
       rawScore: 0,
       weight: SOURCE_WEIGHTS.credentialVerifications,
@@ -455,31 +542,39 @@ export async function calculateCredentialVerifications(
     }
   }
 
-  // Weight credentials by type
-  const credentialWeights = {
+  // Weight credentials by type (higher value = more trust signal)
+  const credentialWeights: Record<string, number> = {
+    // Original credentials
     AGENT_IDENTITY: 1000,
     REPUTATION_TIER: 1500,
     PAYMENT_MILESTONE: 1200,
     VERIFIED_STAKER: 800,
     VERIFIED_HIRE: 1000,
-    ELIZAOS_AGENT: 1100, // ElizaOS framework verification (modest boost)
+    // New high-value credentials (observation-based)
+    CAPABILITY_VERIFIED: 1800, // Proves agent does what it claims
+    UPTIME_ATTESTATION: 1200, // Proves reliability
+    API_QUALITY_GRADE: 1500, // Proves quality
+    // Trust infrastructure credentials
+    TEE_ATTESTATION: 2000, // Hardware-backed security
+    MODEL_PROVENANCE: 800, // EU AI Act compliance
   }
 
   let totalScore = 0
-  for (const cred of credentials) {
-    const weight = credentialWeights[cred.credentialType as keyof typeof credentialWeights] || 500
+  for (const cred of allCredentials) {
+    const weight = credentialWeights[cred.type as keyof typeof credentialWeights] || 500
     totalScore += weight
   }
 
-  // Normalize to 0-10000 (assume max ~10 credentials)
+  // Normalize to 0-10000 (cap at reasonable max)
   const rawScore = Math.min(10000, totalScore)
 
-  // Confidence based on credential diversity
-  const uniqueTypes = new Set(credentials.map((c: any) => c.credentialType))
-  const confidence = Math.min(1, uniqueTypes.size / 5) // Max at 5 different types
+  // Confidence based on credential diversity (10 possible types)
+  const uniqueTypes = new Set(allCredentials.map((c) => c.type))
+  const confidence = Math.min(1, uniqueTypes.size / 10) // Max at 10 different types
 
   // Time decay based on most recent credential
-  const lastUpdated = Math.max(...credentials.map((c: any) => c.issuedAt || 0))
+  const issuedTimes = allCredentials.map((c) => c.issuedAt || 0).filter((t) => t > 0)
+  const lastUpdated = issuedTimes.length > 0 ? Math.max(...issuedTimes) : Date.now()
   const timeDecayFactor = calculateTimeDecayFactor(
     lastUpdated,
     DECAY_HALF_LIVES.credentialVerifications
@@ -489,7 +584,7 @@ export async function calculateCredentialVerifications(
     rawScore,
     weight: SOURCE_WEIGHTS.credentialVerifications,
     confidence,
-    dataPoints: credentials.length,
+    dataPoints: allCredentials.length,
     timeDecayFactor,
     lastUpdated,
   }
@@ -785,6 +880,7 @@ export const calculateAgentScore = query({
       sources,
       lastUpdated: Date.now(),
       badges,
+      network: getNetworkMetadata(),
     }
   },
 })
@@ -843,6 +939,7 @@ export const calculateAgentScoreInternal = internalQuery({
       sources,
       lastUpdated: Date.now(),
       badges,
+      network: getNetworkMetadata(),
     }
   },
 })

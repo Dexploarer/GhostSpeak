@@ -92,9 +92,16 @@ export default function ObservePage() {
   })
 
   // Group endpoints by agent
-  const agentGroups = endpoints
+  type AgentGroup = {
+    agentAddress: string
+    baseUrl: string
+    endpoints: typeof endpoints extends Array<infer T> ? T[] : never[]
+    avgQuality: number
+    totalTests: number
+  }
+  const agentGroups: Record<string, AgentGroup> = endpoints
     ? endpoints.reduce(
-        (acc, ep) => {
+        (acc: Record<string, AgentGroup>, ep) => {
           if (!acc[ep.agentAddress]) {
             acc[ep.agentAddress] = {
               agentAddress: ep.agentAddress,
@@ -107,7 +114,7 @@ export default function ObservePage() {
           acc[ep.agentAddress].endpoints.push(ep)
           return acc
         },
-        {} as Record<string, any>
+        {} as Record<string, AgentGroup>
       )
     : {}
 

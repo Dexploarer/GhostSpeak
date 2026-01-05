@@ -17,6 +17,7 @@ import { api } from '@/convex/_generated/api'
 // Web-app-specific actions
 import { discoverAgentsAction } from './actions/discoverAgents'
 import { claimAgentAction } from './actions/claimAgent'
+import { queryX402AgentAction } from './actions/queryX402Agent'
 
 // Convex database adapter for ElizaOS
 class ConvexDatabaseAdapter implements IDatabaseAdapter {
@@ -272,7 +273,8 @@ export async function initializeAgent(): Promise<IAgentRuntime> {
     // Register web-app-specific actions
     runtime.registerAction(discoverAgentsAction)
     runtime.registerAction(claimAgentAction)
-    console.log('📝 Registered web-app actions: discoverAgents, claimAgent')
+    runtime.registerAction(queryX402AgentAction)
+    console.log('📝 Registered web-app actions: discoverAgents, claimAgent, queryX402Agent')
 
     agentRuntime = runtime
     console.log('✅ Casper agent initialized successfully')

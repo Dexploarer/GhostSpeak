@@ -6,6 +6,8 @@
 
 import { v } from 'convex/values'
 import { mutation, query, internalMutation, internalQuery } from './_generated/server'
+import { internal } from './_generated/api'
+import { getDiscoveryNetworkMetadata } from './lib/networkMetadata'
 
 /**
  * Store a newly discovered agent (called by actions)
@@ -146,11 +148,22 @@ export const claimAgent = mutation({
       timestamp: Date.now(),
     })
 
+    // Issue agent identity credential
+    const credentialResult = await ctx.runMutation(
+      internal.credentials.issueAgentIdentityCredential,
+      {
+        agentAddress: args.ghostAddress,
+        did: `did:sol:devnet:${args.ghostAddress}`,
+      }
+    )
+
     return {
       success: true,
       agentId: agent._id,
       ghostAddress: args.ghostAddress,
       claimedBy: args.claimedBy,
+      credentialIssued: credentialResult.success,
+      credentialId: credentialResult.credentialId,
     }
   },
 })
@@ -448,6 +461,15 @@ export const getDiscoveryStats = query({
     totalClaimed: v.number(),
     totalVerified: v.number(),
     total: v.number(),
+    network: v.object({
+      chain: v.string(),
+      environment: v.string(),
+      rpcUrl: v.string(),
+      notice: v.string(),
+      programId: v.string(),
+      ghostTokenMint: v.string(),
+      discoveryNote: v.string(),
+    }),
   }),
   handler: async (ctx) => {
     const discovered = await ctx.db
@@ -470,6 +492,7 @@ export const getDiscoveryStats = query({
       totalClaimed: claimed.length,
       totalVerified: verified.length,
       total: discovered.length + claimed.length + verified.length,
+      network: getDiscoveryNetworkMetadata(),
     }
   },
 })

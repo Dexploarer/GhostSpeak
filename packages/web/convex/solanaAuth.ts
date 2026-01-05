@@ -122,7 +122,7 @@ export const updateUserProfile = mutation({
       username: args.username,
       bio: args.bio,
       avatar: args.avatar,
-      updatedAt: Date.now(),
+      lastActiveAt: Date.now(),
     })
 
     return { success: true }

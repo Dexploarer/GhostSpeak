@@ -19,7 +19,7 @@ export const claimAgentAction: Action = {
 
   // Validate: trigger on claim-related queries
   validate: async (runtime: IAgentRuntime, message: Memory, state?: State) => {
-    const text = message.content.text.toLowerCase()
+    const text = (message.content.text || '').toLowerCase()
 
     // Match claim intent with potential agent address
     const claimTriggers = [
@@ -46,8 +46,8 @@ export const claimAgentAction: Action = {
     callback?: any
   ) => {
     try {
-      const text = message.content.text
-      const userId = message.userId
+      const text = message.content.text || ''
+      const entityId = message.entityId
 
       // Extract potential wallet address from message
       // Look for Solana address pattern (base58, 32-44 chars)
@@ -68,7 +68,7 @@ export const claimAgentAction: Action = {
       const ghostAddress = addressMatch[0]
 
       console.log(`🎯 Attempting to claim agent: ${ghostAddress}`)
-      console.log(`👤 User: ${userId}`)
+      console.log(`👤 Entity: ${entityId}`)
 
       // Get Convex client
       const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
@@ -107,7 +107,7 @@ export const claimAgentAction: Action = {
       // For now, we'll check if the user's wallet matches the ghost address
       // In production, this should use a challenge-response signature verification
 
-      const userWallet = userId // In web app, userId is the wallet address
+      const userWallet = entityId // In web app, entityId is the wallet address
 
       if (userWallet !== ghostAddress) {
         const response = {
@@ -139,24 +139,22 @@ export const claimAgentAction: Action = {
       const adminKeypair = await createKeyPairSignerFromBytes(bs58.default.decode(adminPrivateKey))
 
       // Initialize GhostSpeak client
-      const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
+      const rpcEndpoint = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
       const client = new GhostSpeakClient({
-        rpcUrl,
+        rpcEndpoint,
         commitment: 'confirmed'
       })
 
       // Register agent on-chain
       // For discovered agents, we use a simple agent type with minimal metadata
       // Skip simulation to bypass staking requirement check (for dev/testing)
+      // Note: pricingModel defaults to PricingModel.Fixed if not specified
       const txSignature = await client.agents.register(adminKeypair, {
         agentType: 10, // Type 10 = External x402 agent (Ghost)
         name: `Ghost Agent ${ghostAddress.slice(0, 8)}`,
         description: `Discovered agent from x402 payment at ${ghostAddress}`,
         metadataUri: `https://ghostspeak.ai/agents/${ghostAddress}`, // Placeholder URI
         agentId: ghostAddress, // Use ghost address as unique identifier
-        pricingModel: {
-          __kind: 'Free', // Free model for discovered agents
-        },
         skipSimulation: true, // Bypass staking requirement for now
       })
 

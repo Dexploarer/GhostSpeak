@@ -1,18 +1,15 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useRef } from 'react'
 import { Hero } from '@/components/landing/Hero'
-import { BentoGrid } from '@/components/landing/BentoGrid'
 import { GhostIcon } from '@/components/shared/GhostIcon'
 import { ManifestoSection } from '@/components/landing/ManifestoSection'
-import { ArchitectureLayers } from '@/components/landing/ArchitectureLayers'
-import { ClaimGhost } from '@/components/landing/ClaimGhost'
 import { IntegrationMarquee } from '@/components/landing/IntegrationMarquee'
-import { IdentityBridge } from '@/components/landing/IdentityBridge'
 import { DeveloperIntegration } from '@/components/landing/DeveloperIntegration'
 import { UseCases } from '@/components/landing/UseCases'
-import { FlyingGhost } from '@/components/landing/FlyingGhost'
+import { CaisperCTA } from '@/components/landing/CaisperCTA'
+import { TechnicalFlow } from '@/components/landing/TechnicalFlow'
+import { FloatingGhostScroll } from '@/components/landing/FloatingGhostScroll'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
@@ -67,65 +64,45 @@ export default function LandingPage() {
   return (
     <div
       ref={pageRef}
-      className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30"
+      className="relative min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30"
     >
-      {/* 1. Hero Section */}
+      {/* Floating ghosts that drift across as user scrolls */}
+      <FloatingGhostScroll />
+
+      {/* 1. Hero - Value Proposition */}
       <Hero />
 
-      {/* 2. Integration Marquee */}
+      {/* 2. Social Proof */}
       <div className="animate-on-scroll">
         <IntegrationMarquee />
       </div>
 
-      {/* 3. Manifesto - High Impact Brand Statement */}
+      {/* 3. What is GhostSpeak */}
       <div className="animate-on-scroll">
         <ManifestoSection />
       </div>
 
-
-
-      {/* 6. Architecture Deep Dive */}
+      {/* 4. How It Works */}
       <div className="animate-on-scroll">
-        <ArchitectureLayers />
+        <TechnicalFlow />
       </div>
 
-      {/* 7. Claim Ghost */}
+      {/* 5. Try It - Caisper Demo */}
       <div className="animate-on-scroll">
-        <ClaimGhost />
+        <CaisperCTA />
       </div>
 
-      {/* 8. Cross-Chain Identity Bridge */}
-      <div className="animate-on-scroll">
-        <IdentityBridge />
-      </div>
-
-      {/* 9. Use Cases */}
+      {/* 6. Use Cases */}
       <div className="animate-on-scroll">
         <UseCases />
       </div>
 
-      {/* 10. Developer Integration */}
+      {/* 7. For Developers */}
       <div className="animate-on-scroll">
         <DeveloperIntegration />
       </div>
 
-      {/* 11. Flying Ghost Section */}
-      <FlyingGhost />
-
-      {/* 12. Features Grid (Bento) */}
-      <section className="animate-on-scroll py-16 sm:py-24 md:py-32 relative border-t border-border">
-        <div className="max-w-7xl mx-auto px-4 mb-10 sm:mb-16 md:mb-20 text-center">
-          <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight">
-            Built on <span className="text-primary italic">PayAI</span>. Extended by GhostSpeak.
-          </h2>
-          <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto mt-3 sm:mt-4 px-2">
-            PayAI handles payments. GhostSpeak adds credentials, scores, and on-chain trust.
-          </p>
-        </div>
-        <BentoGrid />
-      </section>
-
-      {/* 6. Footer */}
+      {/* Footer */}
       <footer className="py-12 sm:py-16 md:py-24 border-t border-border bg-card/80 relative">
         <div className="max-w-7xl mx-auto px-4 flex flex-col items-center gap-6 sm:gap-8 md:gap-12 text-center">
           <div className="flex flex-col items-center gap-3 sm:gap-4">
@@ -148,14 +125,6 @@ export default function LandingPage() {
               className="hover:text-primary transition-colors"
             >
               DOCS
-            </a>
-            <a
-              href="https://dexscreener.com/solana/e44xj7jyjxyermlqqwrpu4nekcphawfjf3ppn2uokgdb"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-primary transition-colors"
-            >
-              BUY GHOST
             </a>
             <a
               href="https://github.com/ghostspeak/ghostspeak"

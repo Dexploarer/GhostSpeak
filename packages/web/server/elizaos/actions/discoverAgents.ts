@@ -14,7 +14,7 @@ export const discoverAgentsAction: Action = {
 
   // Validate: trigger on queries about agents, discovery, claiming, etc.
   validate: async (runtime: IAgentRuntime, message: Memory, state?: State) => {
-    const text = message.content.text.toLowerCase()
+    const text = (message.content.text || '').toLowerCase()
 
     // Match discovery queries (NOT claim actions - those are handled by CLAIM_AGENT)
     const discoveryTriggers = [

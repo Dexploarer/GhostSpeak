@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { useWallet } from '@/lib/wallet/WalletStandardProvider'
 import { WalletModal, useWalletModal } from '@/lib/wallet/WalletModal'
-import { Wallet, ChevronDown, LogOut } from 'lucide-react'
+import { Wallet, ChevronDown, LogOut, Copy, Check } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { useMutation } from 'convex/react'
@@ -28,6 +28,7 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
     sessionToken: string
     walletAddress: string
   } | null>(null)
+  const [copied, setCopied] = useState(false)
 
   const signInWithSolana = useMutation(api.solanaAuth.signInWithSolana)
 
@@ -148,7 +149,18 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
     if (typeof window !== 'undefined') {
       localStorage.removeItem('ghostspeak_auth')
     }
-    console.log('🔌 Wallet disconnected and session cleared')
+    console.log('Wallet disconnected and session cleared')
+  }
+
+  const handleCopyAddress = async () => {
+    if (!publicKey) return
+    try {
+      await navigator.clipboard.writeText(publicKey)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy address:', err)
+    }
   }
 
   // Format wallet address
@@ -208,7 +220,25 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
                 className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl overflow-hidden z-50"
               >
                 <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Connected Wallet</div>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Connected Wallet</div>
+                    <button
+                      onClick={handleCopyAddress}
+                      className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="w-3 h-3 text-green-500" />
+                          <span className="text-green-500">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                   <div className="font-mono text-sm text-gray-900 dark:text-white break-all">
                     {publicKey}
                   </div>

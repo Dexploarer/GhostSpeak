@@ -36,6 +36,10 @@ export default defineSchema({
     // Stats
     totalSpent: v.optional(v.number()),
     totalTransactions: v.optional(v.number()),
+    // Activity streak tracking
+    currentStreak: v.optional(v.number()), // Current consecutive days active
+    longestStreak: v.optional(v.number()), // All-time longest streak
+    lastActivityDate: v.optional(v.string()), // ISO date string (YYYY-MM-DD) of last activity
     // Individual B2B API billing - USDC token account
     usdcTokenAccount: v.optional(v.string()), // User's USDC token account for API payments
     monthlyBudget: v.optional(v.number()), // Monthly USDC budget (optional limit)
@@ -45,6 +49,38 @@ export default defineSchema({
     ghostTokenAccount: v.optional(v.string()), // User's GHOST token account for API payments
     currentGhostBalance: v.optional(v.number()), // Current GHOST balance (in micro GHOST, 9 decimals)
     preferredPaymentToken: v.optional(v.string()), // 'usdc' | 'ghost' - user's preferred payment method
+    // ─── THREE-TIER REPUTATION SYSTEM ───────────────────────────────────────────
+    // Users can be Developers (Ecto Score), Customers (Ghosthunter Score), or both
+    // Ghost Score is reserved for AI agents only
+    //
+    // Ecto Score: For agent developers (people who build/register AI agents)
+    // Measures: agents registered, agent performance, developer activity
+    ectoScore: v.optional(v.number()), // 0-10,000 scale
+    ectoTier: v.optional(v.string()), // 'NOVICE' | 'APPRENTICE' | 'ARTISAN' | 'MASTER' | 'LEGEND'
+    ectoScoreLastUpdated: v.optional(v.number()),
+    //
+    // Ghosthunter Score: For customers (people who hunt for/verify/use agents)
+    // Measures: verifications, payments, reviews, platform engagement
+    ghosthunterScore: v.optional(v.number()), // 0-10,000 scale
+    ghosthunterTier: v.optional(v.string()), // 'ROOKIE' | 'TRACKER' | 'VETERAN' | 'ELITE' | 'LEGENDARY'
+    ghosthunterScoreLastUpdated: v.optional(v.number()),
+    //
+    // Role tracking
+    isAgentDeveloper: v.optional(v.boolean()), // true if user has registered agents
+    isCustomer: v.optional(v.boolean()), // true if user has verified/used agents
+    //
+    // ─── ONBOARDING ───────────────────────────────────────────────────────────────
+    // Track if user has completed initial onboarding (username selection)
+    onboardingCompleted: v.optional(v.boolean()),
+    onboardingCompletedAt: v.optional(v.number()),
+    //
+    // ─── WALLET HISTORY SCORING ───────────────────────────────────────────────────
+    // Initial reputation seed from wallet history at signup
+    walletAge: v.optional(v.number()), // Wallet age in days (first tx timestamp)
+    walletTransactionCount: v.optional(v.number()), // Historical tx count
+    walletHistoryScore: v.optional(v.number()), // 0-1000 initial score seed
+    walletHistoryAnalyzedAt: v.optional(v.number()), // When we analyzed their wallet
+    //
     // Timestamps
     createdAt: v.number(),
     lastActiveAt: v.number(),
@@ -52,7 +88,11 @@ export default defineSchema({
     .index('by_wallet_address', ['walletAddress'])
     .index('by_email', ['email'])
     .index('by_usdc_account', ['usdcTokenAccount'])
-    .index('by_ghost_account', ['ghostTokenAccount']),
+    .index('by_ghost_account', ['ghostTokenAccount'])
+    .index('by_ecto_score', ['ectoScore'])
+    .index('by_ghosthunter_score', ['ghosthunterScore'])
+    .index('by_username', ['username'])
+    .index('by_onboarding', ['onboardingCompleted']),
 
   //
   // ─── FAVORITE RESOURCES ────────────────────────────────────────────────────
@@ -345,13 +385,22 @@ export default defineSchema({
   //
   // ─── B2B API: AGENT REPUTATION CACHE ───────────────────────────────────────
   // Cache agent reputation data for fast API responses
+  // Agents have Ghost Score (their reputation) AND can have Ghosthunter Score
+  // (if they verify other agents)
   //
   agentReputationCache: defineTable({
     // Agent identity
     agentAddress: v.string(),
-    // Ghost Score metrics
+    // Ghost Score metrics (the agent's own reputation)
     ghostScore: v.number(),
     tier: v.string(), // 'NEWCOMER', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND'
+    //
+    // Ghosthunter Score (if agent verifies OTHER agents)
+    // AI agents can evaluate other AI agents, earning Ghosthunter reputation
+    ghosthunterScore: v.optional(v.number()), // 0-10,000 scale
+    ghosthunterTier: v.optional(v.string()), // 'ROOKIE' | 'TRACKER' | 'VETERAN' | 'ELITE' | 'LEGENDARY'
+    verificationsPerformed: v.optional(v.number()), // How many agents this agent has verified
+    //
     // Detailed metrics
     successRate: v.number(),
     avgResponseTime: v.optional(v.number()),
@@ -376,7 +425,8 @@ export default defineSchema({
   })
     .index('by_address', ['agentAddress'])
     .index('by_tier', ['tier'])
-    .index('by_score', ['ghostScore']),
+    .index('by_score', ['ghostScore'])
+    .index('by_ghosthunter_score', ['ghosthunterScore']),
 
   //
   // ─── PAYAI INTEGRATION: FAILED RECORDINGS ──────────────────────────────────
@@ -1041,4 +1091,58 @@ export default defineSchema({
   })
     .index('by_user', ['userId'])
     .index('by_user_timestamp', ['userId', 'timestamp']),
+
+  //
+  // ─── HISTORICAL USER-AGENT INTERACTIONS ────────────────────────────────────
+  // Track x402 payments discovered during wallet history analysis
+  // Used for: Ghosthunter score calculation, agent discovery, review prompts
+  //
+  historicalInteractions: defineTable({
+    // User who made the payment
+    userWalletAddress: v.string(),
+    userId: v.optional(v.id('users')), // May not exist yet at discovery time
+    // Agent who received the payment
+    agentWalletAddress: v.string(),
+    agentId: v.optional(v.id('discoveredAgents')), // Links when agent is discovered/claimed
+    // Payment details
+    transactionSignature: v.string(),
+    amount: v.optional(v.string()), // BigInt as string
+    facilitatorAddress: v.string(), // x402 facilitator
+    blockTime: v.number(), // Unix timestamp from chain
+    // Discovery metadata
+    discoveredAt: v.number(), // When we found this interaction
+    discoverySource: v.string(), // 'wallet_onboarding' | 'x402_indexer' | 'manual'
+    // Status tracking
+    agentKnown: v.boolean(), // Was agent already in our system when discovered?
+    reviewPromptSent: v.optional(v.boolean()), // Have we prompted for review?
+    reviewPromptSentAt: v.optional(v.number()),
+  })
+    .index('by_user_wallet', ['userWalletAddress'])
+    .index('by_agent_wallet', ['agentWalletAddress'])
+    .index('by_user_agent', ['userWalletAddress', 'agentWalletAddress'])
+    .index('by_signature', ['transactionSignature'])
+    .index('by_facilitator', ['facilitatorAddress'])
+    .index('by_block_time', ['blockTime']),
+
+  //
+  // ─── POTENTIAL AGENT DEVELOPERS ────────────────────────────────────────────
+  // Track wallets that appear to be agent developers based on on-chain activity
+  // (e.g., deployed programs, authority over multiple agent accounts)
+  //
+  potentialDevelopers: defineTable({
+    walletAddress: v.string(),
+    // Evidence of developer activity
+    deployedProgramIds: v.optional(v.array(v.string())), // Programs they deployed
+    authorityOverAgents: v.optional(v.array(v.string())), // Agent wallets they control
+    // Confidence and status
+    confidence: v.number(), // 0-100 confidence score
+    confirmedDeveloper: v.boolean(), // Has claimed agents on platform
+    // Discovery
+    discoveredAt: v.number(),
+    discoverySource: v.string(), // 'wallet_onboarding' | 'chain_analysis'
+    lastAnalyzedAt: v.number(),
+  })
+    .index('by_wallet', ['walletAddress'])
+    .index('by_confidence', ['confidence'])
+    .index('by_confirmed', ['confirmedDeveloper']),
 })

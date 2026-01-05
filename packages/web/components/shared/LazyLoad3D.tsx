@@ -73,9 +73,15 @@ export function LazyLoad3D({
   useEffect(() => {
     if (!loadOnView || shouldLoad || !containerRef) return
 
+    // Ensure containerRef is a valid DOM Node before observing
+    if (!(containerRef instanceof Node)) {
+      console.warn('LazyLoad3D: containerRef is not a valid DOM Node')
+      return
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
+        if (entries[0]?.isIntersecting) {
           setShouldLoad(true)
           observer.disconnect()
         }

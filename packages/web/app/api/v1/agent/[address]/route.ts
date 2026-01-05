@@ -12,10 +12,10 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { address: string } }
+  { params }: { params: Promise<{ address: string }> }
 ) {
   try {
-    const { address: agentAddress } = params
+    const { address: agentAddress } = await params
 
     // Validate Solana address format
     const solanaAddressRegex = /^[A-HJ-NP-Za-km-z1-9]{32,44}$/

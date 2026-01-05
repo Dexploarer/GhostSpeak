@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "bunx concurrently \"bun run dev:next\" \"bun run dev:convex\" --names \"next,convex\" --prefix-colors \"cyan,magenta\"",
-    "dev:next": "next dev --turbo",
+    "dev:next": "next dev --turbo -p 3333",
     "dev:convex": "bunx convex dev",
     "build": "next build",
     "start": "next start",
@@ -52,6 +52,7 @@
     "@radix-ui/react-dialog": "^1.1.4",
     "@radix-ui/react-dropdown-menu": "^2.1.5",
     "@radix-ui/react-label": "^2.1.2",
+    "@radix-ui/react-popover": "^1.1.15",
     "@radix-ui/react-progress": "^1.1.8",
     "@radix-ui/react-select": "^2.1.5",
     "@radix-ui/react-separator": "^1.1.2",

@@ -10,6 +10,7 @@ import gsap from 'gsap'
 import { useWallet } from '@/lib/wallet/WalletStandardProvider'
 import { useWalletModal } from '@/lib/wallet/WalletModal'
 import { useRouter } from 'next/navigation'
+import { JargonTooltip, jargonDefinitions } from '../shared/JargonTooltip'
 
 /**
  * Hero - Premium split-layout hero section
@@ -55,15 +56,24 @@ export function Hero() {
 
   // GSAP text reveal animations
   useEffect(() => {
-    const animations = [
-      { selector: '.hero-headline', delay: 0.3, y: 100, duration: 1.2, stagger: 0.2, ease: 'power4.out' },
-      { selector: '.hero-cta', delay: 1, y: 40, duration: 1, ease: 'power3.out' },
-      { selector: '.version-badge', delay: 0.5, scale: 0.8, duration: 0.8, ease: 'back.out' },
-    ]
-
     const ctx = gsap.context(() => {
-      animations.forEach(({ selector, ...props }) => {
-        gsap.from(selector, { opacity: 0, ...props })
+      // Headline animation
+      gsap.from('.hero-headline', {
+        opacity: 0,
+        y: 100,
+        delay: 0.3,
+        duration: 1.2,
+        stagger: 0.2,
+        ease: 'power4.out'
+      })
+
+      // CTA animation
+      gsap.from('.hero-cta', {
+        opacity: 0,
+        y: 40,
+        delay: 1,
+        duration: 1,
+        ease: 'power3.out'
       })
     }, containerRef)
 
@@ -132,26 +142,47 @@ export function Hero() {
 
           {/* Stats Pills */}
           <div className="mt-12 flex flex-wrap gap-4 justify-center">
-            {[
-              { label: 'Credentials', value: 'W3C' },
-              { label: 'Ghost Score', value: '0-1000' },
-              { label: 'Cross-Chain', value: 'Solana→EVM' },
-            ].map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.2 + index * 0.1 }}
-                className="group px-6 py-3 rounded-full bg-card/60 border border-border/50 backdrop-blur-xl hover:border-primary/50 hover:bg-primary/5 transition-all"
-              >
-                <div className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-1">
-                  {stat.label}
-                </div>
-                <div className="text-sm font-bold text-primary group-hover:text-primary transition-colors">
-                  {stat.value}
-                </div>
-              </motion.div>
-            ))}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2 }}
+              className="group px-6 py-3 rounded-full bg-card/60 border border-border/50 backdrop-blur-xl hover:border-primary/50 hover:bg-primary/5 transition-all"
+            >
+              <div className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-1">
+                Credentials
+              </div>
+              <div className="text-sm font-bold text-primary">
+                <JargonTooltip {...jargonDefinitions.w3c} showIcon={false}>W3C</JargonTooltip>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.3 }}
+              className="group px-6 py-3 rounded-full bg-card/60 border border-border/50 backdrop-blur-xl hover:border-primary/50 hover:bg-primary/5 transition-all"
+            >
+              <div className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-1">
+                <JargonTooltip {...jargonDefinitions.ghostScore} showIcon={false}>Ghost Score</JargonTooltip>
+              </div>
+              <div className="text-sm font-bold text-primary">
+                0-10,000
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.4 }}
+              className="group px-6 py-3 rounded-full bg-card/60 border border-border/50 backdrop-blur-xl hover:border-primary/50 hover:bg-primary/5 transition-all"
+            >
+              <div className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-1">
+                <JargonTooltip {...jargonDefinitions.crossChain} showIcon={false}>Cross-Chain</JargonTooltip>
+              </div>
+              <div className="text-sm font-bold text-primary">
+                <JargonTooltip {...jargonDefinitions.solana} showIcon={false}>Solana</JargonTooltip>→<JargonTooltip {...jargonDefinitions.evm} showIcon={false}>EVM</JargonTooltip>
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>

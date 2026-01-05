@@ -3,6 +3,7 @@
 import React from 'react'
 import { Cpu, Globe, Shield, Zap } from 'lucide-react'
 import { GhostIcon } from '../shared/GhostIcon'
+import { JargonTooltip, jargonDefinitions } from '../shared/JargonTooltip'
 
 export function BentoGrid() {
   return (
@@ -22,9 +23,13 @@ export function BentoGrid() {
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center mb-3 sm:mb-4">
               <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
             </div>
-            <h3 className="text-xl sm:text-2xl font-bold mb-2">Verifiable Credentials</h3>
+            <h3 className="text-xl sm:text-2xl font-bold mb-2">
+              <JargonTooltip {...jargonDefinitions.verifiableCredentials} showIcon={false}>
+                Verifiable Credentials
+              </JargonTooltip>
+            </h3>
             <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 max-w-md">
-              W3C-compliant credentials issued on-chain. Prove agent identity, capabilities, and reputation across any blockchain with portable, verifiable credentials.
+              <JargonTooltip {...jargonDefinitions.w3c}>W3C</JargonTooltip>-compliant credentials issued on-chain. Prove agent identity, capabilities, and reputation across any blockchain with portable, verifiable credentials.
             </p>
           </div>
           {/* Mock Network Visualization */}
@@ -51,14 +56,18 @@ export function BentoGrid() {
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center mb-3 sm:mb-4 backdrop-blur-sm">
             <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
           </div>
-          <h3 className="text-lg sm:text-xl font-bold mb-2">Ghost Score</h3>
+          <h3 className="text-lg sm:text-xl font-bold mb-2">
+            <JargonTooltip {...jargonDefinitions.ghostScore} showIcon={false}>
+              Ghost Score
+            </JargonTooltip>
+          </h3>
           <p className="text-muted-foreground text-xs sm:text-sm mb-4 sm:mb-6">
             On-chain reputation that follows agents everywhere. Like a credit score, but for AI agents.
           </p>
 
           <div className="space-y-3">
             {[
-              { label: 'Range', val: '0-1000', color: 'text-primary' },
+              { label: 'Range', val: '0-10,000', color: 'text-primary' },
               { label: 'Tier', val: 'GOLD', color: 'text-primary/80' },
               { label: 'Network', val: 'Solana', color: 'text-primary/60' },
             ].map((stat) => (
@@ -84,7 +93,7 @@ export function BentoGrid() {
         <Cpu className="w-6 h-6 sm:w-8 sm:h-8 text-primary mb-3 sm:mb-4" />
         <h4 className="font-bold mb-1 text-sm sm:text-base">PayAI Integration</h4>
         <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">
-          Track x402 payments and build reputation.
+          Track <JargonTooltip {...jargonDefinitions.x402}>x402</JargonTooltip> payments and build reputation.
         </p>
       </div>
 
@@ -100,10 +109,10 @@ export function BentoGrid() {
       {/* Wide Bottom Card */}
       <div className="md:col-span-1 group rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 p-4 sm:p-6 hover:border-primary/30 transition-colors flex flex-col justify-center items-center text-center">
         <div className="text-2xl sm:text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(204,255,0,0.3)]">
-          Solana → EVM
+          <JargonTooltip {...jargonDefinitions.solana} showIcon={false}>Solana</JargonTooltip> → <JargonTooltip {...jargonDefinitions.evm} showIcon={false}>EVM</JargonTooltip>
         </div>
         <p className="text-[10px] sm:text-xs text-gray-500 mt-1.5 sm:mt-2 font-mono">
-          Cross-Chain Credentials via Crossmint
+          <JargonTooltip {...jargonDefinitions.crossChain} showIcon={false}>Cross-Chain</JargonTooltip> Credentials via Crossmint
         </p>
       </div>
     </div>

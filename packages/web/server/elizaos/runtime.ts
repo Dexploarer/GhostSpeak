@@ -87,9 +87,12 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   }
 
   async getMemoriesByRoomIds(params: any): Promise<any[]> { return [] }
+  async getMemoriesByWorldId(worldId: any): Promise<any[]> { return [] }
   async getMemoryById(id: string): Promise<any | null> { return null }
-  async createMemory(memory: any, tableName?: string): Promise<void> {
+  async createMemory(memory: any, tableName?: string): Promise<`${string}-${string}-${string}-${string}-${string}`> {
     // Memories are already being stored via storeUserMessage/storeAgentResponse
+    // Return a UUID as required by the interface
+    return crypto.randomUUID() as `${string}-${string}-${string}-${string}-${string}`
   }
   async removeMemory(memoryId: string, tableName?: string): Promise<void> {}
   async removeAllMemories(roomId: string, tableName?: string): Promise<void> {}
@@ -122,10 +125,11 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async getRelationship(params: any): Promise<any | null> { return null }
   async getRelationships(params: any): Promise<any[]> { return [] }
   async createRelationship(params: any): Promise<boolean> { return true }
+  async updateRelationship(relationship: any): Promise<void> {}
 
-  async getCache(params: any): Promise<any[]> { return [] }
-  async setCache(params: any): Promise<boolean> { return true }
-  async deleteCache(params: any): Promise<boolean> { return true }
+  async getCache<T>(key: string): Promise<T | undefined> { return undefined }
+  async setCache<T>(key: string, value: T): Promise<boolean> { return true }
+  async deleteCache(key: string): Promise<boolean> { return true }
 
   async getAccountById(userId: string): Promise<any | null> {
     // Users are stored in Convex users table
@@ -174,8 +178,25 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async getRoomsByIds(roomIds: any[]): Promise<any[] | null> { return roomIds.map(id => ({ id })) }
   async createRooms(rooms: any[]): Promise<any[]> { return rooms.map(r => r.id || `room-${Date.now()}`) }
   async deleteRoom(roomId: any): Promise<void> {}
+  async deleteRoomsByWorldId(worldId: any): Promise<void> {}
+  async updateRoom(room: any): Promise<void> {}
+  async getRoomsByWorld(worldId: any): Promise<any[]> { return [] }
+
+  // Participant methods required by v1.7.0
+  async getParticipantsForEntity(entityId: any): Promise<any[]> { return [] }
+  async isRoomParticipant(roomId: any, entityId: any): Promise<boolean> { return false }
+  async addParticipantsRoom(entityIds: any[], roomId: any): Promise<boolean> { return true }
 
   async getCachedEmbeddings(params: any): Promise<any[]> { return [] }
+
+  // Task management methods required by v1.7.0
+  async createTask(task: any): Promise<any> { return task.id || crypto.randomUUID() }
+  async getTasks(params: any): Promise<any[]> { return [] }
+  async getTask(taskId: any): Promise<any | null> { return null }
+  async updateTask(taskId: any, task: any): Promise<void> {}
+  async deleteTask(taskId: any): Promise<void> {}
+  async getTasksByName(name: string): Promise<any[]> { return [] }
+  async deleteTasks(params: any): Promise<void> {}
 }
 
 // Singleton instance
@@ -205,27 +226,17 @@ export async function initializeAgent(): Promise<IAgentRuntime> {
     await databaseAdapter.init()
 
     // Create runtime with Casper character and plugins
-    // Using SQL plugin (required by ElizaOS) + MCP plugin for GhostSpeak discovery
+    // Using SQL plugin (required by ElizaOS) + GhostSpeak + AI Gateway plugins
     const runtime = new AgentRuntime({
       // @ts-ignore - Character JSON matches ICharacter interface
       character: CaisperCharacter,
       plugins: [sqlPlugin, ghostspeakPlugin, aiGatewayPlugin, mcpPlugin],
-      serverUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-      token: process.env.AI_GATEWAY_API_KEY!,
-      databaseAdapter,
-
-      // MCP configuration - connect to our HTTP MCP server
+      adapter: databaseAdapter,
+      // Settings is Record<string, string> in v1.7.0
       settings: {
-        mcp: {
-          servers: {
-            ghostspeak: {
-              transport: 'http',
-              url: process.env.NEXT_PUBLIC_APP_URL
-                ? `${process.env.NEXT_PUBLIC_APP_URL}/api/mcp`
-                : 'http://localhost:3000/api/mcp',
-            }
-          }
-        }
+        AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY!,
+        SOLANA_RPC_URL: process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
+        CONVEX_URL: process.env.NEXT_PUBLIC_CONVEX_URL || '',
       }
     })
 
@@ -275,16 +286,18 @@ export async function processAgentMessage(params: {
     const roomId = params.roomId || `user-${params.userId}`
 
     // Create memory object for the current message
-    const memory: Memory = {
+    // Use type assertion for UUIDs since web app uses wallet addresses as IDs
+    const memory = {
       userId: params.userId,
       agentId: runtime.agentId,
       roomId: roomId,
+      entityId: params.userId, // v1.7.0 uses entityId
       content: {
         text: params.message,
         source: 'web-chat',
       },
       createdAt: Date.now(),
-    }
+    } as Memory
 
     console.log('📨 Processing message:', params.message)
     console.log('🏠 Room ID:', roomId)
@@ -319,7 +332,7 @@ export async function processAgentMessage(params: {
             }
           )
 
-          if (result.success) {
+          if (result && result.success) {
             triggeredAction = action.name
             // Also capture metadata from result.data if available
             if (result.data) {
@@ -340,19 +353,20 @@ export async function processAgentMessage(params: {
 
       try {
         // Get recent conversation history for context
-        const recentMemories = await runtime.databaseAdapter.getMemories({
+        // v1.7.0 uses 'adapter' property instead of 'databaseAdapter'
+        const recentMemories = await (runtime as any).adapter?.getMemories({
           roomId,
           count: 10,
-        })
+        }) || []
 
         // Generate response using runtime's LLM
-        const response = await runtime.generateText({
-          context: `You are ${runtime.character.name}. ${runtime.character.system}`,
-          messages: recentMemories,
-          currentMessage: memory,
+        // v1.7.0 generateText takes (input: string, options?: GenerateTextOptions)
+        const prompt = `User message: ${params.message}`
+        const result = await runtime.generateText(prompt, {
+          includeCharacter: true,
         })
 
-        responseText = response || "I'm having trouble formulating a response. Try asking me something specific about agents, credentials, or reputation!"
+        responseText = result?.text || "I'm having trouble formulating a response. Try asking me something specific about agents, credentials, or reputation!"
         console.log('✅ Generated conversational response')
       } catch (error) {
         console.error('❌ Error generating LLM response:', error)

@@ -4,7 +4,7 @@ import React from 'react'
 
 interface GhostIconProps {
   className?: string
-  variant?: 'logo' | 'circuit' | 'brain' | 'simple' | 'outline'
+  variant?: 'logo' | 'circuit' | 'brain' | 'simple' | 'outline' | 'solid'
   size?: number
 }
 
@@ -66,6 +66,17 @@ export const GhostIcon: React.FC<GhostIconProps> = ({
             />
             <circle cx="35" cy="45" r="5" fill="none" stroke="currentColor" strokeWidth="2" />
             <circle cx="65" cy="45" r="5" fill="none" stroke="currentColor" strokeWidth="2" />
+          </>
+        )
+      case 'solid':
+        return (
+          <>
+            <path
+              d="M50 10 C25 10 10 30 10 60 L10 85 C10 90 20 95 30 90 C40 85 45 95 50 90 C55 85 60 95 70 90 C80 85 90 90 90 85 L90 60 C90 30 75 10 50 10 Z"
+              fill="currentColor"
+            />
+            <circle cx="35" cy="45" r="6" fill="#000" />
+            <circle cx="65" cy="45" r="6" fill="#000" />
           </>
         )
       case 'logo':

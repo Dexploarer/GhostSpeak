@@ -271,7 +271,7 @@ export default function CaisperPage() {
       {/* Left Sidebar - Actions */}
       <div className="w-64 border-r border-white/10 flex flex-col bg-[rgb(29,29,29)] overflow-hidden">
         {/* Header */}
-        <div className="p-4 border-b border-white/10 flex-shrink-0">
+        <div className="p-4 border-b border-white/10 shrink-0">
           <Link
             href="/dashboard"
             className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors mb-4"
@@ -329,7 +329,7 @@ export default function CaisperPage() {
             <div className="space-y-6 max-w-3xl mx-auto">
               {localMessages.map((msg, idx) => (
                 <div key={idx} className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                  <div className="shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
                     <span className="text-xs text-white">
                       {msg.role === 'user' ? 'You' : 'AI'}
                     </span>
@@ -355,7 +355,7 @@ export default function CaisperPage() {
 
               {isLoading && (
                 <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                  <div className="shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
                     <span className="text-xs text-white">AI</span>
                   </div>
                   <div className="flex-1">
@@ -374,7 +374,7 @@ export default function CaisperPage() {
         </div>
 
         {/* Input */}
-        <div className="flex-shrink-0 border-t border-white/10 bg-[rgb(29,29,29)] px-4 py-4">
+        <div className="shrink-0 border-t border-white/10 bg-[rgb(29,29,29)] px-4 py-4">
           <div className="max-w-3xl mx-auto">
             <div className="flex gap-3 items-end">
               <textarea

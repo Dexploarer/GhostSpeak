@@ -122,7 +122,7 @@ export function ClaimGhost() {
     {
       icon: Trophy,
       title: 'View Your Score',
-      desc: 'See your Ghost Score (0-1000) calculated from transaction history',
+      desc: 'See your Ghost Score (0-10,000) calculated from transaction history',
       color: 'from-primary/15 to-transparent',
     },
     {
@@ -194,7 +194,7 @@ export function ClaimGhost() {
 
               {/* Animated Ghost */}
               <div className="relative z-10 w-[220px] h-[280px] sm:w-[300px] sm:h-[380px]">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent blur-2xl" />
+                <div className="absolute inset-0 bg-linear-to-br from-primary/30 to-transparent blur-2xl" />
                 <MeshGradientGhost
                   className="relative z-10 drop-shadow-[0_0_60px_rgba(204,255,0,0.4)]"
                   animated={true}
@@ -219,8 +219,7 @@ export function ClaimGhost() {
             {/* Headline */}
             <div className="space-y-4">
               <h2 className="claim-title text-5xl sm:text-6xl md:text-7xl font-black tracking-tighter leading-[0.95]">
-                Claim Your{' '}
-                <span className="text-primary italic block mt-2">Ghost</span>
+                Claim Your <span className="text-primary italic block mt-2">Ghost</span>
               </h2>
               <p className="claim-title text-xl sm:text-2xl text-muted-foreground font-light leading-relaxed max-w-xl">
                 Your agent already has a reputation score - you just don&apos;t know it yet.
@@ -232,10 +231,10 @@ export function ClaimGhost() {
               {features.map((feature, i) => (
                 <div
                   key={i}
-                  className="claim-card group p-6 rounded-2xl bg-gradient-to-br from-card/80 to-card/40 border border-border/50 hover:border-primary/40 transition-all duration-300 backdrop-blur-sm hover:shadow-[0_0_30px_rgba(204,255,0,0.1)]"
+                  className="claim-card group p-6 rounded-2xl bg-linear-to-br from-card/80 to-card/40 border border-border/50 hover:border-primary/40 transition-all duration-300 backdrop-blur-sm hover:shadow-[0_0_30px_rgba(204,255,0,0.1)]"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <div className="w-14 h-14 rounded-xl bg-linear-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                       <feature.icon className="w-7 h-7 text-primary" />
                     </div>
                     <div className="flex-1 pt-1">
@@ -269,7 +268,6 @@ export function ClaimGhost() {
           </div>
         </div>
       </div>
-
     </section>
   )
 }

@@ -2,13 +2,18 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { getWallets, type Wallet, type WalletAccount } from '@wallet-standard/core'
+import { type StandardConnectFeature, type StandardDisconnectFeature } from '@wallet-standard/features'
 import {
   SolanaSignAndSendTransaction,
   SolanaSignMessage,
-  SolanaSignTransaction
+  SolanaSignTransaction,
+  type SolanaSignAndSendTransactionFeature,
+  type SolanaSignMessageFeature,
+  type SolanaSignTransactionFeature
 } from '@solana/wallet-standard-features'
 import { address, type Address } from '@solana/addresses'
-import { createSolanaRpc, type Rpc } from '@solana/rpc'
+import { createSolanaRpc, type Rpc, type SolanaRpcApi } from '@solana/rpc'
+import { getSolanaNetwork, type SolanaNetwork } from '@/lib/solana/explorer'
 
 // Wallet Standard Context Types
 interface WalletStandardContextValue {
@@ -30,7 +35,10 @@ interface WalletStandardContextValue {
   wallets: Wallet[]
 
   // RPC
-  rpc: Rpc
+  rpc: Rpc<SolanaRpcApi>
+
+  // Network
+  network: SolanaNetwork
 }
 
 const WalletStandardContext = createContext<WalletStandardContextValue | null>(null)
@@ -68,6 +76,9 @@ export function WalletStandardProvider({
     return createSolanaRpc(rpcUrl)
   }, [endpoint])
 
+  // Get network
+  const network = useMemo(() => getSolanaNetwork(), [])
+
   // Derived state
   const publicKey = useMemo(() => {
     if (!account) return null
@@ -82,21 +93,21 @@ export function WalletStandardProvider({
   useEffect(() => {
     const walletsApi = getWallets()
 
+    // Helper to check if wallet supports Solana features
+    // w.features is an object with feature names as keys, not an array
+    const isSolanaWallet = (w: Wallet) =>
+      SolanaSignAndSendTransaction in w.features ||
+      SolanaSignTransaction in w.features
+
     // Get current wallets
     const currentWallets = walletsApi.get()
-    const solanaWallets = currentWallets.filter(w =>
-      w.features.includes(SolanaSignAndSendTransaction) ||
-      w.features.includes(SolanaSignTransaction)
-    )
+    const solanaWallets = currentWallets.filter(isSolanaWallet)
     setAvailableWallets(solanaWallets)
 
     // Listen for new wallets
     const unsubscribe = walletsApi.on('register', () => {
       const wallets = walletsApi.get()
-      const solanaWallets = wallets.filter(w =>
-        w.features.includes(SolanaSignAndSendTransaction) ||
-        w.features.includes(SolanaSignTransaction)
-      )
+      const solanaWallets = wallets.filter(isSolanaWallet)
       setAvailableWallets(solanaWallets)
     })
 
@@ -130,7 +141,7 @@ export function WalletStandardProvider({
       }
 
       // Request connection
-      const connectFeature = targetWallet.features['standard:connect']
+      const connectFeature = targetWallet.features['standard:connect'] as StandardConnectFeature['standard:connect'] | undefined
       if (!connectFeature) {
         throw new Error(`Wallet ${targetWallet.name} does not support connection`)
       }
@@ -160,7 +171,7 @@ export function WalletStandardProvider({
     if (!wallet) return
 
     try {
-      const disconnectFeature = wallet.features['standard:disconnect']
+      const disconnectFeature = wallet.features['standard:disconnect'] as StandardDisconnectFeature['standard:disconnect'] | undefined
       if (disconnectFeature) {
         await disconnectFeature.disconnect()
       }
@@ -180,15 +191,22 @@ export function WalletStandardProvider({
       throw new Error('Wallet not connected')
     }
 
-    const signMessageFeature = wallet.features[SolanaSignMessage]
+    const signMessageFeature = wallet.features[SolanaSignMessage] as SolanaSignMessageFeature[typeof SolanaSignMessage] | undefined
     if (!signMessageFeature) {
       throw new Error('Wallet does not support message signing')
     }
 
-    const result = await signMessageFeature.signMessage({
+    // Wallet Standard signMessage returns an array of outputs
+    const results = await signMessageFeature.signMessage({
       account,
       message,
     })
+
+    // Handle both array result (spec) and single result (some implementations)
+    const result = Array.isArray(results) ? results[0] : results
+    if (!result || !result.signature) {
+      throw new Error('Failed to get signature from wallet')
+    }
 
     return result.signature
   }, [wallet, account])
@@ -199,16 +217,23 @@ export function WalletStandardProvider({
       throw new Error('Wallet not connected')
     }
 
-    const signTransactionFeature = wallet.features[SolanaSignTransaction]
+    const signTransactionFeature = wallet.features[SolanaSignTransaction] as SolanaSignTransactionFeature[typeof SolanaSignTransaction] | undefined
     if (!signTransactionFeature) {
       throw new Error('Wallet does not support transaction signing')
     }
 
-    const result = await signTransactionFeature.signTransaction({
+    // Wallet Standard returns an array of outputs
+    const results = await signTransactionFeature.signTransaction({
       account,
       transaction,
       chain: 'solana:mainnet', // or 'solana:devnet' based on your needs
     })
+
+    // Handle both array result (spec) and single result (some implementations)
+    const result = Array.isArray(results) ? results[0] : results
+    if (!result || !result.signedTransaction) {
+      throw new Error('Failed to get signed transaction from wallet')
+    }
 
     return result.signedTransaction
   }, [wallet, account])
@@ -219,16 +244,23 @@ export function WalletStandardProvider({
       throw new Error('Wallet not connected')
     }
 
-    const signAndSendFeature = wallet.features[SolanaSignAndSendTransaction]
+    const signAndSendFeature = wallet.features[SolanaSignAndSendTransaction] as SolanaSignAndSendTransactionFeature[typeof SolanaSignAndSendTransaction] | undefined
     if (!signAndSendFeature) {
       throw new Error('Wallet does not support sign and send')
     }
 
-    const result = await signAndSendFeature.signAndSendTransaction({
+    // Wallet Standard returns an array of outputs
+    const results = await signAndSendFeature.signAndSendTransaction({
       account,
       transaction,
       chain: 'solana:mainnet', // or 'solana:devnet' based on your needs
     })
+
+    // Handle both array result (spec) and single result (some implementations)
+    const result = Array.isArray(results) ? results[0] : results
+    if (!result || !result.signature) {
+      throw new Error('Failed to get transaction signature from wallet')
+    }
 
     return result.signature
   }, [wallet, account])
@@ -246,6 +278,7 @@ export function WalletStandardProvider({
     signAndSendTransaction,
     wallets: availableWallets,
     rpc,
+    network,
   }
 
   return (

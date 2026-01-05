@@ -216,3 +216,131 @@ export function DashboardSkeleton() {
     </div>
   )
 }
+
+// Dashboard Page Skeleton - Dark theme stat cards
+export function DashboardStatCardSkeleton({ className }: SkeletonProps) {
+  return (
+    <div className={cn('group p-6 bg-[#111111] border border-white/10 rounded-xl', className)}>
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex-1">
+          <Skeleton className="h-3 w-20 mb-3 bg-white/10" />
+          <Skeleton className="h-10 w-24 bg-white/10" />
+        </div>
+        <Skeleton className="w-10 h-10 rounded-lg bg-white/10" />
+      </div>
+      <Skeleton className="h-5 w-16 rounded bg-white/10" />
+    </div>
+  )
+}
+
+export function DashboardStatsGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <DashboardStatCardSkeleton key={i} />
+      ))}
+    </div>
+  )
+}
+
+// Quick Action Button Skeleton
+export function QuickActionSkeleton({ className }: SkeletonProps) {
+  return (
+    <div className={cn('flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-lg', className)}>
+      <div className="flex items-center gap-3">
+        <Skeleton className="w-9 h-9 rounded-lg bg-white/10" />
+        <div>
+          <Skeleton className="h-4 w-28 mb-1.5 bg-white/10" />
+          <Skeleton className="h-3 w-20 bg-white/10" />
+        </div>
+      </div>
+      <Skeleton className="w-4 h-4 bg-white/10" />
+    </div>
+  )
+}
+
+export function QuickActionsGridSkeleton() {
+  return (
+    <div className="lg:col-span-2 p-6 bg-[#111111] border border-white/10 rounded-xl">
+      <div className="flex items-center gap-2 mb-6">
+        <Skeleton className="w-5 h-5 rounded bg-white/10" />
+        <Skeleton className="h-6 w-28 bg-white/10" />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <QuickActionSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Activity Item Skeleton
+export function ActivityItemSkeleton({ className }: SkeletonProps) {
+  return (
+    <div className={cn('flex items-start gap-3 p-3 bg-white/5 border border-white/10 rounded-lg', className)}>
+      <Skeleton className="w-1.5 h-1.5 mt-2 rounded-full bg-white/20" />
+      <div className="flex-1 min-w-0">
+        <Skeleton className="h-4 w-full mb-2 bg-white/10" />
+        <Skeleton className="h-3 w-24 bg-white/10" />
+      </div>
+    </div>
+  )
+}
+
+export function RecentActivitySkeleton() {
+  return (
+    <div className="p-6 bg-[#111111] border border-white/10 rounded-xl">
+      <div className="flex items-center gap-2 mb-6">
+        <Skeleton className="w-5 h-5 rounded bg-white/10" />
+        <Skeleton className="h-6 w-32 bg-white/10" />
+      </div>
+      <div className="space-y-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <ActivityItemSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Status Banner Skeleton
+export function StatusBannerSkeleton({ className }: SkeletonProps) {
+  return (
+    <div className={cn('p-6 bg-[#111111] border border-white/10 rounded-xl', className)}>
+      <div className="flex items-start gap-4">
+        <Skeleton className="w-12 h-12 rounded-lg bg-white/10 shrink-0" />
+        <div className="flex-1">
+          <Skeleton className="h-6 w-48 mb-3 bg-white/10" />
+          <Skeleton className="h-4 w-full mb-2 bg-white/10" />
+          <Skeleton className="h-4 w-3/4 mb-4 bg-white/10" />
+          <div className="flex gap-3">
+            <Skeleton className="h-10 w-36 rounded-lg bg-white/10" />
+            <Skeleton className="h-10 w-24 rounded-lg bg-white/10" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Full Dashboard Page Skeleton
+export function DashboardPageSkeleton() {
+  return (
+    <div className="min-h-screen bg-[#0a0a0a]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
+        {/* Stats Grid */}
+        <DashboardStatsGridSkeleton />
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <QuickActionsGridSkeleton />
+          <RecentActivitySkeleton />
+        </div>
+
+        {/* Status Banner */}
+        <StatusBannerSkeleton />
+      </div>
+    </div>
+  )
+}

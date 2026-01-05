@@ -67,7 +67,7 @@ export function ManifestoSection() {
         {/* Statement 3 - Right Aligned with Parallax */}
         <motion.div style={{ y: y2 }} className="md:text-right text-center md:pr-10 lg:pr-20">
           <div className="inline-flex flex-col items-end">
-            <span className="text-base sm:text-xl font-bold uppercase mb-2">0-1000 Score</span>
+            <span className="text-base sm:text-xl font-bold uppercase mb-2">0-10,000 Score</span>
             <h3 className="text-4xl sm:text-5xl md:text-8xl font-black tracking-tighter leading-[0.9]">
               <span className="text-5xl sm:text-7xl md:text-[8rem] mr-1 sm:mr-2">Ghost</span> <br />
               Score

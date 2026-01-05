@@ -18,7 +18,7 @@ const agent = await client.agents.register(signer, {
 
 // Get Ghost Score
 const reputation = await client.reputation.getAgentReputation(agent.address)
-console.log(\`Ghost Score: \${reputation.ghostScore}/1000\`)`
+console.log(\`Ghost Score: \${reputation.ghostScore}/10000\`)`
 
   const integrations = [
     {

@@ -86,6 +86,7 @@ export function IntegrationMarquee() {
                   src={item.image}
                   alt={item.name}
                   fill
+                  sizes="64px"
                   className="object-contain opacity-40 group-hover:opacity-100 transition-all duration-500 grayscale group-hover:grayscale-0"
                 />
               </div>

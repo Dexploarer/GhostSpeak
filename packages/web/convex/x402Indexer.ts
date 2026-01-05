@@ -13,7 +13,7 @@
 'use node'
 
 import { action } from './_generated/server'
-import { internal } from './_generated/api'
+import { internal, api } from './_generated/api'
 import { v } from 'convex/values'
 
 /**
@@ -47,7 +47,7 @@ export const pollX402Transactions = action({
       const network = rpcUrl.includes('devnet') ? 'solana-devnet' : 'solana'
 
       // Get last synced signature from state
-      const lastState = await ctx.runQuery(internal.ghostDiscovery.getIndexerState, {
+      const lastState = await ctx.runQuery(api.ghostDiscovery.getIndexerState, {
         stateKey: `x402_last_signature_${facilitatorAddr}`,
       })
 
@@ -56,7 +56,7 @@ export const pollX402Transactions = action({
       console.log(`[X402 Indexer Action] Last signature: ${lastSignature || 'none'}`)
 
       // Fetch transaction signatures
-      const config: { limit: number; before?: string } = {
+      const config: { limit: number; before?: any } = {
         limit: args.limit || 100,
       }
 
@@ -65,7 +65,7 @@ export const pollX402Transactions = action({
       }
 
       const signatures = await rpc
-        .getSignaturesForAddress(facilitatorAddress, config)
+        .getSignaturesForAddress(facilitatorAddress, config as any)
         .send()
 
       console.log(`[X402 Indexer Action] Found ${signatures.length} transactions`)
@@ -94,7 +94,7 @@ export const pollX402Transactions = action({
           let transferIx: any = null
 
           for (const ix of instructions) {
-            const programId = ix.programId?.toString()
+            const programId = (ix as any).programId?.toString()
 
             // Check for SPL token transfer (USDC on mainnet/devnet)
             const isTokenProgram =
@@ -102,7 +102,7 @@ export const pollX402Transactions = action({
               programId === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' // Token-2022
 
             if (isTokenProgram) {
-              const parsed = ix.parsed
+              const parsed = (ix as any).parsed
               if (parsed?.type === 'transfer' || parsed?.type === 'transferChecked') {
                 const destination = parsed.info?.destination
                 if (destination === facilitatorAddr) {
@@ -115,7 +115,7 @@ export const pollX402Transactions = action({
 
             // Check for system transfer (SOL on devnet and mainnet)
             if (programId === '11111111111111111111111111111111') {
-              const parsed = ix.parsed
+              const parsed = (ix as any).parsed
               if (parsed?.type === 'transfer') {
                 const destination = parsed.info?.destination
                 if (destination === facilitatorAddr) {
@@ -156,8 +156,8 @@ export const pollX402Transactions = action({
             try {
               // Memo data can be in parsed field or data field
               let memoText: string
-              if (memoIx.parsed) {
-                memoText = memoIx.parsed
+              if ((memoIx as any).parsed) {
+                memoText = (memoIx as any).parsed
               } else {
                 memoText = ''
               }
@@ -264,7 +264,7 @@ export const parseX402Transaction = action({
       let transferIx: any = null
 
       for (const ix of instructions) {
-        const programId = ix.programId?.toString()
+        const programId = (ix as any).programId?.toString()
 
         // Check for SPL token transfer (USDC on mainnet/devnet)
         const isTokenProgram =
@@ -272,7 +272,7 @@ export const parseX402Transaction = action({
           programId === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'
 
         if (isTokenProgram) {
-          const parsed = ix.parsed
+          const parsed = (ix as any).parsed
           if (parsed?.type === 'transfer' || parsed?.type === 'transferChecked') {
             const destination = parsed.info?.destination
             if (destination === facilitatorAddr) {
@@ -285,7 +285,7 @@ export const parseX402Transaction = action({
 
         // Check for system transfer (SOL on devnet and mainnet)
         if (programId === '11111111111111111111111111111111') {
-          const parsed = ix.parsed
+          const parsed = (ix as any).parsed
           if (parsed?.type === 'transfer') {
             const destination = parsed.info?.destination
             if (destination === facilitatorAddr) {
@@ -305,7 +305,7 @@ export const parseX402Transaction = action({
       }
 
       // Extract payment data
-      const transferInfo = transferIx.parsed.info
+      const transferInfo = (transferIx as any).parsed.info
       const payerAddress = transferInfo.source
       const amount = transferInfo.amount || transferInfo.tokenAmount?.amount || transferInfo.lamports || '0'
       const success = response.meta?.err === null
@@ -331,8 +331,8 @@ export const parseX402Transaction = action({
       if (memoIx) {
         try {
           let memoText: string
-          if (memoIx.parsed) {
-            memoText = memoIx.parsed
+          if ((memoIx as any).parsed) {
+            memoText = (memoIx as any).parsed
           } else {
             memoText = ''
           }

@@ -74,9 +74,10 @@ export const signInWithSolana = mutation({
         sessionToken,
         walletAddress: args.publicKey,
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sign in error:', error)
-      throw new Error('Authentication failed')
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      throw new Error(`Authentication failed: ${errorMessage}`)
     }
   },
 })

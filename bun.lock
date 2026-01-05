@@ -196,7 +196,7 @@
         "@elizaos/plugin-sql": "^1.7.0",
         "@ghostspeak/plugin-elizaos": "workspace:*",
         "@ghostspeak/plugin-gateway-ghost": "^0.2.1",
-        "@ghostspeak/sdk": "^2.0.10",
+        "@ghostspeak/sdk": "workspace:*",
         "@gsap/react": "^2.1.2",
         "@hookform/resolvers": "^5.2.2",
         "@modelcontextprotocol/sdk": "^1.25.1",

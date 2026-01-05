@@ -119,6 +119,12 @@ export const getUserDashboard = query({
       apiCallsThisMonth += usage.length
     }
 
+    // Get observation votes cast by user
+    const observationVotes = await ctx.db
+      .query('observationVotes')
+      .withIndex('by_user', (q: any) => q.eq('userId', user._id))
+      .collect()
+
     // ─── CALCULATE ECTO SCORE (Agent Developers) ───────────────────────────────
     let ectoScore = 0
     let ectoTier = 'NOVICE'
@@ -144,6 +150,7 @@ export const getUserDashboard = query({
         totalAgentGhostScore,
         totalAgentJobs,
         accountAge: now - user.createdAt,
+        votesCast: observationVotes.length,
       })
       ectoTier = getEctoScoreTier(ectoScore)
     }
@@ -314,11 +321,13 @@ function calculateEctoScore({
   totalAgentGhostScore,
   totalAgentJobs,
   accountAge,
+  votesCast,
 }: {
   agentsRegistered: number
   totalAgentGhostScore: number // Sum of Ghost Scores across all their agents
   totalAgentJobs: number // Total jobs completed by all their agents
   accountAge: number
+  votesCast: number // Number of observation votes cast
 }): number {
   const ageInDays = accountAge / (1000 * 60 * 60 * 24)
   let score = 0
@@ -340,6 +349,10 @@ function calculateEctoScore({
 
   // Developer tenure points (up to 1500 points)
   score += Math.min(ageInDays * 10, 1500)
+
+  // Observation voting points (up to 1000 points)
+  // 5 points per vote
+  score += Math.min(votesCast * 5, 1000)
 
   return Math.min(Math.round(score), 10000)
 }

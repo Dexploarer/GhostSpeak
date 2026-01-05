@@ -37,6 +37,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import { Progress } from '@/components/ui/progress'
+import { LiveObservationFeed } from '@/components/dashboard/LiveObservationFeed'
 
 // Grade colors
 const GRADE_COLORS: Record<string, string> = {
@@ -73,6 +74,7 @@ function formatPrice(usdc: number): string {
 export default function ObservePage() {
   const { publicKey } = useWallet()
   const router = useRouter()
+  const [viewMode, setViewMode] = useState<'directory' | 'live'>('directory')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [expandedAgent, setExpandedAgent] = useState<string | null>(null)
 
@@ -167,8 +169,42 @@ export default function ObservePage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
+        {/* View Switcher */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-[#111111] border border-white/10 p-1 rounded-lg inline-flex">
+            <button
+              onClick={() => setViewMode('directory')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                viewMode === 'directory' 
+                  ? 'bg-primary text-primary-foreground shadow-lg' 
+                  : 'text-white/60 hover:text-white'
+              }`}
+            >
+              Directory
+            </button>
+            <button
+              onClick={() => setViewMode('live')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
+                viewMode === 'live' 
+                  ? 'bg-primary text-primary-foreground shadow-lg' 
+                  : 'text-white/60 hover:text-white'
+              }`}
+            >
+              Live Feed 
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {viewMode === 'live' ? (
+           <LiveObservationFeed />
+        ) : (
+           <>
+             {/* Stats Grid */}
+             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
           <div className="bg-[#111111] border border-white/10 rounded-xl p-4">
             <div className="flex items-center gap-2 text-white/60 text-sm mb-1">
               <Activity className="w-4 h-4" />
@@ -405,6 +441,8 @@ export default function ObservePage() {
             </div>
           </div>
         </div>
+           </>
+        )}
       </div>
 
       <Footer />

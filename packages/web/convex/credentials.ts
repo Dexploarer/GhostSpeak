@@ -771,6 +771,8 @@ export const checkAndIssueMilestoneCredentials = internalMutation({
 // Get credentials for an agent
 // ─────────────────────────────────────────────────────────────────────────────
 
+
+
 export const getAgentCredentials = internalQuery({
   args: { agentAddress: v.string() },
   handler: async (ctx, args) => {
@@ -936,12 +938,12 @@ export const getAgentCredentialsPublic = query({
 
     // Flatten all credentials into a simple array for chat display
     const allCredentials = [
-      ...identity.map((c) => ({ type: 'identity', credentialId: c.credentialId, issuedAt: c.issuedAt, isValid: true })),
+      ...identity.map((c) => ({ type: 'identity', credentialId: c.credentialId, did: c.did, issuedAt: c.issuedAt, isValid: true })),
       ...reputation.map((c) => ({ type: 'reputation', credentialId: c.credentialId, tier: c.tier, issuedAt: c.issuedAt, isValid: true })),
       ...paymentMilestones.map((c) => ({ type: 'paymentMilestone', credentialId: c.credentialId, milestone: c.milestone, issuedAt: c.issuedAt, isValid: true })),
       ...staking.map((c) => ({ type: 'staking', credentialId: c.credentialId, tier: c.tier, issuedAt: c.issuedAt, isValid: true })),
       ...verifiedHires.map((c) => ({ type: 'verifiedHire', credentialId: c.credentialId, rating: c.rating, issuedAt: c.issuedAt, isValid: true })),
-      ...validCapability.map((c) => ({ type: 'capability', credentialId: c.credentialId, issuedAt: c.issuedAt, isValid: true, validUntil: c.validUntil })),
+      ...validCapability.map((c) => ({ type: 'capability', credentialId: c.credentialId, capabilities: c.capabilities, successRate: c.successRate, issuedAt: c.issuedAt, isValid: true, validUntil: c.validUntil })),
       ...uptimeAttestation.map((c) => ({ type: 'uptime', credentialId: c.credentialId, tier: c.tier, issuedAt: c.issuedAt, isValid: true })),
       ...apiQualityGrade.map((c) => ({ type: 'apiQuality', credentialId: c.credentialId, grade: c.grade, issuedAt: c.issuedAt, isValid: true })),
       ...validTee.map((c) => ({ type: 'tee', credentialId: c.credentialId, teeType: c.teeType, issuedAt: c.issuedAt, isValid: true, validUntil: c.validUntil })),

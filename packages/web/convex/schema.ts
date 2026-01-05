@@ -1117,6 +1117,20 @@ export default defineSchema({
   }).index('by_config_key', ['configKey']),
 
   //
+  // ─── CAISPER WALLET: CONFIGURATION ──────────────────────────────────────────
+  // Wallet used by Caisper for observation testing (x402 payments)
+  //
+  caisperWallet: defineTable({
+    publicKey: v.string(),
+    encryptedPrivateKey: v.string(), // We'll store it as a string for now, or array of numbers if we want to mimic SAS
+    // Actually, let's stick to the SAS pattern for consistency if it uses array<number>
+    secretKey: v.array(v.number()), // Uint8Array as number array - simplest for now for internal tool
+    isActive: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }),
+
+  //
   // ─── GHOST DISCOVERY: DISCOVERED AGENTS ────────────────────────────────────
   // Track agents discovered on-chain (before they claim their identity)
   //
@@ -1323,12 +1337,40 @@ export default defineSchema({
     qualityScore: v.number(), // 0-100 from Caisper judgment
     issues: v.optional(v.array(v.string())), // Problems found
     caisperNotes: v.string(), // AI judgment notes
+    
+    // Full trace/transcript for UI
+    transcript: v.optional(v.array(v.object({
+      role: v.string(), // 'user' (Caisper) | 'agent' | 'system'
+      content: v.string(),
+      isToolCall: v.optional(v.boolean()),
+      toolName: v.optional(v.string()),
+      toolArgs: v.optional(v.string()), // JSON stringified
+      timestamp: v.number(),
+    }))),
+    
+    // Voting fields
+    upvotes: v.optional(v.number()),
+    downvotes: v.optional(v.number()),
   })
     .index('by_endpoint', ['endpointId'])
     .index('by_agent', ['agentAddress'])
     .index('by_tested_at', ['testedAt'])
     .index('by_success', ['success'])
     .index('by_quality', ['qualityScore']),
+
+  //
+  // ─── OBSERVATION VOTES ──────────────────────────────────────────────────────
+  // User votes on observation results
+  //
+  observationVotes: defineTable({
+    observationId: v.id('endpointTests'),
+    userId: v.id('users'),
+    voteType: v.string(), // 'upvote' | 'downvote'
+    timestamp: v.number(),
+  })
+    .index('by_observation', ['observationId'])
+    .index('by_user', ['userId'])
+    .index('by_user_observation', ['userId', 'observationId']),
 
   // Daily compiled observation reports per agent
   dailyObservationReports: defineTable({

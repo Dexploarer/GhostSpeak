@@ -496,3 +496,31 @@ export const getDiscoveryStats = query({
     }
   },
 })
+
+/**
+ * ADMIN: Transfer agent ownership (Fix for role assignment)
+ */
+export const adminTransferAgent = mutation({
+  args: {
+    ghostAddress: v.string(),
+    newOwner: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const agent = await ctx.db
+      .query('discoveredAgents')
+      .withIndex('by_address', (q) => q.eq('ghostAddress', args.ghostAddress))
+      .first()
+
+    if (!agent) {
+      throw new Error('Agent not found')
+    }
+
+    await ctx.db.patch(agent._id, {
+      claimedBy: args.newOwner,
+      status: 'claimed',
+      updatedAt: Date.now(),
+    })
+
+    return { success: true, previousOwner: agent.claimedBy, newOwner: args.newOwner }
+  },
+})

@@ -69,11 +69,19 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
 
           // Request signature from wallet
           const signature = await signMessage(messageBytes)
+          const signatureEncoded = bs58.encode(signature)
+
+          console.log('📝 Auth Debug:', {
+            publicKey,
+            message,
+            signature: signatureEncoded,
+            signatureLen: signature.length
+          })
 
           // Send to Convex for verification
           const result = await signInWithSolana({
             publicKey,
-            signature: bs58.encode(signature),
+            signature: signatureEncoded,
             message,
           })
 

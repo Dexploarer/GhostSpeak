@@ -195,6 +195,65 @@ export const getObservatoryStats = query({
   },
 })
 
+/**
+ * Get recent observations for the live feed
+ */
+export const getRecentObservations = query({
+  args: { 
+    limit: v.optional(v.number()),
+    walletAddress: v.optional(v.string())
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit || 20
+    const tests = await ctx.db
+      .query('endpointTests')
+      .withIndex('by_tested_at')
+      .order('desc')
+      .take(limit)
+
+    // Resolve user if wallet address provided
+    let userId: Id<'users'> | null = null
+    if (args.walletAddress) {
+      const user = await ctx.db
+        .query('users')
+        .withIndex('by_wallet_address', (q) => q.eq('walletAddress', args.walletAddress!))
+        .first()
+      if (user) userId = user._id
+    }
+
+    // Join with endpoint details and user vote
+    const results = await Promise.all(
+      tests.map(async (test) => {
+        const endpoint = await ctx.db.get(test.endpointId)
+        
+        let myVote = null
+        if (userId) {
+          const vote = await ctx.db
+            .query('observationVotes')
+            .withIndex('by_user_observation', (q) => q.eq('userId', userId!).eq('observationId', test._id))
+            .first()
+          if (vote) myVote = vote.voteType
+        }
+
+        return {
+          ...test,
+          myVote,
+          endpoint: endpoint
+            ? {
+                baseUrl: endpoint.baseUrl,
+                method: endpoint.method,
+                endpoint: endpoint.endpoint,
+                description: endpoint.description,
+              }
+            : null,
+        }
+      })
+    )
+
+    return results
+  },
+})
+
 // ─── MUTATIONS ──────────────────────────────────────────────────────────────────
 
 /**
@@ -313,6 +372,14 @@ export const recordTestResult = internalMutation({
     qualityScore: v.number(),
     issues: v.optional(v.array(v.string())),
     caisperNotes: v.string(),
+    transcript: v.optional(v.array(v.object({
+      role: v.string(),
+      content: v.string(),
+      isToolCall: v.optional(v.boolean()),
+      toolName: v.optional(v.string()),
+      toolArgs: v.optional(v.string()),
+      timestamp: v.number(),
+    }))),
   },
   handler: async (ctx, args) => {
     // Insert test result
@@ -704,68 +771,193 @@ export const runHourlyTests = internalAction({
 
       // Test this endpoint
       try {
-        console.log(`[Observation] Testing ${endpoint.baseUrl}${endpoint.endpoint.substring(0, 50)}...`)
+        console.log(`[Observation] TESTING (DEBUG MODE) ${endpoint.baseUrl}${endpoint.endpoint.substring(0, 50)}...`)
 
-        // For now, we'll do a simple HTTP call without actual x402 payment
-        // Full x402 payment integration will be added when Caisper's wallet is set up
+        // Initialize variables for this test
         const startTime = Date.now()
         let responseStatus = 0
         let responseBody = ''
         let responseError = ''
         let success = false
+        
+        // Quality metrics
+        let qualityScore = 50 // Base score
+        let capabilityVerified = false
+        let issues: string[] = []
+        let caisperNotes = ''
+        let paymentSignature = ''
+        let paymentAmountUsdc = 0
+
+        // Transcript tracking
+        const transcript: {
+          role: string
+          content: string
+          isToolCall?: boolean
+          toolName?: string
+          toolArgs?: string
+          timestamp: number
+        }[] = []
 
         try {
-          // Make discovery call (no payment) to verify endpoint is alive
-          const response = await fetch(endpoint.endpoint, {
+          // 1. Initial Call (Discovery)
+          // Construct a prompt based on endpoint description
+          const prompt = `Test request for: ${endpoint.description || 'General availability check'}`
+          transcript.push({
+            role: 'user',
+            content: prompt,
+            timestamp: Date.now()
+          })
+
+          let response = await fetch(endpoint.endpoint, {
             method: endpoint.method,
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
             },
-            // Don't follow redirects, we want to see 402
+            body: endpoint.method === 'POST' ? JSON.stringify({ message: prompt }) : undefined,
             redirect: 'manual',
           })
 
           responseStatus = response.status
-          // 402 means endpoint is working and requires payment (expected)
-          // 200 means endpoint doesn't require payment (also valid)
-          success = responseStatus === 402 || responseStatus === 200
-
+          
+          // 2. Handle 402 Payment Required
           if (responseStatus === 402) {
-            // This is expected - endpoint requires payment
-            responseBody = 'Endpoint returned 402 Payment Required (expected behavior)'
+             const authHeader = response.headers.get('www-authenticate') || ''
+             console.log(`[Observation Debug] 402 received. AuthHeader: "${authHeader}"`)
+             
+             let recipient = ''
+             let amount = 0
+             let token = 'SOL' // Default to SOL
+             
+             // Try to parse from header or body
+             if (authHeader.includes('recipient=')) {
+               const match = authHeader.match(/recipient="?([a-zA-Z0-9]+)"?/)
+               if (match) recipient = match[1]
+               
+               const amountMatch = authHeader.match(/amount="?(\d+)"?/)
+               if (amountMatch) amount = parseInt(amountMatch[1])
+             } else {
+               // Try body
+               try {
+                 const json = await response.json()
+                 console.log(`[Observation Debug] 402 Body:`, JSON.stringify(json))
+                 if (json.recipient) recipient = json.recipient
+                 if (json.amount) amount = json.amount
+                 if (json.token) token = json.token
+               } catch (e) {
+                 // Ignore JSON parse error on 402 if body is empty
+                 console.log(`[Observation Debug] 402 Body parse error:`, e)
+               }
+             }
+
+             console.log(`[Observation Debug] Parsed: Recipient=${recipient}, Amount=${amount}, Token=${token}`)
+
+             if (recipient && amount > 0) {
+               console.log(`[Observation] Payment required: ${amount} ${token} to ${recipient}`)
+               transcript.push({
+                 role: 'system',
+                 content: `Payment Required: ${amount} ${token} to ${recipient}`,
+                 timestamp: Date.now()
+               })
+               
+               // Check sanity (don't spend too much)
+               const MAX_SOL_PAYMENT = 0.01 * 1e9 // 0.01 SOL limit
+               
+               if (token === 'SOL' && amount <= MAX_SOL_PAYMENT) {
+                 // PAY IT!
+                 const payResult = await ctx.runAction(internal.lib.caisper.sendSolPayment, {
+                   recipient,
+                   amountSol: amount / 1e9,
+                 })
+                 
+                 if (payResult.success) {
+                    const signature = payResult.signature
+                    transcript.push({
+                        role: 'system',
+                        content: `Payment Sent. Signature: ${signature}`,
+                        timestamp: Date.now()
+                    })
+                    transcript.push({
+                        role: 'user',
+                        content: 'Payment completed. Retrying request with Authorization header...',
+                        timestamp: Date.now()
+                    })
+                    console.log(`[Observation] Paid! Sig: ${signature}`)
+                    
+                    // 3. Retry with Authorization
+                    response = await fetch(endpoint.endpoint, {
+                      method: endpoint.method,
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': `Solana ${signature}`
+                      },
+                      redirect: 'manual',
+                    })
+                    
+                    responseStatus = response.status
+                    success = responseStatus === 200
+                    
+                    if (success) {
+                      caisperNotes = `Successfully negotiated x402 payment! Paid ${amount} lamports. Content unlocked.`
+                      qualityScore = 100 
+                      capabilityVerified = true
+                      paymentSignature = signature
+                      paymentAmountUsdc = (amount / 1e9) * 150 // Approx $150/SOL for tracking stats (mock rate)
+                      
+                      const text = await response.text()
+                      responseBody = text.substring(0, 1000)
+                      transcript.push({
+                         role: 'agent',
+                         content: responseBody.substring(0, 5000), 
+                         timestamp: Date.now()
+                      })
+                    }
+                 }
+               } else {
+                 caisperNotes = `Payment requested (${amount} ${token}) exceeded safety limit or unsupported token.`
+                 // Mark as capabilities verified (it acts like an agent) but failed test
+                 capabilityVerified = true
+                 qualityScore = 80
+                 success = true // It's alive
+               }
+             } else {
+                // 402 but couldn't parse params
+                caisperNotes = "returned 402 but missing payment params"
+                qualityScore = 60
+                success = true
+             }
           } else {
-            const text = await response.text()
-            responseBody = text.substring(0, 1000) // Truncate
+             // 200 OK or other error
+             success = responseStatus === 200
+             if (success) {
+               const text = await response.text()
+               responseBody = text.substring(0, 1000)
+               qualityScore = 80
+               capabilityVerified = true
+               caisperNotes = 'Endpoint responded successfully without payment.'
+               transcript.push({
+                   role: 'agent',
+                   content: responseBody.substring(0, 5000), 
+                   timestamp: Date.now()
+               })
+             } else {
+               const text = await response.text()
+               responseBody = text.substring(0, 1000)
+               qualityScore = 20
+               issues.push(`HTTP ${responseStatus}: ${responseBody.substring(0, 100)}`)
+               caisperNotes = `Endpoint failed with status ${responseStatus}`
+             }
           }
+
         } catch (fetchError: any) {
           responseError = fetchError.message || 'Unknown fetch error'
           success = false
+          qualityScore = 0
+          caisperNotes = `Fetch failed: ${responseError}`
         }
 
         const responseTimeMs = Date.now() - startTime
-
-        // Simple quality judgment based on response
-        let qualityScore = 50 // Base score
-        let capabilityVerified = false
-        let issues: string[] = []
-        let caisperNotes = ''
-
-        if (success) {
-          if (responseStatus === 402) {
-            qualityScore = 75 // Good - endpoint is properly configured for x402
-            capabilityVerified = true
-            caisperNotes = 'Endpoint properly returns 402 Payment Required. Ready for paid testing when wallet is funded.'
-          } else if (responseStatus === 200) {
-            qualityScore = 80 // Great - endpoint responded
-            capabilityVerified = true
-            caisperNotes = 'Endpoint responded successfully without payment. May be free tier or discovery endpoint.'
-          }
-        } else {
-          qualityScore = 20
-          issues.push(`HTTP ${responseStatus}: ${responseError || 'Failed to respond'}`)
-          caisperNotes = `Endpoint failed to respond properly. ${responseError || 'Unknown error'}`
-        }
 
         // Adjust for response time
         if (responseTimeMs < 500) qualityScore += 10
@@ -777,7 +969,7 @@ export const runHourlyTests = internalAction({
         await ctx.runMutation(internal.observation.recordTestResult, {
           endpointId: endpoint._id,
           agentAddress: endpoint.agentAddress,
-          paymentAmountUsdc: 0, // No actual payment in discovery mode
+          paymentAmountUsdc, 
           responseStatus,
           responseTimeMs,
           responseBody: responseBody.substring(0, 10000),
@@ -787,11 +979,12 @@ export const runHourlyTests = internalAction({
           qualityScore,
           issues: issues.length > 0 ? issues : undefined,
           caisperNotes,
+          paymentSignature: paymentSignature || undefined,
+          transcript
         })
 
         testsRun++
-        // In discovery mode, no actual cost
-        // totalSpent += endpoint.priceUsdc
+        totalSpent += paymentAmountUsdc
 
         console.log(`[Observation] Test complete: ${success ? '✓' : '✗'} ${responseStatus} ${responseTimeMs}ms Q${qualityScore}`)
       } catch (error: any) {
@@ -814,20 +1007,22 @@ export const compileDailyReports = internalAction({
     // Get yesterday's date
     const yesterday = new Date()
     yesterday.setUTCDate(yesterday.getUTCDate() - 1)
+    yesterday.setUTCHours(0, 0, 0, 0)
+    
+    const startOfDay = yesterday.getTime()
+    const endOfDay = startOfDay + 24 * 60 * 60 * 1000
     const date = yesterday.toISOString().split('T')[0]
 
     console.log(`[Observation] Compiling daily reports for ${date}...`)
 
     // Get all unique agents that had tests yesterday
-    const startOfDay = new Date(date).getTime()
-    const endOfDay = startOfDay + 24 * 60 * 60 * 1000
 
     const tests = await ctx.runQuery(internal.observation.getTestsInRange, {
       startTime: startOfDay,
       endTime: endOfDay,
     })
 
-    const uniqueAgents = [...new Set(tests.map((t: any) => t.agentAddress))]
+    const uniqueAgents: string[] = [...new Set(tests.map((t: any) => t.agentAddress))]
 
     console.log(`[Observation] Found ${uniqueAgents.length} agents with tests yesterday`)
 
@@ -862,3 +1057,89 @@ export const getTestsInRange = internalMutation({
       .collect()
   },
 })
+
+/**
+ * Vote on an observation result
+ *
+ * Updates user's Ecto/Ghosthunter Score points and observation metrics
+ */
+export const voteOnObservation = mutation({
+  args: {
+    observationId: v.id('endpointTests'),
+    walletAddress: v.string(), // Authenticated user's wallet
+    voteType: v.string(), // 'upvote' | 'downvote'
+  },
+  handler: async (ctx, args) => {
+    // 1. Get user
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_wallet_address', (q) => q.eq('walletAddress', args.walletAddress))
+      .first()
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    // 2. Check for existing vote
+    const existingVote = await ctx.db
+      .query('observationVotes')
+      .withIndex('by_user_observation', (q) =>
+        q.eq('userId', user._id).eq('observationId', args.observationId)
+      )
+      .first()
+
+    // 3. Get test record to update counts
+    const test = await ctx.db.get(args.observationId)
+    if (!test) {
+      throw new Error('Observation not found')
+    }
+
+    let currentUpvotes = test.upvotes || 0
+    let currentDownvotes = test.downvotes || 0
+
+    if (existingVote) {
+      if (existingVote.voteType === args.voteType) {
+        // Same vote -> Toggle off (remove vote)
+        await ctx.db.delete(existingVote._id)
+        
+        if (args.voteType === 'upvote') currentUpvotes = Math.max(0, currentUpvotes - 1)
+        else currentDownvotes = Math.max(0, currentDownvotes - 1)
+      } else {
+        // Different vote -> Switch vote
+        await ctx.db.patch(existingVote._id, {
+          voteType: args.voteType,
+          timestamp: Date.now(),
+        })
+
+        if (args.voteType === 'upvote') {
+          currentUpvotes++
+          currentDownvotes = Math.max(0, currentDownvotes - 1)
+        } else {
+          currentDownvotes++
+          currentUpvotes = Math.max(0, currentUpvotes - 1)
+        }
+      }
+    } else {
+      // New vote
+      await ctx.db.insert('observationVotes', {
+        observationId: args.observationId,
+        userId: user._id,
+        voteType: args.voteType, // 'upvote' | 'downvote'
+        timestamp: Date.now(),
+      })
+
+      if (args.voteType === 'upvote') currentUpvotes++
+      else currentDownvotes++
+    }
+
+    // 4. Update test record
+    await ctx.db.patch(args.observationId, {
+      upvotes: currentUpvotes,
+      downvotes: currentDownvotes,
+    })
+
+    return { success: true, upvotes: currentUpvotes, downvotes: currentDownvotes }
+  },
+})
+
+

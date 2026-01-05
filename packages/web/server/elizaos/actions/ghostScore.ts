@@ -32,6 +32,10 @@ export const ghostScoreAction: Action = {
       'check reputation',
       'reputation score',
       'agent score',
+      'evaluation',
+      'evaluate',
+      'assess agent',
+      'full evaluation',
     ]
 
     return triggers.some((trigger) => text.includes(trigger))
@@ -41,8 +45,8 @@ export const ghostScoreAction: Action = {
     runtime: IAgentRuntime,
     message: Memory,
     state?: State,
-    options?: any,
-    callback?: any
+    options?: Record<string, unknown>,
+    callback?: (response: any) => Promise<void>
   ) => {
     try {
       const text = message.content.text || ''
@@ -92,8 +96,11 @@ export const ghostScoreAction: Action = {
       // Add breakdown if available
       if (scoreData.sources) {
         responseText += `**Score Breakdown:**\n`
-        const sources = scoreData.sources as Record<string, any>
-        
+        const sources = scoreData.sources as unknown as Record<
+          string,
+          { score: number; dataPoints?: number }
+        >
+
         if (sources.paymentHistory) {
           responseText += `- Payment History: ${sources.paymentHistory.score || 0} pts (${sources.paymentHistory.dataPoints || 0} transactions)\n`
         }
@@ -111,19 +118,27 @@ export const ghostScoreAction: Action = {
         }
       }
 
-      // Add vibe check
-      responseText += `\n**My Take:** `
+      
+      // Calculate vibe check
+      let myTake = ''
       if (scoreData.score >= 9000) {
         responseText += `Platinum tier? This agent is basically blockchain royalty. I'd vouch for them at a blockchain wedding. 💎`
+        myTake = `Platinum tier? This agent is basically blockchain royalty. I'd vouch for them at a blockchain wedding. 💎`
       } else if (scoreData.score >= 7500) {
         responseText += `Gold tier is no joke—this agent has their life together more than I did when I was alive. Solid choice.`
+        myTake = `Gold tier is no joke—this agent has their life together more than I did when I was alive. Solid choice.`
       } else if (scoreData.score >= 5000) {
         responseText += `Silver tier means they're building a track record. Not quite elite, but definitely not sketchy.`
+        myTake = `Silver tier means they're building a track record. Not quite elite, but definitely not sketchy.`
       } else if (scoreData.score >= 2000) {
         responseText += `Bronze tier—they're climbing the ladder. Keep an eye on them, but don't write them off yet.`
+        myTake = `Bronze tier—they're climbing the ladder. Keep an eye on them, but don't write them off yet.`
       } else {
         responseText += `Newcomer tier. Everyone starts somewhere! Just... maybe verify their credentials before anything major.`
+        myTake = `Newcomer tier. Everyone starts somewhere! Just... maybe verify their credentials before anything major.`
       }
+
+      responseText += `\n**My Take:** ${myTake}`
 
       const response = {
         text: responseText,
@@ -134,6 +149,8 @@ export const ghostScoreAction: Action = {
           tier: scoreData.tier,
           breakdown: scoreData.sources,
           network: scoreData.network,
+          badges: scoreData.badges,
+          myTake,
         },
       }
 
@@ -152,7 +169,7 @@ export const ghostScoreAction: Action = {
       console.error('Error checking ghost score:', error)
 
       const errorResponse = {
-        text: "My ghost senses malfunctioned trying to pull that score. 👻💥\n\nThe reputation oracle might be taking a coffee break. Try again in a moment!",
+        text: 'My ghost senses malfunctioned trying to pull that score. 👻💥\n\nThe reputation oracle might be taking a coffee break. Try again in a moment!',
       }
 
       if (callback) await callback(errorResponse)
@@ -168,7 +185,9 @@ export const ghostScoreAction: Action = {
     [
       {
         name: '{{user1}}',
-        content: { text: 'What is the ghost score for 5eLbn3wj3iScc2fVH8hyNGRBttDTY5rZpeGk1rcjLek2?' },
+        content: {
+          text: 'What is the ghost score for 5eLbn3wj3iScc2fVH8hyNGRBttDTY5rZpeGk1rcjLek2?',
+        },
       },
       {
         name: '{{agent}}',

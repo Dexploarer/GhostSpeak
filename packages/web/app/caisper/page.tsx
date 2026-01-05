@@ -16,6 +16,7 @@ import {
 import Link from 'next/link'
 import { MeshGradientGhost } from '@/components/shared/MeshGradientGhost'
 import { AgentListResponse } from '@/components/chat/AgentListResponse'
+import { AgentEvaluationResponse } from '@/components/chat/AgentEvaluationResponse'
 import { AgentToolsPanel, caisperTools } from '@/components/chat/AgentToolsPanel'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
@@ -24,7 +25,7 @@ interface Message {
   role: 'user' | 'agent'
   content: string
   actionTriggered?: string
-  metadata?: any
+  metadata?: Record<string, any>
   timestamp: number
 }
 
@@ -111,8 +112,8 @@ export default function CaisperPage() {
   }
 
   // Handle scroll events to detect manual scrolling
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const container = e.currentTarget
+  const handleScroll = () => {
+    // const container = e.currentTarget
 
     // Mark that user is actively scrolling
     isUserScrollingRef.current = true
@@ -426,6 +427,18 @@ export default function CaisperPage() {
                           onClaimClick={handleClaimClick}
                         />
                       )}
+
+                    {/* Render ghost score evaluation if metadata type is ghost-score */}
+                    {msg.metadata?.type === 'ghost-score' && (
+                      <AgentEvaluationResponse
+                        agentAddress={msg.metadata.agentAddress}
+                        score={msg.metadata.score}
+                        tier={msg.metadata.tier}
+                        breakdown={msg.metadata.breakdown}
+                        network={msg.metadata.network}
+                        myTake={msg.metadata.myTake}
+                      />
+                    )}
                   </div>
                 </div>
               ))}

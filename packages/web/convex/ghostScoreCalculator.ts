@@ -254,19 +254,27 @@ export function calculateGhostScore(sources: Record<string, SourceScore>): {
     const sortedDeviations = [...absoluteDeviations].sort((a, b) => a - b)
     const mad = sortedDeviations[Math.floor(sortedDeviations.length / 2)]
 
+    // If MAD is 0 (e.g., most scores are 0), don't filter out "outliers" (positive signals)
+    // This allows new agents to have non-zero scores from single sources
+    if (mad === 0) return true
+
     const madConstant = 1.4826
     const modifiedZScore = Math.abs(s.score - median) / (mad * madConstant)
     return modifiedZScore <= 2.5
   })
 
+  // Filter out sources with 0 weight (no confidence/data) to avoid NaN variances
+  const validSources = trimmedWithDataPoints.filter((s) => s.weight > 0)
+
   // Step 3: Normalize weights to sum to 1
-  const totalWeight = trimmedWithDataPoints.reduce((sum, s) => sum + s.weight, 0)
+  const totalWeight = validSources.reduce((sum, s) => sum + s.weight, 0)
+
   if (totalWeight === 0) {
     // No valid sources, return neutral score
     return { score: 0, confidence: [0, 0] }
   }
 
-  const normalized = trimmedWithDataPoints.map((s) => ({
+  const normalized = validSources.map((s) => ({
     score: s.score,
     weight: s.weight / totalWeight,
     dataPoints: s.dataPoints,
@@ -705,6 +713,9 @@ export async function calculateAPIQualityMetrics(
     const avgQualityScore =
       observationTests.reduce((sum: number, t: any) => sum + (t.qualityScore || 50), 0) / observationTests.length
 
+    // Calculate total spent (Payment Capability)
+    const totalSpentUsdc = observationTests.reduce((sum: number, t: any) => sum + (t.paymentAmountUsdc || 0), 0)
+
     // Capability verification rate
     const verifiedCount = observationTests.filter((t: any) => t.capabilityVerified).length
     const verificationRate = verifiedCount / observationTests.length
@@ -729,6 +740,21 @@ export async function calculateAPIQualityMetrics(
 
     // Quality score component (10%)
     rawScore += (avgQualityScore / 100) * 1000
+    
+    // PAYMENT CAPABILITY BONUS (Add on top)
+    // If agent accepted real money tests, they are trusted significantly more.
+    if (totalSpentUsdc > 0.001) {
+       // Micro-payments prove liveness
+       rawScore += 500
+    }
+    if (totalSpentUsdc > 0.10) {
+       // Consistent paid usage
+       rawScore += 1000
+    }
+    if (totalSpentUsdc > 1.0) {
+       // High volume validated
+       rawScore += 2000
+    }
 
     rawScore = Math.max(0, Math.min(10000, rawScore))
 

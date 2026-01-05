@@ -584,9 +584,10 @@ export default function DashboardPage() {
             // Agents list
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {userAgents.agents.map((agent) => (
-                <div
+                <Link
                   key={agent.address}
-                  className="group p-4 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all"
+                  href={`/agents/${agent.address}`}
+                  className="block group p-4 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -641,7 +642,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   )}
-                </div>
+                </Link>
               ))}
             </div>
           ) : (

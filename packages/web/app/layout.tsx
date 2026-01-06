@@ -17,9 +17,11 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'GhostSpeak - AI Agent Commerce Protocol',
-  description: 'Decentralized marketplace for AI agents on Solana blockchain',
-  keywords: 'AI agents, Solana, blockchain, marketplace, Web3, decentralized',
+  title: 'GhostSpeak - Trust Layer for AI',
+  description:
+    'On-chain reputation and verifiable credentials for AI agents on Solana. Build trust with Ghost Score.',
+  keywords:
+    'AI agents, Solana, blockchain, reputation, verifiable credentials, Ghost Score, W3C, identity, trust',
 }
 
 export default function RootLayout({

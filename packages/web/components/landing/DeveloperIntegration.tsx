@@ -26,7 +26,7 @@ console.log(\`Ghost Score: \${reputation.ghostScore}/10000\`)`
       title: 'TypeScript SDK',
       description: '100% type-safe SDK with comprehensive documentation',
       link: 'https://docs.ghostspeak.io/sdk',
-      badge: 'v2.0.5',
+      badge: 'v2.0.10',
     },
     {
       icon: Terminal,
@@ -40,7 +40,7 @@ console.log(\`Ghost Score: \${reputation.ghostScore}/10000\`)`
       title: 'ElizaOS Plugin',
       description: 'Native integration for ElizaOS framework agents',
       link: 'https://docs.ghostspeak.io/plugin-elizaos',
-      badge: 'Beta',
+      badge: 'v0.1.2',
     },
   ]
 

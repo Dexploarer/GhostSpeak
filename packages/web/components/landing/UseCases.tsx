@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Building2, Network, Sparkles, TrendingUp, Users, Zap } from 'lucide-react'
+import { Building2, Network, Sparkles, TrendingUp, Users } from 'lucide-react'
 
 export function UseCases() {
   const useCases = [
@@ -110,7 +110,7 @@ export function UseCases() {
               <div className="relative p-8 rounded-3xl bg-card border border-border hover:border-primary/40 transition-all duration-300 overflow-hidden">
                 {/* Background gradient */}
                 <div
-                  className={`absolute inset-0 bg-gradient-to-br ${useCase.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+                  className={`absolute inset-0 bg-linear-to-br ${useCase.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
                 />
 
                 {/* Content */}
@@ -158,10 +158,10 @@ export function UseCases() {
           className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 rounded-2xl bg-card/50 border border-border backdrop-blur-sm"
         >
           {[
-            { label: 'Ghosts Created', value: '10,000+' },
-            { label: 'Transaction Volume', value: '$50M+' },
-            { label: 'Platform Integrations', value: '2+' },
-            { label: 'Average Ghost Score', value: '450' },
+            { label: 'Status', value: 'Live' },
+            { label: 'Network', value: 'Mainnet' },
+            { label: 'Initial Integrations', value: '3+' },
+            { label: 'Starting Ghost Score', value: '1,000' },
           ].map((stat, i) => (
             <div key={i} className="text-center p-4">
               <div className="text-3xl font-black text-primary mb-1">{stat.value}</div>

@@ -13,27 +13,28 @@ export async function GET() {
   try {
     const stats = await convex.query(api.ghostDiscovery.getDiscoveryStats, {})
 
-    return Response.json({
-      stats: {
-        total: stats.total,
-        totalDiscovered: stats.totalDiscovered,
-        totalClaimed: stats.totalClaimed,
-        totalVerified: stats.totalVerified,
-        percentageClaimed: stats.total > 0
-          ? Math.round((stats.totalClaimed / stats.total) * 100)
-          : 0,
-        percentageVerified: stats.total > 0
-          ? Math.round((stats.totalVerified / stats.total) * 100)
-          : 0,
+    return Response.json(
+      {
+        stats: {
+          total: stats.total,
+          totalDiscovered: stats.totalDiscovered,
+          totalClaimed: stats.totalClaimed,
+          totalVerified: stats.totalVerified,
+          percentageClaimed:
+            stats.total > 0 ? Math.round((stats.totalClaimed / stats.total) * 100) : 0,
+          percentageVerified:
+            stats.total > 0 ? Math.round((stats.totalVerified / stats.total) * 100) : 0,
+        },
+        timestamp: Date.now(),
       },
-      timestamp: Date.now(),
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
-      },
-    })
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+        },
+      }
+    )
   } catch (error) {
     console.error('Discovery stats error:', error)
     return Response.json(

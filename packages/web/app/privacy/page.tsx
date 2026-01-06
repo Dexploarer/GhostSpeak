@@ -32,7 +32,9 @@ export default function PrivacyPage() {
               <li>Staking transactions and governance votes</li>
             </ul>
 
-            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">2.2 Off-Chain Data (Optional)</h3>
+            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">
+              2.2 Off-Chain Data (Optional)
+            </h3>
             <p className="text-muted-foreground leading-relaxed mb-4">
               Data you choose to provide:
             </p>
@@ -77,15 +79,27 @@ export default function PrivacyPage() {
               <li>Inspect your transaction history</li>
             </ul>
 
-            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">4.2 Third-Party Services</h3>
+            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">
+              4.2 Third-Party Services
+            </h3>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
-              <li><strong>Crossmint:</strong> For cross-chain credential bridging (EVM chains)</li>
-              <li><strong>Helius:</strong> For Solana RPC access and transaction monitoring</li>
-              <li><strong>Turso:</strong> Optional database caching (self-hosted option available)</li>
-              <li><strong>Vercel:</strong> Website hosting and analytics</li>
+              <li>
+                <strong>Crossmint:</strong> For cross-chain credential bridging (EVM chains)
+              </li>
+              <li>
+                <strong>Helius:</strong> For Solana RPC access and transaction monitoring
+              </li>
+              <li>
+                <strong>Turso:</strong> Optional database caching (self-hosted option available)
+              </li>
+              <li>
+                <strong>Vercel:</strong> Website hosting and analytics
+              </li>
             </ul>
 
-            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">4.3 We DO NOT Sell Your Data</h3>
+            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">
+              4.3 We DO NOT Sell Your Data
+            </h3>
             <p className="text-muted-foreground leading-relaxed">
               GhostSpeak Labs does not sell, rent, or trade your personal information to third
               parties for marketing purposes.
@@ -107,7 +121,8 @@ export default function PrivacyPage() {
 
             <h3 className="text-xl font-semibold mb-3 text-primary mt-6">5.2 Deletion & Opt-Out</h3>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              <strong>Important:</strong> Blockchain data is PERMANENT and cannot be deleted. However, you can:
+              <strong>Important:</strong> Blockchain data is PERMANENT and cannot be deleted.
+              However, you can:
             </p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
               <li>Deactivate your Ghost (stops future reputation updates)</li>
@@ -117,7 +132,10 @@ export default function PrivacyPage() {
             </ul>
 
             <p className="text-muted-foreground leading-relaxed mt-4">
-              To exercise these rights, email: <a href="mailto:privacy@ghostspeak.io" className="text-primary hover:underline">privacy@ghostspeak.io</a>
+              To exercise these rights, email:{' '}
+              <a href="mailto:privacy@ghostspeak.io" className="text-primary hover:underline">
+                privacy@ghostspeak.io
+              </a>
             </p>
           </section>
 
@@ -165,9 +183,24 @@ export default function PrivacyPage() {
               For privacy-related questions or concerns:
             </p>
             <ul className="list-none text-muted-foreground space-y-2">
-              <li><strong>Email:</strong> <a href="mailto:privacy@ghostspeak.io" className="text-primary hover:underline">privacy@ghostspeak.io</a></li>
-              <li><strong>General:</strong> <a href="mailto:team@ghostspeak.io" className="text-primary hover:underline">team@ghostspeak.io</a></li>
-              <li><strong>Website:</strong> <a href="https://ghostspeak.io" className="text-primary hover:underline">ghostspeak.io</a></li>
+              <li>
+                <strong>Email:</strong>{' '}
+                <a href="mailto:privacy@ghostspeak.io" className="text-primary hover:underline">
+                  privacy@ghostspeak.io
+                </a>
+              </li>
+              <li>
+                <strong>General:</strong>{' '}
+                <a href="mailto:team@ghostspeak.io" className="text-primary hover:underline">
+                  team@ghostspeak.io
+                </a>
+              </li>
+              <li>
+                <strong>Website:</strong>{' '}
+                <a href="https://ghostspeak.io" className="text-primary hover:underline">
+                  ghostspeak.io
+                </a>
+              </li>
             </ul>
           </section>
         </div>

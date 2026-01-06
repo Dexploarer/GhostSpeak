@@ -24,6 +24,9 @@ const eslintConfig = [
       'coverage/**',
       '*.config.js',
       '*.config.mjs',
+      'scripts/**',
+      'test*.ts',
+      'convex/test*.ts',
     ],
   },
   {

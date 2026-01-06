@@ -37,20 +37,14 @@ export function AgentToolsPanel({
   return (
     <div className="h-full flex flex-col">
       {/* Agent Info Section */}
-      <div className="flex-shrink-0 border-b border-white/10 pb-6">
+      <div className="shrink-0 border-b border-white/10 pb-6">
         {/* Avatar */}
-        {agentAvatar && (
-          <div className="flex justify-center -mt-2 mb-4">
-            {agentAvatar}
-          </div>
-        )}
+        {agentAvatar && <div className="flex justify-center -mt-2 mb-4">{agentAvatar}</div>}
 
         {/* Agent Details */}
         <div>
           <h3 className="text-sm font-medium text-white mb-3">{agentName}</h3>
-          <p className="text-sm text-white/60 leading-relaxed">
-            {agentDescription}
-          </p>
+          <p className="text-sm text-white/60 leading-relaxed">{agentDescription}</p>
         </div>
       </div>
 
@@ -64,27 +58,21 @@ export function AgentToolsPanel({
               className="group bg-white/5 border border-white/10 rounded-lg overflow-hidden hover:border-white/20 transition-all"
             >
               <summary className="p-3 cursor-pointer list-none flex items-start gap-3 hover:bg-white/5 transition-colors">
-                <div className={`flex-shrink-0 mt-0.5 ${categoryColors[tool.category]}`}>
+                <div className={`shrink-0 mt-0.5 ${categoryColors[tool.category]}`}>
                   {tool.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-medium text-white mb-1">
-                    {tool.name}
-                  </h4>
-                  <p className="text-xs text-white/60 leading-relaxed">
-                    {tool.description}
-                  </p>
+                  <h4 className="text-sm font-medium text-white mb-1">{tool.name}</h4>
+                  <p className="text-xs text-white/60 leading-relaxed">{tool.description}</p>
                 </div>
-                <div className="flex-shrink-0 text-white/40 group-open:rotate-180 transition-transform">
+                <div className="shrink-0 text-white/40 group-open:rotate-180 transition-transform">
                   ▼
                 </div>
               </summary>
 
               {/* Prompts */}
               <div className="border-t border-white/10 p-3 space-y-2 bg-white/5">
-                <p className="text-xs text-white/40 mb-2">
-                  Click to send:
-                </p>
+                <p className="text-xs text-white/40 mb-2">Click to send:</p>
                 {tool.prompts.map((prompt, idx) => (
                   <button
                     key={idx}
@@ -144,7 +132,7 @@ export const caisperTools: AgentTool[] = [
   {
     id: 'verify-credential',
     name: 'Verify Credential',
-    description: 'Check if an agent\'s credential is valid and trustworthy',
+    description: "Check if an agent's credential is valid and trustworthy",
     icon: <Zap className="w-4 h-4" />,
     category: 'verification',
     prompts: [
@@ -175,6 +163,18 @@ export const caisperTools: AgentTool[] = [
       'How does reputation scoring work?',
       'What are the reputation tiers?',
       'Explain the reputation system',
+    ],
+  },
+  {
+    id: 'token-analysis',
+    name: 'Token Analysis',
+    description: 'Scan agent wallet for risky tokens and exploitation signals',
+    icon: <FileCheck className="w-4 h-4" />,
+    category: 'verification',
+    prompts: [
+      'Evaluate agent tokens...',
+      'Check my wallet portfolio',
+      'Scan a wallet for risky tokens',
     ],
   },
 ]

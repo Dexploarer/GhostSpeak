@@ -14,44 +14,47 @@ export async function GET() {
     // Fetch all stats in parallel
     const discoveryStats = await convex.query(api.ghostDiscovery.getDiscoveryStats, {})
 
-    return Response.json({
-      platform: {
-        name: 'GhostSpeak',
-        version: '1.0.0',
-        network: process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet',
-        programId: '4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB',
-      },
+    return Response.json(
+      {
+        platform: {
+          name: 'GhostSpeak',
+          version: '1.0.0',
+          network: process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet',
+          programId: '4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB',
+        },
 
-      discovery: {
-        totalAgents: discoveryStats.total,
-        discovered: discoveryStats.totalDiscovered,
-        claimed: discoveryStats.totalClaimed,
-        verified: discoveryStats.totalVerified,
-      },
+        discovery: {
+          totalAgents: discoveryStats.total,
+          discovered: discoveryStats.totalDiscovered,
+          claimed: discoveryStats.totalClaimed,
+          verified: discoveryStats.totalVerified,
+        },
 
-      network: {
-        rpcEndpoint: process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-        websocketEndpoint: process.env.NEXT_PUBLIC_SOLANA_WS_URL || 'wss://api.devnet.solana.com',
-      },
+        network: {
+          rpcEndpoint: process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
+          websocketEndpoint: process.env.NEXT_PUBLIC_SOLANA_WS_URL || 'wss://api.devnet.solana.com',
+        },
 
-      features: {
-        agentDiscovery: true,
-        ghostScore: true,
-        x402Payments: true,
-        staking: true,
-        reputation: true,
-        escrow: true,
-        verifiableCredentials: true,
-      },
+        features: {
+          agentDiscovery: true,
+          ghostScore: true,
+          x402Payments: true,
+          staking: true,
+          reputation: true,
+          escrow: true,
+          verifiableCredentials: true,
+        },
 
-      timestamp: Date.now(),
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        timestamp: Date.now(),
       },
-    })
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        },
+      }
+    )
   } catch (error) {
     console.error('Stats API error:', error)
     return Response.json(

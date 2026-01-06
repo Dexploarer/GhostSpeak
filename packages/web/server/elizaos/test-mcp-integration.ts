@@ -8,7 +8,7 @@ import { processAgentMessage } from './runtime'
 
 async function testMCPIntegration() {
   console.log('\n🧪 Testing ElizaOS Agent MCP Integration\n')
-  console.log('=' .repeat(60))
+  console.log('='.repeat(60))
 
   try {
     // Test 1: Ask about discovered agents (should trigger MCP tool)

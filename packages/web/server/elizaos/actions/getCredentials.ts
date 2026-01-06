@@ -147,7 +147,7 @@ export const getCredentialsAction: Action = {
       console.error('Error fetching credentials:', error)
 
       const errorResponse = {
-        text: "The credential vault seems to be locked right now. 👻🔐\n\nTry again in a moment—sometimes the blockchain spirits need a second.",
+        text: 'The credential vault seems to be locked right now. 👻🔐\n\nTry again in a moment—sometimes the blockchain spirits need a second.',
       }
 
       if (callback) await callback(errorResponse)
@@ -163,7 +163,9 @@ export const getCredentialsAction: Action = {
     [
       {
         name: '{{user1}}',
-        content: { text: 'What credentials does 5eLbn3wj3iScc2fVH8hyNGRBttDTY5rZpeGk1rcjLek2 have?' },
+        content: {
+          text: 'What credentials does 5eLbn3wj3iScc2fVH8hyNGRBttDTY5rZpeGk1rcjLek2 have?',
+        },
       },
       {
         name: '{{agent}}',

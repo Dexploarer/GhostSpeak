@@ -4,14 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
-import {
-  Menu,
-  X,
-  Moon,
-  Sun,
-  Coins,
-  FileText,
-} from 'lucide-react'
+import { Menu, X, Moon, Sun, Coins, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from 'next-themes'
 import { BrandLogo } from '@/components/shared/BrandLogo'
@@ -23,7 +16,7 @@ const marketingNavItems = [
     href: 'https://dexscreener.com/solana/e44xj7jyjxyermlqqwrpu4nekcphawfjf3ppn2uokgdb',
     label: '$GHOST',
     icon: Coins,
-    external: true
+    external: true,
   },
 ]
 
@@ -45,7 +38,10 @@ export const Navigation: React.FC = () => {
   }, [])
 
   // Check if we're on dashboard or other authenticated pages
-  const isDashboardPage = pathname?.startsWith('/dashboard') || pathname?.startsWith('/caisper') || pathname?.startsWith('/settings')
+  const isDashboardPage =
+    pathname?.startsWith('/dashboard') ||
+    pathname?.startsWith('/caisper') ||
+    pathname?.startsWith('/settings')
   const isMarketingPage = !isDashboardPage
 
   // Show marketing nav items only on marketing pages
@@ -119,33 +115,33 @@ export const Navigation: React.FC = () => {
               className="hidden md:flex items-center justify-center absolute left-1/2 -translate-x-1/2"
             >
               {navItems.map((item) => {
-              const Icon = item.icon
-              const LinkComponent = item.external ? 'a' : Link
+                const Icon = item.icon
+                const LinkComponent = item.external ? 'a' : Link
 
-              return (
-                <LinkComponent
-                  key={item.href}
-                  href={item.href}
-                  {...(item.external && { target: '_blank', rel: 'noopener noreferrer' })}
-                  className="relative px-3 py-2 rounded-full group overflow-hidden shrink-0"
-                >
-                  <span
-                    className={cn(
-                      'relative z-10 flex items-center text-sm font-medium transition-colors duration-200',
-                      isMarketingPage && !isScrolled
-                        ? 'text-white/70 group-hover:text-white'
-                        : 'text-gray-600 dark:text-gray-400 group-hover:text-lime-500 dark:group-hover:text-lime-200'
-                    )}
+                return (
+                  <LinkComponent
+                    key={item.href}
+                    href={item.href}
+                    {...(item.external && { target: '_blank', rel: 'noopener noreferrer' })}
+                    className="relative px-3 py-2 rounded-full group overflow-hidden shrink-0"
                   >
-                    <Icon className="w-4 h-4 mr-1.5" />
-                    {item.label}
-                  </span>
+                    <span
+                      className={cn(
+                        'relative z-10 flex items-center text-sm font-medium transition-colors duration-200',
+                        isMarketingPage && !isScrolled
+                          ? 'text-white/70 group-hover:text-white'
+                          : 'text-gray-600 dark:text-gray-400 group-hover:text-lime-500 dark:group-hover:text-lime-200'
+                      )}
+                    >
+                      <Icon className="w-4 h-4 mr-1.5" />
+                      {item.label}
+                    </span>
 
-                  {/* Hover Effect */}
-                  <div className="absolute inset-0 bg-white/10 dark:bg-white/5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                </LinkComponent>
-              )
-            })}
+                    {/* Hover Effect */}
+                    <div className="absolute inset-0 bg-white/10 dark:bg-white/5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                  </LinkComponent>
+                )
+              })}
             </motion.div>
           )}
 
@@ -159,10 +155,10 @@ export const Navigation: React.FC = () => {
             <button
               onClick={toggleDarkMode}
               className={cn(
-                "p-2 rounded-full transition-colors",
+                'p-2 rounded-full transition-colors',
                 isMarketingPage && !isScrolled
-                  ? "text-white/70 hover:text-white hover:bg-white/10"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10"
+                  ? 'text-white/70 hover:text-white hover:bg-white/10'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10'
               )}
             >
               {mounted &&
@@ -172,8 +168,8 @@ export const Navigation: React.FC = () => {
             {/* Mobile Menu Toggle */}
             <button
               className={cn(
-                "md:hidden p-2",
-                isMarketingPage && !isScrolled ? "text-white" : "text-gray-600 dark:text-gray-300"
+                'md:hidden p-2',
+                isMarketingPage && !isScrolled ? 'text-white' : 'text-gray-600 dark:text-gray-300'
               )}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >

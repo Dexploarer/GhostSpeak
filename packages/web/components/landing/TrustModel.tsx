@@ -18,19 +18,22 @@ export function TrustModel() {
     {
       icon: Lock,
       title: 'Cryptographic Signatures',
-      description: 'All credentials are signed using Ed25519 keys derived from Solana keypairs. Signatures are verifiable on-chain.',
+      description:
+        'All credentials are signed using Ed25519 keys derived from Solana keypairs. Signatures are verifiable on-chain.',
       details: 'Issuer signs → IPFS stores → Solana records CID',
     },
     {
       icon: Shield,
       title: 'W3C Verifiable Credentials',
-      description: 'Industry-standard credential format with built-in revocation checking and expiration support.',
+      description:
+        'Industry-standard credential format with built-in revocation checking and expiration support.',
       details: 'JSON-LD format with did:sol method',
     },
     {
       icon: Eye,
       title: 'On-Chain Transparency',
-      description: 'All agent registrations, reputation updates, and credential issuances are recorded on Solana.',
+      description:
+        'All agent registrations, reputation updates, and credential issuances are recorded on Solana.',
       details: 'Program ID: GpvFxu...cNC9',
     },
     {
@@ -84,8 +87,7 @@ export function TrustModel() {
             transition={{ delay: 0.1 }}
             className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter mb-6"
           >
-            How We{' '}
-            <span className="text-primary italic">Secure</span> Trust
+            How We <span className="text-primary italic">Secure</span> Trust
           </motion.h2>
 
           <motion.p
@@ -95,8 +97,8 @@ export function TrustModel() {
             transition={{ delay: 0.2 }}
             className="text-lg text-muted-foreground max-w-2xl mx-auto"
           >
-            Transparency about our security model, trust anchors, and dependencies.
-            Don&apos;t trust—verify.
+            Transparency about our security model, trust anchors, and dependencies. Don&apos;t
+            trust—verify.
           </motion.p>
         </div>
 
@@ -140,9 +142,13 @@ export function TrustModel() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Dependency</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                    Dependency
+                  </th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Role</th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Trust Model</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">
+                    Trust Model
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -151,13 +157,15 @@ export function TrustModel() {
                     <td className="py-3 px-4 font-medium">{dep.name}</td>
                     <td className="py-3 px-4 text-muted-foreground">{dep.role}</td>
                     <td className="py-3 px-4">
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        dep.trust.includes('Decentralized')
-                          ? 'bg-green-500/10 text-green-500'
-                          : dep.trust.includes('Content-addressed')
-                          ? 'bg-blue-500/10 text-blue-500'
-                          : 'bg-yellow-500/10 text-yellow-500'
-                      }`}>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          dep.trust.includes('Decentralized')
+                            ? 'bg-green-500/10 text-green-500'
+                            : dep.trust.includes('Content-addressed')
+                              ? 'bg-blue-500/10 text-blue-500'
+                              : 'bg-yellow-500/10 text-yellow-500'
+                        }`}
+                      >
                         {dep.trust}
                       </span>
                     </td>

@@ -7,9 +7,16 @@ interface TerminalWindowProps {
   glow?: boolean
 }
 
-export function TerminalWindow({ title = 'terminal', children, className = '', glow = true }: TerminalWindowProps) {
+export function TerminalWindow({
+  title = 'terminal',
+  children,
+  className = '',
+  glow = true,
+}: TerminalWindowProps) {
   return (
-    <div className={`relative rounded-2xl bg-zinc-950 border border-zinc-800 overflow-hidden shadow-2xl ${className}`}>
+    <div
+      className={`relative rounded-2xl bg-zinc-950 border border-zinc-800 overflow-hidden shadow-2xl ${className}`}
+    >
       {/* Code editor header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm">
         <div className="flex gap-1.5">
@@ -21,9 +28,7 @@ export function TerminalWindow({ title = 'terminal', children, className = '', g
       </div>
 
       {/* Content */}
-      <div className="relative z-10">
-        {children}
-      </div>
+      <div className="relative z-10">{children}</div>
 
       {/* Glow effect */}
       {glow && (

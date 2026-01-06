@@ -33,7 +33,11 @@ export function getSolanaClient(): SolanaClient<any> {
  * @param rpcUrl - Optional custom RPC URL (falls back to env)
  */
 export function createServerSolanaClient(rpcUrl?: string): SolanaClient<any> {
-  const url = rpcUrl || process.env.SOLANA_RPC_URL || process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
+  const url =
+    rpcUrl ||
+    process.env.SOLANA_RPC_URL ||
+    process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
+    'https://api.mainnet-beta.solana.com'
   // Gill requires an object with urlOrMoniker
   return createSolanaClient({ urlOrMoniker: url })
 }

@@ -28,11 +28,7 @@ export const signInWithSolana = mutation({
       const messageBytes = new TextEncoder().encode(args.message)
 
       // Verify the signature
-      const isValid = nacl.sign.detached.verify(
-        messageBytes,
-        signatureBytes,
-        publicKeyBytes
-      )
+      const isValid = nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes)
 
       if (!isValid) {
         throw new Error('Invalid signature')

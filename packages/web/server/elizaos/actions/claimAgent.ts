@@ -34,7 +34,7 @@ export const claimAgentAction: Action = {
       'choose agent',
     ]
 
-    return claimTriggers.some(trigger => text.includes(trigger))
+    return claimTriggers.some((trigger) => text.includes(trigger))
   },
 
   // Handler: validate keypair → register on-chain → update Convex
@@ -55,7 +55,7 @@ export const claimAgentAction: Action = {
 
       if (!addressMatch) {
         const response = {
-          text: "Hold up bestie, I need to know which agent you want to claim! 🤔\n\nPlease provide the wallet address of the discovered agent.\n\nExample: \"I want to claim agent 4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB\"",
+          text: 'Hold up bestie, I need to know which agent you want to claim! 🤔\n\nPlease provide the wallet address of the discovered agent.\n\nExample: "I want to claim agent 4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB"',
         }
 
         if (callback) {
@@ -125,7 +125,8 @@ export const claimAgentAction: Action = {
       console.log(`⛓️  Registering Ghost on-chain: ${ghostAddress}`)
 
       // Import SDK for on-chain registration
-      const { GhostSpeakClient, createKeyPairSignerFromBytes, address } = await import('@ghostspeak/sdk')
+      const { GhostSpeakClient, createKeyPairSignerFromBytes, address } =
+        await import('@ghostspeak/sdk')
       const bs58 = await import('bs58')
 
       // Get admin keypair from environment (server-side signing for Phase 1)
@@ -142,7 +143,7 @@ export const claimAgentAction: Action = {
       const rpcEndpoint = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
       const client = new GhostSpeakClient({
         rpcEndpoint,
-        commitment: 'confirmed'
+        commitment: 'confirmed',
       })
 
       // Register agent on-chain
@@ -184,14 +185,13 @@ export const claimAgentAction: Action = {
           claimedBy: userWallet,
           txSignature,
           agent,
-        }
+        },
       }
-
     } catch (error) {
       console.error('Error claiming agent:', error)
 
       const errorResponse = {
-        text: "My ghost circuits are overloaded! 👻⚡\n\nSomething went wrong while claiming your agent. This might be:\n- Network congestion\n- The blockchain is haunted\n- I need a coffee break\n\nTry again in a moment, or ask me to show available agents!",
+        text: 'My ghost circuits are overloaded! 👻⚡\n\nSomething went wrong while claiming your agent. This might be:\n- Network congestion\n- The blockchain is haunted\n- I need a coffee break\n\nTry again in a moment, or ask me to show available agents!',
       }
 
       if (callback) {
@@ -200,7 +200,7 @@ export const claimAgentAction: Action = {
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       }
     }
   },

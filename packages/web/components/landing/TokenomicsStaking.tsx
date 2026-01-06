@@ -11,7 +11,11 @@ export function TokenomicsStaking() {
       name: 'Verified Staker',
       stake: '5,000 GHOST',
       value: '~$0.28',
-      benefits: ['Unlimited Ghost Score checks', '1.5x revenue share multiplier', 'Basic API access'],
+      benefits: [
+        'Unlimited Ghost Score checks',
+        '1.5x revenue share multiplier',
+        'Basic API access',
+      ],
       highlight: false,
     },
     {

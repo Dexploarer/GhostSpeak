@@ -21,36 +21,39 @@ export async function GET(request: NextRequest) {
     // Example future usage:
     // const balance = await client.getBalance(PROGRAM_ID)
     // const account = await client.getAccount(treasuryPDA)
-    return Response.json({
-      treasury: {
-        programId: PROGRAM_ID,
-        network: process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet',
+    return Response.json(
+      {
+        treasury: {
+          programId: PROGRAM_ID,
+          network: process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet',
 
-        // These would come from on-chain queries in production
-        balances: {
-          sol: 0, // Query from on-chain
-          fees_collected: 0, // From transaction history
-        },
+          // These would come from on-chain queries in production
+          balances: {
+            sol: 0, // Query from on-chain
+            fees_collected: 0, // From transaction history
+          },
 
-        stats: {
-          total_transactions: 0, // From indexer
-          total_fees_collected: 0, // From indexer
-          total_staking_rewards_distributed: 0, // From indexer
-        },
+          stats: {
+            total_transactions: 0, // From indexer
+            total_fees_collected: 0, // From indexer
+            total_staking_rewards_distributed: 0, // From indexer
+          },
 
-        info: {
-          message: 'Treasury data will be populated from on-chain queries',
-          note: 'Connect to indexer for historical fee collection data',
+          info: {
+            message: 'Treasury data will be populated from on-chain queries',
+            note: 'Connect to indexer for historical fee collection data',
+          },
         },
+        timestamp: Date.now(),
       },
-      timestamp: Date.now(),
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
-      },
-    })
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        },
+      }
+    )
   } catch (error) {
     console.error('Treasury API error:', error)
     return Response.json(

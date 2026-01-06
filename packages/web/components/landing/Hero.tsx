@@ -64,7 +64,7 @@ export function Hero() {
         delay: 0.3,
         duration: 1.2,
         stagger: 0.2,
-        ease: 'power4.out'
+        ease: 'power4.out',
       })
 
       // CTA animation
@@ -73,7 +73,7 @@ export function Hero() {
         y: 40,
         delay: 1,
         duration: 1,
-        ease: 'power3.out'
+        ease: 'power3.out',
       })
     }, containerRef)
 
@@ -152,7 +152,9 @@ export function Hero() {
                 Credentials
               </div>
               <div className="text-sm font-bold text-primary">
-                <JargonTooltip {...jargonDefinitions.w3c} showIcon={false}>W3C</JargonTooltip>
+                <JargonTooltip {...jargonDefinitions.w3c} showIcon={false}>
+                  W3C
+                </JargonTooltip>
               </div>
             </motion.div>
 
@@ -163,11 +165,11 @@ export function Hero() {
               className="group px-6 py-3 rounded-full bg-card/60 border border-border/50 backdrop-blur-xl hover:border-primary/50 hover:bg-primary/5 transition-all"
             >
               <div className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-1">
-                <JargonTooltip {...jargonDefinitions.ghostScore} showIcon={false}>Ghost Score</JargonTooltip>
+                <JargonTooltip {...jargonDefinitions.ghostScore} showIcon={false}>
+                  Ghost Score
+                </JargonTooltip>
               </div>
-              <div className="text-sm font-bold text-primary">
-                0-10,000
-              </div>
+              <div className="text-sm font-bold text-primary">0-10,000</div>
             </motion.div>
 
             <motion.div
@@ -177,10 +179,18 @@ export function Hero() {
               className="group px-6 py-3 rounded-full bg-card/60 border border-border/50 backdrop-blur-xl hover:border-primary/50 hover:bg-primary/5 transition-all"
             >
               <div className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-1">
-                <JargonTooltip {...jargonDefinitions.crossChain} showIcon={false}>Cross-Chain</JargonTooltip>
+                <JargonTooltip {...jargonDefinitions.crossChain} showIcon={false}>
+                  Cross-Chain
+                </JargonTooltip>
               </div>
               <div className="text-sm font-bold text-primary">
-                <JargonTooltip {...jargonDefinitions.solana} showIcon={false}>Solana</JargonTooltip>→<JargonTooltip {...jargonDefinitions.evm} showIcon={false}>EVM</JargonTooltip>
+                <JargonTooltip {...jargonDefinitions.solana} showIcon={false}>
+                  Solana
+                </JargonTooltip>
+                →
+                <JargonTooltip {...jargonDefinitions.evm} showIcon={false}>
+                  EVM
+                </JargonTooltip>
               </div>
             </motion.div>
           </div>

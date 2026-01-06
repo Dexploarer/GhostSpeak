@@ -21,10 +21,7 @@ export async function GET(request: NextRequest) {
 
     // Validate limit
     if (limit < 1 || limit > 100) {
-      return Response.json(
-        { error: 'Limit must be between 1 and 100' },
-        { status: 400 }
-      )
+      return Response.json({ error: 'Limit must be between 1 and 100' }, { status: 400 })
     }
 
     // If address is provided, get specific agent
@@ -34,14 +31,46 @@ export async function GET(request: NextRequest) {
       })
 
       if (!agent) {
-        return Response.json(
-          { error: 'Agent not found' },
-          { status: 404 }
-        )
+        return Response.json({ error: 'Agent not found' }, { status: 404 })
       }
 
-      return Response.json({
-        agent: {
+      return Response.json(
+        {
+          agent: {
+            ghostAddress: agent.ghostAddress,
+            status: agent.status,
+            discoverySource: agent.discoverySource,
+            firstSeenTimestamp: agent.firstSeenTimestamp,
+            slot: agent.slot,
+            blockTime: agent.blockTime,
+            facilitatorAddress: agent.facilitatorAddress,
+            claimedBy: agent.claimedBy,
+            claimedAt: agent.claimedAt,
+            metadataFileId: agent.metadataFileId,
+            ipfsCid: agent.ipfsCid,
+            ipfsUri: agent.ipfsUri,
+          },
+          timestamp: Date.now(),
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+          },
+        }
+      )
+    }
+
+    // List agents with filters
+    const [agents, stats] = await Promise.all([
+      convex.query(api.ghostDiscovery.listDiscoveredAgents, { status, limit }),
+      convex.query(api.ghostDiscovery.getDiscoveryStats, {}),
+    ])
+
+    return Response.json(
+      {
+        agents: agents.map((agent: any) => ({
           ghostAddress: agent.ghostAddress,
           status: agent.status,
           discoverySource: agent.discoverySource,
@@ -51,48 +80,19 @@ export async function GET(request: NextRequest) {
           facilitatorAddress: agent.facilitatorAddress,
           claimedBy: agent.claimedBy,
           claimedAt: agent.claimedAt,
-          metadataFileId: agent.metadataFileId,
-          ipfsCid: agent.ipfsCid,
-          ipfsUri: agent.ipfsUri,
-        },
+        })),
+        stats,
+        count: agents.length,
         timestamp: Date.now(),
-      }, {
+      },
+      {
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
           'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
         },
-      })
-    }
-
-    // List agents with filters
-    const [agents, stats] = await Promise.all([
-      convex.query(api.ghostDiscovery.listDiscoveredAgents, { status, limit }),
-      convex.query(api.ghostDiscovery.getDiscoveryStats, {}),
-    ])
-
-    return Response.json({
-      agents: agents.map((agent: any) => ({
-        ghostAddress: agent.ghostAddress,
-        status: agent.status,
-        discoverySource: agent.discoverySource,
-        firstSeenTimestamp: agent.firstSeenTimestamp,
-        slot: agent.slot,
-        blockTime: agent.blockTime,
-        facilitatorAddress: agent.facilitatorAddress,
-        claimedBy: agent.claimedBy,
-        claimedAt: agent.claimedAt,
-      })),
-      stats,
-      count: agents.length,
-      timestamp: Date.now(),
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
-      },
-    })
+      }
+    )
   } catch (error) {
     console.error('Discovery API error:', error)
     return Response.json(

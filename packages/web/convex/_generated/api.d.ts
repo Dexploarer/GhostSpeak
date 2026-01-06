@@ -19,7 +19,10 @@ import type * as lib_caisper from "../lib/caisper.js";
 import type * as lib_networkMetadata from "../lib/networkMetadata.js";
 import type * as observation from "../observation.js";
 import type * as onboarding from "../onboarding.js";
+import type * as scripts_seedAgentDirectory from "../scripts/seedAgentDirectory.js";
+import type * as scripts_seedDashboardData from "../scripts/seedDashboardData.js";
 import type * as solanaAuth from "../solanaAuth.js";
+import type * as x402 from "../x402.js";
 import type * as x402Indexer from "../x402Indexer.js";
 
 import type {
@@ -40,7 +43,10 @@ declare const fullApi: ApiFromModules<{
   "lib/networkMetadata": typeof lib_networkMetadata;
   observation: typeof observation;
   onboarding: typeof onboarding;
+  "scripts/seedAgentDirectory": typeof scripts_seedAgentDirectory;
+  "scripts/seedDashboardData": typeof scripts_seedDashboardData;
   solanaAuth: typeof solanaAuth;
+  x402: typeof x402;
   x402Indexer: typeof x402Indexer;
 }>;
 

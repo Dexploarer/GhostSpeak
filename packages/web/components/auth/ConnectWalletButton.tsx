@@ -75,7 +75,7 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
             publicKey,
             message,
             signature: signatureEncoded,
-            signatureLen: signature.length
+            signatureLen: signature.length,
           })
 
           // Send to Convex for verification
@@ -114,8 +114,10 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
           console.error('❌ Authentication failed:', error)
 
           // Only disconnect if user explicitly rejected signature
-          if (error?.message?.includes('User rejected') ||
-              error?.message?.includes('rejected the request')) {
+          if (
+            error?.message?.includes('User rejected') ||
+            error?.message?.includes('rejected the request')
+          ) {
             console.log('User rejected signature, disconnecting wallet')
             await disconnect()
           }
@@ -126,7 +128,16 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
     }
 
     authenticate()
-  }, [publicKey, connected, signMessage, isAuthenticated, isAuthenticating, signInWithSolana, disconnect, router])
+  }, [
+    publicKey,
+    connected,
+    signMessage,
+    isAuthenticated,
+    isAuthenticating,
+    signInWithSolana,
+    disconnect,
+    router,
+  ])
 
   // Reset auth state when wallet disconnects
   useEffect(() => {
@@ -177,9 +188,12 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
   }
 
   const buttonVariants = {
-    default: 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100',
-    ghost: 'bg-transparent hover:bg-white/10 dark:hover:bg-white/5 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-800',
-    gradient: 'bg-gradient-to-r from-lime-500 to-lime-400 text-gray-900 font-semibold hover:from-lime-400 hover:to-lime-300 shadow-lg shadow-lime-500/20',
+    default:
+      'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100',
+    ghost:
+      'bg-transparent hover:bg-white/10 dark:hover:bg-white/5 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-800',
+    gradient:
+      'bg-gradient-to-r from-lime-500 to-lime-400 text-gray-900 font-semibold hover:from-lime-400 hover:to-lime-300 shadow-lg shadow-lime-500/20',
   }
 
   return (
@@ -202,10 +216,10 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
             {connecting
               ? 'Connecting...'
               : isAuthenticating
-              ? 'Sign to authenticate...'
-              : publicKey && connected
-              ? formatAddress(publicKey)
-              : 'Connect Wallet'}
+                ? 'Sign to authenticate...'
+                : publicKey && connected
+                  ? formatAddress(publicKey)
+                  : 'Connect Wallet'}
           </span>
           {publicKey && connected && !isAuthenticating && <ChevronDown className="w-4 h-4" />}
         </motion.button>
@@ -215,10 +229,7 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
           {showDropdown && publicKey && connected && (
             <>
               {/* Backdrop */}
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setShowDropdown(false)}
-              />
+              <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)} />
 
               {/* Dropdown */}
               <motion.div

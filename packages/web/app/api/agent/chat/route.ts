@@ -42,10 +42,7 @@ export async function POST(req: NextRequest) {
     //
     // Future enhancement: Add JWT with expiration, refresh tokens, and per-message signatures
     if (sessionToken && !sessionToken.startsWith('session_')) {
-      return NextResponse.json(
-        { error: 'Invalid session token format' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Invalid session token format' }, { status: 401 })
     }
 
     // TODO Phase 2: Validate session hasn't expired, implement proper JWT

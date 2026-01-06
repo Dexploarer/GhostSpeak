@@ -141,13 +141,23 @@ export async function POST(request: NextRequest) {
 
         switch (name) {
           case 'search_discovered_agents':
-            result = { content: [{ type: 'text', text: JSON.stringify(await handleSearchAgents(args), null, 2) }] }
+            result = {
+              content: [
+                { type: 'text', text: JSON.stringify(await handleSearchAgents(args), null, 2) },
+              ],
+            }
             break
           case 'claim_agent':
-            result = { content: [{ type: 'text', text: JSON.stringify(await handleClaimAgent(args), null, 2) }] }
+            result = {
+              content: [
+                { type: 'text', text: JSON.stringify(await handleClaimAgent(args), null, 2) },
+              ],
+            }
             break
           case 'get_discovery_stats':
-            result = { content: [{ type: 'text', text: JSON.stringify(await handleGetStats(), null, 2) }] }
+            result = {
+              content: [{ type: 'text', text: JSON.stringify(await handleGetStats(), null, 2) }],
+            }
             break
           default:
             return Response.json(jsonRpcError(id, -32601, `Unknown tool: ${name}`), { status: 404 })

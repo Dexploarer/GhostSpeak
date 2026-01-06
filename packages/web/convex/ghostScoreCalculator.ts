@@ -57,13 +57,13 @@ export type ReputationTier =
 
 export const SOURCE_WEIGHTS = {
   // Primary signals (70% total) - hard to fake
-  paymentActivity: 0.30, // Transaction success rate, volume, consistency
-  stakingCommitment: 0.20, // Economic stake (Schelling point)
+  paymentActivity: 0.3, // Transaction success rate, volume, consistency
+  stakingCommitment: 0.2, // Economic stake (Schelling point)
   credentialVerifications: 0.15, // W3C attestations from trusted issuers
   userReviews: 0.15, // Verified hire reviews with payment proof
 
   // Secondary signals (25% total) - supporting evidence
-  onChainActivity: 0.10, // Transaction history, age, diversity
+  onChainActivity: 0.1, // Transaction history, age, diversity
   governanceParticipation: 0.05, // DAO voting, proposals
   apiQualityMetrics: 0.03, // B2B API usage patterns, error rates
 
@@ -107,10 +107,7 @@ export const TIER_THRESHOLDS = {
  * Calculate exponential time decay factor
  * P(t) = e^(-λt) where λ = ln(2) / half_life
  */
-export function calculateTimeDecayFactor(
-  lastUpdated: number,
-  halfLifeDays: number
-): number {
+export function calculateTimeDecayFactor(lastUpdated: number, halfLifeDays: number): number {
   const ageMs = Date.now() - lastUpdated
   const ageDays = ageMs / (1000 * 60 * 60 * 24)
 
@@ -165,16 +162,11 @@ function trimOutliers(
 /**
  * Calculate variance for a source (used in confidence intervals)
  */
-function calculateVariance(
-  dataPoints: number,
-  score: number,
-  historicalScores?: number[]
-): number {
+function calculateVariance(dataPoints: number, score: number, historicalScores?: number[]): number {
   if (historicalScores && historicalScores.length > 1) {
     const mean = historicalScores.reduce((a, b) => a + b, 0) / historicalScores.length
     const variance =
-      historicalScores.reduce((sum, s) => sum + Math.pow(s - mean, 2), 0) /
-      historicalScores.length
+      historicalScores.reduce((sum, s) => sum + Math.pow(s - mean, 2), 0) / historicalScores.length
     return variance
   }
 
@@ -201,16 +193,10 @@ function calculateBayesianInterval(
   const weightedMean = sources.reduce((sum, s) => sum + s.score * s.weight, 0)
 
   // Weighted variance (accounts for different data qualities)
-  const weightedVariance = sources.reduce(
-    (sum, s) => sum + s.weight * s.weight * s.variance,
-    0
-  )
+  const weightedVariance = sources.reduce((sum, s) => sum + s.weight * s.weight * s.variance, 0)
 
   // Effective sample size (penalize low data points)
-  const effectiveSampleSize = sources.reduce(
-    (sum, s) => sum + Math.sqrt(s.dataPoints),
-    0
-  )
+  const effectiveSampleSize = sources.reduce((sum, s) => sum + Math.sqrt(s.dataPoints), 0)
 
   // Z-score for 95% CI (normal distribution approximation)
   const zScore = 1.96
@@ -327,9 +313,10 @@ export async function calculatePaymentActivity(
   const successRate = successCount / payments.length
 
   // Response time analysis (if available)
-  const avgResponseTime = payments
-    .filter((p: any) => p.responseTimeMs)
-    .reduce((sum: number, p: any) => sum + (p.responseTimeMs || 0), 0) / payments.length
+  const avgResponseTime =
+    payments
+      .filter((p: any) => p.responseTimeMs)
+      .reduce((sum: number, p: any) => sum + (p.responseTimeMs || 0), 0) / payments.length
 
   // Base score from success rate
   let rawScore = successRate * 10000
@@ -360,10 +347,7 @@ export async function calculatePaymentActivity(
 
   // Time decay
   const lastUpdated = payments[0]?.syncedAt || Date.now()
-  const timeDecayFactor = calculateTimeDecayFactor(
-    lastUpdated,
-    DECAY_HALF_LIVES.paymentActivity
-  )
+  const timeDecayFactor = calculateTimeDecayFactor(lastUpdated, DECAY_HALF_LIVES.paymentActivity)
 
   return {
     rawScore,
@@ -426,10 +410,7 @@ export async function calculateStakingCommitment(
 
   // Time decay based on last stake update
   const lastUpdated = Math.max(...stakes.map((s: any) => s.stakedAt || 0))
-  const timeDecayFactor = calculateTimeDecayFactor(
-    lastUpdated,
-    DECAY_HALF_LIVES.stakingCommitment
-  )
+  const timeDecayFactor = calculateTimeDecayFactor(lastUpdated, DECAY_HALF_LIVES.stakingCommitment)
 
   return {
     rawScore: finalScore,
@@ -515,14 +496,16 @@ export async function calculateCredentialVerifications(
 
   // For API Quality Grade, only count the most recent one (not historical)
   // This prevents score inflation from daily credential accumulation
-  const mostRecentApiQuality = apiQualityCredentials.length > 0
-    ? [apiQualityCredentials.sort((a: any, b: any) => b.issuedAt - a.issuedAt)[0]]
-    : []
+  const mostRecentApiQuality =
+    apiQualityCredentials.length > 0
+      ? [apiQualityCredentials.sort((a: any, b: any) => b.issuedAt - a.issuedAt)[0]]
+      : []
 
   // For Uptime Attestation, only count the most recent (rolling credential)
-  const mostRecentUptime = uptimeCredentials.length > 0
-    ? [uptimeCredentials.sort((a: any, b: any) => b.issuedAt - a.issuedAt)[0]]
-    : []
+  const mostRecentUptime =
+    uptimeCredentials.length > 0
+      ? [uptimeCredentials.sort((a: any, b: any) => b.issuedAt - a.issuedAt)[0]]
+      : []
 
   // Combine all credentials with their types
   const allCredentials: Array<{ type: string; issuedAt: number }> = [
@@ -602,10 +585,7 @@ export async function calculateCredentialVerifications(
  * User Reviews Score
  * Based on verified hire reviews with payment proof
  */
-export async function calculateUserReviews(
-  ctx: any,
-  agentAddress: string
-): Promise<SourceScore> {
+export async function calculateUserReviews(ctx: any, agentAddress: string): Promise<SourceScore> {
   const reviews = await ctx.db
     .query('reviews')
     .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
@@ -623,7 +603,8 @@ export async function calculateUserReviews(
   }
 
   // Average rating (assume 1-5 scale)
-  const avgRating = reviews.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) / reviews.length
+  const avgRating =
+    reviews.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) / reviews.length
 
   // Normalize to 0-10000
   const rawScore = (avgRating / 5) * 10000
@@ -707,14 +688,19 @@ export async function calculateAPIQualityMetrics(
 
     // Calculate avg response time
     const avgResponseTime =
-      observationTests.reduce((sum: number, t: any) => sum + (t.responseTimeMs || 0), 0) / observationTests.length
+      observationTests.reduce((sum: number, t: any) => sum + (t.responseTimeMs || 0), 0) /
+      observationTests.length
 
     // Calculate avg quality score from Caisper's judgment
     const avgQualityScore =
-      observationTests.reduce((sum: number, t: any) => sum + (t.qualityScore || 50), 0) / observationTests.length
+      observationTests.reduce((sum: number, t: any) => sum + (t.qualityScore || 50), 0) /
+      observationTests.length
 
     // Calculate total spent (Payment Capability)
-    const totalSpentUsdc = observationTests.reduce((sum: number, t: any) => sum + (t.paymentAmountUsdc || 0), 0)
+    const totalSpentUsdc = observationTests.reduce(
+      (sum: number, t: any) => sum + (t.paymentAmountUsdc || 0),
+      0
+    )
 
     // Capability verification rate
     const verifiedCount = observationTests.filter((t: any) => t.capabilityVerified).length
@@ -740,20 +726,20 @@ export async function calculateAPIQualityMetrics(
 
     // Quality score component (10%)
     rawScore += (avgQualityScore / 100) * 1000
-    
+
     // PAYMENT CAPABILITY BONUS (Add on top)
     // If agent accepted real money tests, they are trusted significantly more.
     if (totalSpentUsdc > 0.001) {
-       // Micro-payments prove liveness
-       rawScore += 500
+      // Micro-payments prove liveness
+      rawScore += 500
     }
-    if (totalSpentUsdc > 0.10) {
-       // Consistent paid usage
-       rawScore += 1000
+    if (totalSpentUsdc > 0.1) {
+      // Consistent paid usage
+      rawScore += 1000
     }
     if (totalSpentUsdc > 1.0) {
-       // High volume validated
-       rawScore += 2000
+      // High volume validated
+      rawScore += 2000
     }
 
     rawScore = Math.max(0, Math.min(10000, rawScore))
@@ -763,7 +749,10 @@ export async function calculateAPIQualityMetrics(
 
     // Time decay (fast decay for API quality - 14 days)
     const lastUpdated = observationTests[0]?.testedAt || Date.now()
-    const timeDecayFactor = calculateTimeDecayFactor(lastUpdated, DECAY_HALF_LIVES.apiQualityMetrics)
+    const timeDecayFactor = calculateTimeDecayFactor(
+      lastUpdated,
+      DECAY_HALF_LIVES.apiQualityMetrics
+    )
 
     return {
       rawScore,

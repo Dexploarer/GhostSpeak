@@ -29,7 +29,9 @@ export function BentoGrid() {
               </JargonTooltip>
             </h3>
             <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 max-w-md">
-              <JargonTooltip {...jargonDefinitions.w3c}>W3C</JargonTooltip>-compliant credentials issued on-chain. Prove agent identity, capabilities, and reputation across any blockchain with portable, verifiable credentials.
+              <JargonTooltip {...jargonDefinitions.w3c}>W3C</JargonTooltip>-compliant credentials
+              issued on-chain. Prove agent identity, capabilities, and reputation across any
+              blockchain with portable, verifiable credentials.
             </p>
           </div>
           {/* Mock Network Visualization */}
@@ -62,7 +64,8 @@ export function BentoGrid() {
             </JargonTooltip>
           </h3>
           <p className="text-muted-foreground text-xs sm:text-sm mb-4 sm:mb-6">
-            On-chain reputation that follows agents everywhere. Like a credit score, but for AI agents.
+            On-chain reputation that follows agents everywhere. Like a credit score, but for AI
+            agents.
           </p>
 
           <div className="space-y-3">
@@ -93,7 +96,8 @@ export function BentoGrid() {
         <Cpu className="w-6 h-6 sm:w-8 sm:h-8 text-primary mb-3 sm:mb-4" />
         <h4 className="font-bold mb-1 text-sm sm:text-base">PayAI Integration</h4>
         <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">
-          Track <JargonTooltip {...jargonDefinitions.x402}>x402</JargonTooltip> payments and build reputation.
+          Track <JargonTooltip {...jargonDefinitions.x402}>x402</JargonTooltip> payments and build
+          reputation.
         </p>
       </div>
 
@@ -109,10 +113,19 @@ export function BentoGrid() {
       {/* Wide Bottom Card */}
       <div className="md:col-span-1 group rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 p-4 sm:p-6 hover:border-primary/30 transition-colors flex flex-col justify-center items-center text-center">
         <div className="text-2xl sm:text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(204,255,0,0.3)]">
-          <JargonTooltip {...jargonDefinitions.solana} showIcon={false}>Solana</JargonTooltip> → <JargonTooltip {...jargonDefinitions.evm} showIcon={false}>EVM</JargonTooltip>
+          <JargonTooltip {...jargonDefinitions.solana} showIcon={false}>
+            Solana
+          </JargonTooltip>{' '}
+          →{' '}
+          <JargonTooltip {...jargonDefinitions.evm} showIcon={false}>
+            EVM
+          </JargonTooltip>
         </div>
         <p className="text-[10px] sm:text-xs text-gray-500 mt-1.5 sm:mt-2 font-mono">
-          <JargonTooltip {...jargonDefinitions.crossChain} showIcon={false}>Cross-Chain</JargonTooltip> Credentials via Crossmint
+          <JargonTooltip {...jargonDefinitions.crossChain} showIcon={false}>
+            Cross-Chain
+          </JargonTooltip>{' '}
+          Credentials via Crossmint
         </p>
       </div>
     </div>

@@ -67,13 +67,7 @@ export function GhostAgentBadge({
 /**
  * Compact version showing just the ghost icon for tight spaces
  */
-export function GhostAgentIcon({
-  status,
-  className,
-}: {
-  status: AgentStatus
-  className?: string
-}) {
+export function GhostAgentIcon({ status, className }: { status: AgentStatus; className?: string }) {
   const config = statusConfig[status]
 
   return (

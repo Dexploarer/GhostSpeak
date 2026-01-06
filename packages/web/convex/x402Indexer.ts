@@ -12,7 +12,7 @@
 
 'use node'
 
-import { action } from './_generated/server'
+import { action, query } from './_generated/server'
 import { internal, api } from './_generated/api'
 import { v } from 'convex/values'
 
@@ -27,8 +27,11 @@ export const pollX402Transactions = action({
   handler: async (ctx, args) => {
     try {
       // Get configuration from environment
-      // Default to mainnet for production x402 discovery
-      const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
+      // Use X402_SOLANA_RPC_URL for mainnet x402 discovery (separate from devnet GhostSpeak)
+      const rpcUrl =
+        process.env.X402_SOLANA_RPC_URL ||
+        process.env.SOLANA_RPC_URL ||
+        'https://api.mainnet-beta.solana.com'
       const facilitatorAddr =
         args.facilitatorAddress ||
         process.env.GHOSTSPEAK_MERCHANT_ADDRESS ||
@@ -57,41 +60,69 @@ export const pollX402Transactions = action({
       console.log(`[X402 Indexer Action] Last signature: ${lastSignature || 'none'}`)
 
       // Fetch transaction signatures
-      // Default to 20 per poll to stay within rate limits (500ms * 20 = 10sec)
+      // Default to 5 per poll with 2 second delays = 10 seconds total
       const config: { limit: number; before?: any } = {
-        limit: args.limit || 20,
+        limit: args.limit || 5,
       }
 
       if (lastSignature) {
         config.before = lastSignature
       }
 
-      const signatures = await rpc
-        .getSignaturesForAddress(facilitatorAddress, config as any)
-        .send()
+      const signatures = await rpc.getSignaturesForAddress(facilitatorAddress, config as any).send()
 
       console.log(`[X402 Indexer Action] Found ${signatures.length} transactions`)
 
       // Helper function for rate limiting
-      const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+      const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+      // Exponential backoff helper
+      const fetchWithBackoff = async <T>(
+        fn: () => Promise<T>,
+        maxRetries = 3,
+        baseDelayMs = 2000
+      ): Promise<T | null> => {
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          try {
+            return await fn()
+          } catch (error: unknown) {
+            const isRateLimit =
+              error instanceof Error &&
+              (error.message.includes('429') || error.message.includes('Too Many Requests'))
+
+            if (isRateLimit && attempt < maxRetries) {
+              const delayMs = baseDelayMs * Math.pow(2, attempt) // 2s, 4s, 8s
+              console.log(
+                `[X402 Indexer] Rate limited, retrying in ${delayMs}ms (attempt ${attempt + 1}/${maxRetries})`
+              )
+              await sleep(delayMs)
+            } else {
+              throw error
+            }
+          }
+        }
+        return null
+      }
 
       // Process each transaction with rate limiting
-      // Mainnet public RPC has a limit of ~2 req/sec for getTransaction
+      // Using 2 second base delay to stay well under Helius limits
       const discovered: string[] = []
-      const RATE_LIMIT_DELAY_MS = 500 // 500ms between calls = 2 req/sec
+      const RATE_LIMIT_DELAY_MS = 2000 // 2 seconds between calls
 
       for (const sig of signatures) {
         try {
           // Rate limit: wait before fetching
           await sleep(RATE_LIMIT_DELAY_MS)
 
-          // Fetch full transaction data
-          const response = await rpc
-            .getTransaction(sig.signature, {
-              maxSupportedTransactionVersion: 0,
-              encoding: 'jsonParsed',
-            })
-            .send()
+          // Fetch full transaction data with backoff
+          const response = await fetchWithBackoff(() =>
+            rpc
+              .getTransaction(sig.signature, {
+                maxSupportedTransactionVersion: 0,
+                encoding: 'jsonParsed',
+              })
+              .send()
+          )
 
           if (!response || !response.transaction) {
             continue
@@ -144,7 +175,8 @@ export const pollX402Transactions = action({
           // Extract payment data
           const transferInfo = transferIx.parsed.info
           const payerAddress = transferInfo.source
-          const amount = transferInfo.amount || transferInfo.tokenAmount?.amount || transferInfo.lamports || '0'
+          const amount =
+            transferInfo.amount || transferInfo.tokenAmount?.amount || transferInfo.lamports || '0'
           const success = response.meta?.err === null
 
           if (!success) {
@@ -156,9 +188,7 @@ export const pollX402Transactions = action({
           const timestamp = blockTime ? blockTime * 1000 : Date.now()
 
           // Look for memo instruction (optional metadata)
-          const memoIx = instructions.find((ix: any) =>
-            ix.programId?.toString()?.includes('Memo')
-          )
+          const memoIx = instructions.find((ix: any) => ix.programId?.toString()?.includes('Memo'))
 
           let metadata: Record<string, unknown> | undefined
 
@@ -197,7 +227,10 @@ export const pollX402Transactions = action({
 
           console.log(`[X402 Indexer Action] Discovered: ${payerAddress} (${amount} lamports)`)
         } catch (error) {
-          console.error(`[X402 Indexer Action] Failed to process transaction ${sig.signature}:`, error)
+          console.error(
+            `[X402 Indexer Action] Failed to process transaction ${sig.signature}:`,
+            error
+          )
           // Continue processing other transactions
         }
       }
@@ -240,7 +273,11 @@ export const parseX402Transaction = action({
   },
   handler: async (ctx, args) => {
     try {
-      const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
+      // Use X402_SOLANA_RPC_URL for mainnet x402 queries
+      const rpcUrl =
+        process.env.X402_SOLANA_RPC_URL ||
+        process.env.SOLANA_RPC_URL ||
+        'https://api.mainnet-beta.solana.com'
       const facilitatorAddr =
         args.facilitatorAddress ||
         process.env.GHOSTSPEAK_MERCHANT_ADDRESS ||
@@ -317,7 +354,8 @@ export const parseX402Transaction = action({
       // Extract payment data
       const transferInfo = (transferIx as any).parsed.info
       const payerAddress = transferInfo.source
-      const amount = transferInfo.amount || transferInfo.tokenAmount?.amount || transferInfo.lamports || '0'
+      const amount =
+        transferInfo.amount || transferInfo.tokenAmount?.amount || transferInfo.lamports || '0'
       const success = response.meta?.err === null
 
       if (!success) {
@@ -332,9 +370,7 @@ export const parseX402Transaction = action({
       const timestamp = blockTime ? blockTime * 1000 : Date.now()
 
       // Look for memo
-      const memoIx = instructions.find((ix: any) =>
-        ix.programId?.toString()?.includes('Memo')
-      )
+      const memoIx = instructions.find((ix: any) => ix.programId?.toString()?.includes('Memo'))
 
       let metadata: Record<string, unknown> | undefined
 

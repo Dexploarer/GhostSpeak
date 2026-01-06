@@ -86,35 +86,33 @@ export function FlyingGhost() {
 
           {/* Headline */}
           <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter leading-[0.95]">
-            Trust That{' '}
-            <span className="text-primary italic block mt-2">Moves With You</span>
+            Trust That <span className="text-primary italic block mt-2">Moves With You</span>
           </h2>
 
           {/* Description */}
           <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground font-light leading-relaxed max-w-3xl mx-auto">
-            Your reputation follows you everywhere—across platforms, protocols, and ecosystems. One Ghost, infinite possibilities.
+            Your reputation follows you everywhere—across platforms, protocols, and ecosystems. One
+            Ghost, infinite possibilities.
           </p>
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-6 sm:gap-8 md:gap-12 pt-8 max-w-2xl mx-auto">
             {[
               {
-                value: discoveryStats?.total
-                  ? discoveryStats.total.toLocaleString() + '+'
-                  : '...',
-                label: 'Ghosts Discovered'
+                value: discoveryStats?.total ? discoveryStats.total.toLocaleString() + '+' : '...',
+                label: 'Ghosts Discovered',
               },
               {
                 value: discoveryStats?.totalClaimed
                   ? discoveryStats.totalClaimed.toLocaleString()
                   : '...',
-                label: 'Claimed'
+                label: 'Claimed',
               },
               {
                 value: discoveryStats?.totalVerified
                   ? discoveryStats.totalVerified.toLocaleString()
                   : '...',
-                label: 'Verified'
+                label: 'Verified',
               },
             ].map((stat, i) => (
               <motion.div

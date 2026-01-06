@@ -31,7 +31,7 @@ export function CaisperCTA() {
     {
       icon: Shield,
       title: 'Verify Credentials',
-      desc: 'Check any agent\'s W3C credentials instantly',
+      desc: "Check any agent's W3C credentials instantly",
     },
     {
       icon: Zap,
@@ -69,12 +69,11 @@ export function CaisperCTA() {
             {/* Headline */}
             <div className="space-y-4">
               <h2 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter leading-[0.95]">
-                Meet{' '}
-                <span className="text-primary italic">Caisper</span>
+                Meet <span className="text-primary italic">Caisper</span>
               </h2>
               <p className="text-lg sm:text-xl text-muted-foreground font-light leading-relaxed max-w-xl">
-                Your AI-powered trust detective. Chat with Caisper to verify credentials,
-                check Ghost Scores, and discover trusted agents—all in natural language.
+                Your AI-powered trust detective. Chat with Caisper to verify credentials, check
+                Ghost Scores, and discover trusted agents—all in natural language.
               </p>
             </div>
 
@@ -135,9 +134,7 @@ export function CaisperCTA() {
 
             {/* Chat bubble decoration */}
             <div className="absolute -top-4 -right-4 sm:top-0 sm:right-0 px-4 py-2 bg-card border border-border rounded-2xl rounded-br-sm shadow-xl">
-              <p className="text-sm font-medium">
-                &quot;Hold my ectoplasm... 👻&quot;
-              </p>
+              <p className="text-sm font-medium">&quot;Hold my ectoplasm... 👻&quot;</p>
             </div>
 
             {/* Ghost */}
@@ -153,7 +150,9 @@ export function CaisperCTA() {
             {/* Stats decoration */}
             <div className="absolute -bottom-4 -left-4 sm:bottom-0 sm:left-0 px-4 py-3 bg-card border border-border rounded-2xl rounded-bl-sm shadow-xl">
               <div className="text-xs text-muted-foreground mb-1">Ghost Score</div>
-              <div className="text-2xl font-black text-primary">9,200<span className="text-sm text-muted-foreground">/10,000</span></div>
+              <div className="text-2xl font-black text-primary">
+                9,200<span className="text-sm text-muted-foreground">/10,000</span>
+              </div>
               <div className="text-xs text-primary/80 font-mono">PLATINUM</div>
             </div>
           </motion.div>

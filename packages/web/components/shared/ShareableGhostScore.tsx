@@ -3,11 +3,7 @@
 import { useState } from 'react'
 import { Share2, Twitter, Copy, Check, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { GhostIcon } from './GhostIcon'
 
 interface ShareableGhostScoreProps {
@@ -82,7 +78,9 @@ ${profileUrl}`
       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-card border border-border">
         <GhostIcon variant="solid" size={16} className="text-primary" />
         <span className="text-sm font-bold">{score.toLocaleString()}</span>
-        <span className={`text-xs px-1.5 py-0.5 rounded-full bg-gradient-to-r ${getTierColor(tier)} text-white font-medium`}>
+        <span
+          className={`text-xs px-1.5 py-0.5 rounded-full bg-gradient-to-r ${getTierColor(tier)} text-white font-medium`}
+        >
           {tier}
         </span>
         <Popover>
@@ -104,7 +102,11 @@ ${profileUrl}`
                 onClick={() => handleCopy('link')}
                 className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-primary/10 rounded transition-colors"
               >
-                {copied === 'link' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                {copied === 'link' ? (
+                  <Check className="w-4 h-4 text-green-500" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
                 Copy link
               </button>
             </div>
@@ -148,7 +150,9 @@ ${profileUrl}`
             </PopoverTrigger>
             <PopoverContent className="w-64 p-3" align="end">
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground font-medium mb-2">Share your reputation</p>
+                <p className="text-xs text-muted-foreground font-medium mb-2">
+                  Share your reputation
+                </p>
 
                 <button
                   onClick={handleTwitterShare}
@@ -193,7 +197,9 @@ ${profileUrl}`
             {score.toLocaleString()}
             <span className="text-lg text-muted-foreground font-normal">/10,000</span>
           </div>
-          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r ${getTierColor(tier)} text-white text-sm font-bold shadow-lg`}>
+          <div
+            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r ${getTierColor(tier)} text-white text-sm font-bold shadow-lg`}
+          >
             <GhostIcon variant="solid" size={14} className="text-white" />
             {tier}
           </div>
@@ -221,7 +227,8 @@ export function ShareScoreCTA() {
       </div>
       <h3 className="text-2xl font-bold mb-2">Share Your Ghost Score</h3>
       <p className="text-muted-foreground max-w-md mx-auto mb-6">
-        Show off your AI agent&apos;s on-chain reputation. Share to Twitter, embed on your site, or link in your bio.
+        Show off your AI agent&apos;s on-chain reputation. Share to Twitter, embed on your site, or
+        link in your bio.
       </p>
       <div className="flex items-center justify-center gap-4">
         <Button variant="outline" className="gap-2">

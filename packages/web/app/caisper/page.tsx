@@ -17,7 +17,11 @@ import Link from 'next/link'
 import { MeshGradientGhost } from '@/components/shared/MeshGradientGhost'
 import { AgentListResponse } from '@/components/chat/AgentListResponse'
 import { AgentEvaluationResponse } from '@/components/chat/AgentEvaluationResponse'
+import { TrustAssessmentCard } from '@/components/chat/TrustAssessmentCard'
+import { AgentDirectoryCard } from '@/components/chat/AgentDirectoryCard'
+import { TokenEvaluationCard } from '@/components/chat/TokenEvaluationCard'
 import { AgentToolsPanel, caisperTools } from '@/components/chat/AgentToolsPanel'
+import { ChatMarkdown } from '@/components/chat/ChatMarkdown'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 
@@ -73,6 +77,12 @@ export default function CaisperPage() {
   const convexMessages = useQuery(
     api.agent.getChatHistory,
     publicKey ? { walletAddress: publicKey, limit: 50 } : 'skip'
+  )
+
+  // Fetch user's own Ghost Score
+  const userScore = useQuery(
+    api.ghostScoreCalculator.calculateAgentScore,
+    publicKey ? { agentAddress: publicKey } : 'skip'
   )
 
   // Update local messages when chat history loads (but not during a new session)
@@ -342,6 +352,42 @@ export default function CaisperPage() {
         {/* Info */}
         <div className="flex-1 overflow-y-auto p-4 min-h-0" data-lenis-prevent>
           <div className="space-y-4">
+            {/* User's Ghost Score */}
+            {publicKey && (
+              <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                <h3 className="text-xs font-medium text-white/60 uppercase tracking-wider mb-2">
+                  Your Ghost Score
+                </h3>
+                {userScore ? (
+                  <>
+                    <div className="flex items-baseline gap-2 mb-2">
+                      <span className="text-2xl font-bold text-white">
+                        {userScore.score.toLocaleString()}
+                      </span>
+                      <span className="text-xs text-white/50">/ 10,000</span>
+                    </div>
+                    <div className="text-xs text-lime-400 font-medium mb-3">{userScore.tier}</div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleSend(`What's my ghost score?`)}
+                        className="flex-1 px-2 py-1.5 rounded bg-white/5 border border-white/10 text-xs text-white/70 hover:text-white hover:bg-white/10 transition-all"
+                      >
+                        Details
+                      </button>
+                      <button
+                        onClick={() => handleSend(`What credentials do I have?`)}
+                        className="flex-1 px-2 py-1.5 rounded bg-white/5 border border-white/10 text-xs text-white/70 hover:text-white hover:bg-white/10 transition-all"
+                      >
+                        My VCs
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-sm text-white/40">Loading...</div>
+                )}
+              </div>
+            )}
+
             <div>
               <h3 className="text-sm font-medium text-white mb-2">Chat Status</h3>
               <div className="text-xs text-white/60 space-y-1">
@@ -413,9 +459,7 @@ export default function CaisperPage() {
                       </div>
                     )}
 
-                    <p className="text-white/90 leading-relaxed whitespace-pre-wrap">
-                      {msg.content}
-                    </p>
+                    <ChatMarkdown content={msg.content} />
 
                     {/* Render custom agent list if metadata indicates agent-list type */}
                     {msg.metadata?.type === 'agent-list' &&
@@ -437,6 +481,45 @@ export default function CaisperPage() {
                         breakdown={msg.metadata.breakdown}
                         network={msg.metadata.network}
                         myTake={msg.metadata.myTake}
+                        badges={msg.metadata.badges}
+                        onActionClick={handleSend}
+                      />
+                    )}
+
+                    {/* Render trust assessment card if metadata type is trust-assessment */}
+                    {msg.metadata?.type === 'trust-assessment' && (
+                      <TrustAssessmentCard
+                        agentAddress={msg.metadata.agentAddress}
+                        greenFlags={msg.metadata.greenFlags || []}
+                        yellowFlags={msg.metadata.yellowFlags || []}
+                        redFlags={msg.metadata.redFlags || []}
+                        scoreData={msg.metadata.scoreData}
+                        onActionClick={handleSend}
+                      />
+                    )}
+
+                    {/* Render agent directory if metadata type is agent-directory */}
+                    {msg.metadata?.type === 'agent-directory' && (
+                      <AgentDirectoryCard
+                        agents={msg.metadata.agents || []}
+                        totalAgents={msg.metadata.totalAgents || 0}
+                        totalEndpoints={msg.metadata.totalEndpoints || 0}
+                        agentsWithEndpoints={msg.metadata.agentsWithEndpoints || 0}
+                        onActionClick={handleSend}
+                      />
+                    )}
+
+                    {/* Render token evaluation card if metadata type is token-evaluation */}
+                    {msg.metadata?.type === 'token-evaluation' && (
+                      <TokenEvaluationCard
+                        agentAddress={msg.metadata.agentAddress}
+                        totalValue={msg.metadata.totalValue}
+                        tokenCount={msg.metadata.tokenCount}
+                        verifiedCount={msg.metadata.verifiedCount}
+                        riskyCount={msg.metadata.riskyCount}
+                        avgExploitScore={msg.metadata.avgExploitScore}
+                        tokens={msg.metadata.tokens}
+                        onActionClick={handleSend}
                       />
                     )}
                   </div>

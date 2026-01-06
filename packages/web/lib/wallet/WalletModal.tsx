@@ -38,58 +38,28 @@ export function WalletModal({ open, onOpenChange }: WalletModalProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Connect Wallet</DialogTitle>
-          <DialogDescription>
-            Choose a wallet to connect to GhostSpeak
-          </DialogDescription>
+          <DialogDescription>Choose a wallet to connect to GhostSpeak</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 py-4">
           {wallets.length === 0 ? (
             <div className="text-center py-8 space-y-4">
-              <p className="text-sm text-muted-foreground">
-                No Solana wallets detected
-              </p>
+              <p className="text-sm text-muted-foreground">No Solana wallets detected</p>
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  Install one of these wallets:
-                </p>
+                <p className="text-xs text-muted-foreground">Install one of these wallets:</p>
                 <div className="flex gap-2 justify-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                  >
-                    <a
-                      href="https://phantom.app/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                  <Button variant="outline" size="sm" asChild>
+                    <a href="https://phantom.app/" target="_blank" rel="noopener noreferrer">
                       Phantom
                     </a>
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                  >
-                    <a
-                      href="https://solflare.com/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                  <Button variant="outline" size="sm" asChild>
+                    <a href="https://solflare.com/" target="_blank" rel="noopener noreferrer">
                       Solflare
                     </a>
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                  >
-                    <a
-                      href="https://backpack.app/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                  <Button variant="outline" size="sm" asChild>
+                    <a href="https://backpack.app/" target="_blank" rel="noopener noreferrer">
                       Backpack
                     </a>
                   </Button>
@@ -105,18 +75,12 @@ export function WalletModal({ open, onOpenChange }: WalletModalProps) {
                 className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary hover:bg-accent/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {wallet.icon && (
-                  <img
-                    src={wallet.icon}
-                    alt={wallet.name}
-                    className="w-8 h-8 rounded-lg"
-                  />
+                  <img src={wallet.icon} alt={wallet.name} className="w-8 h-8 rounded-lg" />
                 )}
                 <div className="flex-1 text-left">
                   <div className="font-medium">{wallet.name}</div>
                   {connecting && selectedWallet === wallet.name && (
-                    <div className="text-xs text-muted-foreground">
-                      Connecting...
-                    </div>
+                    <div className="text-xs text-muted-foreground">Connecting...</div>
                   )}
                 </div>
                 {connecting && selectedWallet === wallet.name && (

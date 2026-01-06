@@ -80,8 +80,7 @@ export function UseCases() {
             transition={{ delay: 0.1 }}
             className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter mb-6"
           >
-            Built for{' '}
-            <span className="text-primary italic">Scale</span>
+            Built for <span className="text-primary italic">Scale</span>
           </motion.h2>
 
           <motion.p

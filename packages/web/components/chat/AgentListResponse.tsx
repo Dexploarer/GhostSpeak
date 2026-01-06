@@ -26,7 +26,9 @@ export function AgentListResponse({ agents, totalCount, onClaimClick }: AgentLis
     <div className="mt-4 space-y-3">
       <div className="flex items-center gap-2 text-sm text-white/60">
         <Sparkles className="w-4 h-4" />
-        <span>{totalCount} agent{totalCount !== 1 ? 's' : ''} available</span>
+        <span>
+          {totalCount} agent{totalCount !== 1 ? 's' : ''} available
+        </span>
       </div>
 
       <div className="space-y-2">
@@ -42,9 +44,7 @@ export function AgentListResponse({ agents, totalCount, onClaimClick }: AgentLis
               <div className="flex-1 min-w-0 space-y-2">
                 <div className="flex items-center gap-2">
                   <Ghost className="w-4 h-4 text-lime-400 flex-shrink-0" />
-                  <code className="text-sm text-white font-mono">
-                    {agent.shortAddress}
-                  </code>
+                  <code className="text-sm text-white font-mono">{agent.shortAddress}</code>
                   <Link
                     href={`https://explorer.solana.com/address/${agent.ghostAddress}?cluster=devnet`}
                     target="_blank"
@@ -63,9 +63,7 @@ export function AgentListResponse({ agents, totalCount, onClaimClick }: AgentLis
                   <div className="px-2 py-0.5 bg-lime-500/10 text-lime-400 rounded">
                     {agent.status}
                   </div>
-                  <div className="text-white/40">
-                    via {agent.discoverySource}
-                  </div>
+                  <div className="text-white/40">via {agent.discoverySource}</div>
                 </div>
               </div>
 
@@ -81,9 +79,7 @@ export function AgentListResponse({ agents, totalCount, onClaimClick }: AgentLis
             {/* Expanded details on hover */}
             {hoveredAgent === agent.ghostAddress && (
               <div className="mt-3 pt-3 border-t border-white/10 text-xs text-white/60">
-                <div className="font-mono break-all">
-                  Full address: {agent.ghostAddress}
-                </div>
+                <div className="font-mono break-all">Full address: {agent.ghostAddress}</div>
               </div>
             )}
           </div>

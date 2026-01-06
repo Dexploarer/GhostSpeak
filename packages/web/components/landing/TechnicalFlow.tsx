@@ -20,7 +20,8 @@ export function TechnicalFlow() {
       icon: Wallet,
       number: '01',
       title: 'Connect Wallet',
-      description: 'Your AI agent connects a Solana wallet. This keypair becomes the agent\'s permanent identity.',
+      description:
+        "Your AI agent connects a Solana wallet. This keypair becomes the agent's permanent identity.",
       technical: 'Ed25519 keypair → did:sol:${publicKey}',
       color: 'bg-blue-500',
     },
@@ -28,7 +29,8 @@ export function TechnicalFlow() {
       icon: Database,
       number: '02',
       title: 'Register on Chain',
-      description: 'A PDA is created storing agent metadata, capabilities, and initial reputation score.',
+      description:
+        'A PDA is created storing agent metadata, capabilities, and initial reputation score.',
       technical: 'PDA = findProgramAddress([agent_pubkey], PROGRAM_ID)',
       color: 'bg-purple-500',
     },
@@ -36,7 +38,8 @@ export function TechnicalFlow() {
       icon: Shield,
       number: '03',
       title: 'Build Reputation',
-      description: 'Complete jobs, receive endorsements, and track x402 payments. Score updates on-chain.',
+      description:
+        'Complete jobs, receive endorsements, and track x402 payments. Score updates on-chain.',
       technical: 'ghost_score = f(tx_history, endorsements, age)',
       color: 'bg-primary',
     },
@@ -44,7 +47,8 @@ export function TechnicalFlow() {
       icon: Globe,
       number: '04',
       title: 'Use Anywhere',
-      description: 'Export W3C credentials. Sync to EVM chains via Crossmint. Verify reputation anywhere.',
+      description:
+        'Export W3C credentials. Sync to EVM chains via Crossmint. Verify reputation anywhere.',
       technical: 'VC → IPFS → CID stored in PDA → EVM bridge',
       color: 'bg-orange-500',
     },
@@ -111,10 +115,14 @@ export function TechnicalFlow() {
                 <div className="p-6 rounded-2xl bg-background border border-border hover:border-primary/30 transition-all h-full">
                   {/* Step number and icon */}
                   <div className="flex items-center gap-4 mb-4">
-                    <div className={`w-12 h-12 rounded-xl ${step.color} flex items-center justify-center`}>
+                    <div
+                      className={`w-12 h-12 rounded-xl ${step.color} flex items-center justify-center`}
+                    >
                       <step.icon className="w-6 h-6 text-white" />
                     </div>
-                    <span className="text-3xl font-black text-muted-foreground/30">{step.number}</span>
+                    <span className="text-3xl font-black text-muted-foreground/30">
+                      {step.number}
+                    </span>
                   </div>
 
                   <h3 className="text-xl font-bold mb-2">{step.title}</h3>
@@ -149,15 +157,21 @@ export function TechnicalFlow() {
                 </span>
                 <ArrowRight className="w-4 h-4 text-zinc-600" />
                 <span className="px-3 py-1.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                  <JargonTooltip {...jargonDefinitions.pda} showIcon={false}>Solana PDA</JargonTooltip>
+                  <JargonTooltip {...jargonDefinitions.pda} showIcon={false}>
+                    Solana PDA
+                  </JargonTooltip>
                 </span>
                 <ArrowRight className="w-4 h-4 text-zinc-600" />
                 <span className="px-3 py-1.5 rounded bg-primary/20 text-primary border border-primary/30">
-                  <JargonTooltip {...jargonDefinitions.ghostScore} showIcon={false}>Ghost Score</JargonTooltip>
+                  <JargonTooltip {...jargonDefinitions.ghostScore} showIcon={false}>
+                    Ghost Score
+                  </JargonTooltip>
                 </span>
                 <ArrowRight className="w-4 h-4 text-zinc-600" />
                 <span className="px-3 py-1.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">
-                  <JargonTooltip {...jargonDefinitions.verifiableCredentials} showIcon={false}>W3C VC</JargonTooltip>
+                  <JargonTooltip {...jargonDefinitions.verifiableCredentials} showIcon={false}>
+                    W3C VC
+                  </JargonTooltip>
                 </span>
               </div>
 

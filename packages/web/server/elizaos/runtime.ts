@@ -22,8 +22,13 @@ import { ghostScoreAction } from './actions/ghostScore'
 import { getCredentialsAction } from './actions/getCredentials'
 import { issueCredentialAction } from './actions/issueCredential'
 import { trustAssessmentAction } from './actions/trustAssessment'
+import { agentDirectoryAction } from './actions/agentDirectory'
+import { evaluateAgentTokensAction } from './actions/evaluateAgentTokens'
 
 // Convex database adapter for ElizaOS
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-empty-function */
 class ConvexDatabaseAdapter implements IDatabaseAdapter {
   private convex: ConvexHttpClient
 
@@ -91,20 +96,33 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     }
   }
 
-  async getMemoriesByRoomIds(params: any): Promise<any[]> { return [] }
-  async getMemoriesByWorldId(worldId: any): Promise<any[]> { return [] }
-  async getMemoryById(id: string): Promise<any | null> { return null }
-  async createMemory(memory: any, tableName?: string): Promise<`${string}-${string}-${string}-${string}-${string}`> {
+  async getMemoriesByRoomIds(params: any): Promise<any[]> {
+    return []
+  }
+  async getMemoriesByWorldId(worldId: any): Promise<any[]> {
+    return []
+  }
+  async getMemoryById(id: string): Promise<any | null> {
+    return null
+  }
+  async createMemory(
+    memory: any,
+    tableName?: string
+  ): Promise<`${string}-${string}-${string}-${string}-${string}`> {
     // Memories are already being stored via storeUserMessage/storeAgentResponse
     // Return a UUID as required by the interface
     return crypto.randomUUID() as `${string}-${string}-${string}-${string}-${string}`
   }
   async removeMemory(memoryId: string, tableName?: string): Promise<void> {}
   async removeAllMemories(roomId: string, tableName?: string): Promise<void> {}
-  async countMemories(roomId: string, unique?: boolean, tableName?: string): Promise<number> { return 0 }
+  async countMemories(roomId: string, unique?: boolean, tableName?: string): Promise<number> {
+    return 0
+  }
 
   // Goals, rooms, participants - minimal implementation for stateless chat
-  async getGoals(params: any): Promise<any[]> { return [] }
+  async getGoals(params: any): Promise<any[]> {
+    return []
+  }
   async updateGoal(goal: any): Promise<void> {}
   async createGoal(goal: any): Promise<void> {}
   async removeGoal(goalId: string): Promise<void> {}
@@ -118,37 +136,82 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   }
   async removeRoom(roomId: string): Promise<void> {}
 
-  async getRoomsForParticipant(userId: string): Promise<any[]> { return [] }
-  async getRoomsForParticipants(userIds: string[]): Promise<any[]> { return [] }
-  async addParticipant(userId: string, roomId: string): Promise<boolean> { return true }
-  async removeParticipant(userId: string, roomId: string): Promise<boolean> { return true }
-  async getParticipantsForAccount(userId: string): Promise<any[]> { return [] }
-  async getParticipantUserState(roomId: string, userId: string): Promise<'FOLLOWED' | 'MUTED' | null> { return null }
-  async setParticipantUserState(roomId: string, userId: string, state: 'FOLLOWED' | 'MUTED' | null): Promise<void> {}
-  async getParticipantsForRoom(roomId: string): Promise<any[]> { return [] }
+  async getRoomsForParticipant(userId: string): Promise<any[]> {
+    return []
+  }
+  async getRoomsForParticipants(userIds: string[]): Promise<any[]> {
+    return []
+  }
+  async addParticipant(userId: string, roomId: string): Promise<boolean> {
+    return true
+  }
+  async removeParticipant(userId: string, roomId: string): Promise<boolean> {
+    return true
+  }
+  async getParticipantsForAccount(userId: string): Promise<any[]> {
+    return []
+  }
+  async getParticipantUserState(
+    roomId: string,
+    userId: string
+  ): Promise<'FOLLOWED' | 'MUTED' | null> {
+    return null
+  }
+  async setParticipantUserState(
+    roomId: string,
+    userId: string,
+    state: 'FOLLOWED' | 'MUTED' | null
+  ): Promise<void> {}
+  async getParticipantsForRoom(roomId: string): Promise<any[]> {
+    return []
+  }
 
-  async getRelationship(params: any): Promise<any | null> { return null }
-  async getRelationships(params: any): Promise<any[]> { return [] }
-  async createRelationship(params: any): Promise<boolean> { return true }
+  async getRelationship(params: any): Promise<any | null> {
+    return null
+  }
+  async getRelationships(params: any): Promise<any[]> {
+    return []
+  }
+  async createRelationship(params: any): Promise<boolean> {
+    return true
+  }
   async updateRelationship(relationship: any): Promise<void> {}
 
-  async getCache<T>(key: string): Promise<T | undefined> { return undefined }
-  async setCache<T>(key: string, value: T): Promise<boolean> { return true }
-  async deleteCache(key: string): Promise<boolean> { return true }
+  async getCache<T>(key: string): Promise<T | undefined> {
+    return undefined
+  }
+  async setCache<T>(key: string, value: T): Promise<boolean> {
+    return true
+  }
+  async deleteCache(key: string): Promise<boolean> {
+    return true
+  }
 
   async getAccountById(userId: string): Promise<any | null> {
     // Users are stored in Convex users table
     return { id: userId }
   }
-  async createAccount(account: any): Promise<boolean> { return true }
+  async createAccount(account: any): Promise<boolean> {
+    return true
+  }
 
-  async getActorById(params: any): Promise<any[]> { return [] }
-  async getActorDetails(params: any): Promise<any[]> { return [] }
+  async getActorById(params: any): Promise<any[]> {
+    return []
+  }
+  async getActorDetails(params: any): Promise<any[]> {
+    return []
+  }
 
   // Additional required methods for full IDatabaseAdapter compliance
-  async getMemoriesByIds(ids: any[], tableName?: string): Promise<any[]> { return [] }
-  async searchMemories(params: any): Promise<any[]> { return [] }
-  async updateMemory(memory: any): Promise<boolean> { return true }
+  async getMemoriesByIds(ids: any[], tableName?: string): Promise<any[]> {
+    return []
+  }
+  async searchMemories(params: any): Promise<any[]> {
+    return []
+  }
+  async updateMemory(memory: any): Promise<boolean> {
+    return true
+  }
   async deleteMemory(memoryId: any): Promise<void> {}
   async deleteManyMemories(memoryIds: any[]): Promise<void> {}
   async deleteAllMemories(roomId: string, tableName: string): Promise<void> {}
@@ -156,7 +219,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async getEntitiesByIds(entityIds: any[]): Promise<any[] | null> {
     // Return entity objects for elizaOS v1.7.0
     // The runtime expects to find the agent as an entity
-    return entityIds.map(id => ({
+    return entityIds.map((id) => ({
       id,
       name: 'Caisper',
       type: 'agent',
@@ -165,13 +228,28 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
       metadata: {},
     }))
   }
-  async getEntitiesForRoom(roomId: any, includeComponents?: boolean): Promise<any[]> { return [] }
-  async createEntities(entities: any[]): Promise<boolean> { return true }
+  async getEntitiesForRoom(roomId: any, includeComponents?: boolean): Promise<any[]> {
+    return []
+  }
+  async createEntities(entities: any[]): Promise<boolean> {
+    return true
+  }
   async updateEntity(entity: any): Promise<void> {}
 
-  async getComponent(entityId: any, type: string, worldId?: any, sourceEntityId?: any): Promise<any | null> { return null }
-  async getComponents(entityId: any, worldId?: any, sourceEntityId?: any): Promise<any[]> { return [] }
-  async createComponent(component: any): Promise<boolean> { return true }
+  async getComponent(
+    entityId: any,
+    type: string,
+    worldId?: any,
+    sourceEntityId?: any
+  ): Promise<any | null> {
+    return null
+  }
+  async getComponents(entityId: any, worldId?: any, sourceEntityId?: any): Promise<any[]> {
+    return []
+  }
+  async createComponent(component: any): Promise<boolean> {
+    return true
+  }
   async updateComponent(component: any): Promise<void> {}
   async deleteComponent(componentId: any): Promise<void> {}
 
@@ -191,44 +269,85 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
       status: 'active',
     }
   }
-  async getAgents(): Promise<any[]> { return [] }
-  async createAgent(agent: any): Promise<boolean> { return true }
-  async updateAgent(agentId: any, agent: any): Promise<boolean> { return true }
-  async deleteAgent(agentId: any): Promise<boolean> { return true }
+  async getAgents(): Promise<any[]> {
+    return []
+  }
+  async createAgent(agent: any): Promise<boolean> {
+    return true
+  }
+  async updateAgent(agentId: any, agent: any): Promise<boolean> {
+    return true
+  }
+  async deleteAgent(agentId: any): Promise<boolean> {
+    return true
+  }
   async ensureEmbeddingDimension(dimension: number): Promise<void> {}
 
   async log(params: any): Promise<void> {}
-  async getLogs(params: any): Promise<any[]> { return [] }
+  async getLogs(params: any): Promise<any[]> {
+    return []
+  }
   async deleteLog(logId: any): Promise<void> {}
 
-  async createWorld(world: any): Promise<any> { return world.id || `world-${Date.now()}` }
-  async getWorld(id: any): Promise<any | null> { return { id } }
+  async createWorld(world: any): Promise<any> {
+    return world.id || `world-${Date.now()}`
+  }
+  async getWorld(id: any): Promise<any | null> {
+    return { id }
+  }
   async removeWorld(id: any): Promise<void> {}
-  async getAllWorlds(): Promise<any[]> { return [] }
+  async getAllWorlds(): Promise<any[]> {
+    return []
+  }
   async updateWorld(world: any): Promise<void> {}
-  async getRoomsByIds(roomIds: any[]): Promise<any[] | null> { return roomIds.map(id => ({ id })) }
-  async createRooms(rooms: any[]): Promise<any[]> { return rooms.map(r => r.id || `room-${Date.now()}`) }
+  async getRoomsByIds(roomIds: any[]): Promise<any[] | null> {
+    return roomIds.map((id) => ({ id }))
+  }
+  async createRooms(rooms: any[]): Promise<any[]> {
+    return rooms.map((r) => r.id || `room-${Date.now()}`)
+  }
   async deleteRoom(roomId: any): Promise<void> {}
   async deleteRoomsByWorldId(worldId: any): Promise<void> {}
   async updateRoom(room: any): Promise<void> {}
-  async getRoomsByWorld(worldId: any): Promise<any[]> { return [] }
+  async getRoomsByWorld(worldId: any): Promise<any[]> {
+    return []
+  }
 
   // Participant methods required by v1.7.0
-  async getParticipantsForEntity(entityId: any): Promise<any[]> { return [] }
-  async isRoomParticipant(roomId: any, entityId: any): Promise<boolean> { return false }
-  async addParticipantsRoom(entityIds: any[], roomId: any): Promise<boolean> { return true }
+  async getParticipantsForEntity(entityId: any): Promise<any[]> {
+    return []
+  }
+  async isRoomParticipant(roomId: any, entityId: any): Promise<boolean> {
+    return false
+  }
+  async addParticipantsRoom(entityIds: any[], roomId: any): Promise<boolean> {
+    return true
+  }
 
-  async getCachedEmbeddings(params: any): Promise<any[]> { return [] }
+  async getCachedEmbeddings(params: any): Promise<any[]> {
+    return []
+  }
 
   // Task management methods required by v1.7.0
-  async createTask(task: any): Promise<any> { return task.id || crypto.randomUUID() }
-  async getTasks(params: any): Promise<any[]> { return [] }
-  async getTask(taskId: any): Promise<any | null> { return null }
+  async createTask(task: any): Promise<any> {
+    return task.id || crypto.randomUUID()
+  }
+  async getTasks(params: any): Promise<any[]> {
+    return []
+  }
+  async getTask(taskId: any): Promise<any | null> {
+    return null
+  }
   async updateTask(taskId: any, task: any): Promise<void> {}
   async deleteTask(taskId: any): Promise<void> {}
-  async getTasksByName(name: string): Promise<any[]> { return [] }
+  async getTasksByName(name: string): Promise<any[]> {
+    return []
+  }
   async deleteTasks(params: any): Promise<void> {}
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */
+/* eslint-enable @typescript-eslint/no-unused-vars */
+/* eslint-enable @typescript-eslint/no-empty-function */
 
 // Singleton instance
 let agentRuntime: IAgentRuntime | null = null
@@ -268,7 +387,7 @@ export async function initializeAgent(): Promise<IAgentRuntime> {
         AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY!,
         SOLANA_RPC_URL: process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
         CONVEX_URL: process.env.NEXT_PUBLIC_CONVEX_URL || '',
-      }
+      },
     })
 
     // Initialize runtime
@@ -282,7 +401,9 @@ export async function initializeAgent(): Promise<IAgentRuntime> {
     runtime.registerAction(getCredentialsAction)
     runtime.registerAction(issueCredentialAction)
     runtime.registerAction(trustAssessmentAction)
-    console.log('📝 Registered 7 web-app actions: discoverAgents, claimAgent, queryX402Agent, ghostScore, getCredentials, issueCredential, trustAssessment')
+    runtime.registerAction(agentDirectoryAction)
+    runtime.registerAction(evaluateAgentTokensAction)
+    console.log('📝 Registered 9 web-app actions including evaluateAgentTokens')
 
     agentRuntime = runtime
     console.log('✅ Casper agent initialized successfully')
@@ -430,11 +551,14 @@ Respond in character as Caisper - be helpful, slightly sarcastic, use ghost puns
           includeCharacter: true,
         })
 
-        responseText = result?.text || "I'm having trouble formulating a response. Try asking me something specific about agents, credentials, or reputation!"
+        responseText =
+          result?.text ||
+          "I'm having trouble formulating a response. Try asking me something specific about agents, credentials, or reputation!"
         console.log('✅ Generated conversational response')
       } catch (error) {
         console.error('❌ Error generating LLM response:', error)
-        responseText = "I'm having some technical difficulties right now. Try asking me about available agents or credential verification!"
+        responseText =
+          "I'm having some technical difficulties right now. Try asking me about available agents or credential verification!"
       }
     }
 
@@ -447,6 +571,7 @@ Respond in character as Caisper - be helpful, slightly sarcastic, use ghost puns
       text: responseText,
       action: triggeredAction,
       metadata: {
+        type: actionMetadata.type, // Explicit type for UI card rendering
         triggeredAction,
         ...actionMetadata,
       },

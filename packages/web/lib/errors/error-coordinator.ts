@@ -60,7 +60,8 @@ export interface ErrorCoordinatorConfig {
 function classifyError(error: unknown): ErrorType {
   if (!error) return ErrorType.UNKNOWN
 
-  const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase()
+  const errorMessage =
+    error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase()
 
   // Network errors
   if (
@@ -180,12 +181,7 @@ export function coordinateError(
   operation: string,
   config: ErrorCoordinatorConfig = {}
 ): ErrorMetadata {
-  const {
-    showToast = true,
-    logToConsole = true,
-    reportToService = false,
-    customReporter,
-  } = config
+  const { showToast = true, logToConsole = true, reportToService = false, customReporter } = config
 
   // Classify the error
   const errorType = classifyError(error)
@@ -240,10 +236,7 @@ export function coordinateError(
  * @param operation - Human-readable operation name
  * @param config - Optional error coordinator configuration
  */
-export function createMutationErrorHandler(
-  operation: string,
-  config?: ErrorCoordinatorConfig
-) {
+export function createMutationErrorHandler(operation: string, config?: ErrorCoordinatorConfig) {
   return (error: unknown) => {
     coordinateError(error, operation, config)
   }
@@ -257,10 +250,7 @@ export function createMutationErrorHandler(
  * @param operation - Human-readable operation name
  * @param config - Optional error coordinator configuration
  */
-export function createQueryErrorHandler(
-  operation: string,
-  config?: ErrorCoordinatorConfig
-) {
+export function createQueryErrorHandler(operation: string, config?: ErrorCoordinatorConfig) {
   return (error: unknown) => {
     coordinateError(error, operation, {
       ...config,

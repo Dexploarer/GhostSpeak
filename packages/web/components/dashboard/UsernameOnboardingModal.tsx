@@ -40,10 +40,8 @@ export function UsernameOnboardingModal({
   // Username validation state
   const usernameStatus = useMemo(() => {
     if (username.length === 0) return { status: 'empty' as const, message: '' }
-    if (username.length < 3)
-      return { status: 'invalid' as const, message: 'At least 3 characters' }
-    if (username.length > 20)
-      return { status: 'invalid' as const, message: 'Max 20 characters' }
+    if (username.length < 3) return { status: 'invalid' as const, message: 'At least 3 characters' }
+    if (username.length > 20) return { status: 'invalid' as const, message: 'Max 20 characters' }
     if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
       return { status: 'invalid' as const, message: 'Letters, numbers, _ and - only' }
     }
@@ -54,8 +52,7 @@ export function UsernameOnboardingModal({
     return { status: 'available' as const, message: 'Available!' }
   }, [username, usernameCheck])
 
-  const canSubmit =
-    usernameStatus.status === 'available' && !isSubmitting && !isAnalyzingWallet
+  const canSubmit = usernameStatus.status === 'available' && !isSubmitting && !isAnalyzingWallet
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -119,12 +116,8 @@ export function UsernameOnboardingModal({
             <div className="w-24 h-28 mb-4">
               <MeshGradientGhost animated={true} variant="caisper" />
             </div>
-            <h2 className="text-2xl font-light text-white text-center">
-              Welcome to GhostSpeak
-            </h2>
-            <p className="text-white/60 text-center mt-2">
-              Choose a username to get started
-            </p>
+            <h2 className="text-2xl font-light text-white text-center">Welcome to GhostSpeak</h2>
+            <p className="text-white/60 text-center mt-2">Choose a username to get started</p>
           </div>
 
           {/* Form */}
@@ -144,8 +137,7 @@ export function UsernameOnboardingModal({
                   className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 transition-all ${
                     usernameStatus.status === 'available'
                       ? 'border-green-500/50 focus:ring-green-500/30'
-                      : usernameStatus.status === 'taken' ||
-                          usernameStatus.status === 'invalid'
+                      : usernameStatus.status === 'taken' || usernameStatus.status === 'invalid'
                         ? 'border-red-500/50 focus:ring-red-500/30'
                         : 'border-white/10 focus:ring-primary/30'
                   }`}
@@ -160,8 +152,7 @@ export function UsernameOnboardingModal({
                   {usernameStatus.status === 'available' && (
                     <Check className="w-5 h-5 text-green-500" />
                   )}
-                  {(usernameStatus.status === 'taken' ||
-                    usernameStatus.status === 'invalid') && (
+                  {(usernameStatus.status === 'taken' || usernameStatus.status === 'invalid') && (
                     <X className="w-5 h-5 text-red-500" />
                   )}
                 </div>
@@ -171,8 +162,7 @@ export function UsernameOnboardingModal({
                   className={`text-xs ${
                     usernameStatus.status === 'available'
                       ? 'text-green-400'
-                      : usernameStatus.status === 'taken' ||
-                          usernameStatus.status === 'invalid'
+                      : usernameStatus.status === 'taken' || usernameStatus.status === 'invalid'
                         ? 'text-red-400'
                         : 'text-white/40'
                   }`}
@@ -262,4 +252,3 @@ export function UsernameOnboardingModal({
     </motion.div>
   )
 }
-

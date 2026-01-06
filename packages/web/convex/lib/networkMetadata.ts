@@ -40,9 +40,7 @@ export function getNetworkMetadata(): NetworkMetadata {
   const environment: NetworkEnvironment = isDevnet ? 'devnet' : 'mainnet-beta'
 
   // Program and token addresses
-  const programId = isDevnet
-    ? '4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB'
-    : '' // Mainnet program not yet deployed
+  const programId = isDevnet ? '4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB' : '' // Mainnet program not yet deployed
 
   const ghostTokenMint = isDevnet
     ? 'HaFP2LFWJ8fwe5j837CR6YPJpAwsN27hVqNDAnLcwt81'

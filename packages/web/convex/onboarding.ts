@@ -255,7 +255,9 @@ export const recordHistoricalInteraction = internalMutation({
     // Check if we already recorded this interaction
     const existing = await ctx.db
       .query('historicalInteractions')
-      .withIndex('by_signature', (q: any) => q.eq('transactionSignature', args.transactionSignature))
+      .withIndex('by_signature', (q: any) =>
+        q.eq('transactionSignature', args.transactionSignature)
+      )
       .first()
 
     if (existing) {
@@ -467,9 +469,10 @@ export const analyzeWalletHistory = action({
             // Check if this tx involves an x402 facilitator
             const involvesFacilitator =
               tx.accountData?.some((acc: any) => X402_FACILITATORS.includes(acc.account)) ||
-              tokenTransfers.some((t: any) =>
-                X402_FACILITATORS.includes(t.fromUserAccount) ||
-                X402_FACILITATORS.includes(t.toUserAccount)
+              tokenTransfers.some(
+                (t: any) =>
+                  X402_FACILITATORS.includes(t.fromUserAccount) ||
+                  X402_FACILITATORS.includes(t.toUserAccount)
               )
 
             if (involvesFacilitator) {
@@ -502,7 +505,10 @@ export const analyzeWalletHistory = action({
               for (const transfer of nativeTransfers) {
                 if (transfer.fromUserAccount === args.walletAddress) {
                   const recipient = transfer.toUserAccount
-                  if (!X402_FACILITATORS.includes(recipient) && !discoveredAgents.includes(recipient)) {
+                  if (
+                    !X402_FACILITATORS.includes(recipient) &&
+                    !discoveredAgents.includes(recipient)
+                  ) {
                     interactions.push({
                       agentWallet: recipient,
                       signature: tx.signature,
@@ -551,8 +557,8 @@ export const analyzeWalletHistory = action({
       // ─── CALCULATE SCORES ────────────────────────────────────────────────────
 
       // Base wallet history score (0-1000)
-      const ageScore = Math.min(walletAge, 365) / 365 * 400
-      const txScore = Math.min(walletTransactionCount, 100) / 100 * 600
+      const ageScore = (Math.min(walletAge, 365) / 365) * 400
+      const txScore = (Math.min(walletTransactionCount, 100) / 100) * 600
       walletHistoryScore = Math.round(ageScore + txScore)
 
       // Ghosthunter boost from x402 payments (each payment = 150 points, up to 3500)

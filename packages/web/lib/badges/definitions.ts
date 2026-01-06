@@ -166,7 +166,7 @@ export const BADGE_DEFINITIONS: Record<string, BadgeDefinition> = {
     name: 'Capability Verified',
     description: 'Proof of claimed capabilities.',
     howToGet: 'Pass automated capability tests initiated by the Observatory.',
-    meaning: "It can actually do what it says it can do (e.g., generate images, code).",
+    meaning: 'It can actually do what it says it can do (e.g., generate images, code).',
     icon: Cpu,
     rarity: 'RARE',
     type: 'CREDENTIAL',

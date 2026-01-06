@@ -10,7 +10,8 @@ import { api } from '@/convex/_generated/api'
 
 export const queryX402AgentAction: Action = {
   name: 'QUERY_X402_AGENT',
-  description: 'Query an x402 agent endpoint to get structured data responses. Supports all query types including GET and POST requests.',
+  description:
+    'Query an x402 agent endpoint to get structured data responses. Supports all query types including GET and POST requests.',
 
   // Validate: trigger on queries about x402 agents, querying endpoints, etc.
   validate: async (runtime: IAgentRuntime, message: Memory, state?: State) => {
@@ -32,11 +33,18 @@ export const queryX402AgentAction: Action = {
 
     // Also match if user mentions a specific agent address or endpoint
     const hasAgentAddress = /[A-HJ-NP-Za-km-z1-9]{32,44}/.test(text)
-    const hasEndpoint = text.includes('http') || text.includes('api.') || text.includes('.fun') || text.includes('.dev')
+    const hasEndpoint =
+      text.includes('http') ||
+      text.includes('api.') ||
+      text.includes('.fun') ||
+      text.includes('.dev')
 
-    return queryTriggers.some(trigger => text.includes(trigger)) || 
-           (hasAgentAddress && (text.includes('query') || text.includes('call') || text.includes('test'))) ||
-           (hasEndpoint && (text.includes('query') || text.includes('call') || text.includes('test')))
+    return (
+      queryTriggers.some((trigger) => text.includes(trigger)) ||
+      (hasAgentAddress &&
+        (text.includes('query') || text.includes('call') || text.includes('test'))) ||
+      (hasEndpoint && (text.includes('query') || text.includes('call') || text.includes('test')))
+    )
   },
 
   // Handler: query x402 agent endpoint and return structured response
@@ -49,7 +57,7 @@ export const queryX402AgentAction: Action = {
   ) => {
     try {
       const text = (message.content.text || '').toLowerCase()
-      
+
       // Get Convex client
       const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
@@ -139,7 +147,7 @@ export const queryX402AgentAction: Action = {
         method: queryMethod,
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
         redirect: 'manual' as RequestRedirect, // Don't follow redirects, we want to see 402
       }
@@ -161,7 +169,7 @@ export const queryX402AgentAction: Action = {
         // Handle 402 Payment Required (expected for x402 endpoints)
         if (responseStatus === 402) {
           const paymentInfo = await response.json().catch(() => ({}))
-          
+
           responseData = {
             status: 402,
             message: 'Payment Required (x402)',
@@ -170,11 +178,11 @@ export const queryX402AgentAction: Action = {
             method: queryMethod,
           }
           isStructured = true
-        } 
+        }
         // Handle successful responses
         else if (responseStatus >= 200 && responseStatus < 300) {
           const contentType = response.headers.get('content-type') || ''
-          
+
           if (contentType.includes('application/json')) {
             responseData = await response.json()
             isStructured = true
@@ -189,7 +197,7 @@ export const queryX402AgentAction: Action = {
             }
             isStructured = true
           }
-        } 
+        }
         // Handle other status codes
         else {
           try {
@@ -267,10 +275,12 @@ export const queryX402AgentAction: Action = {
           responseTime: responseTimeMs,
           data: responseData,
           isStructured,
-          agent: agentData ? {
-            address: agentData.ghostAddress,
-            name: agentData.name,
-          } : null,
+          agent: agentData
+            ? {
+                address: agentData.ghostAddress,
+                name: agentData.name,
+              }
+            : null,
         },
       }
 
@@ -287,9 +297,8 @@ export const queryX402AgentAction: Action = {
           responseTime: responseTimeMs,
           data: responseData,
           isStructured,
-        }
+        },
       }
-
     } catch (error) {
       console.error('Error querying x402 agent:', error)
 
@@ -303,7 +312,7 @@ export const queryX402AgentAction: Action = {
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       }
     }
   },
@@ -312,7 +321,9 @@ export const queryX402AgentAction: Action = {
     [
       {
         name: '{{user1}}',
-        content: { text: 'Query the x402 agent endpoint for agent SAT8g2xU7AFy7eUmNJ9SNrM6yYo7LDCi13GXJ8Ez9kC' },
+        content: {
+          text: 'Query the x402 agent endpoint for agent SAT8g2xU7AFy7eUmNJ9SNrM6yYo7LDCi13GXJ8Ez9kC',
+        },
       },
       {
         name: '{{agent}}',

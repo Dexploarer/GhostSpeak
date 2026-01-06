@@ -2,14 +2,17 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { getWallets, type Wallet, type WalletAccount } from '@wallet-standard/core'
-import { type StandardConnectFeature, type StandardDisconnectFeature } from '@wallet-standard/features'
+import {
+  type StandardConnectFeature,
+  type StandardDisconnectFeature,
+} from '@wallet-standard/features'
 import {
   SolanaSignAndSendTransaction,
   SolanaSignMessage,
   SolanaSignTransaction,
   type SolanaSignAndSendTransactionFeature,
   type SolanaSignMessageFeature,
-  type SolanaSignTransactionFeature
+  type SolanaSignTransactionFeature,
 } from '@solana/wallet-standard-features'
 import { address, type Address } from '@solana/addresses'
 import { createSolanaRpc, type Rpc, type SolanaRpcApi } from '@solana/rpc'
@@ -61,7 +64,7 @@ interface WalletStandardProviderProps {
 export function WalletStandardProvider({
   children,
   endpoint,
-  autoConnect = true
+  autoConnect = true,
 }: WalletStandardProviderProps) {
   // State
   const [wallet, setWallet] = useState<Wallet | null>(null)
@@ -72,7 +75,8 @@ export function WalletStandardProvider({
 
   // Create RPC client
   const rpc = useMemo(() => {
-    const rpcUrl = endpoint || process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
+    const rpcUrl =
+      endpoint || process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
     return createSolanaRpc(rpcUrl)
   }, [endpoint])
 
@@ -96,8 +100,7 @@ export function WalletStandardProvider({
     // Helper to check if wallet supports Solana features
     // w.features is an object with feature names as keys, not an array
     const isSolanaWallet = (w: Wallet) =>
-      SolanaSignAndSendTransaction in w.features ||
-      SolanaSignTransaction in w.features
+      SolanaSignAndSendTransaction in w.features || SolanaSignTransaction in w.features
 
     // Get current wallets
     const currentWallets = walletsApi.get()
@@ -120,7 +123,7 @@ export function WalletStandardProvider({
 
     const lastConnectedWallet = localStorage.getItem('walletName')
     if (lastConnectedWallet && availableWallets.length > 0) {
-      const wallet = availableWallets.find(w => w.name === lastConnectedWallet)
+      const wallet = availableWallets.find((w) => w.name === lastConnectedWallet)
       if (wallet) {
         connect(lastConnectedWallet).catch(console.error)
       }
@@ -128,50 +131,59 @@ export function WalletStandardProvider({
   }, [autoConnect, availableWallets])
 
   // Connect to wallet
-  const connect = useCallback(async (walletName?: string) => {
-    setConnecting(true)
-    try {
-      // Find wallet by name or use first available
-      const targetWallet = walletName
-        ? availableWallets.find(w => w.name === walletName)
-        : availableWallets[0]
+  const connect = useCallback(
+    async (walletName?: string) => {
+      setConnecting(true)
+      try {
+        // Find wallet by name or use first available
+        const targetWallet = walletName
+          ? availableWallets.find((w) => w.name === walletName)
+          : availableWallets[0]
 
-      if (!targetWallet) {
-        throw new Error('No Solana wallets detected. Please install Phantom, Solflare, or Backpack.')
+        if (!targetWallet) {
+          throw new Error(
+            'No Solana wallets detected. Please install Phantom, Solflare, or Backpack.'
+          )
+        }
+
+        // Request connection
+        const connectFeature = targetWallet.features['standard:connect'] as
+          | StandardConnectFeature['standard:connect']
+          | undefined
+        if (!connectFeature) {
+          throw new Error(`Wallet ${targetWallet.name} does not support connection`)
+        }
+
+        const result = await connectFeature.connect()
+
+        if (result.accounts && result.accounts.length > 0) {
+          setWallet(targetWallet)
+          setAccount(result.accounts[0])
+          setConnected(true)
+
+          // Save to localStorage for auto-connect
+          localStorage.setItem('walletName', targetWallet.name)
+        } else {
+          throw new Error('No accounts returned from wallet')
+        }
+      } catch (error) {
+        console.error('Failed to connect wallet:', error)
+        throw error
+      } finally {
+        setConnecting(false)
       }
-
-      // Request connection
-      const connectFeature = targetWallet.features['standard:connect'] as StandardConnectFeature['standard:connect'] | undefined
-      if (!connectFeature) {
-        throw new Error(`Wallet ${targetWallet.name} does not support connection`)
-      }
-
-      const result = await connectFeature.connect()
-
-      if (result.accounts && result.accounts.length > 0) {
-        setWallet(targetWallet)
-        setAccount(result.accounts[0])
-        setConnected(true)
-
-        // Save to localStorage for auto-connect
-        localStorage.setItem('walletName', targetWallet.name)
-      } else {
-        throw new Error('No accounts returned from wallet')
-      }
-    } catch (error) {
-      console.error('Failed to connect wallet:', error)
-      throw error
-    } finally {
-      setConnecting(false)
-    }
-  }, [availableWallets])
+    },
+    [availableWallets]
+  )
 
   // Disconnect wallet
   const disconnect = useCallback(async () => {
     if (!wallet) return
 
     try {
-      const disconnectFeature = wallet.features['standard:disconnect'] as StandardDisconnectFeature['standard:disconnect'] | undefined
+      const disconnectFeature = wallet.features['standard:disconnect'] as
+        | StandardDisconnectFeature['standard:disconnect']
+        | undefined
       if (disconnectFeature) {
         await disconnectFeature.disconnect()
       }
@@ -186,84 +198,99 @@ export function WalletStandardProvider({
   }, [wallet])
 
   // Sign message
-  const signMessage = useCallback(async (message: Uint8Array): Promise<Uint8Array> => {
-    if (!wallet || !account) {
-      throw new Error('Wallet not connected')
-    }
+  const signMessage = useCallback(
+    async (message: Uint8Array): Promise<Uint8Array> => {
+      if (!wallet || !account) {
+        throw new Error('Wallet not connected')
+      }
 
-    const signMessageFeature = wallet.features[SolanaSignMessage] as SolanaSignMessageFeature[typeof SolanaSignMessage] | undefined
-    if (!signMessageFeature) {
-      throw new Error('Wallet does not support message signing')
-    }
+      const signMessageFeature = wallet.features[SolanaSignMessage] as
+        | SolanaSignMessageFeature[typeof SolanaSignMessage]
+        | undefined
+      if (!signMessageFeature) {
+        throw new Error('Wallet does not support message signing')
+      }
 
-    // Wallet Standard signMessage returns an array of outputs
-    const results = await signMessageFeature.signMessage({
-      account,
-      message,
-    })
+      // Wallet Standard signMessage returns an array of outputs
+      const results = await signMessageFeature.signMessage({
+        account,
+        message,
+      })
 
-    // Handle both array result (spec) and single result (some implementations)
-    const result = Array.isArray(results) ? results[0] : results
-    if (!result || !result.signature) {
-      throw new Error('Failed to get signature from wallet')
-    }
+      // Handle both array result (spec) and single result (some implementations)
+      const result = Array.isArray(results) ? results[0] : results
+      if (!result || !result.signature) {
+        throw new Error('Failed to get signature from wallet')
+      }
 
-    return result.signature
-  }, [wallet, account])
+      return result.signature
+    },
+    [wallet, account]
+  )
 
   // Sign transaction
-  const signTransaction = useCallback(async (transaction: Uint8Array): Promise<Uint8Array> => {
-    if (!wallet || !account) {
-      throw new Error('Wallet not connected')
-    }
+  const signTransaction = useCallback(
+    async (transaction: Uint8Array): Promise<Uint8Array> => {
+      if (!wallet || !account) {
+        throw new Error('Wallet not connected')
+      }
 
-    const signTransactionFeature = wallet.features[SolanaSignTransaction] as SolanaSignTransactionFeature[typeof SolanaSignTransaction] | undefined
-    if (!signTransactionFeature) {
-      throw new Error('Wallet does not support transaction signing')
-    }
+      const signTransactionFeature = wallet.features[SolanaSignTransaction] as
+        | SolanaSignTransactionFeature[typeof SolanaSignTransaction]
+        | undefined
+      if (!signTransactionFeature) {
+        throw new Error('Wallet does not support transaction signing')
+      }
 
-    // Wallet Standard returns an array of outputs
-    const results = await signTransactionFeature.signTransaction({
-      account,
-      transaction,
-      chain: 'solana:mainnet', // or 'solana:devnet' based on your needs
-    })
+      // Wallet Standard returns an array of outputs
+      const results = await signTransactionFeature.signTransaction({
+        account,
+        transaction,
+        chain: 'solana:mainnet', // or 'solana:devnet' based on your needs
+      })
 
-    // Handle both array result (spec) and single result (some implementations)
-    const result = Array.isArray(results) ? results[0] : results
-    if (!result || !result.signedTransaction) {
-      throw new Error('Failed to get signed transaction from wallet')
-    }
+      // Handle both array result (spec) and single result (some implementations)
+      const result = Array.isArray(results) ? results[0] : results
+      if (!result || !result.signedTransaction) {
+        throw new Error('Failed to get signed transaction from wallet')
+      }
 
-    return result.signedTransaction
-  }, [wallet, account])
+      return result.signedTransaction
+    },
+    [wallet, account]
+  )
 
   // Sign and send transaction
-  const signAndSendTransaction = useCallback(async (transaction: Uint8Array): Promise<string> => {
-    if (!wallet || !account) {
-      throw new Error('Wallet not connected')
-    }
+  const signAndSendTransaction = useCallback(
+    async (transaction: Uint8Array): Promise<string> => {
+      if (!wallet || !account) {
+        throw new Error('Wallet not connected')
+      }
 
-    const signAndSendFeature = wallet.features[SolanaSignAndSendTransaction] as SolanaSignAndSendTransactionFeature[typeof SolanaSignAndSendTransaction] | undefined
-    if (!signAndSendFeature) {
-      throw new Error('Wallet does not support sign and send')
-    }
+      const signAndSendFeature = wallet.features[SolanaSignAndSendTransaction] as
+        | SolanaSignAndSendTransactionFeature[typeof SolanaSignAndSendTransaction]
+        | undefined
+      if (!signAndSendFeature) {
+        throw new Error('Wallet does not support sign and send')
+      }
 
-    // Wallet Standard returns an array of outputs
-    const results = await signAndSendFeature.signAndSendTransaction({
-      account,
-      transaction,
-      chain: 'solana:mainnet', // or 'solana:devnet' based on your needs
-    })
+      // Wallet Standard returns an array of outputs
+      const results = await signAndSendFeature.signAndSendTransaction({
+        account,
+        transaction,
+        chain: 'solana:mainnet', // or 'solana:devnet' based on your needs
+      })
 
-    // Handle both array result (spec) and single result (some implementations)
-    const result = Array.isArray(results) ? results[0] : results
-    if (!result || !result.signature) {
-      throw new Error('Failed to get transaction signature from wallet')
-    }
+      // Handle both array result (spec) and single result (some implementations)
+      const result = Array.isArray(results) ? results[0] : results
+      if (!result || !result.signature) {
+        throw new Error('Failed to get transaction signature from wallet')
+      }
 
-    return result.signature
-  }, [wallet, account])
+      return result.signature
+    },
+    [wallet, account]
+  )
 
   const value: WalletStandardContextValue = {
     wallet,
@@ -281,11 +308,7 @@ export function WalletStandardProvider({
     network,
   }
 
-  return (
-    <WalletStandardContext.Provider value={value}>
-      {children}
-    </WalletStandardContext.Provider>
-  )
+  return <WalletStandardContext.Provider value={value}>{children}</WalletStandardContext.Provider>
 }
 
 // Hook to use wallet context

@@ -813,9 +813,7 @@ export const getUserAgents = query({
     }
 
     // Convert map to array and sort by lastActivity (newest first)
-    const agents = Array.from(agentsMap.values()).sort(
-      (a, b) => b.lastActivity - a.lastActivity
-    )
+    const agents = Array.from(agentsMap.values()).sort((a, b) => b.lastActivity - a.lastActivity)
 
     return {
       agents,

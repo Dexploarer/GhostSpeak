@@ -31,17 +31,18 @@ export const discoverAgentsAction: Action = {
     ]
 
     // Don't trigger if user is trying to claim a specific agent
-    const isClaimIntent = text.includes('i want to claim') ||
-                          text.includes('claim agent') ||
-                          text.includes('claim this') ||
-                          text.includes('select agent') ||
-                          text.includes('choose agent')
+    const isClaimIntent =
+      text.includes('i want to claim') ||
+      text.includes('claim agent') ||
+      text.includes('claim this') ||
+      text.includes('select agent') ||
+      text.includes('choose agent')
 
     if (isClaimIntent) {
       return false
     }
 
-    return discoveryTriggers.some(trigger => text.includes(trigger))
+    return discoveryTriggers.some((trigger) => text.includes(trigger))
   },
 
   // Handler: query Convex and format response
@@ -109,9 +110,8 @@ export const discoverAgentsAction: Action = {
           agents: formattedAgents,
           count: agents.length,
           response: responseText,
-        }
+        },
       }
-
     } catch (error) {
       console.error('Error discovering agents:', error)
 
@@ -125,7 +125,7 @@ export const discoverAgentsAction: Action = {
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       }
     }
   },

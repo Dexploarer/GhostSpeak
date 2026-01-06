@@ -4,7 +4,7 @@
  * Check reputation/Ghost Score for an agent - implements CHECK_REPUTATION capability
  */
 
-import type { Action, IAgentRuntime, Memory, State } from '@elizaos/core'
+import type { Action, IAgentRuntime, Memory, State, HandlerCallback } from '@elizaos/core'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 
@@ -46,7 +46,7 @@ export const ghostScoreAction: Action = {
     message: Memory,
     state?: State,
     options?: Record<string, unknown>,
-    callback?: (response: any) => Promise<void>
+    callback?: HandlerCallback
   ) => {
     try {
       const text = message.content.text || ''
@@ -118,7 +118,6 @@ export const ghostScoreAction: Action = {
         }
       }
 
-      
       // Calculate vibe check
       let myTake = ''
       if (scoreData.score >= 9000) {

@@ -182,7 +182,6 @@ export function ArchitectureLayers() {
         </div>
       </div>
 
-
       <style jsx>{`
         .perspective-1000 {
           perspective: 2000px;

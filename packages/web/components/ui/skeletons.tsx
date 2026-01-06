@@ -246,7 +246,12 @@ export function DashboardStatsGridSkeleton() {
 // Quick Action Button Skeleton
 export function QuickActionSkeleton({ className }: SkeletonProps) {
   return (
-    <div className={cn('flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-lg', className)}>
+    <div
+      className={cn(
+        'flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-lg',
+        className
+      )}
+    >
       <div className="flex items-center gap-3">
         <Skeleton className="w-9 h-9 rounded-lg bg-white/10" />
         <div>
@@ -278,7 +283,12 @@ export function QuickActionsGridSkeleton() {
 // Activity Item Skeleton
 export function ActivityItemSkeleton({ className }: SkeletonProps) {
   return (
-    <div className={cn('flex items-start gap-3 p-3 bg-white/5 border border-white/10 rounded-lg', className)}>
+    <div
+      className={cn(
+        'flex items-start gap-3 p-3 bg-white/5 border border-white/10 rounded-lg',
+        className
+      )}
+    >
       <Skeleton className="w-1.5 h-1.5 mt-2 rounded-full bg-white/20" />
       <div className="flex-1 min-w-0">
         <Skeleton className="h-4 w-full mb-2 bg-white/10" />

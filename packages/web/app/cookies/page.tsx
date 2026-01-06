@@ -26,7 +26,9 @@ export default function CookiesPage() {
           <section>
             <h2 className="text-2xl font-bold mb-4">3. Types of Cookies We Use</h2>
 
-            <h3 className="text-xl font-semibold mb-3 text-primary">3.1 Essential Cookies (Required)</h3>
+            <h3 className="text-xl font-semibold mb-3 text-primary">
+              3.1 Essential Cookies (Required)
+            </h3>
             <p className="text-muted-foreground leading-relaxed mb-4">
               These cookies are necessary for the website to function and cannot be disabled:
             </p>
@@ -42,7 +44,9 @@ export default function CookiesPage() {
                 <tbody className="text-muted-foreground">
                   <tr>
                     <td className="p-4 border-b border-border font-mono">ghost_session</td>
-                    <td className="p-4 border-b border-border">Maintains wallet connection state</td>
+                    <td className="p-4 border-b border-border">
+                      Maintains wallet connection state
+                    </td>
                     <td className="p-4 border-b border-border">Session</td>
                   </tr>
                   <tr>
@@ -59,7 +63,9 @@ export default function CookiesPage() {
               </table>
             </div>
 
-            <h3 className="text-xl font-semibold mb-3 text-primary mt-8">3.2 Analytics Cookies (Optional)</h3>
+            <h3 className="text-xl font-semibold mb-3 text-primary mt-8">
+              3.2 Analytics Cookies (Optional)
+            </h3>
             <p className="text-muted-foreground leading-relaxed mb-4">
               We use Vercel Analytics (privacy-friendly, GDPR-compliant) to understand how users
               interact with our website:
@@ -76,26 +82,57 @@ export default function CookiesPage() {
                 <tbody className="text-muted-foreground">
                   <tr>
                     <td className="p-4 border-b border-border font-mono">_va</td>
-                    <td className="p-4 border-b border-border">Vercel Analytics (anonymized page views)</td>
+                    <td className="p-4 border-b border-border">
+                      Vercel Analytics (anonymized page views)
+                    </td>
                     <td className="p-4 border-b border-border">1 year</td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <p className="text-muted-foreground leading-relaxed mt-4 text-sm">
-              <strong>Note:</strong> Vercel Analytics does NOT track IP addresses, use fingerprinting,
-              or share data with third parties. It is fully GDPR and CCPA compliant.
+              <strong>Note:</strong> Vercel Analytics does NOT track IP addresses, use
+              fingerprinting, or share data with third parties. It is fully GDPR and CCPA compliant.
             </p>
 
-            <h3 className="text-xl font-semibold mb-3 text-primary mt-8">3.3 Third-Party Cookies</h3>
+            <h3 className="text-xl font-semibold mb-3 text-primary mt-8">
+              3.3 Third-Party Cookies
+            </h3>
             <p className="text-muted-foreground leading-relaxed mb-4">
               When you connect external services (Crossmint, wallet providers), they may set their
               own cookies. We do not control these cookies. Refer to their privacy policies:
             </p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
-              <li><a href="https://www.crossmint.com/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Crossmint Privacy Policy</a></li>
-              <li><a href="https://phantom.app/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Phantom Wallet Privacy Policy</a></li>
-              <li><a href="https://solflare.com/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Solflare Privacy Policy</a></li>
+              <li>
+                <a
+                  href="https://www.crossmint.com/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  Crossmint Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://phantom.app/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  Phantom Wallet Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://solflare.com/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  Solflare Privacy Policy
+                </a>
+              </li>
             </ul>
           </section>
 
@@ -128,7 +165,9 @@ export default function CookiesPage() {
               <li>RPC latency (performance monitoring)</li>
             </ul>
 
-            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">5.2 What We DON'T Collect</h3>
+            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">
+              5.2 What We DON'T Collect
+            </h3>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
               <li>Wallet addresses or private keys</li>
               <li>Transaction details or amounts</li>
@@ -142,7 +181,9 @@ export default function CookiesPage() {
               <p># Via CLI</p>
               <p className="text-primary">ghost config set telemetry false</p>
               <p className="mt-4"># Via SDK</p>
-              <p className="text-primary">const client = new GhostSpeakClient({`{ telemetry: false }`})</p>
+              <p className="text-primary">
+                const client = new GhostSpeakClient({`{ telemetry: false }`})
+              </p>
             </div>
           </section>
 
@@ -154,13 +195,23 @@ export default function CookiesPage() {
               You can control cookies through your browser settings:
             </p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
-              <li><strong>Chrome:</strong> Settings → Privacy and Security → Cookies</li>
-              <li><strong>Firefox:</strong> Preferences → Privacy & Security → Cookies</li>
-              <li><strong>Safari:</strong> Preferences → Privacy → Cookies</li>
-              <li><strong>Edge:</strong> Settings → Privacy → Cookies</li>
+              <li>
+                <strong>Chrome:</strong> Settings → Privacy and Security → Cookies
+              </li>
+              <li>
+                <strong>Firefox:</strong> Preferences → Privacy & Security → Cookies
+              </li>
+              <li>
+                <strong>Safari:</strong> Preferences → Privacy → Cookies
+              </li>
+              <li>
+                <strong>Edge:</strong> Settings → Privacy → Cookies
+              </li>
             </ul>
 
-            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">6.2 Clear GhostSpeak Data</h3>
+            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">
+              6.2 Clear GhostSpeak Data
+            </h3>
             <p className="text-muted-foreground leading-relaxed mb-4">
               To clear all GhostSpeak cookies and local storage:
             </p>
@@ -208,8 +259,9 @@ export default function CookiesPage() {
           <section>
             <h2 className="text-2xl font-bold mb-4">9. Changes to This Policy</h2>
             <p className="text-muted-foreground leading-relaxed">
-              We may update this Cookie Policy periodically. Changes will be posted on this page with
-              an updated "Last Updated" date. Continued use of GhostSpeak constitutes acceptance.
+              We may update this Cookie Policy periodically. Changes will be posted on this page
+              with an updated "Last Updated" date. Continued use of GhostSpeak constitutes
+              acceptance.
             </p>
           </section>
 
@@ -219,9 +271,24 @@ export default function CookiesPage() {
               Questions about our use of cookies:
             </p>
             <ul className="list-none text-muted-foreground space-y-2">
-              <li><strong>Email:</strong> <a href="mailto:privacy@ghostspeak.io" className="text-primary hover:underline">privacy@ghostspeak.io</a></li>
-              <li><strong>General:</strong> <a href="mailto:team@ghostspeak.io" className="text-primary hover:underline">team@ghostspeak.io</a></li>
-              <li><strong>Website:</strong> <a href="https://ghostspeak.io" className="text-primary hover:underline">ghostspeak.io</a></li>
+              <li>
+                <strong>Email:</strong>{' '}
+                <a href="mailto:privacy@ghostspeak.io" className="text-primary hover:underline">
+                  privacy@ghostspeak.io
+                </a>
+              </li>
+              <li>
+                <strong>General:</strong>{' '}
+                <a href="mailto:team@ghostspeak.io" className="text-primary hover:underline">
+                  team@ghostspeak.io
+                </a>
+              </li>
+              <li>
+                <strong>Website:</strong>{' '}
+                <a href="https://ghostspeak.io" className="text-primary hover:underline">
+                  ghostspeak.io
+                </a>
+              </li>
             </ul>
           </section>
         </div>

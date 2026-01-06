@@ -4,7 +4,7 @@
  * Issue a new W3C Verifiable Credential for an agent
  */
 
-import type { Action, IAgentRuntime, Memory, State } from '@elizaos/core'
+import type { Action, IAgentRuntime, Memory, State, HandlerCallback } from '@elizaos/core'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 
@@ -39,8 +39,8 @@ export const issueCredentialAction: Action = {
     runtime: IAgentRuntime,
     message: Memory,
     state?: State,
-    options?: any,
-    callback?: any
+    options?: Record<string, unknown>,
+    callback?: HandlerCallback
   ) => {
     try {
       const text = message.content.text || ''
@@ -69,13 +69,14 @@ export const issueCredentialAction: Action = {
 
       if (!result.success) {
         const response = {
-          text: `Couldn't issue that credential. 👻\n\nReason: ${result.error || 'Unknown error'}\n\nMake sure the agent address is valid and try again.`,
+          text: `Couldn't issue that credential. 👻\n\nReason: ${result.reason || 'Unknown error'}\n\nMake sure the agent address is valid and try again.`,
         }
         if (callback) await callback(response)
-        return { success: false, error: result.error }
+        return { success: false, error: result.reason }
       }
 
-      const responseText = `On it! Creating a verified credential... 🔏\n\n` +
+      const responseText =
+        `On it! Creating a verified credential... 🔏\n\n` +
         `**✅ Credential Issued!**\n\n` +
         `**Agent:** \`${agentAddress.slice(0, 8)}...${agentAddress.slice(-4)}\`\n` +
         `**Credential ID:** \`${result.credentialId}\`\n` +

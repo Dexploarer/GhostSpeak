@@ -111,7 +111,7 @@ export function GhostParticles({ scrollProgress = 0 }: GhostParticlesProps) {
   const [mounted, setMounted] = useState(false)
 
   // Get the effective theme (null safe)
-  const effectiveTheme = mounted ? (resolvedTheme || theme || 'dark') : 'dark'
+  const effectiveTheme = mounted ? resolvedTheme || theme || 'dark' : 'dark'
 
   useEffect(() => {
     setMounted(true)
@@ -203,8 +203,7 @@ export function GhostParticles({ scrollProgress = 0 }: GhostParticlesProps) {
         particle.y += particle.vy
 
         // Pulse effect
-        particle.opacity =
-          particle.baseOpacity + Math.sin(time * 0.001 + particle.phase) * 0.15
+        particle.opacity = particle.baseOpacity + Math.sin(time * 0.001 + particle.phase) * 0.15
 
         // Disperse based on scroll
         if (scrollProgress > 0) {

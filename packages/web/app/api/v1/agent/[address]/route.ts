@@ -20,10 +20,7 @@ export async function GET(
     // Validate Solana address format
     const solanaAddressRegex = /^[A-HJ-NP-Za-km-z1-9]{32,44}$/
     if (!solanaAddressRegex.test(agentAddress)) {
-      return Response.json(
-        { error: 'Invalid Solana address format' },
-        { status: 400 }
-      )
+      return Response.json({ error: 'Invalid Solana address format' }, { status: 400 })
     }
 
     // Fetch agent from discovery database
@@ -37,52 +34,52 @@ export async function GET(
     })
 
     if (!discoveredAgent) {
-      return Response.json(
-        { error: 'Agent not found' },
-        { status: 404 }
-      )
+      return Response.json({ error: 'Agent not found' }, { status: 404 })
     }
 
-    return Response.json({
-      agent: {
-        address: discoveredAgent.ghostAddress,
-        status: discoveredAgent.status,
+    return Response.json(
+      {
+        agent: {
+          address: discoveredAgent.ghostAddress,
+          status: discoveredAgent.status,
 
-        discovery: {
-          source: discoveredAgent.discoverySource,
-          firstSeenTimestamp: discoveredAgent.firstSeenTimestamp,
-          slot: discoveredAgent.slot,
-          blockTime: discoveredAgent.blockTime,
-          firstTxSignature: discoveredAgent.firstTxSignature,
-          facilitatorAddress: discoveredAgent.facilitatorAddress,
+          discovery: {
+            source: discoveredAgent.discoverySource,
+            firstSeenTimestamp: discoveredAgent.firstSeenTimestamp,
+            slot: discoveredAgent.slot,
+            blockTime: discoveredAgent.blockTime,
+            firstTxSignature: discoveredAgent.firstTxSignature,
+            facilitatorAddress: discoveredAgent.facilitatorAddress,
+          },
+
+          ownership: {
+            claimedBy: discoveredAgent.claimedBy,
+            claimedAt: discoveredAgent.claimedAt,
+          },
+
+          metadata: {
+            ipfsCid: discoveredAgent.ipfsCid,
+            ipfsUri: discoveredAgent.ipfsUri,
+            fileId: discoveredAgent.metadataFileId,
+          },
+
+          externalIds: externalMappings.map((mapping: any) => ({
+            platform: mapping.platform,
+            externalId: mapping.externalId,
+            verified: mapping.verified,
+            verifiedAt: mapping.verifiedAt,
+          })),
         },
-
-        ownership: {
-          claimedBy: discoveredAgent.claimedBy,
-          claimedAt: discoveredAgent.claimedAt,
-        },
-
-        metadata: {
-          ipfsCid: discoveredAgent.ipfsCid,
-          ipfsUri: discoveredAgent.ipfsUri,
-          fileId: discoveredAgent.metadataFileId,
-        },
-
-        externalIds: externalMappings.map((mapping: any) => ({
-          platform: mapping.platform,
-          externalId: mapping.externalId,
-          verified: mapping.verified,
-          verifiedAt: mapping.verifiedAt,
-        })),
+        timestamp: Date.now(),
       },
-      timestamp: Date.now(),
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
-      },
-    })
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        },
+      }
+    )
   } catch (error) {
     console.error('Agent API error:', error)
     return Response.json(

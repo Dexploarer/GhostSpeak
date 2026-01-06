@@ -12,14 +12,15 @@ import { toast } from 'sonner'
 export default function SettingsPage() {
   const { publicKey } = useWallet()
   const router = useRouter()
-  
+
   // Form state
   const [username, setUsername] = useState('')
   const [bio, setBio] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   // Fetch user data
-  const user = useQuery(api.solanaAuth.getUserByWallet, 
+  const user = useQuery(
+    api.solanaAuth.getUserByWallet,
     publicKey ? { walletAddress: publicKey } : 'skip'
   )
 
@@ -42,7 +43,7 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     if (!publicKey) return
-    
+
     setIsLoading(true)
     try {
       await updateUserProfile({
@@ -64,7 +65,7 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
-        <button 
+        <button
           onClick={() => router.back()}
           className="flex items-center gap-2 text-white/40 hover:text-white mb-8 transition-colors"
         >
@@ -83,14 +84,13 @@ export default function SettingsPage() {
         </div>
 
         <div className="bg-[#111111] border border-white/10 rounded-xl p-6 md:p-8 space-y-8">
-          
           {/* Public Profile */}
           <section>
             <h2 className="text-lg font-light text-white mb-6 flex items-center gap-2">
               <User className="w-5 h-5 text-primary" />
               Public Profile
             </h2>
-            
+
             <div className="space-y-6 max-w-xl">
               <div className="space-y-2">
                 <label className="text-sm text-white/60">Username</label>

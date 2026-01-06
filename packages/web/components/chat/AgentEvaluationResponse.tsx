@@ -1,32 +1,34 @@
 import { BadgeDefinition, BADGE_DEFINITIONS } from '@/lib/badges/definitions'
 import { BadgeDetailsModal } from '@/components/ui/BadgeModal'
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Shield } from 'lucide-react'
+import { AnimatePresence } from 'framer-motion'
+import { Shield, Search, FileCheck } from 'lucide-react'
 
 interface AgentEvaluationResponseProps {
+  agentAddress?: string
   score: number
   tier: string
   breakdown: Record<string, { score: number; dataPoints: number }> // Simplified type
   network?: { chain: string; environment: string }
   myTake?: string
   badges?: string[] // Badge IDs
+  onActionClick?: (prompt: string) => void
 }
 
 export function AgentEvaluationResponse({
+  agentAddress,
   score,
   tier,
   breakdown,
   network,
   myTake,
   badges = [],
+  onActionClick,
 }: AgentEvaluationResponseProps) {
   const [selectedBadge, setSelectedBadge] = useState<BadgeDefinition | null>(null)
 
   // Map badge IDs to full definitions
-  const activeBadges = badges
-    .map((id) => BADGE_DEFINITIONS[id])
-    .filter(Boolean)
+  const activeBadges = badges.map((id) => BADGE_DEFINITIONS[id]).filter(Boolean)
 
   // Determine color theme based on tier
   const getThemeColor = (t: string) => {
@@ -50,14 +52,19 @@ export function AgentEvaluationResponse({
 
   return (
     <>
-      <div className={`w-full max-w-md my-2 p-6 rounded-xl border bg-linear-to-br backdrop-blur-md shadow-xl ${themeClass}`}>
+      <div
+        className={`w-full max-w-md my-2 p-6 rounded-xl border bg-linear-to-br backdrop-blur-md shadow-xl ${themeClass}`}
+      >
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
           <div>
             <div className="text-xs uppercase tracking-widest opacity-70 font-semibold mb-1">
               Ghost Score
             </div>
-            <div className="text-4xl font-black tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            <div
+              className="text-4xl font-black tracking-tight"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
+            >
               {score.toLocaleString()}
             </div>
           </div>
@@ -65,9 +72,7 @@ export function AgentEvaluationResponse({
             <div className="text-xs uppercase tracking-widest opacity-70 font-semibold mb-1">
               Tier status
             </div>
-            <div className="text-xl font-bold tracking-wide">
-              {tier}
-            </div>
+            <div className="text-xl font-bold tracking-wide">{tier}</div>
           </div>
         </div>
 
@@ -75,7 +80,7 @@ export function AgentEvaluationResponse({
         {activeBadges.length > 0 && (
           <div className="mb-6">
             <div className="text-xs uppercase tracking-widest opacity-50 font-semibold mb-3 flex items-center gap-1">
-               <Shield className="w-3 h-3" /> Credentials & Badges
+              <Shield className="w-3 h-3" /> Credentials & Badges
             </div>
             <div className="flex flex-wrap gap-2">
               {activeBadges.map((badge) => {
@@ -91,7 +96,9 @@ export function AgentEvaluationResponse({
                     `}
                     title={badge.name}
                   >
-                    <Icon className={`w-5 h-5 ${isLegendary ? 'text-amber-300' : 'text-white/70 group-hover:text-white'}`} />
+                    <Icon
+                      className={`w-5 h-5 ${isLegendary ? 'text-amber-300' : 'text-white/70 group-hover:text-white'}`}
+                    />
                   </button>
                 )
               })}
@@ -122,9 +129,7 @@ export function AgentEvaluationResponse({
         {/* Footer / Vibe Check */}
         {myTake && (
           <div className="mt-6 pt-4 border-t border-current border-opacity-20">
-            <div className="text-xs italic opacity-80 leading-relaxed font-medium">
-              "{myTake}"
-            </div>
+            <div className="text-xs italic opacity-80 leading-relaxed font-medium">"{myTake}"</div>
           </div>
         )}
 
@@ -135,14 +140,31 @@ export function AgentEvaluationResponse({
             <span>GHOST PROTOCOL v1.0</span>
           </div>
         )}
+
+        {/* Action Buttons */}
+        {agentAddress && onActionClick && (
+          <div className="mt-4 pt-4 border-t border-current border-opacity-20 flex gap-2">
+            <button
+              onClick={() => onActionClick(`Vibe check ${agentAddress}`)}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all"
+            >
+              <Search className="w-3 h-3" />
+              Vibe Check
+            </button>
+            <button
+              onClick={() => onActionClick(`What credentials does ${agentAddress} have?`)}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all"
+            >
+              <FileCheck className="w-3 h-3" />
+              Credentials
+            </button>
+          </div>
+        )}
       </div>
 
       <AnimatePresence>
         {selectedBadge && (
-          <BadgeDetailsModal 
-            badge={selectedBadge}
-            onClose={() => setSelectedBadge(null)} 
-          />
+          <BadgeDetailsModal badge={selectedBadge} onClose={() => setSelectedBadge(null)} />
         )}
       </AnimatePresence>
     </>

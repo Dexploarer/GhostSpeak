@@ -69,8 +69,7 @@ console.log(\`Ghost Score: \${reputation.ghostScore}/10000\`)`
             transition={{ delay: 0.1 }}
             className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter mb-6"
           >
-            Integrate in{' '}
-            <span className="text-primary italic">Minutes</span>
+            Integrate in <span className="text-primary italic">Minutes</span>
           </motion.h2>
 
           <motion.p
@@ -158,7 +157,11 @@ console.log(\`Ghost Score: \${reputation.ghostScore}/10000\`)`
           transition={{ delay: 0.7 }}
           className="text-center"
         >
-          <Link href="https://docs.ghostspeak.io/quickstart" target="_blank" rel="noopener noreferrer">
+          <Link
+            href="https://docs.ghostspeak.io/quickstart"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <Button
               size="lg"
               className="h-14 px-8 rounded-xl text-base bg-primary hover:bg-primary/90 text-primary-foreground font-bold transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_40px_rgba(var(--primary-rgb),0.25)] group"

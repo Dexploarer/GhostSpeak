@@ -116,7 +116,17 @@ export const claimAgent = mutation({
     claimedBy: v.string(),
     claimTxSignature: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args
+  ): Promise<{
+    success: boolean
+    agentId: any // Using any to avoid importing Id<"discoveredAgents"> for now, or use string
+    ghostAddress: string
+    claimedBy: string
+    credentialIssued: boolean
+    credentialId: string | undefined
+  }> => {
     const agent = await ctx.db
       .query('discoveredAgents')
       .withIndex('by_address', (q) => q.eq('ghostAddress', args.ghostAddress))
@@ -294,10 +304,7 @@ export const listDiscoveredAgents = query({
         .take(limit)
     }
 
-    return await ctx.db
-      .query('discoveredAgents')
-      .order('desc')
-      .take(limit)
+    return await ctx.db.query('discoveredAgents').order('desc').take(limit)
   },
 })
 
@@ -320,10 +327,7 @@ export const listDiscoveredAgentsInternal = internalQuery({
         .take(limit)
     }
 
-    return await ctx.db
-      .query('discoveredAgents')
-      .order('desc')
-      .take(limit)
+    return await ctx.db.query('discoveredAgents').order('desc').take(limit)
   },
 })
 

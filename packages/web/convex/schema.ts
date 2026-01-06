@@ -1149,6 +1149,16 @@ export default defineSchema({
     // Claim tracking
     claimedAt: v.optional(v.number()),
     claimedBy: v.optional(v.string()), // Wallet address that claimed it
+    // Agent Details
+    name: v.optional(v.string()), // Display name
+    description: v.optional(v.string()), // Short description
+
+    // Services
+    x402ServiceEndpoint: v.optional(v.string()), // URL for x402 service if discovered
+    x402Enabled: v.optional(v.boolean()),
+    x402PricePerCall: v.optional(v.number()), // USDC
+    x402AcceptedTokens: v.optional(v.array(v.string())), // List of mint addresses, e.g. USDC
+
     // Metadata storage (Convex file storage or IPFS)
     metadataFileId: v.optional(v.id('_storage')), // Convex file storage
     ipfsCid: v.optional(v.string()), // IPFS CID (alternative)
@@ -1192,7 +1202,9 @@ export default defineSchema({
     value: v.string(), // State value as string
     network: v.string(), // 'devnet' | 'mainnet-beta'
     updatedAt: v.number(),
-  }).index('by_state_key', ['stateKey']).index('by_network', ['network']),
+  })
+    .index('by_state_key', ['stateKey'])
+    .index('by_network', ['network']),
 
   //
   // ─── GHOST DISCOVERY: DISCOVERY EVENTS ─────────────────────────────────────
@@ -1337,17 +1349,21 @@ export default defineSchema({
     qualityScore: v.number(), // 0-100 from Caisper judgment
     issues: v.optional(v.array(v.string())), // Problems found
     caisperNotes: v.string(), // AI judgment notes
-    
+
     // Full trace/transcript for UI
-    transcript: v.optional(v.array(v.object({
-      role: v.string(), // 'user' (Caisper) | 'agent' | 'system'
-      content: v.string(),
-      isToolCall: v.optional(v.boolean()),
-      toolName: v.optional(v.string()),
-      toolArgs: v.optional(v.string()), // JSON stringified
-      timestamp: v.number(),
-    }))),
-    
+    transcript: v.optional(
+      v.array(
+        v.object({
+          role: v.string(), // 'user' (Caisper) | 'agent' | 'system'
+          content: v.string(),
+          isToolCall: v.optional(v.boolean()),
+          toolName: v.optional(v.string()),
+          toolArgs: v.optional(v.string()), // JSON stringified
+          timestamp: v.number(),
+        })
+      )
+    ),
+
     // Voting fields
     upvotes: v.optional(v.number()),
     downvotes: v.optional(v.number()),

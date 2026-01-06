@@ -22,7 +22,7 @@ function generateCredentialId(type: string, agentAddress: string, timestamp: num
   // Simple hash function (djb2 algorithm)
   let hash = 5381
   for (let i = 0; i < data.length; i++) {
-    hash = ((hash << 5) + hash) + data.charCodeAt(i)
+    hash = (hash << 5) + hash + data.charCodeAt(i)
     hash = hash & hash // Convert to 32-bit integer
   }
 
@@ -75,7 +75,10 @@ export const issueAgentIdentityCredentialPublic = mutation({
     agentAddress: v.string(),
     did: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args
+  ): Promise<{ success: boolean; reason?: string; credentialId: string; did?: string }> => {
     return await ctx.runMutation(internal.credentials.issueAgentIdentityCredential, args)
   },
 })
@@ -159,9 +162,7 @@ export const issuePaymentMilestoneCredential = internalMutation({
   },
   handler: async (ctx, args) => {
     // Find the highest milestone the agent qualifies for
-    const qualifiedMilestone = PAYMENT_MILESTONES.filter(
-      (m) => args.paymentCount >= m.count
-    ).pop()
+    const qualifiedMilestone = PAYMENT_MILESTONES.filter((m) => args.paymentCount >= m.count).pop()
 
     if (!qualifiedMilestone) {
       return { success: false, reason: 'not_enough_payments', paymentCount: args.paymentCount }
@@ -175,7 +176,11 @@ export const issuePaymentMilestoneCredential = internalMutation({
 
     const alreadyHasMilestone = existing.some((c) => c.milestone === qualifiedMilestone.count)
     if (alreadyHasMilestone) {
-      return { success: false, reason: 'milestone_already_issued', milestone: qualifiedMilestone.count }
+      return {
+        success: false,
+        reason: 'milestone_already_issued',
+        milestone: qualifiedMilestone.count,
+      }
     }
 
     const timestamp = Date.now()
@@ -282,7 +287,11 @@ export const issueVerifiedHireCredential = internalMutation({
       .first()
 
     if (existing) {
-      return { success: false, reason: 'already_issued_for_tx', transactionSignature: args.transactionSignature }
+      return {
+        success: false,
+        reason: 'already_issued_for_tx',
+        transactionSignature: args.transactionSignature,
+      }
     }
 
     const timestamp = Date.now()
@@ -771,8 +780,6 @@ export const checkAndIssueMilestoneCredentials = internalMutation({
 // Get credentials for an agent
 // ─────────────────────────────────────────────────────────────────────────────
 
-
-
 export const getAgentCredentials = internalQuery({
   args: { agentAddress: v.string() },
   handler: async (ctx, args) => {
@@ -938,16 +945,79 @@ export const getAgentCredentialsPublic = query({
 
     // Flatten all credentials into a simple array for chat display
     const allCredentials = [
-      ...identity.map((c) => ({ type: 'identity', credentialId: c.credentialId, did: c.did, issuedAt: c.issuedAt, isValid: true })),
-      ...reputation.map((c) => ({ type: 'reputation', credentialId: c.credentialId, tier: c.tier, issuedAt: c.issuedAt, isValid: true })),
-      ...paymentMilestones.map((c) => ({ type: 'paymentMilestone', credentialId: c.credentialId, milestone: c.milestone, issuedAt: c.issuedAt, isValid: true })),
-      ...staking.map((c) => ({ type: 'staking', credentialId: c.credentialId, tier: c.tier, issuedAt: c.issuedAt, isValid: true })),
-      ...verifiedHires.map((c) => ({ type: 'verifiedHire', credentialId: c.credentialId, rating: c.rating, issuedAt: c.issuedAt, isValid: true })),
-      ...validCapability.map((c) => ({ type: 'capability', credentialId: c.credentialId, capabilities: c.capabilities, successRate: c.successRate, issuedAt: c.issuedAt, isValid: true, validUntil: c.validUntil })),
-      ...uptimeAttestation.map((c) => ({ type: 'uptime', credentialId: c.credentialId, tier: c.tier, issuedAt: c.issuedAt, isValid: true })),
-      ...apiQualityGrade.map((c) => ({ type: 'apiQuality', credentialId: c.credentialId, grade: c.grade, issuedAt: c.issuedAt, isValid: true })),
-      ...validTee.map((c) => ({ type: 'tee', credentialId: c.credentialId, teeType: c.teeType, issuedAt: c.issuedAt, isValid: true, validUntil: c.validUntil })),
-      ...modelProvenance.map((c) => ({ type: 'modelProvenance', credentialId: c.credentialId, modelName: c.modelName, issuedAt: c.issuedAt, isValid: true })),
+      ...identity.map((c) => ({
+        type: 'identity',
+        credentialId: c.credentialId,
+        did: c.did,
+        issuedAt: c.issuedAt,
+        isValid: true,
+      })),
+      ...reputation.map((c) => ({
+        type: 'reputation',
+        credentialId: c.credentialId,
+        tier: c.tier,
+        issuedAt: c.issuedAt,
+        isValid: true,
+      })),
+      ...paymentMilestones.map((c) => ({
+        type: 'paymentMilestone',
+        credentialId: c.credentialId,
+        milestone: c.milestone,
+        issuedAt: c.issuedAt,
+        isValid: true,
+      })),
+      ...staking.map((c) => ({
+        type: 'staking',
+        credentialId: c.credentialId,
+        tier: c.tier,
+        issuedAt: c.issuedAt,
+        isValid: true,
+      })),
+      ...verifiedHires.map((c) => ({
+        type: 'verifiedHire',
+        credentialId: c.credentialId,
+        rating: c.rating,
+        issuedAt: c.issuedAt,
+        isValid: true,
+      })),
+      ...validCapability.map((c) => ({
+        type: 'capability',
+        credentialId: c.credentialId,
+        capabilities: c.capabilities,
+        successRate: c.successRate,
+        issuedAt: c.issuedAt,
+        isValid: true,
+        validUntil: c.validUntil,
+      })),
+      ...uptimeAttestation.map((c) => ({
+        type: 'uptime',
+        credentialId: c.credentialId,
+        tier: c.tier,
+        issuedAt: c.issuedAt,
+        isValid: true,
+      })),
+      ...apiQualityGrade.map((c) => ({
+        type: 'apiQuality',
+        credentialId: c.credentialId,
+        grade: c.grade,
+        issuedAt: c.issuedAt,
+        isValid: true,
+      })),
+      ...validTee.map((c) => ({
+        type: 'tee',
+        credentialId: c.credentialId,
+        teeType: c.teeType,
+        issuedAt: c.issuedAt,
+        isValid: true,
+        validUntil: c.validUntil,
+      })),
+      ...modelProvenance.map((c) => ({
+        type: 'modelProvenance',
+        credentialId: c.credentialId,
+        modelName: c.modelName,
+        issuedAt: c.issuedAt,
+        isValid: true,
+      })),
     ]
 
     return allCredentials

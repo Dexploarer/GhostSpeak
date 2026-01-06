@@ -63,7 +63,8 @@ interface AchievementBadgeProps {
 
 function AchievementBadge({ achievement }: AchievementBadgeProps) {
   const Icon = achievementIcons[achievement.id] || Award
-  const colorClasses = achievementColors[achievement.id] || 'text-white/60 bg-white/5 border-white/10'
+  const colorClasses =
+    achievementColors[achievement.id] || 'text-white/60 bg-white/5 border-white/10'
 
   return (
     <div
@@ -76,11 +77,7 @@ function AchievementBadge({ achievement }: AchievementBadgeProps) {
     >
       {/* Icon */}
       <div className="relative">
-        {achievement.unlocked ? (
-          <Icon className="w-4 h-4" />
-        ) : (
-          <Lock className="w-4 h-4" />
-        )}
+        {achievement.unlocked ? <Icon className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
 
         {/* Unlock animation glow */}
         {achievement.unlocked && (
@@ -167,7 +164,11 @@ interface PercentileDisplayProps {
  * Shows the user's ranking among all users
  * Displays "Top X%" based on Ghost Score
  */
-export function PercentileDisplay({ topPercentage, totalUsers, className }: PercentileDisplayProps) {
+export function PercentileDisplay({
+  topPercentage,
+  totalUsers,
+  className,
+}: PercentileDisplayProps) {
   // Determine display color based on percentile
   const getPercentileColor = (pct: number): string => {
     if (pct <= 5) return 'text-primary bg-primary/10 border-primary/30' // Top 5%

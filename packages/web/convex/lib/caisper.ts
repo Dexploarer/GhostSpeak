@@ -1,40 +1,33 @@
-
 import { v } from 'convex/values'
-import { internalMutation, internalAction, query } from '../_generated/server'
+import { internalMutation, internalAction, query, internalQuery } from '../_generated/server'
 import { internal } from '../_generated/api'
-import { createKeyPairSignerFromBytes } from '@solana/signers'
-import { createSolanaRpc } from '@solana/rpc'
-import { 
-  createTransactionMessage, 
-  setTransactionMessageLifetimeUsingBlockhash, 
+import {
+  createTransactionMessage,
+  setTransactionMessageLifetimeUsingBlockhash,
   setTransactionMessageFeePayer,
-  appendTransactionMessageInstruction
+  appendTransactionMessageInstruction,
+  compileTransactionMessage,
+  getCompiledTransactionMessageEncoder,
 } from '@solana/transaction-messages'
 import { getTransferSolInstruction } from '@solana-program/system'
-import { signTransactionMessageWithSigners } from '@solana/signers'
-import { getBase64EncodedWireTransaction } from '@solana/transactions'
 import { getNetworkMetadata } from './networkMetadata'
-import { address } from '@solana/addresses'
+import { address, type Address } from '@solana/addresses'
+import nacl from 'tweetnacl'
 
 // ─── WALLET MANAGEMENT ──────────────────────────────────────────────────────
 
-/**
- * Initialize or update Caisper's wallet keys
- * (Call this from a script to set up the agent)
- */
 export const setCaisperWallet = internalMutation({
   args: {
     publicKey: v.string(),
-    secretKey: v.array(v.number()), // array of 64 bytes
+    secretKey: v.array(v.number()),
   },
   handler: async (ctx, args) => {
-    // Check if exists
     const existing = await ctx.db.query('caisperWallet').first()
-    
+
     if (existing) {
       await ctx.db.patch(existing._id, {
         publicKey: args.publicKey,
-        encryptedPrivateKey: 'TODO_ENCRYPT', // For now we trust the internal mutation input
+        encryptedPrivateKey: 'TODO_ENCRYPT',
         secretKey: args.secretKey,
         updatedAt: Date.now(),
       })
@@ -48,91 +41,112 @@ export const setCaisperWallet = internalMutation({
         updatedAt: Date.now(),
       })
     }
-  }
+  },
 })
 
-/**
- * Get Caisper's public key (for UI or logic)
- */
 export const getCaisperPublicKey = query({
   handler: async (ctx) => {
     const wallet = await ctx.db.query('caisperWallet').first()
     return wallet?.publicKey || null
-  }
+  },
 })
+
+// ─── DIRECT RPC HELPERS ─────────────────────────────────────────────────────
+
+async function jsonRpc(rpcUrl: string, method: string, params: unknown[]) {
+  const res = await fetch(rpcUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method,
+      params,
+    }),
+  })
+  const json = await res.json()
+  if (json.error) throw new Error(`RPC Error: ${JSON.stringify(json.error)}`)
+  return json.result
+}
 
 // ─── TRANSACTION LOGIC ──────────────────────────────────────────────────────
 
-/**
- * Send SOL payment
- */
 export const sendSolPayment = internalAction({
   args: {
     recipient: v.string(),
     amountSol: v.number(),
   },
   handler: async (ctx, args) => {
-    // 0. Polyfill Secure Context for Solana Web3.js v2 in Convex
-    // @ts-ignore
-    if (globalThis.isSecureContext === undefined) {
-      // @ts-ignore
-      globalThis.isSecureContext = true;
-    }
-
     // 1. Get Wallet
     const wallet = await ctx.runQuery(internal.lib.caisper.getCaisperWalletInternal)
     if (!wallet) {
-      throw new Error("Caisper wallet not configured")
+      throw new Error('Caisper wallet not configured')
     }
 
-    // 2. Setup RPC
-    const network = getNetworkMetadata() // e.g. devnet
-    const rpc = createSolanaRpc(
-       network.cluster === 'mainnet-beta' 
-       ? 'https://api.mainnet-beta.solana.com' 
-       : 'https://api.devnet.solana.com'
-    )
-    
-    // 3. Create Signer
-    const signer = await createKeyPairSignerFromBytes(
-      new Uint8Array(wallet.secretKey)
-    )
+    // 2. Setup RPC URL - x402 payments should use mainnet where Caisper has real funds
+    const network = getNetworkMetadata()
+    // Force mainnet for payments since Caisper has real SOL/USDC
+    const rpcUrl = 'https://api.mainnet-beta.solana.com'
+    console.log(`[Caisper] Using RPC: ${rpcUrl} (env: ${network.environment})`)
+
+    // 3. Key material
+    const secretKeyBytes = new Uint8Array(wallet.secretKey)
+    const payerAddress = address(wallet.publicKey) as Address
 
     // 4. Create Instruction
-    // 1 SOL = 1e9 lamports
     const lamports = BigInt(Math.round(args.amountSol * 1e9))
-    
     const transferIx = getTransferSolInstruction({
-      source: signer.address,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      source: payerAddress as any,
       destination: address(args.recipient),
-      amount: lamports
+      amount: lamports,
     })
 
-    // 5. Get Latest Blockhash
-    const { value: latestBlockhash } = await rpc.getLatestBlockhash().send()
+    // 5. Get Latest Blockhash via direct RPC
+    const blockhashResult = await jsonRpc(rpcUrl, 'getLatestBlockhash', [
+      { commitment: 'finalized' },
+    ])
+    const latestBlockhash = {
+      blockhash: blockhashResult.value.blockhash as string,
+      lastValidBlockHeight: BigInt(blockhashResult.value.lastValidBlockHeight),
+    }
 
     // 6. Build Message
-    const msg0 = createTransactionMessage({ version: 0 });
-    const msg1 = setTransactionMessageFeePayer(signer.address, msg0);
-    const msg2 = setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, msg1);
-    const message = appendTransactionMessageInstruction(transferIx, msg2);
+    const msg0 = createTransactionMessage({ version: 0 })
+    const msg1 = setTransactionMessageFeePayer(payerAddress, msg0)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const msg2 = setTransactionMessageLifetimeUsingBlockhash(latestBlockhash as any, msg1)
+    const message = appendTransactionMessageInstruction(transferIx, msg2)
 
-    // 7. Sign
-    const signedMessage = await signTransactionMessageWithSigners(message);
-    const signature = getBase64EncodedWireTransaction(signedMessage);
+    // 7. Compile and serialize message to bytes
+    const compiledMessage = compileTransactionMessage(message)
+    const messageEncoder = getCompiledTransactionMessageEncoder()
+    const messageBytes = messageEncoder.encode(compiledMessage)
 
-    // 8. Send
-    const txSignature = await rpc.sendTransaction(signature, { encoding: 'base64' }).send()
-    
-    return { success: true, signature: txSignature }
-  }
+    // 8. Sign with tweetnacl
+    const signature = nacl.sign.detached(new Uint8Array(messageBytes), secretKeyBytes)
+
+    // 9. Construct signed transaction wire format
+    // [compact-u16 sig count][sig(s)][message]
+    const signedTx = new Uint8Array(1 + 64 + messageBytes.length)
+    signedTx[0] = 1 // 1 signature (compact-u16 encoding for 1)
+    signedTx.set(signature, 1)
+    signedTx.set(messageBytes, 1 + 64)
+
+    // 10. Send via direct RPC (use btoa for base64, no Node Buffer)
+    const base64Tx = btoa(String.fromCharCode(...signedTx))
+    const txSignature = await jsonRpc(rpcUrl, 'sendTransaction', [
+      base64Tx,
+      { encoding: 'base64', preflightCommitment: 'confirmed' },
+    ])
+
+    console.log(`[Caisper] Payment sent! Sig: ${txSignature}`)
+    return { success: true, signature: txSignature as string }
+  },
 })
 
-/**
- * Internal query to get sensitive wallet data (only callable by internal actions)
- */
-export const getCaisperWalletInternal = query({
+export const getCaisperWalletInternal = internalQuery({
   handler: async (ctx) => {
-    return await ctx.db.query('caisperWallet').first() 
-  }
+    return await ctx.db.query('caisperWallet').first()
+  },
 })

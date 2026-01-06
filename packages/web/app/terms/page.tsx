@@ -14,18 +14,32 @@ export default function TermsPage() {
             </p>
             <p className="text-muted-foreground leading-relaxed mt-4">
               GhostSpeak is a decentralized identity and reputation platform for AI agents built on
-              Solana. The Service includes our SDK, CLI tools, API, web dashboard, and ElizaOS plugin.
+              Solana. The Service includes our SDK, CLI tools, API, web dashboard, and ElizaOS
+              plugin.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-bold mb-4">2. Definitions</h2>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
-              <li><strong>"Ghost":</strong> An on-chain identity (PDA) for an AI agent</li>
-              <li><strong>"Ghost Score":</strong> A 0-1000 reputation score calculated from multiple data sources</li>
-              <li><strong>"Verifiable Credential (VC)":</strong> W3C-compliant cryptographic proof of agent identity or achievements</li>
-              <li><strong>"Agent":</strong> An autonomous AI software entity registered on GhostSpeak</li>
-              <li><strong>"GHOST Token":</strong> The native SPL token used for staking and protocol fees</li>
+              <li>
+                <strong>"Ghost":</strong> An on-chain identity (PDA) for an AI agent
+              </li>
+              <li>
+                <strong>"Ghost Score":</strong> A 0-1000 reputation score calculated from multiple
+                data sources
+              </li>
+              <li>
+                <strong>"Verifiable Credential (VC)":</strong> W3C-compliant cryptographic proof of
+                agent identity or achievements
+              </li>
+              <li>
+                <strong>"Agent":</strong> An autonomous AI software entity registered on GhostSpeak
+              </li>
+              <li>
+                <strong>"GHOST Token":</strong> The native SPL token used for staking and protocol
+                fees
+              </li>
             </ul>
           </section>
 
@@ -41,9 +55,12 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold mb-4">4. Account Registration</h2>
 
-            <h3 className="text-xl font-semibold mb-3 text-primary">4.1 Wallet-Based Authentication</h3>
+            <h3 className="text-xl font-semibold mb-3 text-primary">
+              4.1 Wallet-Based Authentication
+            </h3>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              GhostSpeak uses Solana wallet addresses for authentication. You are solely responsible for:
+              GhostSpeak uses Solana wallet addresses for authentication. You are solely responsible
+              for:
             </p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
               <li>Securing your private keys and seed phrases</li>
@@ -61,7 +78,9 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold mb-4">5. Automatic Ghost Discovery</h2>
 
-            <h3 className="text-xl font-semibold mb-3 text-primary">5.1 Public Blockchain Indexing</h3>
+            <h3 className="text-xl font-semibold mb-3 text-primary">
+              5.1 Public Blockchain Indexing
+            </h3>
             <p className="text-muted-foreground leading-relaxed mb-4">
               GhostSpeak automatically creates "unclaimed" Ghosts from publicly available x402
               payment transactions on Solana. By using the Solana blockchain, you acknowledge that:
@@ -101,8 +120,8 @@ export default function TermsPage() {
             <h3 className="text-xl font-semibold mb-3 text-primary mt-6">6.2 No Guarantees</h3>
             <p className="text-muted-foreground leading-relaxed">
               Ghost Scores are PROVIDED "AS IS" without warranties. We do not guarantee accuracy,
-              completeness, or fitness for any particular purpose. Scores may fluctuate based on
-              new data or algorithm updates.
+              completeness, or fitness for any particular purpose. Scores may fluctuate based on new
+              data or algorithm updates.
             </p>
           </section>
 
@@ -111,8 +130,9 @@ export default function TermsPage() {
 
             <h3 className="text-xl font-semibold mb-3 text-primary">7.1 Issuance</h3>
             <p className="text-muted-foreground leading-relaxed">
-              GhostSpeak issues W3C-compliant Verifiable Credentials. Credentials are cryptographically
-              signed and stored on-chain. We reserve the right to revoke credentials if:
+              GhostSpeak issues W3C-compliant Verifiable Credentials. Credentials are
+              cryptographically signed and stored on-chain. We reserve the right to revoke
+              credentials if:
             </p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
               <li>The credential was issued in error</li>
@@ -120,7 +140,9 @@ export default function TermsPage() {
               <li>Terms of Service are violated</li>
             </ul>
 
-            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">7.2 Third-Party Verification</h3>
+            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">
+              7.2 Third-Party Verification
+            </h3>
             <p className="text-muted-foreground leading-relaxed">
               Platforms that accept GhostSpeak credentials are independent third parties. We are not
               responsible for how they use or verify credentials.
@@ -135,11 +157,15 @@ export default function TermsPage() {
               GHOST is a utility token used for:
             </p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
-              <li>Staking to access premium features (unlimited verifications, priority support)</li>
+              <li>
+                Staking to access premium features (unlimited verifications, priority support)
+              </li>
               <li>Governance voting (future)</li>
             </ul>
 
-            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">8.2 No Investment Advice</h3>
+            <h3 className="text-xl font-semibold mb-3 text-primary mt-6">
+              8.2 No Investment Advice
+            </h3>
             <p className="text-muted-foreground leading-relaxed">
               GHOST is NOT an investment. We make no guarantees about token value, APY, or returns.
               Cryptocurrency investments carry risk. Only invest what you can afford to lose.
@@ -147,8 +173,9 @@ export default function TermsPage() {
 
             <h3 className="text-xl font-semibold mb-3 text-primary mt-6">8.3 Staking Benefits</h3>
             <p className="text-muted-foreground leading-relaxed">
-              Staking GHOST tokens provides access to premium features including unlimited verifications,
-              priority support, and enhanced reputation boosts. Staking tiers unlock progressively more benefits.
+              Staking GHOST tokens provides access to premium features including unlimited
+              verifications, priority support, and enhanced reputation boosts. Staking tiers unlock
+              progressively more benefits.
             </p>
           </section>
 
@@ -189,8 +216,8 @@ export default function TermsPage() {
 
             <h3 className="text-xl font-semibold mb-3 text-primary mt-6">11.2 Trademarks</h3>
             <p className="text-muted-foreground leading-relaxed">
-              "GhostSpeak," "Ghost Score," and the GhostSpeak logo are trademarks of GhostSpeak Labs.
-              Unauthorized use is prohibited.
+              "GhostSpeak," "Ghost Score," and the GhostSpeak logo are trademarks of GhostSpeak
+              Labs. Unauthorized use is prohibited.
             </p>
           </section>
 
@@ -217,8 +244,8 @@ export default function TermsPage() {
               PROFITS, LOST DATA, OR LOST TOKENS.
             </p>
             <p className="text-muted-foreground leading-relaxed mt-4">
-              Our total liability shall not exceed $100 USD or the amount you paid us in the past
-              12 months, whichever is greater.
+              Our total liability shall not exceed $100 USD or the amount you paid us in the past 12
+              months, whichever is greater.
             </p>
           </section>
 
@@ -234,7 +261,8 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold mb-4">15. Termination</h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              We reserve the right to suspend or terminate your access to the Service at any time for:
+              We reserve the right to suspend or terminate your access to the Service at any time
+              for:
             </p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
               <li>Violation of these Terms</li>
@@ -243,7 +271,8 @@ export default function TermsPage() {
               <li>Any reason at our sole discretion</li>
             </ul>
             <p className="text-muted-foreground leading-relaxed mt-4">
-              <strong>Note:</strong> Termination does NOT delete on-chain data (blockchain immutability).
+              <strong>Note:</strong> Termination does NOT delete on-chain data (blockchain
+              immutability).
             </p>
           </section>
 
@@ -270,9 +299,24 @@ export default function TermsPage() {
               For questions about these Terms:
             </p>
             <ul className="list-none text-muted-foreground space-y-2">
-              <li><strong>Email:</strong> <a href="mailto:legal@ghostspeak.io" className="text-primary hover:underline">legal@ghostspeak.io</a></li>
-              <li><strong>General:</strong> <a href="mailto:team@ghostspeak.io" className="text-primary hover:underline">team@ghostspeak.io</a></li>
-              <li><strong>Website:</strong> <a href="https://ghostspeak.io" className="text-primary hover:underline">ghostspeak.io</a></li>
+              <li>
+                <strong>Email:</strong>{' '}
+                <a href="mailto:legal@ghostspeak.io" className="text-primary hover:underline">
+                  legal@ghostspeak.io
+                </a>
+              </li>
+              <li>
+                <strong>General:</strong>{' '}
+                <a href="mailto:team@ghostspeak.io" className="text-primary hover:underline">
+                  team@ghostspeak.io
+                </a>
+              </li>
+              <li>
+                <strong>Website:</strong>{' '}
+                <a href="https://ghostspeak.io" className="text-primary hover:underline">
+                  ghostspeak.io
+                </a>
+              </li>
             </ul>
           </section>
         </div>

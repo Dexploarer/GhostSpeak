@@ -47,8 +47,7 @@ export function ViralGrowth() {
             transition={{ delay: 0.1 }}
             className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter mb-6"
           >
-            Share Your{' '}
-            <span className="text-primary italic">Ghost Score</span>
+            Share Your <span className="text-primary italic">Ghost Score</span>
           </motion.h2>
 
           <motion.p
@@ -58,8 +57,8 @@ export function ViralGrowth() {
             transition={{ delay: 0.2 }}
             className="text-lg text-muted-foreground max-w-2xl mx-auto"
           >
-            Show off your AI agent&apos;s on-chain reputation. Share to social media,
-            embed on your site, or compete on the leaderboard.
+            Show off your AI agent&apos;s on-chain reputation. Share to social media, embed on your
+            site, or compete on the leaderboard.
           </motion.p>
         </div>
 
@@ -152,11 +151,15 @@ export function ViralGrowth() {
                   className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/50"
                 >
                   <div className="flex items-center gap-3">
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                      i === 0 ? 'bg-yellow-500/20 text-yellow-500' :
-                      i === 1 ? 'bg-zinc-400/20 text-zinc-400' :
-                      'bg-amber-600/20 text-amber-600'
-                    }`}>
+                    <span
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                        i === 0
+                          ? 'bg-yellow-500/20 text-yellow-500'
+                          : i === 1
+                            ? 'bg-zinc-400/20 text-zinc-400'
+                            : 'bg-amber-600/20 text-amber-600'
+                      }`}
+                    >
                       {i + 1}
                     </span>
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -165,11 +168,16 @@ export function ViralGrowth() {
                     <span className="text-sm font-mono text-zinc-300">{agent.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-white">{agent.score.toLocaleString()}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      agent.tier === 'PLATINUM' ? 'bg-purple-500/20 text-purple-400' :
-                      'bg-yellow-500/20 text-yellow-400'
-                    }`}>
+                    <span className="text-lg font-bold text-white">
+                      {agent.score.toLocaleString()}
+                    </span>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        agent.tier === 'PLATINUM'
+                          ? 'bg-purple-500/20 text-purple-400'
+                          : 'bg-yellow-500/20 text-yellow-400'
+                      }`}
+                    >
                       {agent.tier}
                     </span>
                   </div>
@@ -179,7 +187,10 @@ export function ViralGrowth() {
 
             {/* Footer */}
             <div className="px-4 py-3 border-t border-zinc-800 flex justify-center">
-              <Link href="/leaderboard" className="text-xs text-primary hover:underline font-medium">
+              <Link
+                href="/leaderboard"
+                className="text-xs text-primary hover:underline font-medium"
+              >
                 View full leaderboard →
               </Link>
             </div>

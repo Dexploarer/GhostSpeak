@@ -8,7 +8,7 @@
 import { AgentRuntime, IAgentRuntime, Memory, IDatabaseAdapter } from '@elizaos/core'
 import { aiGatewayPlugin } from '@ghostspeak/plugin-gateway-ghost'
 import { ghostspeakPlugin } from '@ghostspeak/plugin-elizaos'
-import mcpPlugin from '@elizaos/plugin-mcp'
+// import mcpPlugin from '@elizaos/plugin-mcp' // Disabled: Internal agent uses direct actions
 import sqlPlugin from '@elizaos/plugin-sql'
 import CaisperCharacter from './Caisper.json' assert { type: 'json' }
 import { ConvexHttpClient } from 'convex/browser'
@@ -24,6 +24,8 @@ import { issueCredentialAction } from './actions/issueCredential'
 import { trustAssessmentAction } from './actions/trustAssessment'
 import { agentDirectoryAction } from './actions/agentDirectory'
 import { evaluateAgentTokensAction } from './actions/evaluateAgentTokens'
+import { scoreHistoryAction } from './actions/scoreHistory'
+import { generateOuijaAction } from './actions/generateOuija'
 
 // Convex database adapter for ElizaOS
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -57,7 +59,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     console.log('📦 Convex database adapter initialized')
   }
 
-  async close(): Promise<void> {}
+  async close(): Promise<void> { }
 
   // Memories are stored in Convex agentMessages table
   async getMemories(params: any): Promise<any[]> {
@@ -113,8 +115,8 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     // Return a UUID as required by the interface
     return crypto.randomUUID() as `${string}-${string}-${string}-${string}-${string}`
   }
-  async removeMemory(memoryId: string, tableName?: string): Promise<void> {}
-  async removeAllMemories(roomId: string, tableName?: string): Promise<void> {}
+  async removeMemory(memoryId: string, tableName?: string): Promise<void> { }
+  async removeAllMemories(roomId: string, tableName?: string): Promise<void> { }
   async countMemories(roomId: string, unique?: boolean, tableName?: string): Promise<number> {
     return 0
   }
@@ -123,10 +125,10 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async getGoals(params: any): Promise<any[]> {
     return []
   }
-  async updateGoal(goal: any): Promise<void> {}
-  async createGoal(goal: any): Promise<void> {}
-  async removeGoal(goalId: string): Promise<void> {}
-  async removeAllGoals(roomId: string): Promise<void> {}
+  async updateGoal(goal: any): Promise<void> { }
+  async createGoal(goal: any): Promise<void> { }
+  async removeGoal(goalId: string): Promise<void> { }
+  async removeAllGoals(roomId: string): Promise<void> { }
 
   async getRoom(roomId: string): Promise<any | null> {
     return { id: roomId }
@@ -134,7 +136,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async createRoom(roomId?: string): Promise<string> {
     return roomId || `room-${Date.now()}`
   }
-  async removeRoom(roomId: string): Promise<void> {}
+  async removeRoom(roomId: string): Promise<void> { }
 
   async getRoomsForParticipant(userId: string): Promise<any[]> {
     return []
@@ -161,7 +163,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     roomId: string,
     userId: string,
     state: 'FOLLOWED' | 'MUTED' | null
-  ): Promise<void> {}
+  ): Promise<void> { }
   async getParticipantsForRoom(roomId: string): Promise<any[]> {
     return []
   }
@@ -175,7 +177,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async createRelationship(params: any): Promise<boolean> {
     return true
   }
-  async updateRelationship(relationship: any): Promise<void> {}
+  async updateRelationship(relationship: any): Promise<void> { }
 
   async getCache<T>(key: string): Promise<T | undefined> {
     return undefined
@@ -207,14 +209,44 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     return []
   }
   async searchMemories(params: any): Promise<any[]> {
-    return []
+    try {
+      const { roomId, query, count = 10, namespace = 'docs' } = params
+
+      console.log(`🔍 ConvexDatabaseAdapter: Searching memories for "${query}" in namespace ${namespace}`)
+
+      // Call the Convex searchContext action
+      const { results } = await this.convex.action(api.agent.searchContext, {
+        query: query,
+        namespace,
+        limit: count,
+      })
+
+      // Convert RAG results to ElizaOS Memory format
+      return results.map((res: any) => ({
+        id: res.id,
+        userId: 'system',
+        agentId: 'caisper',
+        roomId: roomId || 'global',
+        content: {
+          text: res.text,
+          metadata: {
+            ...res.metadata,
+            score: res.score,
+          },
+        },
+        createdAt: res.metadata?.ingestedAt || Date.now(),
+      }))
+    } catch (error) {
+      console.error('Error searching memories in Convex:', error)
+      return []
+    }
   }
   async updateMemory(memory: any): Promise<boolean> {
     return true
   }
-  async deleteMemory(memoryId: any): Promise<void> {}
-  async deleteManyMemories(memoryIds: any[]): Promise<void> {}
-  async deleteAllMemories(roomId: string, tableName: string): Promise<void> {}
+  async deleteMemory(memoryId: any): Promise<void> { }
+  async deleteManyMemories(memoryIds: any[]): Promise<void> { }
+  async deleteAllMemories(roomId: string, tableName: string): Promise<void> { }
 
   async getEntitiesByIds(entityIds: any[]): Promise<any[] | null> {
     // Return entity objects for elizaOS v1.7.0
@@ -234,7 +266,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async createEntities(entities: any[]): Promise<boolean> {
     return true
   }
-  async updateEntity(entity: any): Promise<void> {}
+  async updateEntity(entity: any): Promise<void> { }
 
   async getComponent(
     entityId: any,
@@ -250,8 +282,8 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async createComponent(component: any): Promise<boolean> {
     return true
   }
-  async updateComponent(component: any): Promise<void> {}
-  async deleteComponent(componentId: any): Promise<void> {}
+  async updateComponent(component: any): Promise<void> { }
+  async deleteComponent(componentId: any): Promise<void> { }
 
   async getAgent(agentId: any): Promise<any | null> {
     // Return a proper Agent object for elizaOS v1.7.0
@@ -281,13 +313,16 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async deleteAgent(agentId: any): Promise<boolean> {
     return true
   }
-  async ensureEmbeddingDimension(dimension: number): Promise<void> {}
+  async ensureEmbeddingDimension(dimension: number): Promise<void> {
+    console.log(`📏 ConvexDatabaseAdapter: Ensuring embedding dimension ${dimension}`)
+    // GhostSpeak uses Gateway-Ghost with 3072 dimensions (openai/text-embedding-3-large)
+  }
 
-  async log(params: any): Promise<void> {}
+  async log(params: any): Promise<void> { }
   async getLogs(params: any): Promise<any[]> {
     return []
   }
-  async deleteLog(logId: any): Promise<void> {}
+  async deleteLog(logId: any): Promise<void> { }
 
   async createWorld(world: any): Promise<any> {
     return world.id || `world-${Date.now()}`
@@ -295,20 +330,20 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async getWorld(id: any): Promise<any | null> {
     return { id }
   }
-  async removeWorld(id: any): Promise<void> {}
+  async removeWorld(id: any): Promise<void> { }
   async getAllWorlds(): Promise<any[]> {
     return []
   }
-  async updateWorld(world: any): Promise<void> {}
+  async updateWorld(world: any): Promise<void> { }
   async getRoomsByIds(roomIds: any[]): Promise<any[] | null> {
     return roomIds.map((id) => ({ id }))
   }
   async createRooms(rooms: any[]): Promise<any[]> {
     return rooms.map((r) => r.id || `room-${Date.now()}`)
   }
-  async deleteRoom(roomId: any): Promise<void> {}
-  async deleteRoomsByWorldId(worldId: any): Promise<void> {}
-  async updateRoom(room: any): Promise<void> {}
+  async deleteRoom(roomId: any): Promise<void> { }
+  async deleteRoomsByWorldId(worldId: any): Promise<void> { }
+  async updateRoom(room: any): Promise<void> { }
   async getRoomsByWorld(worldId: any): Promise<any[]> {
     return []
   }
@@ -338,12 +373,12 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async getTask(taskId: any): Promise<any | null> {
     return null
   }
-  async updateTask(taskId: any, task: any): Promise<void> {}
-  async deleteTask(taskId: any): Promise<void> {}
+  async updateTask(taskId: any, task: any): Promise<void> { }
+  async deleteTask(taskId: any): Promise<void> { }
   async getTasksByName(name: string): Promise<any[]> {
     return []
   }
-  async deleteTasks(params: any): Promise<void> {}
+  async deleteTasks(params: any): Promise<void> { }
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 /* eslint-enable @typescript-eslint/no-unused-vars */
@@ -380,7 +415,7 @@ export async function initializeAgent(): Promise<IAgentRuntime> {
     const runtime = new AgentRuntime({
       // @ts-ignore - Character JSON matches ICharacter interface
       character: CaisperCharacter,
-      plugins: [sqlPlugin, ghostspeakPlugin, aiGatewayPlugin, mcpPlugin],
+      plugins: [sqlPlugin, ghostspeakPlugin, aiGatewayPlugin], // Removed mcpPlugin for internal runtime
       adapter: databaseAdapter,
       // Settings is Record<string, string> in v1.7.0
       settings: {
@@ -403,7 +438,9 @@ export async function initializeAgent(): Promise<IAgentRuntime> {
     runtime.registerAction(trustAssessmentAction)
     runtime.registerAction(agentDirectoryAction)
     runtime.registerAction(evaluateAgentTokensAction)
-    console.log('📝 Registered 9 web-app actions including evaluateAgentTokens')
+    runtime.registerAction(scoreHistoryAction)
+    runtime.registerAction(generateOuijaAction)
+    console.log('📝 Registered 11 web-app actions including Ouija')
 
     agentRuntime = runtime
     console.log('✅ Casper agent initialized successfully')

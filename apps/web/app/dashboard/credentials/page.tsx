@@ -125,7 +125,10 @@ function getExplorerTxUrl(signature: string): string {
 export default function DashboardCredentialsPage() {
   const { publicKey } = useWallet()
 
-  const userAgents = useQuery(api.dashboard.getUserAgents, publicKey ? { walletAddress: publicKey } : 'skip')
+  const userAgents = useQuery(
+    api.dashboard.getUserAgents,
+    publicKey ? { walletAddress: publicKey } : 'skip'
+  )
   const [addressInput, setAddressInput] = useState('')
   const [lookupAddressRaw, setLookupAddressRaw] = useState<string | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
@@ -159,7 +162,10 @@ export default function DashboardCredentialsPage() {
   const credentialDetails = useQuery(
     api.credentials.getCredentialDetailsPublic,
     selectedCredential
-      ? { credentialType: selectedCredential.credentialType, credentialId: selectedCredential.credentialId }
+      ? {
+          credentialType: selectedCredential.credentialType,
+          credentialId: selectedCredential.credentialId,
+        }
       : 'skip'
   ) as CredentialDetailsEnvelope | undefined
 
@@ -230,7 +236,10 @@ export default function DashboardCredentialsPage() {
                   data-testid="credentials-agent-address-input"
                 />
                 {validationError && (
-                  <p className="text-xs text-red-400 mt-2" data-testid="credentials-agent-address-error">
+                  <p
+                    className="text-xs text-red-400 mt-2"
+                    data-testid="credentials-agent-address-error"
+                  >
                     {validationError}
                   </p>
                 )}
@@ -248,7 +257,9 @@ export default function DashboardCredentialsPage() {
 
             <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
               <div className="flex-1">
-                <p className="text-xs text-white/40 uppercase tracking-wider font-medium">Quick pick (my agents)</p>
+                <p className="text-xs text-white/40 uppercase tracking-wider font-medium">
+                  Quick pick (my agents)
+                </p>
                 <Select
                   onValueChange={onPickAgent}
                   disabled={userAgents === undefined || !userAgents?.agents?.length}
@@ -298,7 +309,10 @@ export default function DashboardCredentialsPage() {
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs text-white/40 uppercase tracking-wider font-medium">Agent</p>
-                <p className="text-sm text-white/90 font-mono break-all mt-1" data-testid="credentials-agent-address">
+                <p
+                  className="text-sm text-white/90 font-mono break-all mt-1"
+                  data-testid="credentials-agent-address"
+                >
                   {normalizedLookup}
                 </p>
               </div>
@@ -321,7 +335,9 @@ export default function DashboardCredentialsPage() {
                   }`}
                   data-testid="credentials-agent-source-reputation"
                 >
-                  {agentProfile?.reputationCache?.exists ? 'Reputation cached' : 'No reputation cache'}
+                  {agentProfile?.reputationCache?.exists
+                    ? 'Reputation cached'
+                    : 'No reputation cache'}
                 </div>
               </div>
             </div>
@@ -359,13 +375,18 @@ export default function DashboardCredentialsPage() {
                     </p>
                     <p className="text-xs text-white/40">
                       Discovery source:{' '}
-                      <span className="text-white/80" data-testid="credentials-agent-discovery-source">
+                      <span
+                        className="text-white/80"
+                        data-testid="credentials-agent-discovery-source"
+                      >
                         {agentProfile.discoveredAgent.record?.discoverySource ?? '—'}
                       </span>
                     </p>
                   </div>
                 ) : (
-                  <p className="text-sm text-white/60">No public discovered profile for this address.</p>
+                  <p className="text-sm text-white/60">
+                    No public discovered profile for this address.
+                  </p>
                 )}
               </div>
 
@@ -383,15 +404,23 @@ export default function DashboardCredentialsPage() {
                 ) : (
                   <div className="space-y-3">
                     <div>
-                      <p className="text-xs text-white/40 uppercase tracking-wider font-medium">External IDs</p>
+                      <p className="text-xs text-white/40 uppercase tracking-wider font-medium">
+                        External IDs
+                      </p>
                       {agentProfile.externalIdMappings?.count ? (
                         <ul className="mt-2 space-y-1" data-testid="credentials-agent-external-ids">
                           {agentProfile.externalIdMappings.items.map((m: any) => (
-                            <li key={`${m.platform}:${m.externalId}`} className="text-xs text-white/70">
+                            <li
+                              key={`${m.platform}:${m.externalId}`}
+                              className="text-xs text-white/70"
+                            >
                               <span className="text-white/50">{m.platform}:</span>{' '}
                               <span className="font-mono break-all">{m.externalId}</span>{' '}
                               {m.verified ? (
-                                <span className="inline-flex items-center gap-1 text-green-400" aria-label="verified">
+                                <span
+                                  className="inline-flex items-center gap-1 text-green-400"
+                                  aria-label="verified"
+                                >
                                   <BadgeCheck className="w-3 h-3" aria-hidden="true" /> verified
                                 </span>
                               ) : (
@@ -406,16 +435,25 @@ export default function DashboardCredentialsPage() {
                     </div>
 
                     <div className="border-t border-white/10 pt-3">
-                      <p className="text-xs text-white/40 uppercase tracking-wider font-medium">Reputation cache</p>
+                      <p className="text-xs text-white/40 uppercase tracking-wider font-medium">
+                        Reputation cache
+                      </p>
                       {agentProfile.reputationCache?.exists ? (
-                        <div className="mt-2 space-y-1" data-testid="credentials-agent-reputation-cache">
+                        <div
+                          className="mt-2 space-y-1"
+                          data-testid="credentials-agent-reputation-cache"
+                        >
                           <p className="text-xs text-white/40">
                             Ghost score:{' '}
-                            <span className="text-white/80">{agentProfile.reputationCache.record?.ghostScore}</span>
+                            <span className="text-white/80">
+                              {agentProfile.reputationCache.record?.ghostScore}
+                            </span>
                           </p>
                           <p className="text-xs text-white/40">
                             Tier:{' '}
-                            <span className="text-white/80">{agentProfile.reputationCache.record?.tier}</span>
+                            <span className="text-white/80">
+                              {agentProfile.reputationCache.record?.tier}
+                            </span>
                           </p>
                           <p className="text-xs text-white/40">
                             Last updated:{' '}
@@ -440,7 +478,9 @@ export default function DashboardCredentialsPage() {
             className="p-5 sm:p-6 bg-[#111111] border border-white/10 rounded-xl"
             data-testid="credentials-list-section"
           >
-            <p className="text-xs text-white/40 uppercase tracking-wider font-medium mb-2">Credentials</p>
+            <p className="text-xs text-white/40 uppercase tracking-wider font-medium mb-2">
+              Credentials
+            </p>
 
             {credentialSummaries === undefined ? (
               <div className="flex items-center gap-2 text-sm text-white/60">
@@ -468,17 +508,27 @@ export default function DashboardCredentialsPage() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-sm text-white/90 font-medium">{humanCredentialType(c.credentialType)}</p>
-                          <p className="text-xs text-white/40 mt-1">{summarizeDisplay(c.display)}</p>
-                          <p className="text-xs text-white/40 font-mono break-all mt-1">{c.credentialId}</p>
+                          <p className="text-sm text-white/90 font-medium">
+                            {humanCredentialType(c.credentialType)}
+                          </p>
+                          <p className="text-xs text-white/40 mt-1">
+                            {summarizeDisplay(c.display)}
+                          </p>
+                          <p className="text-xs text-white/40 font-mono break-all mt-1">
+                            {c.credentialId}
+                          </p>
                           <p className="text-xs text-white/40 mt-1">
                             Issued: {formatDate(c.issuedAt)}
-                            {typeof c.expiresAt === 'number' ? ` • Expires: ${formatDate(c.expiresAt)}` : ''}
+                            {typeof c.expiresAt === 'number'
+                              ? ` • Expires: ${formatDate(c.expiresAt)}`
+                              : ''}
                           </p>
                         </div>
 
                         <div className="shrink-0 flex flex-col items-end gap-2">
-                          <div className={`px-2 py-0.5 rounded text-xs border ${statusBadgeClass(c.status)}`}>
+                          <div
+                            className={`px-2 py-0.5 rounded text-xs border ${statusBadgeClass(c.status)}`}
+                          >
                             {c.status === 'active'
                               ? 'Active'
                               : c.status === 'expired'
@@ -503,8 +553,8 @@ export default function DashboardCredentialsPage() {
         <section className="p-5 sm:p-6 bg-[#111111] border border-white/10 rounded-xl">
           <h2 className="text-sm font-medium text-white mb-2">Not available in web yet</h2>
           <p className="text-sm text-white/60 leading-relaxed">
-            This dashboard view shows credential metadata and pointers. Full cryptographic proof verification is
-            not available in the web UI yet.
+            This dashboard view shows credential metadata and pointers. Full cryptographic proof
+            verification is not available in the web UI yet.
           </p>
           <div className="mt-4 flex flex-col sm:flex-row gap-2">
             <a
@@ -554,7 +604,10 @@ export default function DashboardCredentialsPage() {
                     <p className="text-sm text-white/90 font-medium">
                       {humanCredentialType(selectedCredential.credentialType)}
                     </p>
-                    <p className="text-xs text-white/40 font-mono break-all mt-1" data-testid="credential-details-id">
+                    <p
+                      className="text-xs text-white/40 font-mono break-all mt-1"
+                      data-testid="credential-details-id"
+                    >
                       {selectedCredential.credentialId}
                     </p>
                   </div>
@@ -586,7 +639,8 @@ export default function DashboardCredentialsPage() {
                     </span>
                   </p>
                   <p className="text-xs text-white/40">
-                    Issued at: <span className="text-white/80">{formatDate(selectedCredential.issuedAt)}</span>
+                    Issued at:{' '}
+                    <span className="text-white/80">{formatDate(selectedCredential.issuedAt)}</span>
                   </p>
                   <p className="text-xs text-white/40">
                     Expires at:{' '}
@@ -603,15 +657,23 @@ export default function DashboardCredentialsPage() {
                 </div>
               </div>
 
-              <div className="p-3 bg-white/5 border border-white/10 rounded-lg" data-testid="credential-details-proof">
-                <p className="text-xs text-white/40 uppercase tracking-wider font-medium mb-2">Proof</p>
+              <div
+                className="p-3 bg-white/5 border border-white/10 rounded-lg"
+                data-testid="credential-details-proof"
+              >
+                <p className="text-xs text-white/40 uppercase tracking-wider font-medium mb-2">
+                  Proof
+                </p>
                 <p className="text-sm text-white/70">
-                  Proof: not available in web yet. Any signatures shown below are pointers only and are not
-                  cryptographically verified in this UI.
+                  Proof: not available in web yet. Any signatures shown below are pointers only and
+                  are not cryptographically verified in this UI.
                 </p>
               </div>
 
-              <div className="p-3 bg-white/5 border border-white/10 rounded-lg" data-testid="credential-details-signatures">
+              <div
+                className="p-3 bg-white/5 border border-white/10 rounded-lg"
+                data-testid="credential-details-signatures"
+              >
                 <p className="text-xs text-white/40 uppercase tracking-wider font-medium mb-2">
                   On-chain / signature pointers
                 </p>
@@ -635,11 +697,16 @@ export default function DashboardCredentialsPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-white/60">No signature pointers available for this credential.</p>
+                  <p className="text-sm text-white/60">
+                    No signature pointers available for this credential.
+                  </p>
                 )}
               </div>
 
-              <div className="p-3 bg-white/5 border border-white/10 rounded-lg" data-testid="credential-details-evidence">
+              <div
+                className="p-3 bg-white/5 border border-white/10 rounded-lg"
+                data-testid="credential-details-evidence"
+              >
                 <p className="text-xs text-white/40 uppercase tracking-wider font-medium mb-2">
                   Type-specific evidence
                 </p>

@@ -5,7 +5,48 @@
  */
 
 import { v } from 'convex/values'
-import { mutation, query } from './_generated/server'
+import { mutation, query, action } from './_generated/server'
+import { rag } from './rag'
+
+/**
+ * Semantic search over documentation and agent context
+ */
+export const searchContext = action({
+  args: {
+    query: v.string(),
+    namespace: v.optional(v.string()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    // Default to searching all namespaces if none specified
+    const namespaces = args.namespace ? [args.namespace] : ['docs', 'agents', 'observability', 'transactions']
+    const limit = args.limit || 5
+
+    console.log(`🔍 Searching RAG context: "${args.query}" in namespaces: ${namespaces.join(', ')}`)
+
+    const allResults = []
+
+    // Serial search across namespaces to avoid rate limits and SDK version conflicts
+    for (const ns of namespaces) {
+      const results = await rag.search(ctx, {
+        namespace: ns,
+        query: args.query,
+        limit,
+      })
+
+      for (const result of results.results) {
+        allResults.push({ ...result, namespace: ns })
+      }
+    }
+
+    // Sort by score (descending) and take top N
+    const sortedResults = allResults
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+
+    return { results: sortedResults }
+  },
+})
 
 /**
  * Store user message

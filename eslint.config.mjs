@@ -28,7 +28,7 @@ export default tseslint.config(
   {
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.json', './packages/*/tsconfig.json', './packages/*/tsconfig.eslint.json'],
+        project: ['./tsconfig.json', './packages/*/tsconfig.json', './apps/*/tsconfig.json', './packages/*/tsconfig.eslint.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -45,11 +45,11 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': 'off', // Style preference - safe to suppress
       '@typescript-eslint/no-unnecessary-condition': 'off', // Often defensive programming - safe to suppress
       '@typescript-eslint/prefer-optional-chain': 'off', // Style preference - safe to suppress
-      
+
       // Additional strict TypeScript rules - keep as warnings for gradual improvement
       '@typescript-eslint/no-inferrable-types': 'warn',
       '@typescript-eslint/prefer-string-starts-ends-with': 'warn',
-      
+
       // Unsafe operations - downgrade to warn for production deployment
       '@typescript-eslint/no-unsafe-assignment': 'warn',
       '@typescript-eslint/no-unsafe-call': 'warn',
@@ -57,13 +57,13 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-argument': 'warn',
       '@typescript-eslint/no-unsafe-return': 'warn',
       '@typescript-eslint/no-require-imports': 'off', // Legacy compatibility - safe to suppress
-      
+
       // Temporarily downgrade these to warnings for gradual improvement
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/await-thenable': 'warn',
       '@typescript-eslint/return-await': 'off', // Style preference - safe to suppress
       '@typescript-eslint/no-namespace': 'off', // Legitimate use cases - safe to suppress
-      
+
       // Code quality and consistency rules
       'no-constant-condition': 'error',
       'no-duplicate-case': 'error',
@@ -85,11 +85,11 @@ export default tseslint.config(
       'no-unsafe-negation': 'error',
       'use-isnan': 'error',
       'valid-typeof': 'error',
-      
+
       // Disable conflicting rules
       'no-unused-vars': 'off',
       'no-undef': 'off', // TypeScript handles this better
-      
+
       // Basic JS/TS quality - keep as errors
       'prefer-const': 'error',
       'no-var': 'error',

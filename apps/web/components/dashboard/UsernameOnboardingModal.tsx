@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { User, Mail, AtSign, Check, X, Loader2, Sparkles, AlertCircle } from 'lucide-react'
-import { useAction, useMutation, useQuery } from 'convex/react'
+import { useAction, useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { MeshGradientGhost } from '@/components/shared/MeshGradientGhost'
-import { useDebounce } from '@/hooks/useDebounce'
+import { useUsernameValidation } from '@/hooks/useUsernameValidation'
+import { BRAND_NAME, THEME_COLORS } from '@/lib/constants/branding'
 
 interface UsernameOnboardingModalProps {
   walletAddress: string
@@ -24,35 +25,14 @@ export function UsernameOnboardingModal({
   const [error, setError] = useState<string | null>(null)
   const [isAnalyzingWallet, setIsAnalyzingWallet] = useState(false)
 
-  // Debounce username for availability check
-  const debouncedUsername = useDebounce(username, 300)
-
-  // Check username availability
-  const usernameCheck = useQuery(
-    api.onboarding.checkUsernameAvailable,
-    debouncedUsername.length >= 3 ? { username: debouncedUsername } : 'skip'
-  )
+  // Use the extracted hook for validation
+  const validation = useUsernameValidation(username)
 
   // Mutations
   const completeOnboarding = useMutation(api.onboarding.completeOnboarding)
   const analyzeWalletHistory = useAction(api.onboarding.analyzeWalletHistory)
 
-  // Username validation state
-  const usernameStatus = useMemo(() => {
-    if (username.length === 0) return { status: 'empty' as const, message: '' }
-    if (username.length < 3) return { status: 'invalid' as const, message: 'At least 3 characters' }
-    if (username.length > 20) return { status: 'invalid' as const, message: 'Max 20 characters' }
-    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-      return { status: 'invalid' as const, message: 'Letters, numbers, _ and - only' }
-    }
-    if (usernameCheck === undefined) return { status: 'checking' as const, message: 'Checking...' }
-    if (!usernameCheck.available) {
-      return { status: 'taken' as const, message: usernameCheck.reason || 'Not available' }
-    }
-    return { status: 'available' as const, message: 'Available!' }
-  }, [username, usernameCheck])
-
-  const canSubmit = usernameStatus.status === 'available' && !isSubmitting && !isAnalyzingWallet
+  const canSubmit = validation.isValid && !isSubmitting && !isAnalyzingWallet
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -103,7 +83,7 @@ export function UsernameOnboardingModal({
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className="relative w-full max-w-md bg-[#111111] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+        className={`relative w-full max-w-md bg-[${THEME_COLORS.BACKGROUND}] border border-white/10 rounded-2xl shadow-2xl overflow-hidden`}
       >
         {/* Background Decoration */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
@@ -116,7 +96,7 @@ export function UsernameOnboardingModal({
             <div className="w-24 h-28 mb-4">
               <MeshGradientGhost animated={true} variant="caisper" />
             </div>
-            <h2 className="text-2xl font-light text-white text-center">Welcome to GhostSpeak</h2>
+            <h2 className="text-2xl font-light text-white text-center">Welcome to {BRAND_NAME}</h2>
             <p className="text-white/60 text-center mt-2">Choose a username to get started</p>
           </div>
 
@@ -134,40 +114,38 @@ export function UsernameOnboardingModal({
                   value={username}
                   onChange={(e) => setUsername(e.target.value.toLowerCase())}
                   placeholder="ghosthunter"
-                  className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 transition-all ${
-                    usernameStatus.status === 'available'
+                  className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 transition-all ${validation.status === 'available'
                       ? 'border-green-500/50 focus:ring-green-500/30'
-                      : usernameStatus.status === 'taken' || usernameStatus.status === 'invalid'
+                      : validation.status === 'taken' || validation.status === 'invalid'
                         ? 'border-red-500/50 focus:ring-red-500/30'
                         : 'border-white/10 focus:ring-primary/30'
-                  }`}
+                    }`}
                   autoFocus
                   disabled={isSubmitting}
                 />
                 {/* Status Icon */}
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  {usernameStatus.status === 'checking' && (
+                  {validation.status === 'checking' && (
                     <Loader2 className="w-5 h-5 text-white/40 animate-spin" />
                   )}
-                  {usernameStatus.status === 'available' && (
+                  {validation.status === 'available' && (
                     <Check className="w-5 h-5 text-green-500" />
                   )}
-                  {(usernameStatus.status === 'taken' || usernameStatus.status === 'invalid') && (
+                  {(validation.status === 'taken' || validation.status === 'invalid') && (
                     <X className="w-5 h-5 text-red-500" />
                   )}
                 </div>
               </div>
-              {usernameStatus.message && (
+              {validation.message && (
                 <p
-                  className={`text-xs ${
-                    usernameStatus.status === 'available'
+                  className={`text-xs ${validation.status === 'available'
                       ? 'text-green-400'
-                      : usernameStatus.status === 'taken' || usernameStatus.status === 'invalid'
+                      : validation.status === 'taken' || validation.status === 'invalid'
                         ? 'text-red-400'
                         : 'text-white/40'
-                  }`}
+                    }`}
                 >
-                  {usernameStatus.message}
+                  {validation.message}
                 </p>
               )}
             </div>
@@ -223,11 +201,10 @@ export function UsernameOnboardingModal({
             <button
               type="submit"
               disabled={!canSubmit}
-              className={`w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-medium transition-all ${
-                canSubmit
+              className={`w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-medium transition-all ${canSubmit
                   ? 'bg-primary text-black hover:bg-primary/90'
                   : 'bg-white/10 text-white/40 cursor-not-allowed'
-              }`}
+                }`}
             >
               {isSubmitting || isAnalyzingWallet ? (
                 <>

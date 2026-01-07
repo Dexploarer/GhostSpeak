@@ -429,6 +429,32 @@ export default defineSchema({
     .index('by_ghosthunter_score', ['ghosthunterScore']),
 
   //
+  // ─── GHOST SCORE: HISTORICAL TRACKING ──────────────────────────────────────────
+  // Track Ghost Score changes over time for analytics and trends
+  //
+  ghostScoreHistory: defineTable({
+    agentAddress: v.string(),
+    score: v.number(), // Ghost Score at snapshot time (0-10000)
+    tier: v.string(), // Tier at snapshot ('NEWCOMER' | 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' | 'DIAMOND')
+    // Source breakdown for debugging and analysis
+    breakdown: v.optional(
+      v.object({
+        paymentActivity: v.optional(v.number()),
+        stakingCommitment: v.optional(v.number()),
+        credentialVerifications: v.optional(v.number()),
+        userReviews: v.optional(v.number()),
+        onChainActivity: v.optional(v.number()),
+        apiQualityMetrics: v.optional(v.number()),
+      })
+    ),
+    snapshotType: v.string(), // 'daily' | 'on_change' | 'manual'
+    timestamp: v.number(), // Unix timestamp of snapshot
+  })
+    .index('by_agent', ['agentAddress'])
+    .index('by_agent_timestamp', ['agentAddress', 'timestamp'])
+    .index('by_timestamp', ['timestamp']),
+
+  //
   // ─── PAYAI INTEGRATION: FAILED RECORDINGS ──────────────────────────────────
   // Track failed on-chain recordings for retry
   //

@@ -6,7 +6,7 @@ import { useScrollReveal } from '@/lib/animations/hooks'
 
 /**
  * BentoUseCases - Bento grid layout for use cases with enhanced interactions
- * 
+ *
  * Features:
  * - Mixed-size card grid (bento layout)
  * - Hover lift effects with shadows
@@ -23,7 +23,8 @@ export function BentoUseCases() {
     {
       icon: Building2,
       title: 'AI Marketplaces',
-      description: 'Integrate Ghost Score to reduce fraud and increase trust in AI agent transactions',
+      description:
+        'Integrate Ghost Score to reduce fraud and increase trust in AI agent transactions',
       stat: '87% Fraud Reduction',
       gradient: 'from-blue-500/20 to-blue-500/5',
       size: 'large', // Takes 2 columns on desktop
@@ -58,13 +59,16 @@ export function BentoUseCases() {
     <section className="py-24 sm:py-32 md:py-40 bg-background relative overflow-hidden">
       {/* Background effects */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,var(--primary)/5,transparent_50%)]" />
-      
+
       {/* Dot matrix background */}
       <div className="absolute inset-0 opacity-[0.015]">
-        <div className="absolute inset-0" style={{
-          backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-        }} />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+          }}
+        />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 relative z-10">
@@ -94,7 +98,7 @@ export function BentoUseCases() {
           {useCases.map((useCase, i) => {
             const isLarge = useCase.size === 'large'
             const isMedium = useCase.size === 'medium'
-            
+
             return (
               <motion.div
                 key={useCase.title}
@@ -102,7 +106,11 @@ export function BentoUseCases() {
                 animate={gridInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.6, delay: i * 0.1 }}
                 className={`group relative ${
-                  isLarge ? 'md:col-span-2' : isMedium ? 'md:col-span-2 lg:col-span-1' : 'md:col-span-1'
+                  isLarge
+                    ? 'md:col-span-2'
+                    : isMedium
+                      ? 'md:col-span-2 lg:col-span-1'
+                      : 'md:col-span-1'
                 }`}
               >
                 <motion.div
@@ -119,7 +127,8 @@ export function BentoUseCases() {
                   <motion.div
                     className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                     style={{
-                      background: 'radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.1), transparent 50%)',
+                      background:
+                        'radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.1), transparent 50%)',
                     }}
                   />
 
@@ -135,7 +144,9 @@ export function BentoUseCases() {
                         <useCase.icon className="w-8 h-8 text-primary" />
                       </motion.div>
                       <div className="text-right">
-                        <div className="text-2xl font-black text-primary">{useCase.stat.split(' ')[0]}</div>
+                        <div className="text-2xl font-black text-primary">
+                          {useCase.stat.split(' ')[0]}
+                        </div>
                         <div className="text-xs text-muted-foreground font-mono">
                           {useCase.stat.split(' ').slice(1).join(' ')}
                         </div>

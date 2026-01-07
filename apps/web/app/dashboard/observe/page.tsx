@@ -446,11 +446,13 @@ export default function ObservePage() {
                                 <div className="flex items-center gap-3">
                                   <div
                                     className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                                      CATEGORY_CONFIG[ep.category]?.color || CATEGORY_CONFIG.other.color
+                                      CATEGORY_CONFIG[ep.category]?.color ||
+                                      CATEGORY_CONFIG.other.color
                                     }`}
                                   >
                                     <span className="text-lg">
-                                      {CATEGORY_CONFIG[ep.category]?.icon || CATEGORY_CONFIG.other.icon}
+                                      {CATEGORY_CONFIG[ep.category]?.icon ||
+                                        CATEGORY_CONFIG.other.icon}
                                     </span>
                                   </div>
                                   <div>

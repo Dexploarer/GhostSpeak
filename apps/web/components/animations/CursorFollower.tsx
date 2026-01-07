@@ -5,7 +5,7 @@ import { motion, useSpring } from 'framer-motion'
 
 /**
  * CursorFollower - Custom animated cursor that follows mouse movement
- * 
+ *
  * Features:
  * - Smooth spring physics for natural movement
  * - Glow effect that intensifies on interactive elements
@@ -46,7 +46,9 @@ export function CursorFollower() {
         const rect = target.getBoundingClientRect()
         const centerX = rect.left + rect.width / 2
         const centerY = rect.top + rect.height / 2
-        const distance = Math.sqrt(Math.pow(e.clientX - centerX, 2) + Math.pow(e.clientY - centerY, 2))
+        const distance = Math.sqrt(
+          Math.pow(e.clientX - centerX, 2) + Math.pow(e.clientY - centerY, 2)
+        )
 
         // Pull cursor toward center if within 60px
         if (distance < 60) {

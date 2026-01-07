@@ -52,7 +52,9 @@ export function VerificationContractCard({
       className={className ?? 'p-5 sm:p-6 bg-[#111111] border border-white/10 rounded-xl space-y-4'}
     >
       <div>
-        <p className="text-xs text-white/40 uppercase tracking-wider font-medium">Verified Session</p>
+        <p className="text-xs text-white/40 uppercase tracking-wider font-medium">
+          Verified Session
+        </p>
         <h2 id="verification-contract-heading" className="text-lg font-light text-white mt-1">
           Session status
         </h2>
@@ -86,7 +88,9 @@ export function VerificationContractCard({
       </div>
 
       <div className="space-y-2">
-        <p className="text-xs text-white/40 uppercase tracking-wider font-medium">Available tools</p>
+        <p className="text-xs text-white/40 uppercase tracking-wider font-medium">
+          Available tools
+        </p>
 
         <ul className="space-y-2">
           <li className="flex items-start gap-2 text-sm text-white/80">

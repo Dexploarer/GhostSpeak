@@ -181,7 +181,10 @@ export const createX402Payment = internalAction({
       ),
     }),
   },
-  handler: async (ctx, args): Promise<{ success: boolean; encodedPayload?: string; error?: string }> => {
+  handler: async (
+    ctx,
+    args
+  ): Promise<{ success: boolean; encodedPayload?: string; error?: string }> => {
     const { paymentRequirements } = args
 
     console.log('[caisperX402] Creating x402 payment:', {

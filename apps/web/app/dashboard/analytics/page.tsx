@@ -75,8 +75,8 @@ export default function DashboardAnalyticsPage() {
         <section className="p-5 sm:p-6 bg-[#111111] border border-white/10 rounded-xl">
           <h2 className="text-sm font-medium text-white mb-2">Not available in web yet</h2>
           <p className="text-sm text-white/60 leading-relaxed">
-            The full charts + exports described in the dashboard docs are not wired into the current web
-            backend yet.
+            The full charts + exports described in the dashboard docs are not wired into the current
+            web backend yet.
           </p>
           <div className="mt-4 flex flex-col sm:flex-row gap-2">
             <a
@@ -104,4 +104,3 @@ export default function DashboardAnalyticsPage() {
     </DashboardPageShell>
   )
 }
-

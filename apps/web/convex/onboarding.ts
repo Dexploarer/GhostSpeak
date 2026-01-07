@@ -33,7 +33,7 @@ export const checkOnboardingStatus = query({
   handler: async (ctx, args) => {
     const user = await ctx.db
       .query('users')
-      .withIndex('by_wallet_address', (q: any) => q.eq('walletAddress', args.walletAddress))
+      .withIndex('by_wallet_address', (q) => q.eq('walletAddress', args.walletAddress))
       .first()
 
     if (!user) {
@@ -113,7 +113,7 @@ export const checkUsernameAvailable = query({
     // Check if username is taken
     const existingUser = await ctx.db
       .query('users')
-      .withIndex('by_username', (q: any) => q.eq('username', normalizedUsername))
+      .withIndex('by_username', (q) => q.eq('username', normalizedUsername))
       .first()
 
     if (existingUser) {
@@ -143,7 +143,7 @@ export const completeOnboarding = mutation({
   handler: async (ctx, args) => {
     const user = await ctx.db
       .query('users')
-      .withIndex('by_wallet_address', (q: any) => q.eq('walletAddress', args.walletAddress))
+      .withIndex('by_wallet_address', (q) => q.eq('walletAddress', args.walletAddress))
       .first()
 
     if (!user) {
@@ -166,7 +166,7 @@ export const completeOnboarding = mutation({
     // Check if username is taken (double-check in mutation for race conditions)
     const existingUser = await ctx.db
       .query('users')
-      .withIndex('by_username', (q: any) => q.eq('username', normalizedUsername))
+      .withIndex('by_username', (q) => q.eq('username', normalizedUsername))
       .first()
 
     if (existingUser && existingUser._id !== user._id) {
@@ -207,7 +207,7 @@ export const saveWalletHistoryAnalysis = internalMutation({
   handler: async (ctx, args) => {
     const user = await ctx.db
       .query('users')
-      .withIndex('by_wallet_address', (q: any) => q.eq('walletAddress', args.walletAddress))
+      .withIndex('by_wallet_address', (q) => q.eq('walletAddress', args.walletAddress))
       .first()
 
     if (!user) {
@@ -255,7 +255,7 @@ export const recordHistoricalInteraction = internalMutation({
     // Check if we already recorded this interaction
     const existing = await ctx.db
       .query('historicalInteractions')
-      .withIndex('by_signature', (q: any) =>
+      .withIndex('by_signature', (q) =>
         q.eq('transactionSignature', args.transactionSignature)
       )
       .first()
@@ -267,13 +267,13 @@ export const recordHistoricalInteraction = internalMutation({
     // Get user ID if they exist
     const user = await ctx.db
       .query('users')
-      .withIndex('by_wallet_address', (q: any) => q.eq('walletAddress', args.userWalletAddress))
+      .withIndex('by_wallet_address', (q) => q.eq('walletAddress', args.userWalletAddress))
       .first()
 
     // Get agent ID if discovered
     const agent = await ctx.db
       .query('discoveredAgents')
-      .withIndex('by_address', (q: any) => q.eq('ghostAddress', args.agentWalletAddress))
+      .withIndex('by_address', (q) => q.eq('ghostAddress', args.agentWalletAddress))
       .first()
 
     await ctx.db.insert('historicalInteractions', {
@@ -310,7 +310,7 @@ export const discoverAgentFromPayment = internalMutation({
     // Check if agent already discovered
     const existing = await ctx.db
       .query('discoveredAgents')
-      .withIndex('by_address', (q: any) => q.eq('ghostAddress', args.agentWalletAddress))
+      .withIndex('by_address', (q) => q.eq('ghostAddress', args.agentWalletAddress))
       .first()
 
     if (existing) {
@@ -362,7 +362,7 @@ export const recordPotentialDeveloper = internalMutation({
     // Check if already recorded
     const existing = await ctx.db
       .query('potentialDevelopers')
-      .withIndex('by_wallet', (q: any) => q.eq('walletAddress', args.walletAddress))
+      .withIndex('by_wallet', (q) => q.eq('walletAddress', args.walletAddress))
       .first()
 
     if (existing) {
@@ -657,7 +657,7 @@ export const getUserInteractions = query({
   handler: async (ctx, args) => {
     const interactions = await ctx.db
       .query('historicalInteractions')
-      .withIndex('by_user_wallet', (q: any) => q.eq('userWalletAddress', args.walletAddress))
+      .withIndex('by_user_wallet', (q) => q.eq('userWalletAddress', args.walletAddress))
       .collect()
 
     // Enrich with agent info
@@ -665,17 +665,17 @@ export const getUserInteractions = query({
       interactions.map(async (interaction) => {
         const agent = await ctx.db
           .query('discoveredAgents')
-          .withIndex('by_address', (q: any) => q.eq('ghostAddress', interaction.agentWalletAddress))
+          .withIndex('by_address', (q) => q.eq('ghostAddress', interaction.agentWalletAddress))
           .first()
 
         return {
           ...interaction,
           agent: agent
             ? {
-                address: agent.ghostAddress,
-                status: agent.status,
-                claimedBy: agent.claimedBy,
-              }
+              address: agent.ghostAddress,
+              status: agent.status,
+              claimedBy: agent.claimedBy,
+            }
             : null,
         }
       })
@@ -696,8 +696,8 @@ export const getInteractionsForReviewPrompt = query({
   handler: async (ctx, args) => {
     const interactions = await ctx.db
       .query('historicalInteractions')
-      .withIndex('by_user_wallet', (q: any) => q.eq('userWalletAddress', args.walletAddress))
-      .filter((q: any) => q.neq(q.field('reviewPromptSent'), true))
+      .withIndex('by_user_wallet', (q) => q.eq('userWalletAddress', args.walletAddress))
+      .filter((q) => q.neq(q.field('reviewPromptSent'), true))
       .collect()
 
     // Filter to only interactions where agent is now claimed
@@ -705,7 +705,7 @@ export const getInteractionsForReviewPrompt = query({
     for (const interaction of interactions) {
       const agent = await ctx.db
         .query('discoveredAgents')
-        .withIndex('by_address', (q: any) => q.eq('ghostAddress', interaction.agentWalletAddress))
+        .withIndex('by_address', (q) => q.eq('ghostAddress', interaction.agentWalletAddress))
         .first()
 
       if (agent && (agent.status === 'claimed' || agent.status === 'verified')) {

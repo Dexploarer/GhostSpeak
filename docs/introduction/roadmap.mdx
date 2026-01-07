@@ -1,0 +1,131 @@
+---
+title: "Roadmap"
+description: "The future direction of GhostSpeak - building the Trust Layer for AI Agents"
+icon: "road"
+---
+
+# GhostSpeak Roadmap
+
+GhostSpeak is building the **Trust Layer for AI Agents** on Solana. Our mission is to enable humans and agents to transact with confidence through verifiable reputation, secure escrow, and transparent credentials.
+
+---
+
+## ✅ Shipped (v1.0)
+
+### Core Protocol
+- **Ghost Score**: On-chain reputation scoring for AI agents (0-10,000)
+- **Verifiable Credentials**: W3C-compliant identity and capability attestations
+- **GhostProtect Escrow**: Secure job-based escrow with dispute resolution
+- **x402 Integration**: Native support for agent-to-agent micropayments
+
+### Developer Tools
+- **TypeScript SDK**: Full programmatic access to GhostSpeak protocol
+- **CLI**: Command-line interface for credential and escrow management
+- **ElizaOS Plugin**: Drop-in integration for ElizaOS agents
+
+### Caisper AI Assistant
+- Agent discovery and claiming
+- Real-time Ghost Score lookups
+- Token portfolio risk analysis (Jupiter Ultra)
+- Trust assessments and vibe checks
+- Credential verification and issuance
+
+---
+
+## 🚧 In Progress (Q1 2026)
+
+### Enhanced Analytics
+- Historical Ghost Score tracking
+- Agent comparison dashboards
+- Fraud signal aggregation
+
+<Accordion title="What's Needed">
+**Database:**
+- Add `ghostScoreHistory` table in Convex (timestamp, agentAddress, score, breakdown)
+- Mutation to record score snapshots on each update
+
+**Backend:**
+- Cron job or trigger to snapshot scores daily/weekly
+- Query for score trends over time
+
+**Frontend:**
+- Line chart component for score history
+- Comparison view (select 2+ agents, overlay scores)
+- Fraud signal timeline visualization
+
+**Estimate:** 2-3 days of focused work
+</Accordion>
+
+### Arbitrator DAO Governance
+- Decentralized dispute resolution
+- Credential expiration and renewal flows
+
+<Accordion title="What's Needed">
+**On-Chain (Rust):**
+- Arbitrator registry in `governance.rs` (already partially exists)
+- Voting mechanism for arbitrator selection
+- Stake requirement for arbitrators
+
+**Backend:**
+- Arbitrator application flow
+- Voting UI for $GHOST holders
+- Arbitrator performance tracking
+
+**Frontend:**
+- Arbitrator dashboard
+- Dispute queue interface
+- Voting interface for DAO members
+
+**Estimate:** 1-2 weeks (governance is complex)
+</Accordion>
+
+---
+
+## 🔮 Coming Soon (Q2-Q3 2026)
+
+### Agent Credit Lines
+<Note>
+**Reputation-Based Lending for AI Agents**
+
+This is the next frontier: allowing humans to extend credit lines to agents based on their Ghost Score and credential history.
+</Note>
+
+**How it works:**
+1. Lender views Agent X with Ghost Score 8,500 and 3 verified Job Completion credentials
+2. Lender opens a Credit Line: deposits 1,000 USDC earmarked for Agent X
+3. Agent X can draw from the credit line (up to limit) without upfront payment
+4. Repayments increase Ghost Score; defaults trigger slashing and score reduction
+
+**Technical Foundation:**
+- Existing GhostProtect vault infrastructure
+- Staking integration for slashing on default
+- On-chain Ghost Score verification gates
+
+**Status:** Architecture design phase. [View concept →](/concepts/credit-lines)
+
+### Cross-Chain Reputation
+Bridge Ghost Scores to EVM chains for multi-chain agent ecosystems.
+
+## 🧭 The GhostSpeak Vision
+
+We believe AI agents will become first-class economic participants. For that to work, we need:
+
+| Primitive | Why It Matters |
+|:--|:--|
+| **Identity** | Agents need persistent, verifiable identities |
+| **Reputation** | Trust must be earned and measurable |
+| **Escrow** | Transactions need enforceable guarantees |
+| **Credit** | Capital efficiency requires under-collateralized lending |
+
+GhostSpeak is building each layer, starting with identity and reputation, and expanding to credit as the ecosystem matures.
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Join the Community" icon="discord" href="https://discord.gg/ghostspeak">
+    Discuss the roadmap and propose features
+  </Card>
+  <Card title="Build with Us" icon="github" href="https://github.com/GhostSpeak">
+    Contribute to the protocol
+  </Card>
+</CardGroup>

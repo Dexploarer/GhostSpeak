@@ -10,8 +10,8 @@ function getConvexUrlFromDotenv(): string | null {
   const candidates = [
     path.resolve(process.cwd(), '.env.local'),
     path.resolve(process.cwd(), '.env'),
-    path.resolve(process.cwd(), 'packages/web/.env.local'),
-    path.resolve(process.cwd(), 'packages/web/.env'),
+    path.resolve(process.cwd(), 'apps/web/.env.local'),
+    path.resolve(process.cwd(), 'apps/web/.env'),
   ]
 
   for (const file of candidates) {
@@ -45,34 +45,53 @@ test.describe('Public /observatory terminal UI', () => {
     page,
   }) => {
     const convexUrl = getConvexUrlFromDotenv()
-    test.skip(!convexUrl, 'Missing NEXT_PUBLIC_CONVEX_URL; public /observatory depends on Convex queries')
+    test.skip(
+      !convexUrl,
+      'Missing NEXT_PUBLIC_CONVEX_URL; public /observatory depends on Convex queries'
+    )
 
     await page.goto('/', { waitUntil: 'domcontentloaded' })
 
     await openMobileMenuIfNeeded(page)
 
     const observatoryLink = page.getByRole('link', { name: 'Observatory', exact: true })
-    await expect(observatoryLink, 'Expected an "Observatory" navigation link to exist on public (marketing) pages').toBeVisible(
-      { timeout: 15_000 },
-    )
+    await expect(
+      observatoryLink,
+      'Expected an "Observatory" navigation link to exist on public (marketing) pages'
+    ).toBeVisible({ timeout: 15_000 })
 
     await observatoryLink.click()
-    await expect(page, 'Expected clicking "Observatory" to navigate to /observatory').toHaveURL(/\/observatory(\?.*)?$/, {
+    await expect(page, 'Expected clicking "Observatory" to navigate to /observatory').toHaveURL(
+      /\/observatory(\?.*)?$/,
+      {
+        timeout: 30_000,
+      }
+    )
+
+    await expect(
+      page.getByTestId('observatory-page'),
+      'Expected /observatory page wrapper to render'
+    ).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(
+      page.getByTestId('observatory-terminal'),
+      'Expected terminal UI container to render on /observatory'
+    ).toBeVisible({
       timeout: 30_000,
     })
 
-    await expect(page.getByTestId('observatory-page'), 'Expected /observatory page wrapper to render').toBeVisible({
-      timeout: 30_000,
-    })
-    await expect(page.getByTestId('observatory-terminal'), 'Expected terminal UI container to render on /observatory').toBeVisible({
-      timeout: 30_000,
-    })
-
-    await expect(page.getByTestId('observatory-tab-live'), 'Expected LIVE tab to exist on the observatory terminal').toBeVisible()
+    await expect(
+      page.getByTestId('observatory-tab-live'),
+      'Expected LIVE tab to exist on the observatory terminal'
+    ).toBeVisible()
 
     // X402 tab: assert payer redaction exists when payments are present.
     await page.getByTestId('observatory-tab-x402').click()
-    await expect(page.getByTestId('observatory-tabpanel-x402'), 'Expected X402 tabpanel to render after clicking X402 tab').toBeVisible({
+    await expect(
+      page.getByTestId('observatory-tabpanel-x402'),
+      'Expected X402 tabpanel to render after clicking X402 tab'
+    ).toBeVisible({
       timeout: 15_000,
     })
 
@@ -91,7 +110,7 @@ test.describe('Public /observatory terminal UI', () => {
         {
           timeout: 20_000,
           message: 'Expected X402 tab to render a list, an empty state, or a loading state',
-        },
+        }
       )
       .not.toBe('unknown')
 
@@ -99,30 +118,39 @@ test.describe('Public /observatory terminal UI', () => {
       const firstX402Row = x402List.locator('[data-testid^="observatory-x402-row-"]').first()
       await expect(
         firstX402Row,
-        'Expected at least one X402 payment row when list is present',
+        'Expected at least one X402 payment row when list is present'
       ).toBeVisible({
         timeout: 15_000,
       })
 
       // Requirement: look for the explicit fully-redacted string.
       // Note: some environments may show partial redaction (e.g. 4…4). We keep that as a fallback.
-      await expect.soft(firstX402Row, 'Expected X402 payer to be fully redacted as "payer:[redacted]" in the public UI').toContainText(
-        'payer:[redacted]',
-      )
+      await expect
+        .soft(
+          firstX402Row,
+          'Expected X402 payer to be fully redacted as "payer:[redacted]" in the public UI'
+        )
+        .toContainText('payer:[redacted]')
 
       await expect(
         firstX402Row,
-        'Expected X402 payer to be redacted (either fully "[redacted]" or partially "abcd…wxyz")',
+        'Expected X402 payer to be redacted (either fully "[redacted]" or partially "abcd…wxyz")'
       ).toContainText(/payer:(\[redacted\]|[A-Za-z0-9]{4}…[A-Za-z0-9]{4})/)
     } else {
-      await expect(x402Empty, 'If there are no x402 payments, expected an explicit empty state message').toBeVisible({
+      await expect(
+        x402Empty,
+        'If there are no x402 payments, expected an explicit empty state message'
+      ).toBeVisible({
         timeout: 15_000,
       })
     }
 
     // LIVE tab: if any observation rows exist, click first and assert drawer opens.
     await page.getByTestId('observatory-tab-live').click()
-    await expect(page.getByTestId('observatory-tabpanel-live'), 'Expected LIVE tabpanel to render after returning to LIVE').toBeVisible({
+    await expect(
+      page.getByTestId('observatory-tabpanel-live'),
+      'Expected LIVE tabpanel to render after returning to LIVE'
+    ).toBeVisible({
       timeout: 15_000,
     })
 
@@ -141,7 +169,7 @@ test.describe('Public /observatory terminal UI', () => {
         {
           timeout: 20_000,
           message: 'Expected LIVE tab to render a list, an empty state, or a loading state',
-        },
+        }
       )
       .not.toBe('unknown')
 
@@ -151,14 +179,16 @@ test.describe('Public /observatory terminal UI', () => {
       await firstObservationButton.click()
 
       const drawer = page.getByTestId('observatory-observation-drawer')
-      await expect(drawer, 'Expected observation drawer to open after clicking an observation row').toBeVisible({
+      await expect(
+        drawer,
+        'Expected observation drawer to open after clicking an observation row'
+      ).toBeVisible({
         timeout: 15_000,
       })
       await expect(
         drawer.getByTestId('observatory-observation-details'),
-        'Expected observation drawer to show details content when Convex returns a detail payload',
+        'Expected observation drawer to show details content when Convex returns a detail payload'
       ).toBeVisible({ timeout: 30_000 })
     }
   })
 })
-

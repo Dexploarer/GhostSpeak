@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "bun install",
-  "buildCommand": "cd packages/web && bun run build",
-  "outputDirectory": "packages/web/.next",
+  "buildCommand": "cd apps/web && bun run build",
+  "outputDirectory": "apps/web/.next",
   "build": {
     "env": {
       "NEXT_TELEMETRY_DISABLED": "1",

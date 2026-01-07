@@ -12,8 +12,8 @@ function getConvexUrlFromDotenv(): string | null {
   const candidates = [
     path.resolve(process.cwd(), '.env.local'),
     path.resolve(process.cwd(), '.env'),
-    path.resolve(process.cwd(), 'packages/web/.env.local'),
-    path.resolve(process.cwd(), 'packages/web/.env'),
+    path.resolve(process.cwd(), 'apps/web/.env.local'),
+    path.resolve(process.cwd(), 'apps/web/.env'),
   ]
 
   for (const file of candidates) {
@@ -101,7 +101,7 @@ async function installMockWalletStandard(
         },
         'standard:disconnect': {
           version: '1.0.0',
-          disconnect: async () => {},
+          disconnect: async () => { },
         },
         // Minimal Solana feature stubs (required so the wallet is considered a Solana wallet).
         'solana:signTransaction': {
@@ -136,7 +136,8 @@ async function installMockWalletStandard(
       // Correct Wallet Standard registration sequence:
       // - Dispatch "wallet-standard:register-wallet" with a callback
       // - Also listen for "wallet-standard:app-ready" so we can register even if the app loads after us.
-      const callback = ({ register }: { register: (...wallets: any[]) => unknown }) => register(wallet)
+      const callback = ({ register }: { register: (...wallets: any[]) => unknown }) =>
+        register(wallet)
 
       try {
         window.dispatchEvent(
@@ -161,7 +162,9 @@ async function installMockWalletStandard(
 }
 
 test.describe('Dashboard (verified-only) - minimalist behavior', () => {
-  test('shows only verified actions, hides removed CTAs, and navigation targets are correct', async ({ page }) => {
+  test('shows only verified actions, hides removed CTAs, and navigation targets are correct', async ({
+    page,
+  }) => {
     // Use a deterministic valid-length base58-ish address. It does not need to be a real key.
     // Note: address() parsing happens in WalletStandardProvider and will reject invalid formats.
     const walletAddress = '2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4'
@@ -212,9 +215,15 @@ test.describe('Dashboard (verified-only) - minimalist behavior', () => {
     const settingsLink = actionBar.getByRole('link', { name: 'Settings' })
 
     await expect(chatLink, 'Verified action bar should expose Chat entrypoint').toBeVisible()
-    await expect(registerLink, 'Verified action bar should expose Register Agent entrypoint').toBeVisible()
+    await expect(
+      registerLink,
+      'Verified action bar should expose Register Agent entrypoint'
+    ).toBeVisible()
     await expect(observeLink, 'Verified action bar should expose Observe entrypoint').toBeVisible()
-    await expect(settingsLink, 'Verified action bar should expose Settings entrypoint').toBeVisible()
+    await expect(
+      settingsLink,
+      'Verified action bar should expose Settings entrypoint'
+    ).toBeVisible()
 
     await chatLink.click()
     await expect(page).toHaveURL(/\/caisper(\?.*)?$/, { timeout: 15_000 })

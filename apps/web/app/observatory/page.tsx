@@ -37,10 +37,7 @@ function safeAddressLabel(address: string | undefined | null): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`
 }
 
-function TerminalTabs(props: {
-  active: ObservatoryTab
-  onChange: (tab: ObservatoryTab) => void
-}) {
+function TerminalTabs(props: { active: ObservatoryTab; onChange: (tab: ObservatoryTab) => void }) {
   const tabs: ObservatoryTab[] = ['LIVE', 'ENDPOINTS', 'REPORTS', 'FRAUD', 'X402']
   return (
     <div
@@ -159,8 +156,14 @@ export default function ObservatoryPage() {
         <TerminalWindow title="/observatory" className="w-full" glow>
           <TerminalTabs active={tab} onChange={setTab} />
 
-          <div className="p-4 sm:p-6 font-mono text-sm text-zinc-200" data-testid="observatory-terminal">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 text-xs" data-testid="observatory-stats">
+          <div
+            className="p-4 sm:p-6 font-mono text-sm text-zinc-200"
+            data-testid="observatory-terminal"
+          >
+            <div
+              className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 text-xs"
+              data-testid="observatory-stats"
+            >
               <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
                 <div className="text-zinc-400">endpoints</div>
                 <div className="text-zinc-100">{stats ? stats.totalEndpoints : '…'}</div>
@@ -204,8 +207,8 @@ export default function ObservatoryPage() {
                           >
                             <div className="text-xs text-zinc-200">
                               <span className="text-zinc-500">[{formatTimeAgo(t)}]</span>{' '}
-                              <span className="text-orange-300">[402]</span>{' '}
-                              sig:{safeAddressLabel(item.signature)}
+                              <span className="text-orange-300">[402]</span> sig:
+                              {safeAddressLabel(item.signature)}
                               {' • '}payer:{item.payer ?? '[redacted]'}
                               {' • '}merchant:{safeAddressLabel(item.merchant)}
                               {' • '}amount:{truncate(String(item.amount ?? '0'), 18)}
@@ -222,7 +225,9 @@ export default function ObservatoryPage() {
                       const statusLabel = String(status).padStart(3, ' ')
                       const method = item.endpoint?.method ?? 'GET'
                       const endpoint = item.endpoint?.endpoint ?? 'unknown'
-                      const notesPreview = item.caisperNotes ? truncate(String(item.caisperNotes), 90) : ''
+                      const notesPreview = item.caisperNotes
+                        ? truncate(String(item.caisperNotes), 90)
+                        : ''
                       const transcriptCount = item.transcriptCount ?? 0
 
                       return (
@@ -248,7 +253,9 @@ export default function ObservatoryPage() {
                                   [{statusLabel}]
                                 </span>{' '}
                                 <span className="text-zinc-400">{method}</span>{' '}
-                                <span className="text-zinc-100">{truncate(String(endpoint), 80)}</span>
+                                <span className="text-zinc-100">
+                                  {truncate(String(endpoint), 80)}
+                                </span>
                               </div>
                               <div className="text-[11px] text-zinc-500 mt-1">
                                 {formatTimeAgo(testedAt)} • {item.responseTimeMs ?? '-'}ms • paid{' '}
@@ -294,13 +301,21 @@ export default function ObservatoryPage() {
                           <div className="min-w-0">
                             <div className="text-xs text-zinc-300">
                               <span className="text-zinc-400">{ep.method ?? 'GET'}</span>{' '}
-                              <span className="text-zinc-100">{truncate(String(ep.endpoint ?? '-'), 90)}</span>
+                              <span className="text-zinc-100">
+                                {truncate(String(ep.endpoint ?? '-'), 90)}
+                              </span>
                             </div>
                             <div className="text-[11px] text-zinc-500 mt-1">
-                              agent: <span className="text-zinc-300">{safeAddressLabel(ep.agentAddress)}</span> • price:{' '}
-                              {formatUsdc(ep.priceUsdc)} • tests:{ep.totalTests ?? 0} • success:{' '}
-                              {ep.totalTests ? Math.round(((ep.successfulTests ?? 0) / ep.totalTests) * 100) : 0}%
-                              {ep.lastTestedAt ? ` • last:${formatTimeAgo(ep.lastTestedAt)}` : ''}
+                              agent:{' '}
+                              <span className="text-zinc-300">
+                                {safeAddressLabel(ep.agentAddress)}
+                              </span>{' '}
+                              • price: {formatUsdc(ep.priceUsdc)} • tests:{ep.totalTests ?? 0} •
+                              success:{' '}
+                              {ep.totalTests
+                                ? Math.round(((ep.successfulTests ?? 0) / ep.totalTests) * 100)
+                                : 0}
+                              %{ep.lastTestedAt ? ` • last:${formatTimeAgo(ep.lastTestedAt)}` : ''}
                             </div>
                           </div>
                           <div className="text-[11px] text-zinc-500 shrink-0">
@@ -308,7 +323,9 @@ export default function ObservatoryPage() {
                           </div>
                         </div>
                         {ep.description ? (
-                          <div className="text-[11px] text-zinc-400 mt-2">desc: {truncate(String(ep.description), 140)}</div>
+                          <div className="text-[11px] text-zinc-400 mt-2">
+                            desc: {truncate(String(ep.description), 140)}
+                          </div>
                         ) : null}
                       </div>
                     ))}
@@ -319,7 +336,9 @@ export default function ObservatoryPage() {
 
             {tab === 'REPORTS' && (
               <div data-testid="observatory-tabpanel-reports" className="space-y-3">
-                <div className="text-xs text-zinc-400">$ observatory reports --agent &lt;address&gt;</div>
+                <div className="text-xs text-zinc-400">
+                  $ observatory reports --agent &lt;address&gt;
+                </div>
                 <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
                   <input
                     value={reportsAgentAddress}
@@ -331,7 +350,10 @@ export default function ObservatoryPage() {
                     autoCapitalize="off"
                     autoCorrect="off"
                   />
-                  <div className="text-[11px] text-zinc-500 shrink-0" data-testid="observatory-reports-agent-hint">
+                  <div
+                    className="text-[11px] text-zinc-500 shrink-0"
+                    data-testid="observatory-reports-agent-hint"
+                  >
                     {normalizedReportsAgent
                       ? `querying: ${safeAddressLabel(normalizedReportsAgent)}`
                       : 'enter an agent to query'}
@@ -383,9 +405,12 @@ export default function ObservatoryPage() {
                           {' • '}spent:{formatUsdc(r.totalSpentUsdc)}
                         </div>
                         {r.recommendation ? (
-                          <div className="text-[11px] text-zinc-400 mt-2">rec: {truncate(String(r.recommendation), 240)}</div>
+                          <div className="text-[11px] text-zinc-400 mt-2">
+                            rec: {truncate(String(r.recommendation), 240)}
+                          </div>
                         ) : null}
-                        {Array.isArray(r.verifiedCapabilities) && r.verifiedCapabilities.length > 0 ? (
+                        {Array.isArray(r.verifiedCapabilities) &&
+                        r.verifiedCapabilities.length > 0 ? (
                           <div className="text-[11px] text-zinc-500 mt-2">
                             verified: {truncate(r.verifiedCapabilities.join(', '), 240)}
                           </div>
@@ -404,7 +429,9 @@ export default function ObservatoryPage() {
 
             {tab === 'FRAUD' && (
               <div data-testid="observatory-tabpanel-fraud" className="space-y-3">
-                <div className="text-xs text-zinc-400">$ observatory fraud --agent &lt;address&gt;</div>
+                <div className="text-xs text-zinc-400">
+                  $ observatory fraud --agent &lt;address&gt;
+                </div>
                 <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
                   <input
                     value={fraudAgentAddress}
@@ -416,7 +443,10 @@ export default function ObservatoryPage() {
                     autoCapitalize="off"
                     autoCorrect="off"
                   />
-                  <div className="text-[11px] text-zinc-500 shrink-0" data-testid="observatory-fraud-agent-hint">
+                  <div
+                    className="text-[11px] text-zinc-500 shrink-0"
+                    data-testid="observatory-fraud-agent-hint"
+                  >
                     {normalizedFraudAgent
                       ? `querying: ${safeAddressLabel(normalizedFraudAgent)}`
                       : 'enter an agent to query'}
@@ -444,7 +474,9 @@ export default function ObservatoryPage() {
                         data-testid={`observatory-fraud-row-${String(s._id)}`}
                       >
                         <div className="text-xs text-zinc-200">
-                          <span className="text-zinc-500">[{formatTimeAgo(s.detectedAt ?? s._creationTime)}]</span>{' '}
+                          <span className="text-zinc-500">
+                            [{formatTimeAgo(s.detectedAt ?? s._creationTime)}]
+                          </span>{' '}
                           <span
                             className={
                               s.severity === 'high'
@@ -460,7 +492,9 @@ export default function ObservatoryPage() {
                           {' • '}status:{s.resolvedAt ? 'resolved' : 'unresolved'}
                         </div>
                         {s.evidence ? (
-                          <div className="text-[11px] text-zinc-400 mt-2">evidence: {truncate(String(s.evidence), 320)}</div>
+                          <div className="text-[11px] text-zinc-400 mt-2">
+                            evidence: {truncate(String(s.evidence), 320)}
+                          </div>
                         ) : null}
                       </div>
                     ))}
@@ -490,7 +524,9 @@ export default function ObservatoryPage() {
                         data-testid={`observatory-x402-row-${String(p.signature)}`}
                       >
                         <div className="text-xs text-zinc-200">
-                          <span className="text-zinc-500">[{formatTimeAgo(p.timestamp ?? Date.now())}]</span>{' '}
+                          <span className="text-zinc-500">
+                            [{formatTimeAgo(p.timestamp ?? Date.now())}]
+                          </span>{' '}
                           sig:{safeAddressLabel(p.signature)}
                           {' • '}payer:{p.payer ?? '[redacted]'}
                           {' • '}merchant:{safeAddressLabel(p.merchant)}
@@ -511,7 +547,11 @@ export default function ObservatoryPage() {
 
       <Drawer
         open={!!selectedObservationId}
-        title={selectedObservationId ? `observation_${String(selectedObservationId)}.log` : 'observation.log'}
+        title={
+          selectedObservationId
+            ? `observation_${String(selectedObservationId)}.log`
+            : 'observation.log'
+        }
         onClose={() => setSelectedObservationId(null)}
         testId="observatory-observation-drawer"
       >
@@ -529,7 +569,8 @@ export default function ObservatoryPage() {
               <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
                 <div className="text-zinc-500">endpoint</div>
                 <div className="text-zinc-100">
-                  {selectedObservation.endpoint?.method ?? 'GET'} {selectedObservation.endpoint?.endpoint ?? '-'}
+                  {selectedObservation.endpoint?.method ?? 'GET'}{' '}
+                  {selectedObservation.endpoint?.endpoint ?? '-'}
                 </div>
               </div>
               <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
@@ -546,14 +587,18 @@ export default function ObservatoryPage() {
               </div>
               <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
                 <div className="text-zinc-500">payment</div>
-                <div className="text-zinc-100">{formatUsdc(selectedObservation.paymentAmountUsdc)}</div>
+                <div className="text-zinc-100">
+                  {formatUsdc(selectedObservation.paymentAmountUsdc)}
+                </div>
               </div>
             </div>
 
             {selectedObservation.caisperNotes ? (
               <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3 text-xs">
                 <div className="text-zinc-500 mb-1">caisper_notes</div>
-                <div className="text-zinc-200 whitespace-pre-wrap">{truncate(String(selectedObservation.caisperNotes), 800)}</div>
+                <div className="text-zinc-200 whitespace-pre-wrap">
+                  {truncate(String(selectedObservation.caisperNotes), 800)}
+                </div>
               </div>
             ) : null}
 
@@ -570,7 +615,8 @@ export default function ObservatoryPage() {
 
             <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
               <div className="text-zinc-500 text-xs mb-2">transcript</div>
-              {Array.isArray(selectedObservation.transcript) && selectedObservation.transcript.length > 0 ? (
+              {Array.isArray(selectedObservation.transcript) &&
+              selectedObservation.transcript.length > 0 ? (
                 <div className="space-y-2 text-xs" data-testid="observatory-observation-transcript">
                   {selectedObservation.transcript.map((entry: any, idx: number) => (
                     <div
@@ -584,19 +630,26 @@ export default function ObservatoryPage() {
                           {entry.isToolCall ? ' • tool' : ''}
                           {entry.toolName ? `:${entry.toolName}` : ''}
                         </span>
-                        <span>{entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString() : '-'}</span>
+                        <span>
+                          {entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString() : '-'}
+                        </span>
                       </div>
                       {entry.toolArgs ? (
                         <div className="text-[11px] text-zinc-500 mb-2 whitespace-pre-wrap">
                           args: {truncate(String(entry.toolArgs), 280)}
                         </div>
                       ) : null}
-                      <div className="text-zinc-200 whitespace-pre-wrap">{truncate(String(entry.content ?? ''), 2000)}</div>
+                      <div className="text-zinc-200 whitespace-pre-wrap">
+                        {truncate(String(entry.content ?? ''), 2000)}
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-xs text-zinc-500" data-testid="observatory-observation-transcript-empty">
+                <div
+                  className="text-xs text-zinc-500"
+                  data-testid="observatory-observation-transcript-empty"
+                >
                   no transcript available
                 </div>
               )}

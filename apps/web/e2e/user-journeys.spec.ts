@@ -163,16 +163,44 @@ test.describe.serial('User journeys runner (manual-friendly)', () => {
     await snapshotState(page, testInfo, '04-agents-register-after')
   })
 
-  test('Journey 5: Attempt dashboard subroutes from docs (record missing pages)', async ({ page }, testInfo) => {
+  test('Journey 5: Attempt dashboard subroutes from docs (record missing pages)', async ({
+    page,
+  }, testInfo) => {
     // These are documented routes; they may not exist in the local app build.
     await gotoAndSnapshot(page, testInfo, '05-dashboard-root', '/dashboard')
-    await gotoAndSnapshot(page, testInfo, '05-dashboard-analytics', '/dashboard/analytics', 'May be 404 if not implemented')
-    await gotoAndSnapshot(page, testInfo, '05-dashboard-credentials', '/dashboard/credentials', 'May be 404 if not implemented')
-    await gotoAndSnapshot(page, testInfo, '05-dashboard-privacy', '/dashboard/privacy', 'May be 404 if not implemented')
-    await gotoAndSnapshot(page, testInfo, '05-dashboard-api-keys', '/dashboard/api-keys', 'May be 404 if not implemented')
+    await gotoAndSnapshot(
+      page,
+      testInfo,
+      '05-dashboard-analytics',
+      '/dashboard/analytics',
+      'May be 404 if not implemented'
+    )
+    await gotoAndSnapshot(
+      page,
+      testInfo,
+      '05-dashboard-credentials',
+      '/dashboard/credentials',
+      'May be 404 if not implemented'
+    )
+    await gotoAndSnapshot(
+      page,
+      testInfo,
+      '05-dashboard-privacy',
+      '/dashboard/privacy',
+      'May be 404 if not implemented'
+    )
+    await gotoAndSnapshot(
+      page,
+      testInfo,
+      '05-dashboard-api-keys',
+      '/dashboard/api-keys',
+      'May be 404 if not implemented'
+    )
   })
 
-  test('Journey 6: Privacy page (implemented route) - unauthenticated empty-state check', async ({ page }, testInfo) => {
+  test('Journey 6: Privacy page (implemented route) - unauthenticated empty-state check', async ({
+    page,
+  }, testInfo) => {
     await gotoAndSnapshot(page, testInfo, '06-privacy', '/privacy')
     await snapshotState(
       page,
@@ -200,7 +228,9 @@ test.describe.serial('User journeys runner (manual-friendly)', () => {
     await gotoAndSnapshot(page, testInfo, '08-api-v1-stats', '/api/v1/stats')
   })
 
-  test('Journey 9: Cookie policy expectations (manual verification points)', async ({ page }, testInfo) => {
+  test('Journey 9: Cookie policy expectations (manual verification points)', async ({
+    page,
+  }, testInfo) => {
     await gotoAndSnapshot(page, testInfo, '09-cookies-page', '/cookies')
     await testInfo.attach('09-cookie-policy-notes.txt', {
       body: Buffer.from(
@@ -223,10 +253,10 @@ test.describe.serial('User journeys runner (manual-friendly)', () => {
       body: Buffer.from(
         [
           'Run this suite in interactive mode (recommended):',
-          '  cd packages/web && INTERACTIVE=1 MANUAL_WAIT_MS=120000 bun run test:e2e:headed --project=chromium',
+          '  cd apps/web && INTERACTIVE=1 MANUAL_WAIT_MS=120000 bun run test:e2e:headed --project=chromium',
           '',
           'Non-interactive (skips manual steps, still records snapshots):',
-          '  cd packages/web && bun run test:e2e --project=chromium',
+          '  cd apps/web && bun run test:e2e --project=chromium',
           '',
           'Artifacts are attached to the Playwright HTML report: bun run test:e2e:report',
         ].join('\n')
@@ -235,4 +265,3 @@ test.describe.serial('User journeys runner (manual-friendly)', () => {
     })
   })
 })
-

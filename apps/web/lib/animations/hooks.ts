@@ -3,7 +3,7 @@ import { useInView } from 'framer-motion'
 
 /**
  * useScrollReveal - Hook for scroll-triggered reveal animations
- * 
+ *
  * @param threshold - Intersection threshold (0-1)
  * @param once - Whether to animate only once
  * @returns ref to attach to element and boolean indicating if in view
@@ -17,7 +17,7 @@ export function useScrollReveal(threshold = 0.2, once = true) {
 
 /**
  * useMouseParallax - Hook for mouse-based parallax effect
- * 
+ *
  * @param strength - Parallax strength multiplier
  * @returns x and y offset values
  */
@@ -40,7 +40,7 @@ export function useMouseParallax(strength = 0.03) {
 
 /**
  * useReducedMotion - Hook to detect user's motion preference
- * 
+ *
  * @returns boolean indicating if user prefers reduced motion
  */
 export function useReducedMotion() {
@@ -63,7 +63,7 @@ export function useReducedMotion() {
 
 /**
  * useScrollProgress - Hook to track scroll progress on a specific element
- * 
+ *
  * @returns scroll progress value between 0 and 1
  */
 export function useScrollProgress() {

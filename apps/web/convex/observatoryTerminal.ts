@@ -322,7 +322,8 @@ export const searchPublicObservations = query({
       base = base.filter((q) => {
         const clauses = [] as any[]
         if (args.agentAddress) clauses.push(q.eq(q.field('agentAddress'), args.agentAddress))
-        if (typeof args.status === 'number') clauses.push(q.eq(q.field('responseStatus'), args.status))
+        if (typeof args.status === 'number')
+          clauses.push(q.eq(q.field('responseStatus'), args.status))
         if (typeof args.minQualityScore === 'number')
           clauses.push(q.gte(q.field('qualityScore'), args.minQualityScore))
         return q.and(...clauses)

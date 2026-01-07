@@ -197,12 +197,16 @@ export default function DashboardApiKeysPage() {
             <h2 className="text-sm font-medium text-white">Usage</h2>
           </div>
           <p className="text-sm text-white/60 leading-relaxed">
-            Send your API key as <span className="font-mono text-white/70">Authorization: Bearer &lt;apiKey&gt;</span>.
-            If needed, <span className="font-mono text-white/70">X-API-Key</span> is accepted as an alias.
+            Send your API key as{' '}
+            <span className="font-mono text-white/70">Authorization: Bearer &lt;apiKey&gt;</span>.
+            If needed, <span className="font-mono text-white/70">X-API-Key</span> is accepted as an
+            alias.
           </p>
 
           <div className="mt-4 p-3 bg-[#0a0a0a] border border-white/10 rounded-lg">
-            <p className="text-xs text-white/40 uppercase tracking-wider font-medium mb-2">Example</p>
+            <p className="text-xs text-white/40 uppercase tracking-wider font-medium mb-2">
+              Example
+            </p>
             <pre
               className="text-xs text-white/70 font-mono whitespace-pre-wrap break-words"
               data-testid="api-key-curl-snippet"
@@ -252,7 +256,8 @@ export default function DashboardApiKeysPage() {
                   {sessionError ?? 'Unable to read session.'}
                 </p>
                 <p className="text-xs text-white/40 mt-1">
-                  If this keeps happening, disconnect your wallet and reconnect to refresh your SIWS session.
+                  If this keeps happening, disconnect your wallet and reconnect to refresh your SIWS
+                  session.
                 </p>
               </div>
             </div>
@@ -275,10 +280,7 @@ export default function DashboardApiKeysPage() {
                   <label className="block text-xs text-white/40 uppercase tracking-wider font-medium mb-2">
                     Tier
                   </label>
-                  <Select
-                    value={createTier}
-                    onValueChange={(v) => setCreateTier(v as ApiKeyTier)}
-                  >
+                  <Select value={createTier} onValueChange={(v) => setCreateTier(v as ApiKeyTier)}>
                     <SelectTrigger
                       className="min-h-[44px] bg-[#0a0a0a] border-white/10 text-white"
                       data-testid="api-key-tier-select"
@@ -342,7 +344,10 @@ export default function DashboardApiKeysPage() {
           </div>
 
           {apiKeys === undefined ? (
-            <div className="flex items-center gap-2 text-sm text-white/60" data-testid="api-keys-loading">
+            <div
+              className="flex items-center gap-2 text-sm text-white/60"
+              data-testid="api-keys-loading"
+            >
               <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
               Loading keys…
             </div>
@@ -384,14 +389,17 @@ export default function DashboardApiKeysPage() {
 
                       <div className="mt-2 text-xs text-white/40 space-y-1">
                         <p>
-                          Created: <span className="text-white/70">{formatTimestamp(k.createdAt)}</span>
+                          Created:{' '}
+                          <span className="text-white/70">{formatTimestamp(k.createdAt)}</span>
                         </p>
                         <p>
-                          Last used: <span className="text-white/70">{formatTimestamp(k.lastUsedAt)}</span>
+                          Last used:{' '}
+                          <span className="text-white/70">{formatTimestamp(k.lastUsedAt)}</span>
                         </p>
                         {!k.isActive && (
                           <p>
-                            Revoked: <span className="text-white/70">{formatTimestamp(k.revokedAt)}</span>
+                            Revoked:{' '}
+                            <span className="text-white/70">{formatTimestamp(k.revokedAt)}</span>
                           </p>
                         )}
                       </div>
@@ -490,9 +498,9 @@ export default function DashboardApiKeysPage() {
                   Authorization: Bearer {reveal.apiKey}
                 </p>
                 <p className="text-xs text-white/40 mt-2">
-                  Prefix: <span className="font-mono text-white/70">{reveal.keyPrefix}</span> • Tier:{' '}
-                  <span className="text-white/70">{formatTier(reveal.tier)}</span> • Rate limit:{' '}
-                  <span className="text-white/70">{formatRateLimit(reveal.rateLimit)}</span>
+                  Prefix: <span className="font-mono text-white/70">{reveal.keyPrefix}</span> •
+                  Tier: <span className="text-white/70">{formatTier(reveal.tier)}</span> • Rate
+                  limit: <span className="text-white/70">{formatRateLimit(reveal.rateLimit)}</span>
                 </p>
               </div>
             </div>
@@ -535,7 +543,9 @@ export default function DashboardApiKeysPage() {
 
           {revokeTarget && (
             <div className="p-3 bg-[#0a0a0a] border border-white/10 rounded-lg">
-              <p className="text-xs text-white/40 uppercase tracking-wider font-medium mb-2">Target</p>
+              <p className="text-xs text-white/40 uppercase tracking-wider font-medium mb-2">
+                Target
+              </p>
               <p className="text-sm text-white/80">
                 {revokeTarget.name?.trim() ? revokeTarget.name : 'Unnamed key'}{' '}
                 <span className="text-xs text-white/40 font-mono">({revokeTarget.keyPrefix})</span>

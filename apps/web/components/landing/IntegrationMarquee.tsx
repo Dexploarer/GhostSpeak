@@ -68,7 +68,7 @@ export function IntegrationMarquee() {
       </div>
 
       {/* First row - moving left */}
-      <div 
+      <div
         className="relative flex overflow-x-hidden mb-6"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
@@ -115,7 +115,7 @@ export function IntegrationMarquee() {
       </div>
 
       {/* Second row - moving right (reverse direction) */}
-      <div 
+      <div
         className="relative flex overflow-x-hidden"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}

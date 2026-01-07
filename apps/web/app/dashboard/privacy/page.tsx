@@ -16,8 +16,8 @@ export default function DashboardPrivacyPage() {
             <h2 className="text-sm font-medium text-white">Not available in web yet</h2>
           </div>
           <p className="text-sm text-white/60 leading-relaxed">
-            The web dashboard does not currently persist privacy settings on-chain. Use the SDK/CLI documentation
-            for the intended flow.
+            The web dashboard does not currently persist privacy settings on-chain. Use the SDK/CLI
+            documentation for the intended flow.
           </p>
 
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -46,4 +46,3 @@ export default function DashboardPrivacyPage() {
     </DashboardPageShell>
   )
 }
-

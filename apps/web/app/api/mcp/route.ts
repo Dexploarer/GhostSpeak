@@ -21,11 +21,18 @@ function jsonRpcError(id: any, code: number, message: string) {
 }
 
 // MCP tool handlers
+/**
+ * ACCESS CONTROL: FREE TIER (Public)
+ * Rate Limit: 100 req/hour
+ */
 async function handleSearchAgents(args: any) {
   const { status = 'discovered', limit = 20 } = args || {}
 
+  // Enforce free tier limits
+  const safeLimit = Math.min(limit, 20)
+
   const [agents, stats] = await Promise.all([
-    convex.query(api.ghostDiscovery.listDiscoveredAgents, { status, limit }),
+    convex.query(api.ghostDiscovery.listDiscoveredAgents, { status, limit: safeLimit }),
     convex.query(api.ghostDiscovery.getDiscoveryStats, {}),
   ])
 
@@ -46,8 +53,16 @@ async function handleSearchAgents(args: any) {
   }
 }
 
+/**
+ * ACCESS CONTROL: PROTECTED (x402 Merchant Route)
+ * Requires: Valid Signature or x402 Payment
+ * Status: Placeholder - currently unrestricted for MVP, but marked for upgrade.
+ */
 async function handleClaimAgent(args: any) {
   const { agentAddress, claimedBy } = args
+
+  // TODO: [x402] Verify payment/signature here before processing claim
+  // This is a high-value action that should be gated.
 
   // Ownership validation
   if (agentAddress.toLowerCase() !== claimedBy.toLowerCase()) {

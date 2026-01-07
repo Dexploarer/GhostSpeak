@@ -243,8 +243,8 @@ export default function DashboardPage() {
             <div className="space-y-4">
               <VerificationContractCard className="p-6 bg-[#111111] border border-white/10 rounded-xl" />
               <p className="text-xs text-white/40 leading-relaxed">
-                To continue, approve the "Sign to authenticate" request in your wallet. The dashboard only unlocks
-                after your SIWS session is verified.
+                To continue, approve the "Sign to authenticate" request in your wallet. The
+                dashboard only unlocks after your SIWS session is verified.
               </p>
             </div>
           </main>

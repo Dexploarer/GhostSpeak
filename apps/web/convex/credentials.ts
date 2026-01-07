@@ -1044,8 +1044,9 @@ function computeStatus(now: number, expiresAt?: number | null): PublicCredential
   return expiresAt <= now ? 'expired' : 'active'
 }
 
-function stripInternalFields<T extends Record<string, any>>(doc: T): Omit<T, '_id' | '_creationTime'> {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+function stripInternalFields<T extends Record<string, any>>(
+  doc: T
+): Omit<T, '_id' | '_creationTime'> {
   const { _id, _creationTime, ...rest } = doc
   return rest
 }
@@ -1259,7 +1260,10 @@ export const listAgentCredentialSummariesPublic = query({
       ...teeAttestation.map((c) => {
         const txSignatures: TxSignaturePointer[] = []
         if (c.verificationTxSignature) {
-          txSignatures.push({ kind: 'verification_signature', signature: c.verificationTxSignature })
+          txSignatures.push({
+            kind: 'verification_signature',
+            signature: c.verificationTxSignature,
+          })
         }
         const expiresAt = c.validUntil
         return {

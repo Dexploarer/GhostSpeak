@@ -1,14 +1,14 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { HeroEnhanced } from '@/components/landing/HeroEnhanced'
+import { Hero } from '@/components/landing/Hero'
 import { GhostIcon } from '@/components/shared/GhostIcon'
 import { ManifestoSection } from '@/components/landing/ManifestoSection'
 import { IntegrationMarquee } from '@/components/landing/IntegrationMarquee'
 import { DeveloperIntegration } from '@/components/landing/DeveloperIntegration'
 import { BentoUseCases } from '@/components/landing/BentoUseCases'
-import { CaisperCTAEnhanced } from '@/components/landing/CaisperCTAEnhanced'
-import { TechnicalFlowEnhanced } from '@/components/landing/TechnicalFlowEnhanced'
+import { CaisperCTA } from '@/components/landing/CaisperCTA'
+import { TechnicalFlow } from '@/components/landing/TechnicalFlow'
 import { FloatingGhostScroll } from '@/components/landing/FloatingGhostScroll'
 import { CursorFollower } from '@/components/animations/CursorFollower'
 import gsap from 'gsap'
@@ -75,7 +75,7 @@ export default function LandingPage() {
       <FloatingGhostScroll />
 
       {/* 1. Enhanced Hero - Value Proposition with advanced animations */}
-      <HeroEnhanced />
+      <Hero />
 
       {/* 2. Social Proof */}
       <div className="animate-on-scroll">
@@ -88,10 +88,10 @@ export default function LandingPage() {
       </div>
 
       {/* 4. How It Works - Interactive Flow */}
-      <TechnicalFlowEnhanced />
+      <TechnicalFlow />
 
       {/* 5. Try It - Enhanced Caisper Demo with 3D effects */}
-      <CaisperCTAEnhanced />
+      <CaisperCTA />
 
       {/* 6. Use Cases - Bento Grid Layout */}
       <BentoUseCases />

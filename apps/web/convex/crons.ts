@@ -37,4 +37,14 @@ crons.cron(
   {}
 )
 
+// ─── ANALYTICS: GHOST SCORE HISTORY ─────────────────────────────────────────────
+
+// Snapshot all agent Ghost Scores daily at 2am UTC (after credential checks)
+crons.cron(
+  'snapshot ghost scores',
+  '0 2 * * *', // Every day at 02:00 UTC
+  internal.ghostScoreHistory.snapshotAllAgents,
+  {}
+)
+
 export default crons

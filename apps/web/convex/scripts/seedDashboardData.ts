@@ -18,65 +18,73 @@ export const seedDashboardActivity = mutation({
     const PAYMENT_AMOUNTS = [
       '5000000', // 5 USDC
       '1000000', // 1 USDC
-      '250000',  // 0.25 USDC
-      '100000',  // 0.10 USDC
-      '10000000' // 10 USDC
+      '250000', // 0.25 USDC
+      '100000', // 0.10 USDC
+      '10000000', // 10 USDC
     ]
 
     for (let i = 0; i < 20; i++) {
-        const randomEndpoint = endpoints[Math.floor(Math.random() * endpoints.length)]
-        const randomAmount = PAYMENT_AMOUNTS[Math.floor(Math.random() * PAYMENT_AMOUNTS.length)]
-        
-        await ctx.db.insert('historicalInteractions', {
-            agentWalletAddress: randomEndpoint.agentAddress,
-            userWalletAddress: `User${Math.floor(Math.random() * 1000)}...`, // Mock user
-            // transactionSignature (was signature)
-            transactionSignature: `sig_${Math.random().toString(36).substring(7)}`,
-            blockTime: Math.floor((now - Math.random() * 24 * 60 * 60 * 1000) / 1000), // Within last 24h
-            amount: randomAmount,
-            facilitatorAddress: 'GhostSpeakFacilitator...',
-            
-            // Required fields from schema
-            agentKnown: true,
-            discoveredAt: now,
-            discoverySource: 'seed_dashboard',
-        })
-        paymentsCreated++
+      const randomEndpoint = endpoints[Math.floor(Math.random() * endpoints.length)]
+      const randomAmount = PAYMENT_AMOUNTS[Math.floor(Math.random() * PAYMENT_AMOUNTS.length)]
+
+      await ctx.db.insert('historicalInteractions', {
+        agentWalletAddress: randomEndpoint.agentAddress,
+        userWalletAddress: `User${Math.floor(Math.random() * 1000)}...`, // Mock user
+        // transactionSignature (was signature)
+        transactionSignature: `sig_${Math.random().toString(36).substring(7)}`,
+        blockTime: Math.floor((now - Math.random() * 24 * 60 * 60 * 1000) / 1000), // Within last 24h
+        amount: randomAmount,
+        facilitatorAddress: 'GhostSpeakFacilitator...',
+
+        // Required fields from schema
+        agentKnown: true,
+        discoveredAt: now,
+        discoverySource: 'seed_dashboard',
+      })
+      paymentsCreated++
     }
 
     // 3. Generate Endpoint Tests (Live Observation Feed)
     for (let i = 0; i < 15; i++) {
-        const randomEndpoint = endpoints[Math.floor(Math.random() * endpoints.length)]
-        const isSuccess = Math.random() > 0.2
-        const responseTime = Math.floor(Math.random() * 800) + 100
-        
-        await ctx.db.insert('endpointTests', {
-            endpointId: randomEndpoint._id,
-            agentAddress: randomEndpoint.agentAddress,
-            // testedAt (was timestamp)
-            testedAt: now - Math.floor(Math.random() * 60 * 60 * 1000), // Within last hour
-            success: isSuccess,
-            responseStatus: isSuccess ? 200 : (Math.random() > 0.5 ? 402 : 500),
-            responseTimeMs: responseTime,
-            capabilityVerified: isSuccess,
-            qualityScore: isSuccess ? Math.floor(Math.random() * 20) + 80 : Math.floor(Math.random() * 40),
-            paymentAmountUsdc: 0.05,
-            caisperNotes: isSuccess ? "Agent responded correctly to test prompt." : "Agent failed to respond or requested excessive payment.",
-            transcript: [
-                { role: 'user', content: "Test prompt: What is the current price of SOL?", timestamp: now - 3000 },
-                { role: 'agent', content: "The current price of SOL is $145.20.", timestamp: now }
-            ]
-        })
-        testsCreated++
+      const randomEndpoint = endpoints[Math.floor(Math.random() * endpoints.length)]
+      const isSuccess = Math.random() > 0.2
+      const responseTime = Math.floor(Math.random() * 800) + 100
+
+      await ctx.db.insert('endpointTests', {
+        endpointId: randomEndpoint._id,
+        agentAddress: randomEndpoint.agentAddress,
+        // testedAt (was timestamp)
+        testedAt: now - Math.floor(Math.random() * 60 * 60 * 1000), // Within last hour
+        success: isSuccess,
+        responseStatus: isSuccess ? 200 : Math.random() > 0.5 ? 402 : 500,
+        responseTimeMs: responseTime,
+        capabilityVerified: isSuccess,
+        qualityScore: isSuccess
+          ? Math.floor(Math.random() * 20) + 80
+          : Math.floor(Math.random() * 40),
+        paymentAmountUsdc: 0.05,
+        caisperNotes: isSuccess
+          ? 'Agent responded correctly to test prompt.'
+          : 'Agent failed to respond or requested excessive payment.',
+        transcript: [
+          {
+            role: 'user',
+            content: 'Test prompt: What is the current price of SOL?',
+            timestamp: now - 3000,
+          },
+          { role: 'agent', content: 'The current price of SOL is $145.20.', timestamp: now },
+        ],
+      })
+      testsCreated++
     }
 
     return {
       success: true,
       paymentsCreated,
       testsCreated,
-      message: `Seeded ${paymentsCreated} payments and ${testsCreated} endpoint tests`
+      message: `Seeded ${paymentsCreated} payments and ${testsCreated} endpoint tests`,
     }
-  }
+  },
 })
 export const clearAllSeeds = mutation({
   args: {},

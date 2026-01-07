@@ -22,6 +22,9 @@ import { AgentDirectoryCard } from '@/components/chat/AgentDirectoryCard'
 import { TokenEvaluationCard } from '@/components/chat/TokenEvaluationCard'
 import { AgentToolsPanel, caisperTools } from '@/components/chat/AgentToolsPanel'
 import { ChatMarkdown } from '@/components/chat/ChatMarkdown'
+import { CredentialCard } from '@/components/chat/CredentialCard'
+import { X402ResultCard } from '@/components/chat/X402ResultCard'
+import { ScoreHistoryCard } from '@/components/chat/ScoreHistoryCard'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 
@@ -519,6 +522,45 @@ export default function CaisperPage() {
                         riskyCount={msg.metadata.riskyCount}
                         avgExploitScore={msg.metadata.avgExploitScore}
                         tokens={msg.metadata.tokens}
+                        onActionClick={handleSend}
+                      />
+                    )}
+
+                    {/* Render credential card (issued or list) */}
+                    {(msg.metadata?.type === 'credential-issued' ||
+                      msg.metadata?.type === 'credentials') && (
+                        <CredentialCard
+                          mode={msg.metadata.type === 'credential-issued' ? 'issued' : 'list'}
+                          credentialId={msg.metadata.credentialId}
+                          did={msg.metadata.did}
+                          agentAddress={msg.metadata.agentAddress}
+                          credentials={msg.metadata.credentials}
+                          validCount={msg.metadata.validCount}
+                          totalCount={msg.metadata.totalCount}
+                          onActionClick={handleSend}
+                        />
+                      )}
+
+                    {/* Render x402 query result */}
+                    {msg.metadata?.type === 'x402-query-result' && (
+                      <X402ResultCard
+                        endpoint={msg.metadata.endpoint}
+                        method={msg.metadata.method}
+                        status={msg.metadata.status}
+                        responseTime={msg.metadata.responseTime}
+                        data={msg.metadata.data}
+                        isStructured={msg.metadata.isStructured}
+                        agent={msg.metadata.agent}
+                      />
+                    )}
+
+                    {/* Render score history card */}
+                    {msg.metadata?.type === 'score-history' && (
+                      <ScoreHistoryCard
+                        agentAddress={msg.metadata.agentAddress}
+                        days={msg.metadata.days}
+                        history={msg.metadata.history}
+                        stats={msg.metadata.stats}
                         onActionClick={handleSend}
                       />
                     )}

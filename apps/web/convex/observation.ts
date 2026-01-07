@@ -298,11 +298,11 @@ export const getRecentObservations = query({
           myVote,
           endpoint: endpoint
             ? {
-                baseUrl: endpoint.baseUrl,
-                method: endpoint.method,
-                endpoint: endpoint.endpoint,
-                description: endpoint.description,
-              }
+              baseUrl: endpoint.baseUrl,
+              method: endpoint.method,
+              endpoint: endpoint.endpoint,
+              description: endpoint.description,
+            }
             : null,
         }
       })
@@ -499,7 +499,7 @@ export const recordTestResult = internalMutation({
     if (args.paymentSignature) {
       const existingInteraction = await ctx.db
         .query('historicalInteractions')
-        .withIndex('by_signature', (q: any) =>
+        .withIndex('by_signature', (q) =>
           q.eq('transactionSignature', args.paymentSignature as string)
         )
         .first()
@@ -510,7 +510,7 @@ export const recordTestResult = internalMutation({
 
         const discoveredAgent = await ctx.db
           .query('discoveredAgents')
-          .withIndex('by_address', (q: any) => q.eq('ghostAddress', args.agentAddress))
+          .withIndex('by_address', (q) => q.eq('ghostAddress', args.agentAddress))
           .first()
 
         // Store amount as a string for compatibility with existing schema.
@@ -800,12 +800,15 @@ export const issueObservationCredentials = internalMutation({
 
     // 1. Issue Capability Verification Credential if capabilities verified
     if (args.verifiedCapabilities.length > 0 && args.testsRun >= 5) {
-      const res = await ctx.runMutation(internal.credentials.issueCapabilityVerificationCredential, {
-        agentAddress: args.agentAddress,
-        capabilities: args.verifiedCapabilities,
-        testsRun: args.testsRun,
-        testsPassed: args.testsSucceeded,
-      })
+      const res = await ctx.runMutation(
+        internal.credentials.issueCapabilityVerificationCredential,
+        {
+          agentAddress: args.agentAddress,
+          capabilities: args.verifiedCapabilities,
+          testsRun: args.testsRun,
+          testsPassed: args.testsSucceeded,
+        }
+      )
       if (res.success && 'credentialId' in res && typeof res.credentialId === 'string') {
         results.capabilityCredentialId = res.credentialId
       }
@@ -961,17 +964,21 @@ export const runHourlyTests = internalAction({
       const endpoint =
         args.forceEndpointId && testsRun === 0
           ? await ctx.runQuery(internal.observation.getObservedEndpointInternal, {
-              endpointId: args.forceEndpointId,
-            })
+            endpointId: args.forceEndpointId,
+          })
           : await ctx.runMutation(internal.observation.getNextEndpointToTest, {
-              maxPriceUsdc:
-                typeof args.maxPriceUsdc === 'number'
-                  ? Math.min(args.maxPriceUsdc, remainingBudget)
-                  : remainingBudget,
-            })
+            maxPriceUsdc:
+              typeof args.maxPriceUsdc === 'number'
+                ? Math.min(args.maxPriceUsdc, remainingBudget)
+                : remainingBudget,
+          })
 
       // If we forced an endpoint that is outside budget, stop early.
-      if (endpoint && typeof endpoint.priceUsdc === 'number' && endpoint.priceUsdc > remainingBudget) {
+      if (
+        endpoint &&
+        typeof endpoint.priceUsdc === 'number' &&
+        endpoint.priceUsdc > remainingBudget
+      ) {
         console.log(
           `[Observation] Forced endpoint price ($${endpoint.priceUsdc}) exceeds remaining budget ($${remainingBudget.toFixed(
             4
@@ -1259,7 +1266,7 @@ export const runHourlyTests = internalAction({
         console.log(
           `[Observation] Test complete: ${success ? '✓' : '✗'} ${responseStatus} ${responseTimeMs}ms Q${qualityScore}`
         )
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error(`[Observation] Test error: ${error.message}`)
       }
@@ -1297,7 +1304,9 @@ export const compileDailyReports = internalAction({
       endTime: endOfDay,
     })
 
-    const uniqueAgents: string[] = [...new Set(tests.map((t: Doc<'endpointTests'>) => t.agentAddress as string))]
+    const uniqueAgents: string[] = [
+      ...new Set(tests.map((t: Doc<'endpointTests'>) => t.agentAddress as string)),
+    ]
 
     console.log(`[Observation] Found ${uniqueAgents.length} agents with tests yesterday`)
 
@@ -1308,7 +1317,7 @@ export const compileDailyReports = internalAction({
           date,
         })
         console.log(`[Observation] Compiled report for ${agentAddress.substring(0, 8)}...`)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error(
           `[Observation] Failed to compile report for ${agentAddress}: ${error.message}`

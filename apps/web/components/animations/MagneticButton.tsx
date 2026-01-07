@@ -11,10 +11,10 @@ interface MagneticButtonProps {
 
 /**
  * MagneticButton - Button with magnetic pull effect on hover
- * 
+ *
  * Creates a smooth attraction effect where the button follows the cursor
  * when the mouse is nearby, creating an engaging micro-interaction.
- * 
+ *
  * @param strength - Magnetic pull strength (0-1, default 0.3)
  */
 export function MagneticButton({ children, className = '', strength = 0.3 }: MagneticButtonProps) {

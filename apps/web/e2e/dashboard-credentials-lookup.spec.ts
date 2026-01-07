@@ -12,8 +12,8 @@ function getConvexUrlFromDotenv(): string | null {
   const candidates = [
     path.resolve(process.cwd(), '.env.local'),
     path.resolve(process.cwd(), '.env'),
-    path.resolve(process.cwd(), 'packages/web/.env.local'),
-    path.resolve(process.cwd(), 'packages/web/.env'),
+    path.resolve(process.cwd(), 'apps/web/.env.local'),
+    path.resolve(process.cwd(), 'apps/web/.env'),
   ]
 
   for (const file of candidates) {
@@ -49,11 +49,16 @@ async function seedUserForDashboard(walletAddress: string, convexUrl: string) {
   })
 }
 
-async function getUserIdForWalletAddress(walletAddress: string, convexUrl: string): Promise<string> {
+async function getUserIdForWalletAddress(
+  walletAddress: string,
+  convexUrl: string
+): Promise<string> {
   const convex = new ConvexHttpClient(convexUrl)
   const user = await convex.query(api.solanaAuth.getUserByWallet, { walletAddress })
   if (!user?._id) {
-    throw new Error(`Failed to seed user for walletAddress=${walletAddress} (no user returned from getUserByWallet)`) 
+    throw new Error(
+      `Failed to seed user for walletAddress=${walletAddress} (no user returned from getUserByWallet)`
+    )
   }
   return user._id
 }
@@ -96,7 +101,11 @@ type MockWalletOptions = {
   includeSignMessage: boolean
 }
 
-async function installMockWalletStandard(page: Page, walletAddress: string, { includeSignMessage }: MockWalletOptions) {
+async function installMockWalletStandard(
+  page: Page,
+  walletAddress: string,
+  { includeSignMessage }: MockWalletOptions
+) {
   await page.addInitScript(
     ({ walletAddress, includeSignMessage }) => {
       const walletName = 'E2E Test Wallet'
@@ -138,7 +147,7 @@ async function installMockWalletStandard(page: Page, walletAddress: string, { in
         },
         'standard:disconnect': {
           version: '1.0.0',
-          disconnect: async () => {},
+          disconnect: async () => { },
         },
         // Minimal Solana feature stubs (required so the wallet is considered a Solana wallet).
         'solana:signTransaction': {
@@ -176,7 +185,8 @@ async function installMockWalletStandard(page: Page, walletAddress: string, { in
       // Correct Wallet Standard registration sequence:
       // - Dispatch "wallet-standard:register-wallet" with a callback
       // - Also listen for "wallet-standard:app-ready" so we can register even if the app loads after us.
-      const callback = ({ register }: { register: (...wallets: any[]) => unknown }) => register(wallet)
+      const callback = ({ register }: { register: (...wallets: any[]) => unknown }) =>
+        register(wallet)
 
       try {
         window.dispatchEvent(
@@ -215,7 +225,10 @@ async function ensureWalletAutoConnected(page: Page, { walletAddress }: { wallet
   ).toBeVisible({ timeout: 30_000 })
 }
 
-async function injectVerifiedSession(page: Page, { walletAddress, userId }: { walletAddress: string; userId: string }) {
+async function injectVerifiedSession(
+  page: Page,
+  { walletAddress, userId }: { walletAddress: string; userId: string }
+) {
   await page.evaluate(
     ({ walletAddress, userId }) => {
       window.localStorage.setItem(
@@ -235,10 +248,13 @@ async function gotoDashboardViaPortal(page: Page) {
   // Use in-app navigation to preserve wallet connection state.
   const portalButton = page.getByRole('button', { name: 'Portal' })
   await portalButton.scrollIntoViewIfNeeded()
-  await portalButton.click({ force: true })
-  await expect(page, 'Expected Portal CTA to navigate to /dashboard').toHaveURL(/\/dashboard(\?.*)?$/, {
-    timeout: 30_000,
-  })
+  await portalButton.click()
+  await expect(page, 'Expected Portal CTA to navigate to /dashboard').toHaveURL(
+    /\/dashboard(\?.*)?$/,
+    {
+      timeout: 30_000,
+    }
+  )
   await expect(
     page.getByRole('heading', { name: 'Dashboard', exact: true }),
     'Expected /dashboard heading after navigating via Portal CTA'
@@ -248,7 +264,10 @@ async function gotoDashboardViaPortal(page: Page) {
 test.describe('Dashboard /credentials - VC lookup UX', () => {
   test('agent address input → agent card → VC list → VC details panel', async ({ page }) => {
     const convexUrl = getConvexUrlFromDotenv()
-    test.skip(!convexUrl, 'Missing NEXT_PUBLIC_CONVEX_URL; cannot seed Convex data for credentials lookup')
+    test.skip(
+      !convexUrl,
+      'Missing NEXT_PUBLIC_CONVEX_URL; cannot seed Convex data for credentials lookup'
+    )
 
     // Connected wallet (viewer) for the dashboard session.
     const walletAddress = '2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4'
@@ -258,7 +277,10 @@ test.describe('Dashboard /credentials - VC lookup UX', () => {
     const agentAddress = '9xQeWvG816bUx9EPfYcGJp6G7G6uFi7qSogn8CA9nV2'
 
     await seedUserForDashboard(walletAddress, convexUrl!)
-    const { credentialId } = await seedAgentProfileAndCredential({ agentAddress, convexUrl: convexUrl! })
+    const { credentialId } = await seedAgentProfileAndCredential({
+      agentAddress,
+      convexUrl: convexUrl!,
+    })
 
     await installMockWalletStandard(page, walletAddress, {
       // Prevent ConnectWalletButton from auto-signing and triggering competing navigations.
@@ -270,10 +292,16 @@ test.describe('Dashboard /credentials - VC lookup UX', () => {
     await injectVerifiedSession(page, { walletAddress, userId })
 
     await gotoDashboardViaPortal(page)
-    await page.getByTestId('verification-contract-card').getByRole('link', { name: 'Credentials' }).click()
-    await expect(page, 'Expected navigation to /dashboard/credentials').toHaveURL(/\/dashboard\/credentials(\?.*)?$/, {
-      timeout: 30_000,
-    })
+    await page
+      .getByTestId('verification-contract-card')
+      .getByRole('link', { name: 'Credentials' })
+      .click()
+    await expect(page, 'Expected navigation to /dashboard/credentials').toHaveURL(
+      /\/dashboard\/credentials(\?.*)?$/,
+      {
+        timeout: 30_000,
+      }
+    )
 
     await expect(
       page.getByRole('heading', { level: 1, name: 'Credentials', exact: true }),
@@ -287,7 +315,9 @@ test.describe('Dashboard /credentials - VC lookup UX', () => {
 
     // Agent card renders, including status and external IDs section.
     const agentCard = page.getByTestId('credentials-agent-card')
-    await expect(agentCard, 'Expected agent card to render after Lookup').toBeVisible({ timeout: 30_000 })
+    await expect(agentCard, 'Expected agent card to render after Lookup').toBeVisible({
+      timeout: 30_000,
+    })
     await expect(
       agentCard.getByTestId('credentials-agent-address'),
       'Expected agent card to display the normalized lookup address'
@@ -304,7 +334,10 @@ test.describe('Dashboard /credentials - VC lookup UX', () => {
 
     const externalIdsList = agentCard.getByTestId('credentials-agent-external-ids')
     if ((await externalIdsList.count()) > 0) {
-      await expect(externalIdsList, 'Expected external IDs list to render when mappings exist').toBeVisible()
+      await expect(
+        externalIdsList,
+        'Expected external IDs list to render when mappings exist'
+      ).toBeVisible()
     } else {
       await expect(
         agentCard.getByText('None found.', { exact: true }),
@@ -314,7 +347,10 @@ test.describe('Dashboard /credentials - VC lookup UX', () => {
 
     // Credentials list renders (either as list or stable empty state).
     const listSection = page.getByTestId('credentials-list-section')
-    await expect(listSection, 'Expected Credentials list section to render after Lookup').toBeVisible({
+    await expect(
+      listSection,
+      'Expected Credentials list section to render after Lookup'
+    ).toBeVisible({
       timeout: 30_000,
     })
 
@@ -327,12 +363,17 @@ test.describe('Dashboard /credentials - VC lookup UX', () => {
       return
     }
 
-    await expect(credentialRows.first(), 'Expected at least one credential row').toBeVisible({ timeout: 30_000 })
+    await expect(credentialRows.first(), 'Expected at least one credential row').toBeVisible({
+      timeout: 30_000,
+    })
     await credentialRows.first().click()
 
     // Details panel opens and shows evidence + proof disclaimer.
     const detailsPanel = page.getByTestId('credential-details-panel')
-    await expect(detailsPanel, 'Expected credential details panel to open after clicking a row').toBeVisible({
+    await expect(
+      detailsPanel,
+      'Expected credential details panel to open after clicking a row'
+    ).toBeVisible({
       timeout: 30_000,
     })
     await expect(
@@ -341,15 +382,20 @@ test.describe('Dashboard /credentials - VC lookup UX', () => {
     ).toContainText('Proof: not available in web yet', { timeout: 30_000 })
 
     // Evidence block should render concrete evidence fields (for agent_identity this includes did + crossmintCredentialId).
-    await expect(detailsPanel.getByTestId('credential-details-evidence')).toBeVisible({ timeout: 30_000 })
-    const evidenceList = detailsPanel.getByTestId('credential-details-evidence-list')
-    await expect(evidenceList, 'Expected evidence list to be visible once details are loaded').toBeVisible({
+    await expect(detailsPanel.getByTestId('credential-details-evidence')).toBeVisible({
       timeout: 30_000,
     })
-    await expect(evidenceList, 'Expected evidence list to include "did" field for agent identity credentials').toContainText(
-      'did:',
-      { timeout: 30_000 }
-    )
+    const evidenceList = detailsPanel.getByTestId('credential-details-evidence-list')
+    await expect(
+      evidenceList,
+      'Expected evidence list to be visible once details are loaded'
+    ).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(
+      evidenceList,
+      'Expected evidence list to include "did" field for agent identity credentials'
+    ).toContainText('did:', { timeout: 30_000 })
 
     // If we successfully seeded an identity credential, prefer asserting the exact credential ID.
     if (credentialId) {
@@ -360,4 +406,3 @@ test.describe('Dashboard /credentials - VC lookup UX', () => {
     }
   })
 })
-

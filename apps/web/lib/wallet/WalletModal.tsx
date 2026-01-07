@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { useWallet } from './WalletStandardProvider'
+import Image from 'next/image'
 import {
   Dialog,
   DialogContent,
@@ -75,7 +76,14 @@ export function WalletModal({ open, onOpenChange }: WalletModalProps) {
                 className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary hover:bg-accent/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {wallet.icon && (
-                  <img src={wallet.icon} alt={wallet.name} className="w-8 h-8 rounded-lg" />
+                  <Image
+                    src={wallet.icon}
+                    alt={wallet.name}
+                    width={32}
+                    height={32}
+                    className="rounded-lg"
+                    unoptimized
+                  />
                 )}
                 <div className="flex-1 text-left">
                   <div className="font-medium">{wallet.name}</div>

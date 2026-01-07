@@ -290,7 +290,7 @@ export const ghostClaimCommand = new Command('claim-ghost')
         log.info(chalk.gray('  2. Schema mismatch between configured and on-chain'))
         log.info(chalk.gray('  3. Insufficient permissions for authorized signer'))
         log.info(chalk.cyan('\\nℹ️  To fix:'))
-        log.info(chalk.gray('  Re-run SAS setup: bun packages/web/scripts/setup-sas.ts'))
+        log.info(chalk.gray('  Re-run SAS setup: bun apps/web/scripts/setup-sas.ts'))
         outro(chalk.red('Attestation creation failed'))
         return
       }

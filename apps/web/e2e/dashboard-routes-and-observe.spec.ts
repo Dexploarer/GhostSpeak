@@ -12,8 +12,8 @@ function getConvexUrlFromDotenv(): string | null {
   const candidates = [
     path.resolve(process.cwd(), '.env.local'),
     path.resolve(process.cwd(), '.env'),
-    path.resolve(process.cwd(), 'packages/web/.env.local'),
-    path.resolve(process.cwd(), 'packages/web/.env'),
+    path.resolve(process.cwd(), 'apps/web/.env.local'),
+    path.resolve(process.cwd(), 'apps/web/.env'),
   ]
 
   for (const file of candidates) {
@@ -49,11 +49,16 @@ async function seedUserForDashboard(walletAddress: string, convexUrl: string) {
   })
 }
 
-async function getUserIdForWalletAddress(walletAddress: string, convexUrl: string): Promise<string> {
+async function getUserIdForWalletAddress(
+  walletAddress: string,
+  convexUrl: string
+): Promise<string> {
   const convex = new ConvexHttpClient(convexUrl)
   const user = await convex.query(api.solanaAuth.getUserByWallet, { walletAddress })
   if (!user?._id) {
-    throw new Error(`Failed to seed user for walletAddress=${walletAddress} (no user returned from getUserByWallet)`) 
+    throw new Error(
+      `Failed to seed user for walletAddress=${walletAddress} (no user returned from getUserByWallet)`
+    )
   }
   return user._id
 }
@@ -131,7 +136,7 @@ async function installMockWalletStandard(
         },
         'standard:disconnect': {
           version: '1.0.0',
-          disconnect: async () => {},
+          disconnect: async () => { },
         },
         // Minimal Solana feature stubs (required so the wallet is considered a Solana wallet).
         'solana:signTransaction': {
@@ -169,7 +174,8 @@ async function installMockWalletStandard(
       // Correct Wallet Standard registration sequence:
       // - Dispatch "wallet-standard:register-wallet" with a callback
       // - Also listen for "wallet-standard:app-ready" so we can register even if the app loads after us.
-      const callback = ({ register }: { register: (...wallets: any[]) => unknown }) => register(wallet)
+      const callback = ({ register }: { register: (...wallets: any[]) => unknown }) =>
+        register(wallet)
 
       try {
         window.dispatchEvent(
@@ -240,276 +246,313 @@ async function gotoDashboardViaPortal(page: import('@playwright/test').Page) {
   // Use in-app navigation to preserve wallet connection state.
   const portalButton = page.getByRole('button', { name: 'Portal' })
   await portalButton.scrollIntoViewIfNeeded()
-  await portalButton.click({ force: true })
-  await expect(page, 'Expected Portal CTA to navigate to /dashboard').toHaveURL(/\/dashboard(\?.*)?$/, {
-    timeout: 30_000,
-  })
+  await portalButton.click()
+  await expect(page, 'Expected Portal CTA to navigate to /dashboard').toHaveURL(
+    /\/dashboard(\?.*)?$/,
+    {
+      timeout: 30_000,
+    }
+  )
   await expect(
     page.getByRole('heading', { name: 'Dashboard', exact: true }),
     'Expected /dashboard heading after navigating via Portal CTA'
   ).toBeVisible({ timeout: 30_000 })
 }
 
-test.describe.serial(
-  'Dashboard routes + Observatory voting (Wallet Standard + verified session gating)',
-  () => {
-  test('new dashboard routes load under a verified session and render a heading', async ({ page }) => {
-    const walletAddress = '2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4'
+test.describe
+  .serial('Dashboard routes + Observatory voting (Wallet Standard + verified session gating)', () => {
+    test('new dashboard routes load under a verified session and render a heading', async ({
+      page,
+    }) => {
+      const walletAddress = '2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4'
 
-    const convexUrl = getConvexUrlFromDotenv()
-    test.skip(!convexUrl, 'Missing NEXT_PUBLIC_CONVEX_URL; cannot seed Convex user for dashboard')
+      const convexUrl = getConvexUrlFromDotenv()
+      test.skip(!convexUrl, 'Missing NEXT_PUBLIC_CONVEX_URL; cannot seed Convex user for dashboard')
 
-    await seedUserForDashboard(walletAddress, convexUrl!)
-    await installMockWalletStandard(page, walletAddress, {
-      includeVerifiedSession: true,
-      // Prevent ConnectWalletButton from auto-signing and triggering competing navigations.
-      includeSignMessage: false,
+      await seedUserForDashboard(walletAddress, convexUrl!)
+      await installMockWalletStandard(page, walletAddress, {
+        includeVerifiedSession: true,
+        // Prevent ConnectWalletButton from auto-signing and triggering competing navigations.
+        includeSignMessage: false,
+      })
+      await ensureWalletAutoConnected(page, { walletAddress })
+
+      await injectVerifiedSession(page, { walletAddress })
+
+      await gotoDashboardViaPortal(page)
+
+      // Confirm the dashboard sees the injected SIWS session.
+      await expect(
+        page.getByTestId('verification-contract-card').getByText('Signed in (SIWS) (yes)'),
+        'Expected dashboard to recognize the injected verified session'
+      ).toBeVisible({ timeout: 15_000 })
+
+      const cases = [
+        { path: '/dashboard/analytics', heading: 'Analytics' },
+        { path: '/dashboard/api-keys', heading: 'API Keys' },
+        { path: '/dashboard/credentials', heading: 'Credentials' },
+        { path: '/dashboard/privacy', heading: 'Privacy' },
+      ] as const
+
+      for (const c of cases) {
+        // Use client-side navigation to keep the connected wallet state.
+        const contractCard = page.getByTestId('verification-contract-card')
+        await contractCard.getByRole('link', { name: c.heading, exact: true }).click()
+        await expect(page, `Expected navigation to ${c.path} via contract card link`).toHaveURL(
+          new RegExp(`${c.path.replaceAll('/', '\\/')}(\\?.*)?$`),
+          { timeout: 30_000 }
+        )
+        await expect(
+          page.getByRole('heading', { level: 1, name: c.heading, exact: true }),
+          `Expected ${c.path} to render an <h1> heading with text "${c.heading}" under a verified session`
+        ).toBeVisible({ timeout: 30_000 })
+
+        await expect(
+          page.getByText(/To continue, approve the.*Sign to authenticate/i),
+          `Expected ${c.path} to be unlocked (verified-session gating copy should not render)`
+        ).toHaveCount(0)
+
+        await page.getByRole('link', { name: 'Back', exact: true }).click()
+        await expect(page, 'Expected Back link to return to /dashboard').toHaveURL(
+          /\/dashboard(\?.*)?$/,
+          {
+            timeout: 30_000,
+          }
+        )
+      }
     })
-    await ensureWalletAutoConnected(page, { walletAddress })
 
-    await injectVerifiedSession(page, { walletAddress })
+    test('Observatory: verified session allows access and does not show the vote-blocked prompt', async ({
+      page,
+    }) => {
+      const walletAddress = '2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4'
 
-    await gotoDashboardViaPortal(page)
+      const convexUrl = getConvexUrlFromDotenv()
+      test.skip(!convexUrl, 'Missing NEXT_PUBLIC_CONVEX_URL; cannot seed Convex user for observatory')
 
-    // Confirm the dashboard sees the injected SIWS session.
-    await expect(
-      page.getByTestId('verification-contract-card').getByText('Signed in (SIWS) (yes)'),
-      'Expected dashboard to recognize the injected verified session'
-    ).toBeVisible({ timeout: 15_000 })
+      await seedUserForDashboard(walletAddress, convexUrl!)
+      await installMockWalletStandard(page, walletAddress, {
+        includeVerifiedSession: true,
+        // Prevent ConnectWalletButton from auto-signing and triggering competing navigations.
+        includeSignMessage: false,
+      })
+      await ensureWalletAutoConnected(page, { walletAddress })
 
-    const cases = [
-      { path: '/dashboard/analytics', heading: 'Analytics' },
-      { path: '/dashboard/api-keys', heading: 'API Keys' },
-      { path: '/dashboard/credentials', heading: 'Credentials' },
-      { path: '/dashboard/privacy', heading: 'Privacy' },
-    ] as const
+      await injectVerifiedSession(page, { walletAddress })
 
-    for (const c of cases) {
-      // Use client-side navigation to keep the connected wallet state.
-      const contractCard = page.getByTestId('verification-contract-card')
-      await contractCard.getByRole('link', { name: c.heading, exact: true }).click()
-      await expect(page, `Expected navigation to ${c.path} via contract card link`).toHaveURL(
-        new RegExp(`${c.path.replaceAll('/', '\\/')}(\\?.*)?$`),
-        { timeout: 30_000 }
+      await gotoDashboardViaPortal(page)
+
+      await page
+        .getByTestId('verification-contract-card')
+        .getByRole('link', { name: 'Observe' })
+        .click()
+      await expect(page, 'Expected navigation to /dashboard/observe').toHaveURL(
+        /\/dashboard\/observe(\?.*)?$/,
+        {
+          timeout: 30_000,
+        }
       )
       await expect(
-        page.getByRole('heading', { level: 1, name: c.heading, exact: true }),
-        `Expected ${c.path} to render an <h1> heading with text "${c.heading}" under a verified session`
+        page.getByRole('heading', { name: 'Agent Observatory' }),
+        'Expected /dashboard/observe to load for a connected + verified session'
+      ).toBeVisible({ timeout: 15_000 })
+
+      await expect(
+        page.getByRole('button', { name: 'Directory' }),
+        'Expected verified session to unlock the observatory view switcher'
+      ).toBeVisible({ timeout: 15_000 })
+
+      await expect(
+        page.getByText('Sign in to vote.', { exact: true }),
+        'Verified session should not be blocked by the "Sign in to vote" prompt'
+      ).toHaveCount(0, { timeout: 15_000 })
+
+      // Switch to the live feed view; vote buttons exist only there.
+      await page.getByRole('button', { name: 'Live Feed' }).click()
+
+      // If the seeded Convex DB already has endpoint tests, ensure at least the first vote control is enabled.
+      // If the feed is empty, still assert we are not gated by the verified-session prompt.
+      const upvote = page.locator('button[title="Good result (fast/correct)"]')
+      if ((await upvote.count()) > 0) {
+        await expect(
+          upvote.first(),
+          'Expected upvote control to be enabled when session is verified'
+        ).toBeEnabled({ timeout: 15_000 })
+      }
+    })
+
+    test('Observatory: wallet connected but NOT verified shows vote prompt and blocks vote controls', async ({
+      page,
+    }) => {
+      const walletAddress = '2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4'
+
+      const convexUrl = getConvexUrlFromDotenv()
+      test.skip(!convexUrl, 'Missing NEXT_PUBLIC_CONVEX_URL; cannot run observatory gating test')
+
+      await seedUserForDashboard(walletAddress, convexUrl!)
+      await installMockWalletStandard(page, walletAddress, {
+        includeVerifiedSession: false,
+        // Prevent ConnectWalletButton from auto-signing and creating a session.
+        includeSignMessage: false,
+      })
+      await ensureWalletAutoConnected(page, { walletAddress })
+
+      await gotoDashboardViaPortal(page)
+
+      await page
+        .getByTestId('verification-contract-card')
+        .getByRole('link', { name: 'Observe' })
+        .click()
+      await expect(page, 'Expected navigation to /dashboard/observe').toHaveURL(
+        /\/dashboard\/observe(\?.*)?$/,
+        {
+          timeout: 30_000,
+        }
+      )
+
+      await expect(
+        page.getByRole('heading', { name: 'Agent Observatory' }),
+        'Expected /dashboard/observe to render the session-gated observatory wrapper for connected wallets'
+      ).toBeVisible({ timeout: 15_000 })
+
+      await expect(
+        page.getByTestId('verification-contract-card'),
+        'Expected the verified-session helper card to appear when session is not verified'
+      ).toBeVisible({ timeout: 15_000 })
+
+      await expect(
+        page.getByText('Sign in to vote.', { exact: true }),
+        'Expected /dashboard/observe to show the verified-session prompt when no SIWS session exists'
+      ).toBeVisible({ timeout: 15_000 })
+
+      // When not verified, the observe page renders only the gating UI (no view switcher or live feed).
+      await expect(
+        page.getByRole('button', { name: 'Live Feed' }),
+        'Expected the observe page to block access to the live feed controls when not verified'
+      ).toHaveCount(0)
+      await expect(
+        page.locator('button[title="Good result (fast/correct)"]'),
+        'Vote buttons should not be interactive/available when not verified'
+      ).toHaveCount(0)
+    })
+
+    test('API Keys: create → reveal → list → revoke (verified session)', async ({ page }) => {
+      const walletAddress = '2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4'
+
+      const convexUrl = getConvexUrlFromDotenv()
+      test.skip(
+        !convexUrl,
+        'Missing NEXT_PUBLIC_CONVEX_URL; cannot seed Convex user for API key management'
+      )
+
+      await seedUserForDashboard(walletAddress, convexUrl!)
+      await installMockWalletStandard(page, walletAddress, {
+        includeVerifiedSession: true,
+        // Prevent ConnectWalletButton from auto-signing and triggering competing navigations.
+        includeSignMessage: false,
+      })
+      await ensureWalletAutoConnected(page, { walletAddress })
+
+      const userId = await getUserIdForWalletAddress(walletAddress, convexUrl!)
+      await ensureApiKeySlotAvailable({ userId, convexUrl: convexUrl! })
+      await injectVerifiedSession(page, { walletAddress, userId })
+
+      await gotoDashboardViaPortal(page)
+      await page
+        .getByTestId('verification-contract-card')
+        .getByRole('link', { name: 'API Keys' })
+        .click()
+      await expect(page, 'Expected navigation to /dashboard/api-keys').toHaveURL(
+        /\/dashboard\/api-keys(\?.*)?$/,
+        {
+          timeout: 30_000,
+        }
+      )
+
+      await expect(
+        page.getByTestId('api-keys-page'),
+        'Expected API key management UI wrapper to render'
+      ).toBeVisible({ timeout: 30_000 })
+      await expect(
+        page.getByRole('heading', { level: 1, name: 'API Keys', exact: true }),
+        'Expected /dashboard/api-keys to render an <h1> heading'
       ).toBeVisible({ timeout: 30_000 })
 
       await expect(
-        page.getByText(/To continue, approve the.*Sign to authenticate/i),
-        `Expected ${c.path} to be unlocked (verified-session gating copy should not render)`
+        page.getByTestId('api-keys-session-error'),
+        'Expected verified session to provide a userId (session error should not render)'
       ).toHaveCount(0)
 
-      await page.getByRole('link', { name: 'Back', exact: true }).click()
-      await expect(page, 'Expected Back link to return to /dashboard').toHaveURL(/\/dashboard(\?.*)?$/, {
-        timeout: 30_000,
-      })
-    }
-  })
+      const name = `e2e api key ${Date.now()}`
 
-  test('Observatory: verified session allows access and does not show the vote-blocked prompt', async ({ page }) => {
-    const walletAddress = '2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4'
+      await page.getByTestId('api-key-name-input').fill(name)
+      await page.getByTestId('api-key-create-submit').click()
 
-    const convexUrl = getConvexUrlFromDotenv()
-    test.skip(!convexUrl, 'Missing NEXT_PUBLIC_CONVEX_URL; cannot seed Convex user for observatory')
-
-    await seedUserForDashboard(walletAddress, convexUrl!)
-    await installMockWalletStandard(page, walletAddress, {
-      includeVerifiedSession: true,
-      // Prevent ConnectWalletButton from auto-signing and triggering competing navigations.
-      includeSignMessage: false,
-    })
-    await ensureWalletAutoConnected(page, { walletAddress })
-
-    await injectVerifiedSession(page, { walletAddress })
-
-    await gotoDashboardViaPortal(page)
-
-    await page.getByTestId('verification-contract-card').getByRole('link', { name: 'Observe' }).click()
-    await expect(page, 'Expected navigation to /dashboard/observe').toHaveURL(/\/dashboard\/observe(\?.*)?$/, {
-      timeout: 30_000,
-    })
-    await expect(
-      page.getByRole('heading', { name: 'Agent Observatory' }),
-      'Expected /dashboard/observe to load for a connected + verified session'
-    ).toBeVisible({ timeout: 15_000 })
-
-    await expect(
-      page.getByRole('button', { name: 'Directory' }),
-      'Expected verified session to unlock the observatory view switcher'
-    ).toBeVisible({ timeout: 15_000 })
-
-    await expect(
-      page.getByText('Sign in to vote.', { exact: true }),
-      'Verified session should not be blocked by the "Sign in to vote" prompt'
-    ).toHaveCount(0, { timeout: 15_000 })
-
-    // Switch to the live feed view; vote buttons exist only there.
-    await page.getByRole('button', { name: 'Live Feed' }).click()
-
-    // If the seeded Convex DB already has endpoint tests, ensure at least the first vote control is enabled.
-    // If the feed is empty, still assert we are not gated by the verified-session prompt.
-    const upvote = page.locator('button[title="Good result (fast/correct)"]')
-    if ((await upvote.count()) > 0) {
+      const revealDialog = page.getByTestId('api-key-reveal-dialog')
       await expect(
-        upvote.first(),
-        'Expected upvote control to be enabled when session is verified'
-      ).toBeEnabled({ timeout: 15_000 })
-    }
+        revealDialog,
+        'Expected one-time reveal modal after creating an API key'
+      ).toBeVisible({ timeout: 30_000 })
+
+      const revealedKey = (await page.getByTestId('api-key-reveal-value').innerText()).trim()
+      await expect(
+        page.getByTestId('api-key-reveal-value'),
+        'Expected revealed key to start with gs_live_'
+      ).toHaveText(/^gs_live_/, { timeout: 15_000 })
+      expect(
+        revealedKey,
+        `Expected revealed key to match the gs_live_ base62 format, got: ${revealedKey}`
+      ).toMatch(/^gs_live_[0-9A-Za-z]{40}$/)
+
+      await expect(
+        page.getByTestId('api-key-copy-button'),
+        'Expected copy button to exist in reveal modal'
+      ).toBeVisible()
+
+      // Close reveal modal (it should never show the plaintext key again).
+      await page.keyboard.press('Escape')
+      await expect(revealDialog, 'Expected reveal modal to close after Escape').toHaveCount(0)
+
+      const expectedPrefix = revealedKey.slice(0, 'gs_live_'.length + 8)
+      const list = page.getByTestId('api-keys-list')
+      const createdRow = list.locator('li').filter({ hasText: name }).first()
+      await expect(
+        createdRow,
+        'Expected newly created key to appear in the list with its name'
+      ).toBeVisible({ timeout: 30_000 })
+      await expect(
+        createdRow,
+        `Expected list row to include key prefix ${expectedPrefix}`
+      ).toContainText(expectedPrefix)
+
+      await createdRow.getByRole('button', { name: 'Revoke' }).click()
+      const revokeDialog = page.getByTestId('api-key-revoke-dialog')
+      await expect(revokeDialog, 'Expected revoke confirmation modal').toBeVisible({
+        timeout: 15_000,
+      })
+      await expect(
+        revokeDialog,
+        'Expected revoke modal target to include the key name'
+      ).toContainText(name)
+
+      await revokeDialog.getByTestId('api-key-revoke-confirm').click()
+      await expect(revokeDialog, 'Expected revoke modal to close after confirmation').toHaveCount(0)
+
+      await expect
+        .poll(
+          async () => {
+            const count = await createdRow.count()
+            if (count === 0) return 'disappeared'
+            const text = await createdRow.innerText()
+            if (/\bRevoked\b/.test(text)) return 'revoked'
+            return 'pending'
+          },
+          {
+            timeout: 30_000,
+            message:
+              'Expected revoked key to either show Revoked status or disappear from the active list',
+          }
+        )
+        .toMatch(/revoked|disappeared/)
+    })
   })
-
-  test('Observatory: wallet connected but NOT verified shows vote prompt and blocks vote controls', async ({ page }) => {
-    const walletAddress = '2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4'
-
-    const convexUrl = getConvexUrlFromDotenv()
-    test.skip(!convexUrl, 'Missing NEXT_PUBLIC_CONVEX_URL; cannot run observatory gating test')
-
-    await seedUserForDashboard(walletAddress, convexUrl!)
-    await installMockWalletStandard(page, walletAddress, {
-      includeVerifiedSession: false,
-      // Prevent ConnectWalletButton from auto-signing and creating a session.
-      includeSignMessage: false,
-    })
-    await ensureWalletAutoConnected(page, { walletAddress })
-
-    await gotoDashboardViaPortal(page)
-
-    await page.getByTestId('verification-contract-card').getByRole('link', { name: 'Observe' }).click()
-    await expect(page, 'Expected navigation to /dashboard/observe').toHaveURL(/\/dashboard\/observe(\?.*)?$/, {
-      timeout: 30_000,
-    })
-
-    await expect(
-      page.getByRole('heading', { name: 'Agent Observatory' }),
-      'Expected /dashboard/observe to render the session-gated observatory wrapper for connected wallets'
-    ).toBeVisible({ timeout: 15_000 })
-
-    await expect(
-      page.getByTestId('verification-contract-card'),
-      'Expected the verified-session helper card to appear when session is not verified'
-    ).toBeVisible({ timeout: 15_000 })
-
-    await expect(
-      page.getByText('Sign in to vote.', { exact: true }),
-      'Expected /dashboard/observe to show the verified-session prompt when no SIWS session exists'
-    ).toBeVisible({ timeout: 15_000 })
-
-    // When not verified, the observe page renders only the gating UI (no view switcher or live feed).
-    await expect(
-      page.getByRole('button', { name: 'Live Feed' }),
-      'Expected the observe page to block access to the live feed controls when not verified'
-    ).toHaveCount(0)
-    await expect(
-      page.locator('button[title="Good result (fast/correct)"]'),
-      'Vote buttons should not be interactive/available when not verified'
-    ).toHaveCount(0)
-  })
-
-  test('API Keys: create → reveal → list → revoke (verified session)', async ({ page }) => {
-    const walletAddress = '2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4'
-
-    const convexUrl = getConvexUrlFromDotenv()
-    test.skip(!convexUrl, 'Missing NEXT_PUBLIC_CONVEX_URL; cannot seed Convex user for API key management')
-
-    await seedUserForDashboard(walletAddress, convexUrl!)
-    await installMockWalletStandard(page, walletAddress, {
-      includeVerifiedSession: true,
-      // Prevent ConnectWalletButton from auto-signing and triggering competing navigations.
-      includeSignMessage: false,
-    })
-    await ensureWalletAutoConnected(page, { walletAddress })
-
-    const userId = await getUserIdForWalletAddress(walletAddress, convexUrl!)
-    await ensureApiKeySlotAvailable({ userId, convexUrl: convexUrl! })
-    await injectVerifiedSession(page, { walletAddress, userId })
-
-    await gotoDashboardViaPortal(page)
-    await page.getByTestId('verification-contract-card').getByRole('link', { name: 'API Keys' }).click()
-    await expect(page, 'Expected navigation to /dashboard/api-keys').toHaveURL(/\/dashboard\/api-keys(\?.*)?$/, {
-      timeout: 30_000,
-    })
-
-    await expect(
-      page.getByTestId('api-keys-page'),
-      'Expected API key management UI wrapper to render'
-    ).toBeVisible({ timeout: 30_000 })
-    await expect(
-      page.getByRole('heading', { level: 1, name: 'API Keys', exact: true }),
-      'Expected /dashboard/api-keys to render an <h1> heading'
-    ).toBeVisible({ timeout: 30_000 })
-
-    await expect(
-      page.getByTestId('api-keys-session-error'),
-      'Expected verified session to provide a userId (session error should not render)'
-    ).toHaveCount(0)
-
-    const name = `e2e api key ${Date.now()}`
-
-    await page.getByTestId('api-key-name-input').fill(name)
-    await page.getByTestId('api-key-create-submit').click()
-
-    const revealDialog = page.getByTestId('api-key-reveal-dialog')
-    await expect(
-      revealDialog,
-      'Expected one-time reveal modal after creating an API key'
-    ).toBeVisible({ timeout: 30_000 })
-
-    const revealedKey = (await page.getByTestId('api-key-reveal-value').innerText()).trim()
-    await expect(
-      page.getByTestId('api-key-reveal-value'),
-      'Expected revealed key to start with gs_live_'
-    ).toHaveText(/^gs_live_/, { timeout: 15_000 })
-    expect(
-      revealedKey,
-      `Expected revealed key to match the gs_live_ base62 format, got: ${revealedKey}`
-    ).toMatch(/^gs_live_[0-9A-Za-z]{40}$/)
-
-    await expect(
-      page.getByTestId('api-key-copy-button'),
-      'Expected copy button to exist in reveal modal'
-    ).toBeVisible()
-
-    // Close reveal modal (it should never show the plaintext key again).
-    await page.keyboard.press('Escape')
-    await expect(revealDialog, 'Expected reveal modal to close after Escape').toHaveCount(0)
-
-    const expectedPrefix = revealedKey.slice(0, 'gs_live_'.length + 8)
-    const list = page.getByTestId('api-keys-list')
-    const createdRow = list.locator('li').filter({ hasText: name }).first()
-    await expect(
-      createdRow,
-      'Expected newly created key to appear in the list with its name'
-    ).toBeVisible({ timeout: 30_000 })
-    await expect(
-      createdRow,
-      `Expected list row to include key prefix ${expectedPrefix}`
-    ).toContainText(expectedPrefix)
-
-    await createdRow.getByRole('button', { name: 'Revoke' }).click()
-    const revokeDialog = page.getByTestId('api-key-revoke-dialog')
-    await expect(revokeDialog, 'Expected revoke confirmation modal').toBeVisible({ timeout: 15_000 })
-    await expect(
-      revokeDialog,
-      'Expected revoke modal target to include the key name'
-    ).toContainText(name)
-
-    await revokeDialog.getByTestId('api-key-revoke-confirm').click()
-    await expect(revokeDialog, 'Expected revoke modal to close after confirmation').toHaveCount(0)
-
-    await expect.poll(
-      async () => {
-        const count = await createdRow.count()
-        if (count === 0) return 'disappeared'
-        const text = await createdRow.innerText()
-        if (/\bRevoked\b/.test(text)) return 'revoked'
-        return 'pending'
-      },
-      {
-        timeout: 30_000,
-        message: 'Expected revoked key to either show Revoked status or disappear from the active list',
-      }
-    ).toMatch(/revoked|disappeared/)
-  })
-})

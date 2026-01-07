@@ -1,5 +1,5 @@
 import { BadgeDefinition, BADGE_DEFINITIONS } from '@/lib/badges/definitions'
-import { BadgeDetailsModal } from '@/components/ui/BadgeModal'
+import { BadgeDetailsModal } from '@/components/shared/BadgeDetailsModal'
 import { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { Shield, Search, FileCheck } from 'lucide-react'

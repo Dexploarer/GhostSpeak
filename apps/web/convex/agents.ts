@@ -7,9 +7,7 @@
 import { v } from 'convex/values'
 import { query } from './_generated/server'
 
-type FieldPresence<T> =
-  | { present: true; value: T }
-  | { present: false; value: null }
+type FieldPresence<T> = { present: true; value: T } | { present: false; value: null }
 
 function presence<T>(value: T | null | undefined): FieldPresence<T> {
   return value === undefined || value === null
@@ -146,4 +144,3 @@ export const getAgentProfilePublic = query({
     }
   },
 })
-

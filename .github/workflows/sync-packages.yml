@@ -15,7 +15,7 @@ jobs:
       sdk-rust: ${{ steps.changes.outputs.sdk-rust }}
       core: ${{ steps.changes.outputs.core }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           
@@ -35,7 +35,7 @@ jobs:
     if: needs.detect-changes.outputs.sdk-typescript == 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ secrets.SYNC_TOKEN }}
@@ -62,7 +62,7 @@ jobs:
     if: needs.detect-changes.outputs.sdk-rust == 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ secrets.SYNC_TOKEN }}
@@ -85,7 +85,7 @@ jobs:
     if: needs.detect-changes.outputs.core == 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ secrets.SYNC_TOKEN }}

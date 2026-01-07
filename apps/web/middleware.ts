@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { randomUUID } from 'crypto'
+
 import { createRequestEvent, emitWideEvent, WideEvent } from '@/lib/logging/wide-event'
 
 // Extend NextRequest to include our wide event
@@ -23,24 +23,27 @@ function extractUserContext(request: NextRequest) {
   const cookies = request.cookies
 
   // Extract user ID from various sources
-  const userId = cookies.get('user_id')?.value ||
-                 request.headers.get('x-user-id') ||
-                 request.headers.get('user-id')
+  const userId =
+    cookies.get('user_id')?.value ||
+    request.headers.get('x-user-id') ||
+    request.headers.get('user-id')
 
   // Extract wallet address from various sources
-  const walletAddress = cookies.get('wallet_address')?.value ||
-                       request.headers.get('x-wallet-address') ||
-                       request.headers.get('wallet-address')
+  const walletAddress =
+    cookies.get('wallet_address')?.value ||
+    request.headers.get('x-wallet-address') ||
+    request.headers.get('wallet-address')
 
   // Extract session ID
-  const sessionId = cookies.get('session_id')?.value ||
-                   request.headers.get('x-session-id') ||
-                   cookies.get('__session')?.value
+  const sessionId =
+    cookies.get('session_id')?.value ||
+    request.headers.get('x-session-id') ||
+    cookies.get('__session')?.value
 
   return {
-    userId,
-    walletAddress,
-    sessionId,
+    userId: userId ?? undefined,
+    walletAddress: walletAddress ?? undefined,
+    sessionId: sessionId ?? undefined,
   }
 }
 
@@ -48,10 +51,12 @@ function extractUserContext(request: NextRequest) {
  * Extract trace ID from request headers or generate new one
  */
 function extractTraceId(request: NextRequest): string {
-  return request.headers.get('x-trace-id') ||
-         request.headers.get('x-request-id') ||
-         request.headers.get('trace-id') ||
-         randomUUID()
+  return (
+    request.headers.get('x-trace-id') ||
+    request.headers.get('x-request-id') ||
+    request.headers.get('trace-id') ||
+    globalThis.crypto.randomUUID()
+  )
 }
 
 /**
@@ -59,21 +64,25 @@ function extractTraceId(request: NextRequest): string {
  */
 function shouldLogRequest(pathname: string): boolean {
   // Skip static assets, Next.js internals
-  if (pathname.startsWith('/_next/') ||
-      pathname.startsWith('/api/auth/') ||
-      pathname.includes('favicon') ||
-      pathname.includes('.ico') ||
-      pathname.includes('.png') ||
-      pathname.includes('.jpg') ||
-      pathname.includes('.svg')) {
+  if (
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/api/auth/') ||
+    pathname.includes('favicon') ||
+    pathname.includes('.ico') ||
+    pathname.includes('.png') ||
+    pathname.includes('.jpg') ||
+    pathname.includes('.svg')
+  ) {
     return false
   }
 
   // Log all API routes and important pages
-  return pathname.startsWith('/api/') ||
-         pathname.includes('/dashboard') ||
-         pathname.includes('/caisper') ||
-         pathname.includes('/agents')
+  return (
+    pathname.startsWith('/api/') ||
+    pathname.includes('/dashboard') ||
+    pathname.includes('/caisper') ||
+    pathname.includes('/agents')
+  )
 }
 
 /**
@@ -93,8 +102,9 @@ export async function middleware(request: NextRequest) {
   const traceId = extractTraceId(request)
 
   // Generate correlation ID for cross-service tracing
-  const correlationId = request.headers.get('x-correlation-id') ||
-                       `corr_${randomUUID().substring(0, 8)}`
+  const correlationId =
+    request.headers.get('x-correlation-id') ||
+    `corr_${globalThis.crypto.randomUUID().substring(0, 8)}`
 
   // Create the wide event
   const wideEvent = createRequestEvent({
@@ -138,7 +148,6 @@ export async function middleware(request: NextRequest) {
     })
 
     return result
-
   } catch (error) {
     // Handle and log errors for non-API routes
     const errorEvent = {
@@ -149,17 +158,17 @@ export async function middleware(request: NextRequest) {
       error: {
         type: error instanceof Error ? error.name : 'UnknownError',
         message: error instanceof Error ? error.message : 'An unexpected error occurred',
-        stack: error instanceof Error && process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        stack:
+          error instanceof Error && process.env.NODE_ENV === 'development'
+            ? error.stack
+            : undefined,
       },
     }
 
     emitWideEvent(errorEvent)
 
     // Return error response
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 

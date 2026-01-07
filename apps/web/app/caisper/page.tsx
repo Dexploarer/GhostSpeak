@@ -27,7 +27,14 @@ import { X402ResultCard } from '@/components/chat/X402ResultCard'
 import { ScoreHistoryCard } from '@/components/chat/ScoreHistoryCard'
 
 // Wide Event Logging
-import { useWideEventUserEnrichment, useWideEventFeatureEnrichment } from '@/lib/logging/hooks'
+import {
+  useWideEventUserEnrichment,
+  useWideEventFeatureEnrichment,
+  useWideEventBusinessEnrichment,
+  useWideEventFrontendMetrics,
+  useWideEventComponentTracking,
+  useWideEventUserInteraction,
+} from '@/lib/logging/hooks'
 import OuijaBoard from '@/components/ouija/OuijaBoard'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
@@ -93,7 +100,7 @@ export default function CaisperPage() {
   )
 
   // Comprehensive Wide Event Enrichment
-  useWideEventUserEnrichment(publicKey)
+  useWideEventUserEnrichment()
   useWideEventBusinessEnrichment('agent_interaction', 'agent_chat', 'consult_ai_agent')
   useWideEventFrontendMetrics()
   useWideEventComponentTracking('CaisperChatPage')
@@ -480,15 +487,18 @@ export default function CaisperPage() {
                       </div>
                     )}
 
-                    <ChatMarkdown content={msg.content} />
+                    <ChatMarkdown content={msg.content as string} />
 
                     {/* Render custom agent list if metadata indicates agent-list type */}
                     {msg.metadata?.type === 'agent-list' &&
-                      msg.metadata?.agents &&
-                      msg.metadata?.agents.length > 0 && (
+                      !!msg.metadata?.agents &&
+                      (msg.metadata.agents as any).length > 0 && (
                         <AgentListResponse
-                          agents={msg.metadata.agents}
-                          totalCount={msg.metadata.totalCount || msg.metadata.agents.length}
+                          agents={msg.metadata.agents as any}
+                          totalCount={
+                            (msg.metadata.totalCount as number) ||
+                            (msg.metadata.agents as any).length
+                          }
                           onClaimClick={handleClaimClick}
                         />
                       )}
@@ -496,13 +506,13 @@ export default function CaisperPage() {
                     {/* Render ghost score evaluation if metadata type is ghost-score */}
                     {msg.metadata?.type === 'ghost-score' && (
                       <AgentEvaluationResponse
-                        agentAddress={msg.metadata.agentAddress}
-                        score={msg.metadata.score}
-                        tier={msg.metadata.tier}
-                        breakdown={msg.metadata.breakdown}
-                        network={msg.metadata.network}
-                        myTake={msg.metadata.myTake}
-                        badges={msg.metadata.badges}
+                        agentAddress={msg.metadata.agentAddress as string}
+                        score={msg.metadata.score as number}
+                        tier={msg.metadata.tier as string}
+                        breakdown={msg.metadata.breakdown as any}
+                        network={msg.metadata.network as any}
+                        myTake={msg.metadata.myTake as string}
+                        badges={msg.metadata.badges as string[]}
                         onActionClick={handleSend}
                       />
                     )}
@@ -510,11 +520,11 @@ export default function CaisperPage() {
                     {/* Render trust assessment card if metadata type is trust-assessment */}
                     {msg.metadata?.type === 'trust-assessment' && (
                       <TrustAssessmentCard
-                        agentAddress={msg.metadata.agentAddress}
-                        greenFlags={msg.metadata.greenFlags || []}
-                        yellowFlags={msg.metadata.yellowFlags || []}
-                        redFlags={msg.metadata.redFlags || []}
-                        scoreData={msg.metadata.scoreData}
+                        agentAddress={msg.metadata.agentAddress as string}
+                        greenFlags={(msg.metadata.greenFlags as string[]) || []}
+                        yellowFlags={(msg.metadata.yellowFlags as string[]) || []}
+                        redFlags={(msg.metadata.redFlags as string[]) || []}
+                        scoreData={msg.metadata.scoreData as any}
                         onActionClick={handleSend}
                       />
                     )}
@@ -522,10 +532,10 @@ export default function CaisperPage() {
                     {/* Render agent directory if metadata type is agent-directory */}
                     {msg.metadata?.type === 'agent-directory' && (
                       <AgentDirectoryCard
-                        agents={msg.metadata.agents || []}
-                        totalAgents={msg.metadata.totalAgents || 0}
-                        totalEndpoints={msg.metadata.totalEndpoints || 0}
-                        agentsWithEndpoints={msg.metadata.agentsWithEndpoints || 0}
+                        agents={(msg.metadata.agents as any) || []}
+                        totalAgents={(msg.metadata.totalAgents as number) || 0}
+                        totalEndpoints={(msg.metadata.totalEndpoints as number) || 0}
+                        agentsWithEndpoints={(msg.metadata.agentsWithEndpoints as number) || 0}
                         onActionClick={handleSend}
                       />
                     )}
@@ -533,13 +543,13 @@ export default function CaisperPage() {
                     {/* Render token evaluation card if metadata type is token-evaluation */}
                     {msg.metadata?.type === 'token-evaluation' && (
                       <TokenEvaluationCard
-                        agentAddress={msg.metadata.agentAddress}
-                        totalValue={msg.metadata.totalValue}
-                        tokenCount={msg.metadata.tokenCount}
-                        verifiedCount={msg.metadata.verifiedCount}
-                        riskyCount={msg.metadata.riskyCount}
-                        avgExploitScore={msg.metadata.avgExploitScore}
-                        tokens={msg.metadata.tokens}
+                        agentAddress={msg.metadata.agentAddress as string}
+                        totalValue={msg.metadata.totalValue as number}
+                        tokenCount={msg.metadata.tokenCount as number}
+                        verifiedCount={msg.metadata.verifiedCount as number}
+                        riskyCount={msg.metadata.riskyCount as number}
+                        avgExploitScore={msg.metadata.avgExploitScore as number}
+                        tokens={msg.metadata.tokens as any}
                         onActionClick={handleSend}
                       />
                     )}
@@ -549,12 +559,12 @@ export default function CaisperPage() {
                       msg.metadata?.type === 'credentials') && (
                       <CredentialCard
                         mode={msg.metadata.type === 'credential-issued' ? 'issued' : 'list'}
-                        credentialId={msg.metadata.credentialId}
-                        did={msg.metadata.did}
-                        agentAddress={msg.metadata.agentAddress}
-                        credentials={msg.metadata.credentials}
-                        validCount={msg.metadata.validCount}
-                        totalCount={msg.metadata.totalCount}
+                        credentialId={msg.metadata.credentialId as string}
+                        did={msg.metadata.did as string}
+                        agentAddress={msg.metadata.agentAddress as string}
+                        credentials={msg.metadata.credentials as any}
+                        validCount={msg.metadata.validCount as number}
+                        totalCount={msg.metadata.totalCount as number}
                         onActionClick={handleSend}
                       />
                     )}
@@ -562,23 +572,23 @@ export default function CaisperPage() {
                     {/* Render x402 query result */}
                     {msg.metadata?.type === 'x402-query-result' && (
                       <X402ResultCard
-                        endpoint={msg.metadata.endpoint}
-                        method={msg.metadata.method}
-                        status={msg.metadata.status}
-                        responseTime={msg.metadata.responseTime}
-                        data={msg.metadata.data}
-                        isStructured={msg.metadata.isStructured}
-                        agent={msg.metadata.agent}
+                        endpoint={msg.metadata.endpoint as string}
+                        method={msg.metadata.method as string}
+                        status={msg.metadata.status as number}
+                        responseTime={msg.metadata.responseTime as number}
+                        data={msg.metadata.data as any}
+                        isStructured={msg.metadata.isStructured as boolean}
+                        agent={msg.metadata.agent as any}
                       />
                     )}
 
                     {/* Render score history card */}
                     {msg.metadata?.type === 'score-history' && (
                       <ScoreHistoryCard
-                        agentAddress={msg.metadata.agentAddress}
-                        days={msg.metadata.days}
-                        history={msg.metadata.history}
-                        stats={msg.metadata.stats}
+                        agentAddress={msg.metadata.agentAddress as string}
+                        days={msg.metadata.days as number}
+                        history={msg.metadata.history as any}
+                        stats={msg.metadata.stats as any}
                         onActionClick={handleSend}
                       />
                     )}
@@ -587,11 +597,11 @@ export default function CaisperPage() {
                     {msg.metadata?.type === 'ouija' && (
                       <div className="mt-4">
                         <OuijaBoard
-                          agentAddress={msg.metadata.agentAddress}
+                          agentAddress={msg.metadata.agentAddress as string}
                           summary={msg.metadata.summary}
                           reputation={msg.metadata.reputation}
-                          reports={msg.metadata.reports}
-                          transactions={msg.metadata.transactions}
+                          reports={msg.metadata.reports as any[]}
+                          transactions={msg.metadata.transactions as any[]}
                         />
                       </div>
                     )}

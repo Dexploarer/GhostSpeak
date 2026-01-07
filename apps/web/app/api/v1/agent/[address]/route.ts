@@ -23,7 +23,10 @@ export async function GET(
     if (!solanaAddressRegex.test(agentAddress)) {
       completeWideEvent((request as any).wideEvent, {
         statusCode: 400,
-        durationMs: Date.now() - (request as any).wideEvent?.timestamp ? new Date((request as any).wideEvent.timestamp).getTime() : Date.now(),
+        durationMs:
+          Date.now() - (request as any).wideEvent?.timestamp
+            ? new Date((request as any).wideEvent.timestamp).getTime()
+            : Date.now(),
         error: {
           type: 'ValidationError',
           code: 'INVALID_ADDRESS_FORMAT',
@@ -41,8 +44,27 @@ export async function GET(
       convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL)
     }
 
-    let discoveredAgent = null
-    let externalMappings = []
+    let discoveredAgent: {
+      ghostAddress: string
+      status: string
+      discoverySource: string
+      firstSeenTimestamp: number
+      slot: number
+      blockTime?: number
+      firstTxSignature?: string
+      facilitatorAddress?: string
+      claimedBy?: string
+      claimedAt?: number
+      ipfsCid?: string
+      ipfsUri?: string
+      metadataFileId?: string
+    } | null = null
+    let externalMappings: Array<{
+      platform: string
+      externalId: string
+      verified: boolean
+      verifiedAt?: number
+    }> = []
 
     // Try to fetch from Convex if available
     if (convex) {
@@ -64,14 +86,17 @@ export async function GET(
     if (!discoveredAgent) {
       completeWideEvent((request as any).wideEvent, {
         statusCode: 404,
-        durationMs: Date.now() - (request as any).wideEvent?.timestamp ? new Date((request as any).wideEvent.timestamp).getTime() : Date.now(),
+        durationMs:
+          Date.now() - (request as any).wideEvent?.timestamp
+            ? new Date((request as any).wideEvent.timestamp).getTime()
+            : Date.now(),
       })
 
       return Response.json(
         {
           error: 'Agent not found',
           address: agentAddress,
-          note: 'This is expected behavior - the agent does not exist in the database'
+          note: 'This is expected behavior - the agent does not exist in the database',
         },
         { status: 404 }
       )
@@ -80,13 +105,19 @@ export async function GET(
     // Complete wide event with success
     completeWideEvent((request as any).wideEvent, {
       statusCode: 200,
-      durationMs: Date.now() - (request as any).wideEvent?.timestamp ? new Date((request as any).wideEvent.timestamp).getTime() : Date.now(),
+      durationMs:
+        Date.now() - (request as any).wideEvent?.timestamp
+          ? new Date((request as any).wideEvent.timestamp).getTime()
+          : Date.now(),
     })
 
     // Complete wide event logging
     completeWideEvent((request as any).wideEvent, {
       statusCode: 200,
-      durationMs: Date.now() - (request as any).wideEvent?.timestamp ? new Date((request as any).wideEvent.timestamp).getTime() : Date.now(),
+      durationMs:
+        Date.now() - (request as any).wideEvent?.timestamp
+          ? new Date((request as any).wideEvent.timestamp).getTime()
+          : Date.now(),
     })
 
     return Response.json(
@@ -138,7 +169,10 @@ export async function GET(
     // Complete wide event with error
     completeWideEvent((request as any).wideEvent, {
       statusCode: 500,
-      durationMs: Date.now() - (request as any).wideEvent?.timestamp ? new Date((request as any).wideEvent.timestamp).getTime() : Date.now(),
+      durationMs:
+        Date.now() - (request as any).wideEvent?.timestamp
+          ? new Date((request as any).wideEvent.timestamp).getTime()
+          : Date.now(),
       error: {
         type: 'AgentAPIError',
         code: 'AGENT_LOOKUP_FAILED',

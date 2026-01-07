@@ -9,6 +9,7 @@
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Solana](https://img.shields.io/badge/Solana-v2.3.13-9945FF.svg)](https://solana.com)
   [![Anchor](https://img.shields.io/badge/Anchor-v0.32.1-FF6B6B.svg)](https://anchor-lang.com)
+   [![Codecov](https://img.shields.io/codecov/c/github/ghostspeak/ghostspeak?token=CODECOV_TOKEN)](https://codecov.io/gh/ghostspeak/ghostspeak)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-3178C6.svg)](https://typescriptlang.org)
   [![Rust](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://rust-lang.org)
 

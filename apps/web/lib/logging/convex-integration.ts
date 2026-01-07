@@ -46,7 +46,7 @@ export function useConvexQueryEnrichment<T>(
         },
         metadata: {
           convex_operations: [
-            ...(window.__wideEvent.metadata?.convex_operations as ConvexOperationContext[] || []),
+            ...((window.__wideEvent.metadata?.convex_operations as ConvexOperationContext[]) || []),
             context,
           ],
         },
@@ -72,7 +72,7 @@ export function useConvexMutationEnrichment(
       logger.enrichWithBusiness(window.__wideEvent, {
         metadata: {
           convex_mutations: [
-            ...(window.__wideEvent.metadata?.convex_mutations as string[] || []),
+            ...((window.__wideEvent.metadata?.convex_mutations as string[]) || []),
             functionName,
           ],
         },
@@ -98,7 +98,7 @@ export function useConvexActionEnrichment(
       logger.enrichWithBusiness(window.__wideEvent, {
         metadata: {
           convex_actions: [
-            ...(window.__wideEvent.metadata?.convex_actions as string[] || []),
+            ...((window.__wideEvent.metadata?.convex_actions as string[]) || []),
             functionName,
           ],
         },
@@ -133,7 +133,8 @@ export function withWideEventMutation<T extends any[], R>(
           },
           metadata: {
             convex_operations: [
-              ...(window.__wideEvent.metadata?.convex_operations as ConvexOperationContext[] || []),
+              ...((window.__wideEvent.metadata?.convex_operations as ConvexOperationContext[]) ||
+                []),
               {
                 operationType: 'mutation',
                 functionName,
@@ -154,7 +155,6 @@ export function withWideEventMutation<T extends any[], R>(
       }
 
       return result
-
     } catch (error) {
       // Enrich with error context
       if (typeof window !== 'undefined' && window.__wideEvent) {
@@ -167,7 +167,8 @@ export function withWideEventMutation<T extends any[], R>(
           },
           metadata: {
             convex_operations: [
-              ...(window.__wideEvent.metadata?.convex_operations as ConvexOperationContext[] || []),
+              ...((window.__wideEvent.metadata?.convex_operations as ConvexOperationContext[]) ||
+                []),
               {
                 operationType: 'mutation',
                 functionName,
@@ -209,7 +210,8 @@ export function withWideEventAction<T extends any[], R>(
           },
           metadata: {
             convex_operations: [
-              ...(window.__wideEvent.metadata?.convex_operations as ConvexOperationContext[] || []),
+              ...((window.__wideEvent.metadata?.convex_operations as ConvexOperationContext[]) ||
+                []),
               {
                 operationType: 'action',
                 functionName,
@@ -230,7 +232,6 @@ export function withWideEventAction<T extends any[], R>(
       }
 
       return result
-
     } catch (error) {
       // Enrich with error context
       if (typeof window !== 'undefined' && window.__wideEvent) {
@@ -243,7 +244,8 @@ export function withWideEventAction<T extends any[], R>(
           },
           metadata: {
             convex_operations: [
-              ...(window.__wideEvent.metadata?.convex_operations as ConvexOperationContext[] || []),
+              ...((window.__wideEvent.metadata?.convex_operations as ConvexOperationContext[]) ||
+                []),
               {
                 operationType: 'action',
                 functionName,
@@ -273,7 +275,7 @@ export function enrichWithAgentContext(event: WideEvent, agentAddress: string, o
     },
     metadata: {
       agent_operations: [
-        ...(event.metadata?.agent_operations as string[] || []),
+        ...((event.metadata?.agent_operations as string[]) || []),
         `${operation}:${agentAddress}`,
       ],
     },
@@ -283,7 +285,12 @@ export function enrichWithAgentContext(event: WideEvent, agentAddress: string, o
 /**
  * Utility to enrich wide events with reputation calculation context
  */
-export function enrichWithReputationContext(event: WideEvent, agentAddress: string, score?: number, tier?: string) {
+export function enrichWithReputationContext(
+  event: WideEvent,
+  agentAddress: string,
+  score?: number,
+  tier?: string
+) {
   const logger = getWideEventLogger()
 
   logger.enrichWithBusiness(event, {
@@ -294,7 +301,7 @@ export function enrichWithReputationContext(event: WideEvent, agentAddress: stri
     },
     metadata: {
       reputation_calculations: [
-        ...(event.metadata?.reputation_calculations as any[] || []),
+        ...((event.metadata?.reputation_calculations as any[]) || []),
         { agentAddress, score, tier, timestamp: Date.now() },
       ],
     },
@@ -304,13 +311,17 @@ export function enrichWithReputationContext(event: WideEvent, agentAddress: stri
 /**
  * Utility to enrich wide events with credential operations
  */
-export function enrichWithCredentialContext(event: WideEvent, credentialType: string, agentAddress: string) {
+export function enrichWithCredentialContext(
+  event: WideEvent,
+  credentialType: string,
+  agentAddress: string
+) {
   const logger = getWideEventLogger()
 
   logger.enrichWithBusiness(event, {
     metadata: {
       credential_operations: [
-        ...(event.metadata?.credential_operations as any[] || []),
+        ...((event.metadata?.credential_operations as any[]) || []),
         { type: credentialType, agentAddress, timestamp: Date.now() },
       ],
     },

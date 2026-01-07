@@ -40,7 +40,7 @@ const GHOST_TIERS = {
   PLATINUM: { min: 9000, name: 'PLATINUM' },
   GOLD: { min: 7500, name: 'GOLD' },
   SILVER: { min: 5000, name: 'SILVER' },
-  BRONZE: { min: 2500, name: 'BRONZE' },
+  BRONZE: { min: 2000, name: 'BRONZE' },
   NEWCOMER: { min: 0, name: 'NEWCOMER' },
 } as const
 
@@ -170,6 +170,7 @@ export const getUserDashboard = query({
         totalPayments: completedPayments.length,
         reviewsWritten: userReviews.length,
         accountAge: now - user.createdAt,
+        boost: user.ghosthunterScore || 0,
       })
       ghosthunterTier = getGhosthunterScoreTier(ghosthunterScore)
     }
@@ -220,17 +221,17 @@ export const getUserDashboard = query({
         // Ecto Score - for Agent Developers
         ecto: isAgentDeveloper
           ? {
-              score: ectoScore,
-              tier: ectoTier,
-              agentsRegistered: claimedAgents.length,
-            }
+            score: ectoScore,
+            tier: ectoTier,
+            agentsRegistered: claimedAgents.length,
+          }
           : null,
         // Ghosthunter Score - for Customers
         ghosthunter: isCustomer
           ? {
-              score: ghosthunterScore,
-              tier: ghosthunterTier,
-            }
+            score: ghosthunterScore,
+            tier: ghosthunterTier,
+          }
           : null,
       },
       stats: {
@@ -243,13 +244,13 @@ export const getUserDashboard = query({
       },
       staking: stakingAccount
         ? {
-            amountStaked: stakingAccount.amountStaked,
-            tier: stakingAccount.tier,
-            reputationBoostBps: stakingAccount.reputationBoostBps,
-            unlockAt: stakingAccount.unlockAt,
-            hasVerifiedBadge: stakingAccount.hasVerifiedBadge,
-            hasPremiumBenefits: stakingAccount.hasPremiumBenefits,
-          }
+          amountStaked: stakingAccount.amountStaked,
+          tier: stakingAccount.tier,
+          reputationBoostBps: stakingAccount.reputationBoostBps,
+          unlockAt: stakingAccount.unlockAt,
+          hasVerifiedBadge: stakingAccount.hasVerifiedBadge,
+          hasPremiumBenefits: stakingAccount.hasPremiumBenefits,
+        }
         : null,
       recentActivity,
       gamification: {
@@ -378,14 +379,16 @@ function calculateGhosthunterScore({
   totalPayments,
   reviewsWritten,
   accountAge,
+  boost = 0,
 }: {
   totalVerifications: number
   totalPayments: number
   reviewsWritten: number
   accountAge: number
+  boost?: number
 }): number {
   const ageInDays = accountAge / (1000 * 60 * 60 * 24)
-  let score = 0
+  let score = boost
 
   // Verification points (up to 3500 points)
   // Each verification shows you're actively hunting/evaluating agents
@@ -590,6 +593,7 @@ export const getUserPercentile = query({
       totalPayments: completedPayments.length,
       reviewsWritten: userReviews.length,
       accountAge: now - user.createdAt,
+      boost: user.ghosthunterScore || 0,
     })
 
     // Get all users and calculate their Ghosthunter scores
@@ -621,6 +625,7 @@ export const getUserPercentile = query({
         totalPayments: uCompletedPayments.length,
         reviewsWritten: uReviews.length,
         accountAge: now - u.createdAt,
+        boost: u.ghosthunterScore || 0,
       })
 
       userScores.push(score)

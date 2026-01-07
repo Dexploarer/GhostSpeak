@@ -36,18 +36,42 @@
     "DEVNET_FEE_RECEIVER",
     "SKIP_ENV_VALIDATION"
   ],
+  "ui": "tui",
   "tasks": {
     "build": {
-      "inputs": ["src/**", "package.json", "tsconfig.json"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
-      "dependsOn": ["^build"]
+      "inputs": [
+        "src/**",
+        "package.json",
+        "tsconfig.json"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**"
+      ],
+      "dependsOn": [
+        "^build"
+      ]
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "interactive": true
+    },
+    "dev:next": {
+      "cache": false,
+      "persistent": true,
+      "interactive": true
+    },
+    "dev:convex": {
+      "cache": false,
+      "persistent": true,
+      "interactive": true
     },
     "test": {
-      "outputs": ["coverage/**"],
+      "outputs": [
+        "coverage/**"
+      ],
       "dependsOn": []
     },
     "lint": {

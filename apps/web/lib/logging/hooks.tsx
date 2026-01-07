@@ -7,17 +7,63 @@
 
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useCallback, useState } from 'react'
 import { useWallet } from '@/lib/wallet/WalletStandardProvider'
 import { useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
-import { getWideEventLogger, WideEvent } from './wide-event'
+import { getWideEventLogger, WideEvent, WideEventLogger } from './wide-event'
+
+export type UseWideEventOptions = {
+  path: string
+  method: string
+  userId?: string
+  walletAddress?: string
+}
+
+/**
+ * Hook to manage the lifecycle of a wide event in a client component
+ */
+export function useWideEventState(options: UseWideEventOptions) {
+  const [event, setEvent] = useState<WideEvent | null>(null)
+  const logger = getWideEventLogger()
+
+  const createEvent = useCallback(() => {
+    const newEvent = logger.createEvent({
+      method: options.method,
+      path: options.path,
+      userId: options.userId,
+      walletAddress: options.walletAddress,
+    })
+    setEvent(newEvent)
+    return newEvent
+  }, [logger, options.method, options.path, options.userId, options.walletAddress])
+
+  const enrich = useCallback((enrichment: Partial<WideEvent>) => {
+    setEvent((prev) => (prev ? { ...prev, ...enrichment } : null))
+  }, [])
+
+  return {
+    event,
+    createEvent,
+    enrich,
+  }
+}
 
 // Extend Window interface for request context
 declare global {
   interface Window {
     __wideEvent?: WideEvent
   }
+}
+
+/**
+ * Hook to get the current wide event from window context
+ */
+export function useWideEvent() {
+  if (typeof window !== 'undefined') {
+    return window.__wideEvent
+  }
+  return undefined
 }
 
 /**
@@ -29,22 +75,24 @@ export function useWideEventUserEnrichment() {
 
   // Get user data from Convex
   const userData = useQuery(
-    api.users.getCurrentUser,
+    api.dashboard.getUserDashboard,
     publicKey ? { walletAddress: publicKey } : 'skip'
   )
 
   useEffect(() => {
-    // Enrich the current request's wide event with user context
-    if (typeof window !== 'undefined' && window.__wideEvent) {
-      logger.enrichWithUser(window.__wideEvent, {
-        subscription_tier: userData?.subscriptionTier,
-        account_age_days: userData?.accountAgeDays,
-        lifetime_value_cents: userData?.lifetimeValueCents,
+    // Enrichment with user context
+    if (typeof window !== 'undefined' && window.__wideEvent && userData) {
+      enrichWideEvent(window.__wideEvent, {
+        user: {
+          subscription_tier: (userData as any).subscriptionTier,
+          account_age_days: (userData as any).accountAgeDays,
+          lifetime_value_cents: (userData as any).lifetimeValueCents,
+        },
       })
     }
-  }, [userData, logger])
+  }, [userData])
 
-  return userData
+  return (userData as any)?.user
 }
 
 /**
@@ -77,7 +125,7 @@ export function useWideEventPerformanceEnrichment() {
 
     if (typeof window !== 'undefined' && window.__wideEvent) {
       logger.enrichWithBusiness(window.__wideEvent, {
-        performance: {
+        metadata: {
           component_mount_time: performanceRef.current.componentMountTime,
           render_count: performanceRef.current.renderCount,
         },
@@ -102,7 +150,7 @@ export function useWideEventAgentEnrichment(agentAddress?: string) {
 
   // Get reputation data
   const reputationData = useQuery(
-    api.agentReputationCache.getByAddress,
+    api.ghostScoreCalculator.calculateAgentScore,
     agentAddress ? { agentAddress } : 'skip'
   )
 
@@ -111,10 +159,10 @@ export function useWideEventAgentEnrichment(agentAddress?: string) {
       logger.enrichWithBusiness(window.__wideEvent, {
         agent: {
           address: agentAddress,
-          name: agentData.name,
-          status: agentData.status,
+          name: (agentData as any).name,
+          status: (agentData as any).status,
           tier: reputationData?.tier,
-          reputation_score: reputationData?.ghostScore,
+          reputation_score: reputationData?.score,
         },
       })
     }
@@ -131,11 +179,17 @@ export function useWideEventBusinessEnrichment(journey: string, feature: string,
 
   useEffect(() => {
     if (wideEvent) {
-      enrichWideEvent(wideEvent, 'business', {
-        user_journey: journey,
-        feature_used: feature,
-        user_intent: intent,
-        conversion_step: 1, // Will be updated as user progresses
+      enrichWideEvent(wideEvent, {
+        business: {
+          business: {
+            user_journey: journey,
+            feature_used: feature,
+            user_intent: intent,
+          },
+        },
+        metadata: {
+          conversion_step: 1, // Will be updated as user progresses
+        },
       })
     }
   }, [wideEvent, journey, feature, intent])
@@ -151,33 +205,43 @@ export function useWideEventFrontendMetrics() {
         user_agent: navigator.userAgent,
         viewport_size: `${window.innerWidth}x${window.innerHeight}`,
         page_load_time_ms: performance.timing.loadEventEnd - performance.timing.navigationStart,
-        dom_ready_time_ms: performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart,
+        dom_ready_time_ms:
+          performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart,
       }
 
-      enrichWideEvent(wideEvent, 'frontend', frontendContext)
+      enrichWideEvent(wideEvent, { frontend: frontendContext })
 
       // Capture Web Vitals
       const observer = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           if (entry.entryType === 'largest-contentful-paint') {
-            enrichWideEvent(wideEvent, 'performance', {
-              largest_contentful_paint_ms: entry.startTime
+            enrichWideEvent(wideEvent, {
+              performance: {
+                largest_contentful_paint_ms: entry.startTime,
+              },
             })
           }
           if (entry.entryType === 'first-input') {
-            enrichWideEvent(wideEvent, 'performance', {
-              first_input_delay_ms: (entry as any).processingStart - entry.startTime
+            enrichWideEvent(wideEvent, {
+              performance: {
+                first_input_delay_ms: (entry as any).processingStart - entry.startTime,
+              },
             })
           }
           if (entry.entryType === 'layout-shift') {
-            enrichWideEvent(wideEvent, 'performance', {
-              cumulative_layout_shift: (entry as any).value
+            enrichWideEvent(wideEvent, {
+              performance: {
+                cumulative_layout_shift: (entry as any).value,
+              },
             })
           }
         }
       })
 
-      observer.observe({ entryTypes: ['largest-contentful-paint', 'first-input', 'layout-shift'] })
+      observer.observe({
+        entryTypes: ['largest-contentful-paint', 'first-input', 'layout-shift'],
+        buffered: true,
+      } as any)
 
       return () => observer.disconnect()
     }
@@ -186,7 +250,7 @@ export function useWideEventFrontendMetrics() {
 
 export function useWideEventComponentTracking(componentName: string) {
   const wideEvent = useWideEvent()
-  const renderStartTime = useRef<number>()
+  const renderStartTime = useRef<number | undefined>(undefined)
 
   useEffect(() => {
     renderStartTime.current = performance.now()
@@ -196,9 +260,11 @@ export function useWideEventComponentTracking(componentName: string) {
     if (wideEvent && renderStartTime.current) {
       const renderTime = performance.now() - renderStartTime.current
 
-      enrichWideEvent(wideEvent, 'frontend', {
-        component_name: componentName,
-        react_render_time_ms: renderTime,
+      enrichWideEvent(wideEvent, {
+        frontend: {
+          component_name: componentName,
+          react_render_time_ms: renderTime,
+        },
       })
     }
   })
@@ -207,25 +273,32 @@ export function useWideEventComponentTracking(componentName: string) {
 export function useWideEventUserInteraction(interactionType: string, elementId?: string) {
   const wideEvent = useWideEvent()
 
-  const trackInteraction = useCallback((details?: any) => {
-    if (wideEvent) {
-      enrichWideEvent(wideEvent, 'frontend', {
-        user_interaction: interactionType,
-        component_name: elementId,
-        interaction_details: details,
-      })
+  const trackInteraction = useCallback(
+    (details?: any) => {
+      if (wideEvent) {
+        enrichWideEvent(wideEvent, {
+          frontend: {
+            user_interaction: interactionType,
+            component_name: elementId,
+          },
+          metadata: {
+            interaction_details: details,
+          },
+        })
 
-      // Emit interaction event
-      getWideEventLogger().emit({
-        ...wideEvent,
-        metadata: {
-          ...wideEvent.metadata,
-          interaction_event: true,
-          interaction_type: interactionType,
-        }
-      })
-    }
-  }, [wideEvent, interactionType, elementId])
+        // Emit interaction event
+        getWideEventLogger().emit({
+          ...wideEvent,
+          metadata: {
+            ...wideEvent.metadata,
+            interaction_event: true,
+            interaction_type: interactionType,
+          },
+        })
+      }
+    },
+    [wideEvent, interactionType, elementId]
+  )
 
   return trackInteraction
 }
@@ -252,8 +325,11 @@ export function useWideEventCommerceEnrichment(cartId?: string) {
 export function enrichWideEvent(
   event: WideEvent,
   context: {
-    user?: Parameters<typeof getWideEventLogger>['enrichWithUser'][1]
-    business?: Parameters<typeof getWideEventLogger>['enrichWithBusiness'][1]
+    user?: Parameters<WideEventLogger['enrichWithUser']>[1]
+    business?: Parameters<WideEventLogger['enrichWithBusiness']>[1]
+    frontend?: WideEvent['frontend']
+    performance?: WideEvent['performance']
+    metadata?: WideEvent['metadata']
   }
 ) {
   const logger = getWideEventLogger()
@@ -262,8 +338,15 @@ export function enrichWideEvent(
     logger.enrichWithUser(event, context.user)
   }
 
-  if (context.business) {
-    logger.enrichWithBusiness(event, context.business)
+  if (context.business || context.frontend || context.performance || context.metadata) {
+    logger.enrichWithBusiness(event, {
+      ...context.business,
+      feature_flags: (context.business as any)?.feature_flags,
+      performance: context.performance,
+      metadata: context.metadata,
+      // Handle frontend context which is nested in business enricher for some reason in the logger
+      ...(context.frontend ? { metadata: { ...context.metadata, ...context.frontend } } : {}),
+    } as any)
   }
 }
 
@@ -288,7 +371,7 @@ export function completeWideEvent(
  */
 export function withWideEventEnrichment<P extends object>(
   Component: React.ComponentType<P>,
-  enrichmentFn?: (props: P) => Parameters<typeof getWideEventLogger>['enrichWithBusiness'][1]
+  enrichmentFn?: (props: P) => Parameters<WideEventLogger['enrichWithBusiness']>[1]
 ) {
   return function WideEventEnrichedComponent(props: P) {
     const logger = getWideEventLogger()
@@ -311,7 +394,10 @@ export class WideEventErrorBoundary extends React.Component<
   { children: React.ReactNode; fallback?: React.ComponentType<{ error: Error }> },
   { hasError: boolean; error: Error | null }
 > {
-  constructor(props: { children: React.ReactNode; fallback?: React.ComponentType<{ error: Error }> }) {
+  constructor(props: {
+    children: React.ReactNode
+    fallback?: React.ComponentType<{ error: Error }>
+  }) {
     super(props)
     this.state = { hasError: false, error: null }
   }

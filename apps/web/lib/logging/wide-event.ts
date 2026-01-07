@@ -12,9 +12,15 @@
  * - Service context (version, deployment, region)
  */
 
-import { randomUUID } from 'crypto'
-import { getLoggingConfig, getLogLevel, isDetailedErrorLoggingEnabled, isPerformanceMonitoringEnabled } from './config'
+// Use global crypto for environment compatibility (Node, Browser, Edge)
+const uuid = () => globalThis.crypto.randomUUID()
 
+import {
+  getLoggingConfig,
+  getLogLevel,
+  isDetailedErrorLoggingEnabled,
+  isPerformanceMonitoringEnabled,
+} from './config'
 // Wide Event Types
 export interface WideEvent {
   // Core request context
@@ -113,6 +119,11 @@ export interface WideEvent {
     largest_contentful_paint_ms?: number
     cumulative_layout_shift?: number
     first_input_delay_ms?: number
+    react_render_time_ms?: number
+    convex_queries?: number
+    convex_mutations?: number
+    database_queries?: number
+    external_api_calls?: number
   }
 
   // Legacy business context (maintained for compatibility)
@@ -151,14 +162,6 @@ export interface WideEvent {
     stack?: string
     stripe_decline_code?: string
     solana_error_code?: string
-  }
-
-  // Performance metrics
-  performance?: {
-    database_queries?: number
-    external_api_calls?: number
-    cache_hits?: number
-    cache_misses?: number
   }
 
   // Custom metadata (flexible extension)
@@ -249,8 +252,8 @@ export class WideEventLogger {
     traceId?: string
   }): WideEvent {
     const event: WideEvent = {
-      request_id: randomUUID(),
-      trace_id: request.traceId || randomUUID(),
+      request_id: uuid(),
+      trace_id: request.traceId || uuid(),
       timestamp: new Date().toISOString(),
       method: request.method,
       path: request.path,
@@ -275,11 +278,14 @@ export class WideEventLogger {
   /**
    * Enrich event with user context
    */
-  enrichWithUser(event: WideEvent, user: {
-    subscription_tier?: string
-    account_age_days?: number
-    lifetime_value_cents?: number
-  }): void {
+  enrichWithUser(
+    event: WideEvent,
+    user: {
+      subscription_tier?: string
+      account_age_days?: number
+      lifetime_value_cents?: number
+    }
+  ): void {
     if (!event.user) event.user = {}
 
     event.user.subscription_tier = user.subscription_tier
@@ -290,30 +296,41 @@ export class WideEventLogger {
   /**
    * Enrich event with business context (cart, payment, etc.)
    */
-  enrichWithBusiness(event: WideEvent, context: {
-    cart?: WideEvent['cart']
-    payment?: WideEvent['payment']
-    agent?: WideEvent['agent']
-    feature_flags?: Record<string, boolean | string>
-    performance?: WideEvent['performance']
-    metadata?: Record<string, unknown>
-  }): void {
+  enrichWithBusiness(
+    event: WideEvent,
+    context: {
+      business?: WideEvent['business']
+      cart?: WideEvent['cart']
+      payment?: WideEvent['payment']
+      agent?: WideEvent['agent']
+      feature_flags?: Record<string, boolean | string>
+      performance?: WideEvent['performance']
+      error?: WideEvent['error']
+      metadata?: Record<string, unknown>
+    }
+  ): void {
+    if (context.business) event.business = { ...event.business, ...context.business }
     if (context.cart) event.cart = { ...event.cart, ...context.cart }
     if (context.payment) event.payment = { ...event.payment, ...context.payment }
     if (context.agent) event.agent = { ...event.agent, ...context.agent }
-    if (context.feature_flags) event.feature_flags = { ...event.feature_flags, ...context.feature_flags }
+    if (context.feature_flags)
+      event.feature_flags = { ...event.feature_flags, ...context.feature_flags }
     if (context.performance) event.performance = { ...event.performance, ...context.performance }
+    if (context.error) event.error = { ...event.error, ...context.error }
     if (context.metadata) event.metadata = { ...event.metadata, ...context.metadata }
   }
 
   /**
    * Complete event with final status and timing
    */
-  completeEvent(event: WideEvent, result: {
-    statusCode?: number
-    durationMs?: number
-    error?: Error | { type: string; code?: string; message: string; retriable?: boolean }
-  }): void {
+  completeEvent(
+    event: WideEvent,
+    result: {
+      statusCode?: number
+      durationMs?: number
+      error?: Error | { type: string; code?: string; message: string; retriable?: boolean }
+    }
+  ): void {
     event.status_code = result.statusCode
     event.duration_ms = result.durationMs
     event.outcome = result.error ? 'error' : 'success'
@@ -340,11 +357,13 @@ export class WideEventLogger {
     if (event.error) return true
 
     // Always keep slow requests
-    if (event.duration_ms && event.duration_ms > this.sampling.slow_request_threshold_ms) return true
+    if (event.duration_ms && event.duration_ms > this.sampling.slow_request_threshold_ms)
+      return true
 
     // Always keep VIP users
     if (event.user?.id && this.sampling.vip_users.includes(event.user.id)) return true
-    if (event.user?.wallet_address && this.sampling.vip_wallets.includes(event.user.wallet_address)) return true
+    if (event.user?.wallet_address && this.sampling.vip_wallets.includes(event.user.wallet_address))
+      return true
 
     // Always keep requests with debug feature flags
     if (event.feature_flags) {
@@ -365,7 +384,12 @@ export class WideEventLogger {
       return // Drop this event per sampling rules
     }
 
-    const logLevel = event.outcome === 'error' ? 'error' : event.status_code && event.status_code >= 400 ? 'warn' : 'info'
+    const logLevel =
+      event.outcome === 'error'
+        ? 'error'
+        : event.status_code && event.status_code >= 400
+          ? 'warn'
+          : 'info'
 
     // Check if we should log at this level
     if (!this.shouldLogAtLevel(logLevel)) {
@@ -440,4 +464,20 @@ export function createRequestEvent(request: {
  */
 export function emitWideEvent(event: WideEvent): void {
   getWideEventLogger().emit(event)
+}
+
+/**
+ * Complete and emit a wide event in one step
+ */
+export function completeWideEvent(
+  event: WideEvent,
+  result: {
+    statusCode?: number
+    durationMs?: number
+    error?: Error | { type: string; code?: string; message: string; retriable?: boolean }
+  }
+): void {
+  const logger = getWideEventLogger()
+  logger.completeEvent(event, result)
+  logger.emit(event)
 }

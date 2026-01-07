@@ -47,16 +47,28 @@ async function handleSearchAgents(args: SearchAgentsArgs) {
   ])
 
   return {
-    agents: agents.map((agent: unknown) => ({
-      ghostAddress: agent.ghostAddress,
-      status: agent.status,
-      discoverySource: agent.discoverySource,
-      firstSeenTimestamp: agent.firstSeenTimestamp,
-      slot: agent.slot,
-      facilitatorAddress: agent.facilitatorAddress,
-      claimedBy: agent.claimedBy,
-      claimedAt: agent.claimedAt,
-    })),
+    agents: agents.map((agent) => {
+      const typedAgent = agent as {
+        ghostAddress: string
+        status: string
+        discoverySource: string
+        firstSeenTimestamp: number
+        slot: number
+        facilitatorAddress?: string
+        claimedBy?: string
+        claimedAt?: number
+      }
+      return {
+        ghostAddress: typedAgent.ghostAddress,
+        status: typedAgent.status,
+        discoverySource: typedAgent.discoverySource,
+        firstSeenTimestamp: typedAgent.firstSeenTimestamp,
+        slot: typedAgent.slot,
+        facilitatorAddress: typedAgent.facilitatorAddress,
+        claimedBy: typedAgent.claimedBy,
+        claimedAt: typedAgent.claimedAt,
+      }
+    }),
     stats,
     count: agents.length,
     timestamp: Date.now(),

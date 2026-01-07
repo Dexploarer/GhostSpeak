@@ -13,7 +13,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { processAgentMessage } from '@/server/elizaos/runtime'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
-import { completeWideEvent } from '@/lib/logging/wide-event'
+import { completeWideEvent } from '@/lib/logging/hooks'
 
 // Initialize Convex client
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
   // Propagate correlation ID to wide event
   if ((req as any).wideEvent) {
-    (req as any).wideEvent.correlation_id = correlationId
+    ;(req as any).wideEvent.correlation_id = correlationId
   }
 
   try {
@@ -110,7 +110,10 @@ export async function POST(req: NextRequest) {
     // Complete wide event with success
     completeWideEvent((req as any).wideEvent, {
       statusCode: 200,
-      durationMs: Date.now() - (req as any).wideEvent?.timestamp ? new Date((req as any).wideEvent.timestamp).getTime() : Date.now(),
+      durationMs:
+        Date.now() - (req as any).wideEvent?.timestamp
+          ? new Date((req as any).wideEvent.timestamp).getTime()
+          : Date.now(),
     })
 
     return NextResponse.json({
@@ -129,7 +132,10 @@ export async function POST(req: NextRequest) {
     // Complete wide event with error
     completeWideEvent((req as any).wideEvent, {
       statusCode: 500,
-      durationMs: Date.now() - (req as any).wideEvent?.timestamp ? new Date((req as any).wideEvent.timestamp).getTime() : Date.now(),
+      durationMs:
+        Date.now() - (req as any).wideEvent?.timestamp
+          ? new Date((req as any).wideEvent.timestamp).getTime()
+          : Date.now(),
       error: {
         type: 'AgentAPIError',
         code: 'AGENT_CHAT_FAILED',

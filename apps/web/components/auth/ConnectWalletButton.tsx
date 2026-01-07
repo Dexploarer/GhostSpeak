@@ -6,7 +6,7 @@ import { WalletModal, useWalletModal } from '@/lib/wallet/WalletModal'
 import { Wallet, ChevronDown, LogOut, Copy, Check } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { useMutation } from 'convex/react'
+import { useMutation, useAction } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import bs58 from 'bs58'
 import { useRouter } from 'next/navigation'
@@ -31,6 +31,30 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
   const [copied, setCopied] = useState(false)
 
   const signInWithSolana = useMutation(api.solanaAuth.signInWithSolana)
+  const analyzeWalletHistory = useAction(api.onboarding.analyzeWalletHistory)
+
+  // Helper to sync auth data to cookies for server-side middleware visibility
+  const syncAuthCookies = (
+    data: { userId: string; walletAddress: string; sessionToken: string } | null
+  ) => {
+    if (typeof document === 'undefined') return
+
+    if (data) {
+      // Set cookies with 7 day expiry
+      const expiry = new Date()
+      expiry.setTime(expiry.getTime() + 7 * 24 * 60 * 60 * 1000)
+      const expires = `; expires=${expiry.toUTCString()}`
+
+      document.cookie = `user_id=${data.userId}${expires}; path=/; SameSite=Lax`
+      document.cookie = `wallet_address=${data.walletAddress}${expires}; path=/; SameSite=Lax`
+      document.cookie = `session_id=${data.sessionToken}${expires}; path=/; SameSite=Lax`
+    } else {
+      // Clear cookies
+      document.cookie = 'user_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      document.cookie = 'wallet_address=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      document.cookie = 'session_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    }
+  }
 
   // Load existing session on mount and restore authentication state
   useEffect(() => {
@@ -43,6 +67,7 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
             // Session exists for this wallet - restore it
             setIsAuthenticated(true)
             setSessionData(authData)
+            syncAuthCookies(authData)
             console.log('✅ Restored session from localStorage')
             return
           }
@@ -83,6 +108,8 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
             publicKey,
             signature: signatureEncoded,
             message,
+            // Pass any available metadata
+            // name: account?.label,
           })
 
           if (result.success) {
@@ -97,12 +124,22 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
             // Store in localStorage for persistence
             if (typeof window !== 'undefined') {
               localStorage.setItem('ghostspeak_auth', JSON.stringify(session))
+              syncAuthCookies(session)
             }
 
             console.log('✅ Successfully authenticated!', {
               userId: result.userId,
               walletAddress: result.walletAddress,
+              isNewUser: result.isNewUser,
             })
+
+            // If new user, trigger wallet history analysis to populate reputation
+            if (result.isNewUser) {
+              console.log('🚀 New user detected, triggering wallet history analysis...')
+              analyzeWalletHistory({ walletAddress: result.walletAddress }).catch((e: any) =>
+                console.error('Failed to trigger wallet history analysis:', e)
+              )
+            }
 
             // Only redirect to dashboard if on home page or connect page
             const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/'
@@ -135,6 +172,7 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
     isAuthenticated,
     isAuthenticating,
     signInWithSolana,
+    analyzeWalletHistory,
     disconnect,
     router,
   ])
@@ -147,6 +185,7 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
       // Clear stored session when wallet disconnects
       if (typeof window !== 'undefined') {
         localStorage.removeItem('ghostspeak_auth')
+        syncAuthCookies(null)
       }
     }
   }, [publicKey, connected])
@@ -167,6 +206,7 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
     // Clear stored session
     if (typeof window !== 'undefined') {
       localStorage.removeItem('ghostspeak_auth')
+      syncAuthCookies(null)
     }
     console.log('Wallet disconnected and session cleared')
   }

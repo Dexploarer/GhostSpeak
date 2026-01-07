@@ -62,9 +62,11 @@ export default function RegisterAgentPage() {
       router.push('/dashboard')
     } catch (error: unknown) {
       console.error('Registration failed:', error)
+      const errorMessage =
+        error instanceof Error ? error.message : 'Could not register agent. Please try again.'
       toast({
         title: 'Registration Failed',
-        description: error.message || 'Could not register agent. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       })
     } finally {

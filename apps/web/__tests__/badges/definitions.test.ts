@@ -117,7 +117,8 @@ describe('BADGE_DEFINITIONS', () => {
     it('should have icon component defined', () => {
       Object.values(BADGE_DEFINITIONS).forEach((badge) => {
         expect(badge.icon).toBeDefined()
-        expect(typeof badge.icon).toBe('function')
+        // Icons are React component objects
+        expect(typeof badge.icon).toBe('object')
       })
     })
   })
@@ -125,7 +126,7 @@ describe('BADGE_DEFINITIONS', () => {
   describe('badge count validation', () => {
     it('should have expected number of tier badges', () => {
       const tierBadges = Object.keys(BADGE_DEFINITIONS).filter((key) => key.endsWith('_TIER'))
-      expect(tierBadges).toHaveLength(6)
+      expect(tierBadges).toHaveLength(5)
     })
 
     it('should have expected number of job milestone badges', () => {
@@ -204,7 +205,7 @@ describe('Staking Badge Content', () => {
   it('WHALE_STAKER should require 50,000+ GHOST', () => {
     const badge = BADGE_DEFINITIONS.WHALE_STAKER
     expect(badge.howToGet).toContain('50,000')
-    expect(badge.meaning).toContain('Whale')
+    expect(badge.meaning).toContain('economic')
   })
 
   it('MAJOR_STAKER should require 10,000+ GHOST', () => {

@@ -3,9 +3,17 @@
 import { useWallet } from '@/lib/wallet/WalletStandardProvider'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useQuery } from 'convex/react'
+import { cn } from '@/lib/utils'
 import { api } from '@/convex/_generated/api'
-import { useWideEventUserEnrichment, useWideEventFeatureEnrichment } from '@/lib/logging/hooks'
+import {
+  useWideEventUserEnrichment,
+  useWideEventFeatureEnrichment,
+  useWideEventBusinessEnrichment,
+  useWideEventFrontendMetrics,
+  useWideEventComponentTracking,
+} from '@/lib/logging/hooks'
 import {
   Activity,
   User,
@@ -15,12 +23,12 @@ import {
   MessageSquare,
   Shield,
   Sparkles,
-  Clock,
-  Info,
   Bot,
   Plus,
   CheckCircle2,
   ExternalLink,
+  LayoutGrid,
+  List,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Footer } from '@/components/layout/Footer'
@@ -43,6 +51,10 @@ import { X402PaymentTicker } from '@/components/dashboard/X402PaymentTicker'
 import { VerifiedActionBar } from '@/components/dashboard/VerifiedActionBar'
 import { VerificationContractCard } from '@/components/dashboard/VerificationContractCard'
 import { isVerifiedSessionForWallet } from '@/lib/auth/verifiedSession'
+import { StatCard } from '@/components/ui/enhanced/StatCard'
+import { ActivityTimeline } from '@/components/ui/enhanced/ActivityTimeline'
+import { GhostLoader } from '@/components/ui/enhanced/GhostLoader'
+import { StatusBadge } from '@/components/ui/enhanced/StatusBadge'
 
 // ─── THREE-TIER REPUTATION SYSTEM ───────────────────────────────────────────
 // 1. Ghost Score - AI Agents only (shown in My Agents)
@@ -130,6 +142,7 @@ function formatNumber(num: number): string {
 export default function DashboardPage() {
   const { publicKey, connecting } = useWallet()
   const router = useRouter()
+  const [viewType, setViewType] = useState<'grid' | 'list'>('grid')
   const [showScoreModal, setShowScoreModal] = useState(false)
   const [activeScoreType, setActiveScoreType] = useState<'ecto' | 'ghosthunter'>('ghosthunter')
   const [showUsernameOnboarding, setShowUsernameOnboarding] = useState(false)
@@ -139,7 +152,7 @@ export default function DashboardPage() {
   const [hasVerifiedSession, setHasVerifiedSession] = useState(false)
 
   // Comprehensive Wide Event Enrichment
-  useWideEventUserEnrichment(publicKey)
+  useWideEventUserEnrichment()
   useWideEventBusinessEnrichment('dashboard_viewing', 'user_dashboard', 'view_account_metrics')
   useWideEventFrontendMetrics()
   useWideEventComponentTracking('DashboardPage')
@@ -309,18 +322,18 @@ export default function DashboardPage() {
   const primaryScore =
     roles?.isAgentDeveloper && reputation?.ecto
       ? {
-          type: 'ecto' as const,
-          score: reputation.ecto.score,
-          tier: reputation.ecto.tier,
-          progress: ectoTierProgress,
-        }
+        type: 'ecto' as const,
+        score: reputation.ecto.score,
+        tier: reputation.ecto.tier,
+        progress: ectoTierProgress,
+      }
       : roles?.isCustomer && reputation?.ghosthunter
         ? {
-            type: 'ghosthunter' as const,
-            score: reputation.ghosthunter.score,
-            tier: reputation.ghosthunter.tier,
-            progress: ghosthunterTierProgress,
-          }
+          type: 'ghosthunter' as const,
+          score: reputation.ghosthunter.score,
+          tier: reputation.ghosthunter.tier,
+          progress: ghosthunterTierProgress,
+        }
         : null
 
   const formatAddress = (address: string) => {
@@ -365,136 +378,71 @@ export default function DashboardPage() {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {/* Role-Based Score Card - Shows Ecto (Developer) or Ghosthunter (Customer) */}
-            {primaryScore ? (
-              <button
-                type="button"
+            {/* Role-Based Score Card */}
+            {primaryScore && (
+              <StatCard
+                title={primaryScore.type === 'ecto' ? 'Ecto Score' : 'Ghosthunter Score'}
+                value={formatNumber(primaryScore.score)}
+                icon={TrendingUp}
+                glowColor={primaryScore.type === 'ecto' ? 'lime' : 'blue'}
+                subtitle={primaryScore.tier}
+                trend={5.2} // Calculated trend mock for now
+                trendLabel="this week"
+                description={
+                  primaryScore.type === 'ecto'
+                    ? 'Your developer reputation based on your agents performance.'
+                    : 'Your hunter reputation based on verification activity.'
+                }
                 onClick={() => {
                   setActiveScoreType(primaryScore.type)
                   setShowScoreModal(true)
                 }}
-                className="group p-6 bg-[#111111] border border-white/10 rounded-xl hover:border-primary/40 transition-all text-left w-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
-                    <p className="text-xs text-white/40 mb-2 uppercase tracking-wider font-medium flex items-center gap-1.5">
-                      {primaryScore.type === 'ecto' ? 'Ecto Score' : 'Ghosthunter Score'}
-                      <Info className="w-3 h-3 text-white/30" />
-                    </p>
-                    <p className="text-4xl font-light text-primary">
-                      {formatNumber(primaryScore.score)}
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-all">
-                    <TrendingUp className="w-5 h-5 text-primary" />
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap mb-3">
-                  <div className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-xs text-white/80">
-                    {primaryScore.tier}
-                  </div>
-                  {primaryScore.type === 'ecto' && roles?.isAgentDeveloper && (
-                    <div className="px-2 py-0.5 bg-primary/10 border border-primary/20 rounded text-xs text-primary">
-                      Developer
-                    </div>
-                  )}
-                  {primaryScore.type === 'ghosthunter' && roles?.isCustomer && (
-                    <div className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-xs text-blue-400">
-                      Hunter
-                    </div>
-                  )}
-                </div>
-                {/* Progress bar to next tier */}
-                {primaryScore.progress?.nextTier ? (
-                  <div className="space-y-1.5">
-                    <Progress value={primaryScore.progress.progress} className="h-1.5" />
-                    <p className="text-xs text-white/40">
-                      {formatNumber(primaryScore.progress.current)} /{' '}
-                      {formatNumber(primaryScore.progress.target)} to{' '}
-                      {primaryScore.progress.nextTier}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-xs text-primary/60">Max tier achieved!</p>
-                )}
-              </button>
-            ) : (
-              // New user - show welcome card instead
-              <div className="group p-6 bg-[#111111] border border-white/10 rounded-xl">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
-                    <p className="text-xs text-white/40 mb-2 uppercase tracking-wider font-medium">
-                      Your Score
-                    </p>
-                    <p className="text-4xl font-light text-white/40">—</p>
-                  </div>
-                  <div className="p-2.5 bg-white/5 rounded-lg">
-                    <Sparkles className="w-5 h-5 text-white/40" />
-                  </div>
-                </div>
-                <p className="text-xs text-white/40">
-                  Verify agents or register your own to start building reputation!
-                </p>
-              </div>
+              />
+            )}
+
+            {!primaryScore && (
+              <StatCard
+                title="Your Score"
+                value="—"
+                icon={Sparkles}
+                glowColor="emerald"
+                subtitle="Newcomer"
+                description="Verify agents or register your own to start building reputation!"
+              />
             )}
 
             {/* Verifications */}
-            <div className="group p-6 bg-[#111111] border border-white/10 rounded-xl hover:border-white/20 transition-all">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <p className="text-xs text-white/40 mb-2 uppercase tracking-wider font-medium">
-                    Verifications
-                  </p>
-                  <p className="text-4xl font-light text-white">{stats.verificationsThisMonth}</p>
-                </div>
-                <div className="p-2.5 bg-white/5 rounded-lg group-hover:bg-white/10 transition-all">
-                  <Shield className="w-5 h-5 text-white/60" />
-                </div>
-              </div>
-              <p className="text-xs text-white/40">
-                {stats.freeVerificationsRemaining} free remaining
-              </p>
-            </div>
+            <StatCard
+              title="Verifications"
+              value={stats.verificationsThisMonth}
+              icon={Shield}
+              glowColor="emerald"
+              subtitle={`${stats.freeVerificationsRemaining} free remaining`}
+              trend={12}
+              trendLabel="vs last month"
+              description="Total credential verifications performed this month."
+            />
 
             {/* Transactions */}
-            <div className="group p-6 bg-[#111111] border border-white/10 rounded-xl hover:border-white/20 transition-all">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <p className="text-xs text-white/40 mb-2 uppercase tracking-wider font-medium">
-                    Transactions
-                  </p>
-                  <p className="text-4xl font-light text-white">{stats.totalTransactions}</p>
-                </div>
-                <div className="p-2.5 bg-white/5 rounded-lg group-hover:bg-white/10 transition-all">
-                  <Activity className="w-5 h-5 text-white/60" />
-                </div>
-              </div>
-              <p className="text-xs text-white/40">Lifetime activity</p>
-            </div>
+            <StatCard
+              title="Transactions"
+              value={stats.totalTransactions}
+              icon={Activity}
+              glowColor="blue"
+              subtitle="Lifetime Activity"
+              trend={8}
+              description="Total on-chain transactions associated with your wallet."
+            />
 
             {/* Staking */}
-            <div className="group p-6 bg-[#111111] border border-white/10 rounded-xl hover:border-white/20 transition-all">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <p className="text-xs text-white/40 mb-2 uppercase tracking-wider font-medium">
-                    {staking ? 'Staked' : 'Status'}
-                  </p>
-                  <p className="text-4xl font-light text-white">
-                    {staking ? `${(staking.amountStaked / 1_000_000).toFixed(0)}K` : '—'}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-white/5 rounded-lg group-hover:bg-white/10 transition-all">
-                  {staking ? (
-                    <Zap className="w-5 h-5 text-white/60" />
-                  ) : (
-                    <User className="w-5 h-5 text-white/60" />
-                  )}
-                </div>
-              </div>
-              <div className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-xs text-white/80 inline-block">
-                {staking ? `Tier ${staking.tier}` : 'Active User'}
-              </div>
-            </div>
+            <StatCard
+              title={staking ? 'Staked' : 'Status'}
+              value={staking ? `${(staking.amountStaked / 1_000_000).toFixed(0)}K` : 'Active'}
+              icon={staking ? Zap : User}
+              glowColor="purple"
+              subtitle={staking ? `Tier ${staking.tier}` : 'Active User'}
+              description={staking ? 'Total $GHOST tokens staked in the protocol.' : 'Active status on the GhostSpeak network.'}
+            />
           </div>
 
           {/* Achievements Section */}
@@ -529,85 +477,63 @@ export default function DashboardPage() {
                 </div>
 
                 <div
-                  className="space-y-3 max-h-[400px] overflow-y-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111] rounded-lg"
+                  className="max-h-[400px] overflow-y-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111] rounded-lg p-1"
                   tabIndex={0}
                   aria-label="Recent activity"
                 >
                   {recentActivity && recentActivity.length > 0 ? (
-                    recentActivity.map((activity: DashboardActivityItem, index: number) => (
-                      <div
-                        key={index}
-                        className="flex items-start gap-3 p-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all"
-                      >
-                        <div
-                          aria-hidden="true"
-                          className={`w-1.5 h-1.5 mt-2 rounded-full shrink-0 ${
-                            activity.type === 'VERIFICATION'
-                              ? 'bg-primary'
-                              : activity.status === 'completed'
-                                ? 'bg-green-500'
-                                : activity.status === 'pending'
-                                  ? 'bg-yellow-500'
-                                  : 'bg-red-500'
-                          }`}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white mb-1 line-clamp-2">
-                            {activity.description}
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <p className="text-xs text-white/40">
-                              {new Date(activity.timestamp).toLocaleDateString(undefined, {
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </p>
-                            {activity.transactionSignature && (
-                              <a
-                                href={getTransactionExplorerUrl(activity.transactionSignature)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 rounded-sm text-xs text-primary/70 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <ExternalLink className="w-3 h-3" aria-hidden="true" />
-                                <span>View tx</span>
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))
+                    <ActivityTimeline
+                      items={recentActivity.map((activity: any, idx: number) => ({
+                        id: activity.transactionSignature || idx,
+                        title: activity.description,
+                        subtitle: new Date(activity.timestamp).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        }),
+                        timestamp: '', // subtitle handles it better for this layout
+                        type: activity.type === 'VERIFICATION' ? 'premium' :
+                          activity.status === 'completed' ? 'success' :
+                            activity.status === 'pending' ? 'warning' : 'error',
+                        details: activity.transactionSignature ? (
+                          <a
+                            href={getTransactionExplorerUrl(activity.transactionSignature)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-sm text-xs text-primary/70 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>View Transaction</span>
+                          </a>
+                        ) : undefined,
+                      }))}
+                    />
                   ) : (
-                    /* Enhanced empty state with ghost illustration and quick actions */
-                    <div className="flex flex-col items-center justify-center py-8 text-center relative">
-                      {/* Animated ghost illustration */}
+                    <div className="flex flex-col items-center justify-center py-12 text-center relative">
                       <div className="w-24 h-28 mb-4 opacity-60">
                         <MeshGradientGhost animated={true} interactive={false} />
                       </div>
                       <p className="text-sm text-white/70 mb-2 font-medium">
                         Your journey begins here
                       </p>
-                      <p className="text-xs text-white/40 mb-4 max-w-[200px] leading-relaxed">
+                      <p className="text-xs text-white/40 mb-6 max-w-[200px] leading-relaxed">
                         Chat with Caisper or register an agent to start building reputation.
                       </p>
-                      {/* Quick action buttons in empty state */}
-                      <div className="flex flex-col gap-2 w-full">
+                      <div className="flex flex-col gap-2 w-full max-w-[200px]">
                         <button
                           type="button"
                           onClick={() => router.push('/caisper')}
                           className="w-full min-h-[44px] px-3 py-2 bg-primary/10 border border-primary/30 rounded-lg text-xs text-primary hover:bg-primary/20 transition-all flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]"
                         >
-                          <MessageSquare className="w-3.5 h-3.5" aria-hidden="true" />
+                          <MessageSquare className="w-3.5 h-3.5" />
                           Chat with Caisper
                         </button>
                         <Link
                           href="/agents/register"
                           className="w-full min-h-[44px] px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white/80 hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]"
                         >
-                          <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                          <Plus className="w-3.5 h-3.5" />
                           Register Agent
                         </Link>
                       </div>
@@ -622,112 +548,149 @@ export default function DashboardPage() {
           </div>
 
           {/* My Agents Section */}
-          <div className="p-6 bg-[#111111] border border-white/10 rounded-xl mb-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-light text-white flex items-center gap-2">
-                <Bot className="w-5 h-5 text-primary" />
-                My Agents
-              </h2>
-              <Link
-                href="/agents/register"
-                className="flex min-h-[44px] items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-sm text-primary hover:bg-primary/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]"
-              >
-                <Plus className="w-4 h-4" />
-                Register Agent
-              </Link>
-            </div>
-
-            {userAgents === undefined ? (
-              // Loading state
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-white/40" />
-              </div>
-            ) : userAgents && userAgents.agents.length > 0 ? (
-              // Agents list
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {userAgents.agents.map((agent: DashboardAgentItem) => (
-                  <Link
-                    key={agent.address}
-                    href={`/agents/${agent.address}`}
-                    className="block group p-4 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="p-2 bg-white/5 rounded-lg">
-                          <Bot className="w-4 h-4 text-white/60" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-white font-mono">
-                            {formatAddress(agent.address)}
-                          </p>
-                          {agent.name && <p className="text-xs text-white/40">{agent.name}</p>}
-                        </div>
-                      </div>
-                      <div
-                        className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs ${
-                          agent.verificationStatus === 'verified'
-                            ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                            : agent.verificationStatus === 'claimed'
-                              ? 'bg-primary/10 text-primary border border-primary/20'
-                              : 'bg-white/5 text-white/40 border border-white/10'
-                        }`}
-                      >
-                        {agent.verificationStatus === 'verified' ? (
-                          <CheckCircle2 className="w-3 h-3" />
-                        ) : agent.verificationStatus === 'claimed' ? (
-                          <Shield className="w-3 h-3" />
-                        ) : (
-                          <Clock className="w-3 h-3" />
-                        )}
-                        <span className="capitalize">{agent.verificationStatus}</span>
-                      </div>
-                    </div>
-                    {/* Ghost Score (agent's own reputation) */}
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-white/40">Ghost Score:</span>
-                        <span className="text-sm font-medium text-primary">
-                          {formatNumber(agent.ghostScore)}
-                        </span>
-                      </div>
-                      <div className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-xs text-white/60">
-                        {agent.tier}
-                      </div>
-                    </div>
-                    {/* Ghosthunter Score (if agent verifies other agents) */}
-                    {agent.ghosthunterScore !== null && agent.ghosthunterScore > 0 && (
-                      <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-white/40">Ghosthunter:</span>
-                          <span className="text-sm font-medium text-blue-400">
-                            {formatNumber(agent.ghosthunterScore)}
-                          </span>
-                        </div>
-                        <div className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-xs text-blue-400">
-                          {agent.ghosthunterTier}
-                        </div>
-                      </div>
-                    )}
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              // Empty state
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="p-4 bg-white/5 rounded-full mb-4">
-                  <Bot className="w-10 h-10 text-white/20" />
+          <div className="p-6 bg-[#111111] border border-white/10 rounded-2xl mb-8 relative overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 border border-primary/20 rounded-lg">
+                  <Bot className="w-5 h-5 text-primary" />
                 </div>
-                <p className="text-sm text-white/60 mb-2">No agents yet</p>
-                <p className="text-xs text-white/40 mb-6 max-w-sm">
-                  Register your first AI agent to build reputation and unlock the full potential of
-                  GhostSpeak.
-                </p>
+                <div>
+                  <h2 className="text-xl font-bold text-white tracking-tight">My Registered Agents</h2>
+                  {userAgents?.agents && (
+                    <p className="text-xs text-white/40 mt-0.5">{userAgents.agents.length} agents discovered</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex bg-white/5 border border-white/10 rounded-lg p-1">
+                  <button
+                    onClick={() => setViewType('grid')}
+                    className={cn(
+                      "p-1.5 rounded-md transition-all",
+                      viewType === 'grid' ? "bg-white/10 text-white" : "text-white/40 hover:text-white/60"
+                    )}
+                    aria-label="Grid view"
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewType('list')}
+                    className={cn(
+                      "p-1.5 rounded-md transition-all",
+                      viewType === 'list' ? "bg-white/10 text-white" : "text-white/40 hover:text-white/60"
+                    )}
+                    aria-label="List view"
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                </div>
+
                 <Link
                   href="/agents/register"
-                  className="flex min-h-[44px] items-center gap-2 px-4 py-2 bg-primary text-black rounded-lg text-sm font-medium hover:bg-primary/90 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]"
+                  className="flex min-h-[44px] items-center gap-2 px-4 py-2 bg-primary text-black rounded-lg text-sm font-bold hover:bg-primary/90 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]"
                 >
                   <Plus className="w-4 h-4" />
                   Register Agent
+                </Link>
+              </div>
+            </div>
+
+            {userAgents === undefined ? (
+              <GhostLoader variant="list" count={3} />
+            ) : userAgents && userAgents.agents.length > 0 ? (
+              <div className={cn(
+                "gap-4",
+                viewType === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-col"
+              )}
+              >
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {userAgents.agents.map((agent: DashboardAgentItem) => (
+                    <motion.div
+                      layout
+                      key={agent.address}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Link
+                        href={`/agents/${agent.address}`}
+                        className={cn(
+                          "group h-full relative block bg-white/[0.02] border border-white/5 rounded-xl hover:bg-white/5 hover:border-white/20 transition-all duration-300",
+                          viewType === 'grid' ? "p-5" : "p-4 flex items-center justify-between gap-4"
+                        )}
+                      >
+                        <div className={cn(
+                          "flex gap-4",
+                          viewType === 'grid' ? "flex-col" : "items-center flex-1"
+                        )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-primary/10 group-hover:border-primary/20 transition-all">
+                              <Bot className="w-5 h-5 text-white/40 group-hover:text-primary transition-colors" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-bold text-white truncate max-w-[150px]">
+                                {agent.name || 'Unnamed Agent'}
+                              </p>
+                              <p className="text-[10px] text-white/30 font-mono tracking-widest uppercase">
+                                {formatAddress(agent.address)}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className={cn(
+                            "flex items-center gap-3",
+                            viewType === 'grid' ? "justify-between" : "ml-auto"
+                          )}
+                          >
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[9px] uppercase font-bold text-white/20 tracking-widest">Ghost Score</span>
+                              <span className="text-sm font-bold text-primary font-mono">{formatNumber(agent.ghostScore)}</span>
+                            </div>
+                            <StatusBadge
+                              label={agent.verificationStatus}
+                              variant={agent.verificationStatus === 'verified' ? 'premium' :
+                                agent.verificationStatus === 'claimed' ? 'info' : 'neutral'}
+                            />
+                          </div>
+                        </div>
+
+                        {viewType === 'grid' && (
+                          <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+                            <div className="flex -space-x-2">
+                              {/* Decorative visual for reputation peers if available */}
+                              {[1, 2, 3].map(i => (
+                                <div key={i} className="w-5 h-5 rounded-full border border-[#111111] bg-white/5 flex items-center justify-center">
+                                  <User className="w-2.5 h-2.5 text-white/20" />
+                                </div>
+                              ))}
+                            </div>
+                            <div className="text-[10px] font-bold text-white/40 group-hover:text-primary mb-0 transition-colors uppercase tracking-widest">
+                              View Profile →
+                            </div>
+                          </div>
+                        )}
+                      </Link>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
+                  <Bot className="w-10 h-10 text-white/10" />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">No agents registered</h3>
+                <p className="text-sm text-white/40 max-w-sm mb-8">
+                  Register your AI agent to start building its on-chain reputation and verified identity.
+                </p>
+                <Link
+                  href="/agents/register"
+                  className="min-h-[44px] px-8 py-2 bg-primary text-black rounded-lg text-sm font-bold hover:bg-primary/90 transition-all"
+                >
+                  Register your first agent
                 </Link>
               </div>
             )}
@@ -758,21 +721,19 @@ export default function DashboardPage() {
             <div className="flex gap-2 mt-2">
               <button
                 onClick={() => setActiveScoreType('ecto')}
-                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  activeScoreType === 'ecto'
-                    ? 'bg-primary/20 border border-primary/40 text-primary'
-                    : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
-                }`}
+                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${activeScoreType === 'ecto'
+                  ? 'bg-primary/20 border border-primary/40 text-primary'
+                  : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
+                  }`}
               >
                 Ecto (Developer)
               </button>
               <button
                 onClick={() => setActiveScoreType('ghosthunter')}
-                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  activeScoreType === 'ghosthunter'
-                    ? 'bg-blue-500/20 border border-blue-500/40 text-blue-400'
-                    : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
-                }`}
+                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${activeScoreType === 'ghosthunter'
+                  ? 'bg-blue-500/20 border border-blue-500/40 text-blue-400'
+                  : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
+                  }`}
               >
                 Ghosthunter
               </button>
@@ -782,16 +743,14 @@ export default function DashboardPage() {
           <div className="space-y-4 mt-4">
             {/* Current Score */}
             <div
-              className={`p-4 rounded-lg text-center ${
-                activeScoreType === 'ecto'
-                  ? 'bg-primary/10 border border-primary/20'
-                  : 'bg-blue-500/10 border border-blue-500/20'
-              }`}
+              className={`p-4 rounded-lg text-center ${activeScoreType === 'ecto'
+                ? 'bg-primary/10 border border-primary/20'
+                : 'bg-blue-500/10 border border-blue-500/20'
+                }`}
             >
               <p
-                className={`text-5xl font-light mb-1 ${
-                  activeScoreType === 'ecto' ? 'text-primary' : 'text-blue-400'
-                }`}
+                className={`text-5xl font-light mb-1 ${activeScoreType === 'ecto' ? 'text-primary' : 'text-blue-400'
+                  }`}
               >
                 {activeScoreType === 'ecto'
                   ? formatNumber(reputation?.ecto?.score || 0)
@@ -804,11 +763,10 @@ export default function DashboardPage() {
                     : reputation?.ghosthunter?.tier || 'ROOKIE'}
                 </p>
                 <div
-                  className={`px-2 py-0.5 rounded text-xs ${
-                    activeScoreType === 'ecto'
-                      ? 'bg-primary/20 text-primary'
-                      : 'bg-blue-500/20 text-blue-400'
-                  }`}
+                  className={`px-2 py-0.5 rounded text-xs ${activeScoreType === 'ecto'
+                    ? 'bg-primary/20 text-primary'
+                    : 'bg-blue-500/20 text-blue-400'
+                    }`}
                 >
                   {activeScoreType === 'ecto' ? 'Developer' : 'Hunter'}
                 </div>

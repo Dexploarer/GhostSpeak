@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
-import { Menu, X, Moon, Sun, Coins, FileText, Eye } from 'lucide-react'
+import { Menu, X, Moon, Sun, Coins, FileText, Eye, User, MessageSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from 'next-themes'
 import { BrandLogo } from '@/components/shared/BrandLogo'
@@ -48,8 +48,13 @@ export const Navigation: React.FC = () => {
     pathname === '/agents/register'
   const isMarketingPage = !isDashboardPage
 
-  // Show marketing nav items only on marketing pages
-  const navItems = isDashboardPage ? [] : marketingNavItems
+  // Show dashboard-specific items if on a dashboard page
+  const dashboardNavItems = [
+    { href: '/dashboard', label: 'Dashboard', icon: User, external: false },
+    { href: '/caisper', label: 'Chat', icon: MessageSquare, external: false },
+  ]
+
+  const navItems = isDashboardPage ? dashboardNavItems : marketingNavItems
 
   const toggleDarkMode = (): void => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
@@ -81,11 +86,11 @@ export const Navigation: React.FC = () => {
           isScrolled
             ? 'glass-panel px-6 py-3 border border-white/20 dark:border-white/10 shadow-2xl shadow-lime-500/10 w-fit'
             : cn(
-                'border-b py-4 px-6 md:px-8',
-                isMarketingPage
-                  ? 'bg-transparent border-transparent'
-                  : 'glass border-gray-200 dark:border-gray-800'
-              )
+              'border-b py-4 px-6 md:px-8',
+              isMarketingPage
+                ? 'bg-transparent border-transparent'
+                : 'glass border-gray-200 dark:border-gray-800'
+            )
         )}
         style={{
           transition: 'none',

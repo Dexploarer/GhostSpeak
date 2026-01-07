@@ -25,19 +25,24 @@ import {
 } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { PublicKey } from '@solana/web3.js'
+import { motion, AnimatePresence } from 'framer-motion'
+import { cn } from '@/lib/utils'
+import { StatusBadge } from '@/components/ui/enhanced/StatusBadge'
+import { GhostLoader } from '@/components/ui/enhanced/GhostLoader'
+import { StatCard } from '@/components/ui/enhanced/StatCard'
 
 type CredentialSummary = {
   credentialType:
-    | 'agent_identity'
-    | 'reputation_tier'
-    | 'payment_milestone'
-    | 'staking'
-    | 'verified_hire'
-    | 'capability_verification'
-    | 'uptime_attestation'
-    | 'api_quality_grade'
-    | 'tee_attestation'
-    | 'model_provenance'
+  | 'agent_identity'
+  | 'reputation_tier'
+  | 'payment_milestone'
+  | 'staking'
+  | 'verified_hire'
+  | 'capability_verification'
+  | 'uptime_attestation'
+  | 'api_quality_grade'
+  | 'tee_attestation'
+  | 'model_provenance'
   credentialId: string
   issuedAt: number
   expiresAt: number | null
@@ -163,9 +168,9 @@ export default function DashboardCredentialsPage() {
     api.credentials.getCredentialDetailsPublic,
     selectedCredential
       ? {
-          credentialType: selectedCredential.credentialType,
-          credentialId: selectedCredential.credentialId,
-        }
+        credentialType: selectedCredential.credentialType,
+        credentialId: selectedCredential.credentialId,
+      }
       : 'skip'
   ) as CredentialDetailsEnvelope | undefined
 
@@ -318,21 +323,19 @@ export default function DashboardCredentialsPage() {
               </div>
               <div className="shrink-0 flex items-center gap-2">
                 <div
-                  className={`px-2 py-0.5 rounded text-xs border ${
-                    agentProfile?.discoveredAgent?.exists
-                      ? 'bg-primary/10 text-primary border-primary/20'
-                      : 'bg-white/5 text-white/50 border-white/10'
-                  }`}
+                  className={`px-2 py-0.5 rounded text-xs border ${agentProfile?.discoveredAgent?.exists
+                    ? 'bg-primary/10 text-primary border-primary/20'
+                    : 'bg-white/5 text-white/50 border-white/10'
+                    }`}
                   data-testid="credentials-agent-source-discovered"
                 >
                   {agentProfile?.discoveredAgent?.exists ? 'Discovered' : 'Not discovered'}
                 </div>
                 <div
-                  className={`px-2 py-0.5 rounded text-xs border ${
-                    agentProfile?.reputationCache?.exists
-                      ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                      : 'bg-white/5 text-white/50 border-white/10'
-                  }`}
+                  className={`px-2 py-0.5 rounded text-xs border ${agentProfile?.reputationCache?.exists
+                    ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                    : 'bg-white/5 text-white/50 border-white/10'
+                    }`}
                   data-testid="credentials-agent-source-reputation"
                 >
                   {agentProfile?.reputationCache?.exists
@@ -475,77 +478,99 @@ export default function DashboardCredentialsPage() {
 
         {normalizedLookup && (
           <section
-            className="p-5 sm:p-6 bg-[#111111] border border-white/10 rounded-xl"
+            className="space-y-6"
             data-testid="credentials-list-section"
           >
-            <p className="text-xs text-white/40 uppercase tracking-wider font-medium mb-2">
-              Credentials
-            </p>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-primary" />
+                Agent Credentials
+              </h2>
+            </div>
 
             {credentialSummaries === undefined ? (
-              <div className="flex items-center gap-2 text-sm text-white/60">
-                <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-                Loading credentials…
-              </div>
+              <GhostLoader variant="list" count={2} />
             ) : credentialSummaries.length === 0 ? (
-              <p className="text-sm text-white/60" data-testid="credentials-empty">
-                No credentials found for this agent address.
-              </p>
+              <div className="p-12 border border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center text-center">
+                <Fingerprint className="w-12 h-12 text-white/10 mb-4" />
+                <p className="text-sm text-white/60">No credentials found for this agent address.</p>
+              </div>
             ) : (
-              <ul className="space-y-2" data-testid="credentials-list">
-                {credentialSummaries.map((c) => (
-                  <li key={`${c.credentialType}:${c.credentialId}`}>
-                    <button
-                      type="button"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6" data-testid="credentials-list">
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {credentialSummaries.map((c, idx) => (
+                    <motion.button
+                      layout
+                      key={`${c.credentialType}:${c.credentialId}`}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ delay: idx * 0.05 }}
+                      whileHover={{ y: -4 }}
                       onClick={() => {
                         setSelectedCredential(c)
                         setDetailsOpen(true)
                       }}
-                      className="w-full text-left p-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]"
-                      data-testid="credential-row"
-                      data-credential-type={c.credentialType}
-                      data-credential-id={c.credentialId}
+                      className="group relative flex flex-col items-center p-8 bg-[#111111] border border-white/10 rounded-2xl hover:border-white/20 transition-all text-center overflow-hidden"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm text-white/90 font-medium">
-                            {humanCredentialType(c.credentialType)}
-                          </p>
-                          <p className="text-xs text-white/40 mt-1">
-                            {summarizeDisplay(c.display)}
-                          </p>
-                          <p className="text-xs text-white/40 font-mono break-all mt-1">
-                            {c.credentialId}
-                          </p>
-                          <p className="text-xs text-white/40 mt-1">
-                            Issued: {formatDate(c.issuedAt)}
-                            {typeof c.expiresAt === 'number'
-                              ? ` • Expires: ${formatDate(c.expiresAt)}`
-                              : ''}
-                          </p>
+                      {/* Background Certificate Decorative Seal */}
+                      <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/[0.02] rounded-full border border-white/5 pointer-events-none group-hover:bg-primary/[0.02] transition-colors" />
+
+                      {/* Status Badge */}
+                      <div className="absolute top-4 right-4">
+                        <StatusBadge
+                          label={c.status === 'active' ? 'Active' : 'Expired'}
+                          variant={c.status === 'active' ? 'premium' : 'neutral'}
+                          pulse={c.status === 'active'}
+                        />
+                      </div>
+
+                      {/* Badge Visual */}
+                      <div className="relative mb-6">
+                        <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-300">
+                          <BadgeCheck className="w-10 h-10 text-white/20 group-hover:text-primary transition-colors" />
+                        </div>
+                        {/* Floating Decorative Elements */}
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary/20 rounded-full blur-sm group-hover:animate-pulse" />
+                      </div>
+
+                      <h3 className="text-lg font-bold text-white mb-2 tracking-tight">
+                        {humanCredentialType(c.credentialType)}
+                      </h3>
+
+                      <div className="space-y-3 w-full">
+                        <div className="p-3 bg-white/5 border border-white/5 rounded-xl text-xs text-white/40 font-medium">
+                          {summarizeDisplay(c.display)}
                         </div>
 
-                        <div className="shrink-0 flex flex-col items-end gap-2">
-                          <div
-                            className={`px-2 py-0.5 rounded text-xs border ${statusBadgeClass(c.status)}`}
-                          >
-                            {c.status === 'active'
-                              ? 'Active'
-                              : c.status === 'expired'
-                                ? 'Expired'
-                                : 'Status unknown'}
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] text-white/20 font-mono tracking-widest break-all">ID: {c.credentialId}</span>
+                        </div>
+
+                        <div className="flex items-center justify-center gap-4 pt-4 border-t border-white/5 text-[10px] uppercase font-bold text-white/30 tracking-widest">
+                          <div className="flex flex-col gap-0.5">
+                            <span>Issued</span>
+                            <span className="text-white/60">{new Date(c.issuedAt).toLocaleDateString()}</span>
                           </div>
-                          {c.crossmintCredentialId ? (
-                            <div className="px-2 py-0.5 rounded text-xs border bg-white/5 text-white/60 border-white/10">
-                              Crossmint
-                            </div>
-                          ) : null}
+                          {c.expiresAt && (
+                            <>
+                              <div className="w-1 h-1 bg-white/10 rounded-full" />
+                              <div className="flex flex-col gap-0.5">
+                                <span>Expires</span>
+                                <span className="text-white/60">{new Date(c.expiresAt).toLocaleDateString()}</span>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+                      <div className="mt-6 flex items-center gap-2 text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span>VIEW PROOF DETAILS</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </div>
+                    </motion.button>
+                  ))}
+                </AnimatePresence>
+              </div>
             )}
           </section>
         )}

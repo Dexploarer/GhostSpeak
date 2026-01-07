@@ -19,6 +19,8 @@ export const signInWithSolana = mutation({
     publicKey: v.string(),
     signature: v.string(),
     message: v.string(),
+    email: v.optional(v.string()),
+    name: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     try {
@@ -41,20 +43,26 @@ export const signInWithSolana = mutation({
         .first()
 
       let userId: string
+      let isNewUser = false
 
       const now = Date.now()
 
       if (existingUser) {
-        // Update last login
+        // Update last login and sync metadata
         await ctx.db.patch(existingUser._id, {
           lastLoginAt: now,
           lastActiveAt: now,
+          ...(args.email && { email: args.email }),
+          ...(args.name && { name: args.name }),
         })
         userId = existingUser._id
       } else {
         // Create new user
+        isNewUser = true
         userId = await ctx.db.insert('users', {
           walletAddress: args.publicKey,
+          email: args.email,
+          name: args.name,
           createdAt: now,
           lastLoginAt: now,
           lastActiveAt: now,
@@ -69,6 +77,7 @@ export const signInWithSolana = mutation({
         userId,
         sessionToken,
         walletAddress: args.publicKey,
+        isNewUser,
       }
     } catch (error: any) {
       console.error('Sign in error:', error)

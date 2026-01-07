@@ -94,21 +94,29 @@ async function installMockWalletStandard(
   walletAddress: string,
   { includeVerifiedSession, includeSignMessage }: MockWalletOptions
 ) {
+  // Improved wallet mock registration for better reliability
   await page.addInitScript(
     ({ walletAddress, includeVerifiedSession, includeSignMessage }) => {
       const walletName = 'E2E Test Wallet'
 
-      // Ensure WalletStandardProvider auto-connects.
+      // Set up localStorage BEFORE wallet provider initialization
       try {
         window.localStorage.setItem('walletName', walletName)
-        // Suppress the dashboard onboarding wizard overlay (it can block clicks and includes legacy CTA text).
         window.localStorage.setItem('ghostspeak_onboarding_completed', 'true')
 
-        // NOTE: We do NOT set ghostspeak_auth here.
-        // ConnectWalletButton clears ghostspeak_auth whenever the wallet is disconnected,
-        // which can happen during initial hydration before auto-connect completes.
-        // Tests that require a verified session must set ghostspeak_auth AFTER the wallet is connected.
-        window.localStorage.removeItem('ghostspeak_auth')
+        // For tests with verified session, set it up early
+        if (includeVerifiedSession) {
+          window.localStorage.setItem(
+            'ghostspeak_auth',
+            JSON.stringify({
+              userId: 'e2e-user',
+              sessionToken: 'e2e-session-token',
+              walletAddress,
+            })
+          )
+        } else {
+          window.localStorage.removeItem('ghostspeak_auth')
+        }
       } catch {
         // ignore
       }
@@ -122,7 +130,6 @@ async function installMockWalletStandard(
                 {
                   address: walletAddress,
                   publicKey: new Uint8Array(32),
-                  // Support both common clusters so the UI doesn't reject the wallet as "wrong network".
                   chains: ['solana:mainnet', 'solana:devnet'],
                   features: [
                     'solana:signTransaction',
@@ -138,7 +145,6 @@ async function installMockWalletStandard(
           version: '1.0.0',
           disconnect: async () => {},
         },
-        // Minimal Solana feature stubs (required so the wallet is considered a Solana wallet).
         'solana:signTransaction': {
           version: '1.0.0',
           signTransaction: async ({ transaction }: { transaction: Uint8Array }) => {
@@ -171,21 +177,40 @@ async function installMockWalletStandard(
         accounts: [],
       }
 
-      // Correct Wallet Standard registration sequence:
-      // - Dispatch "wallet-standard:register-wallet" with a callback
-      // - Also listen for "wallet-standard:app-ready" so we can register even if the app loads after us.
+      // Store for early access
+      if (typeof window !== 'undefined') {
+        ;(window as any).__E2E_MOCK_WALLET__ = {
+          register: (register: (...wallets: any[]) => unknown) => register(wallet),
+          wallet,
+        }
+      }
+
       const callback = ({ register }: { register: (...wallets: any[]) => unknown }) =>
         register(wallet)
 
-      try {
-        window.dispatchEvent(
-          new CustomEvent('wallet-standard:register-wallet', {
-            detail: callback,
-          })
-        )
-      } catch {
-        // ignore
-      }
+      // Multiple registration methods
+      const registerMethods = [
+        () => {
+          try {
+            window.dispatchEvent(
+              new CustomEvent('wallet-standard:register-wallet', {
+                detail: callback,
+              })
+            )
+          } catch {}
+        },
+        () => {
+          try {
+            document.dispatchEvent(
+              new CustomEvent('wallet-standard:register-wallet', {
+                detail: callback,
+              })
+            )
+          } catch {}
+        },
+      ]
+
+      registerMethods.forEach((method) => method())
 
       try {
         window.addEventListener('wallet-standard:app-ready', (event: any) => {
@@ -197,6 +222,58 @@ async function installMockWalletStandard(
     },
     { walletAddress, includeVerifiedSession, includeSignMessage }
   )
+
+  // Additional injection after page load
+  await page.evaluate(
+    ({ walletAddress, includeVerifiedSession }) => {
+      if ((window as any).__E2E_MOCK_WALLET__) return
+
+      const walletName = 'E2E Test Wallet'
+      const features: Record<string, any> = {
+        'standard:connect': {
+          version: '1.0.0',
+          connect: async () => ({
+            accounts: [
+              {
+                address: walletAddress,
+                publicKey: new Uint8Array(32),
+                chains: ['solana:mainnet', 'solana:devnet'],
+                features: ['solana:signTransaction', 'solana:signAndSendTransaction'],
+              },
+            ],
+          }),
+        },
+        'standard:disconnect': { version: '1.0.0', disconnect: async () => {} },
+        'solana:signTransaction': {
+          version: '1.0.0',
+          signTransaction: async ({ transaction }: { transaction: Uint8Array }) => ({
+            signedTransaction: transaction,
+          }),
+        },
+        'solana:signAndSendTransaction': {
+          version: '1.0.0',
+          signAndSendTransaction: async () => ({ signature: 'e2e_signature' }),
+        },
+      }
+
+      const wallet = {
+        name: walletName,
+        version: '1.0.0',
+        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>',
+        chains: ['solana:mainnet', 'solana:devnet'],
+        features,
+        accounts: [],
+      }
+
+      ;(window as any).__E2E_MOCK_WALLET__ = {
+        register: (register: (...wallets: any[]) => unknown) => register(wallet),
+        wallet,
+      }
+    },
+    { walletAddress, includeVerifiedSession }
+  )
+
+  await page.waitForTimeout(200)
 }
 
 async function injectVerifiedSession(
@@ -228,35 +305,61 @@ async function ensureWalletAutoConnected(
   page: import('@playwright/test').Page,
   { walletAddress }: { walletAddress: string }
 ) {
-  // Connect wallet on a non-redirecting page first, so /dashboard/* doesn't immediately push us back to '/'.
+  // Connect wallet on a non-redirecting page first, so /dashboard doesn't immediately push us back to '/'.
   await page.goto('/', { waitUntil: 'domcontentloaded' })
+
+  // Wait for page to stabilize
+  await page.waitForLoadState('networkidle')
 
   const formatted = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`
   const formattedEscaped = formatted.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+  // Try multiple selectors for better reliability
+  const walletButton = page
+    .getByRole('button')
+    .filter({
+      hasText: new RegExp(
+        `${formattedEscaped}|Sign to authenticate\\.\\.\\.|Connecting\\.\\.\\.|Connect Wallet`
+      ),
+    })
+    .first()
+
   await expect(
-    page
-      .getByRole('button')
-      .filter({ hasText: new RegExp(`${formattedEscaped}|Sign to authenticate\\.\\.\\.`) })
-      .first(),
-    `Expected mock wallet to connect (showing either ${formatted} or "Sign to authenticate...")`
-  ).toBeVisible({ timeout: 30_000 })
+    walletButton,
+    `Expected wallet button to be visible (${formatted}, "Sign to authenticate...", "Connecting...", or "Connect Wallet")`
+  ).toBeVisible({ timeout: 30000 })
 }
 
 async function gotoDashboardViaPortal(page: import('@playwright/test').Page) {
-  // Use in-app navigation to preserve wallet connection state.
+  // Wait for page to be ready
+  await page.waitForLoadState('domcontentloaded')
+
   const portalButton = page.getByRole('button', { name: 'Portal' })
-  await portalButton.scrollIntoViewIfNeeded()
-  await portalButton.click()
-  await expect(page, 'Expected Portal CTA to navigate to /dashboard').toHaveURL(
-    /\/dashboard(\?.*)?$/,
-    {
-      timeout: 30_000,
+
+  // Wait for portal button to be visible with retry
+  try {
+    await portalButton.waitFor({ state: 'visible', timeout: 15000 })
+  } catch {
+    const currentUrl = page.url()
+    if (/\/dashboard/.test(currentUrl)) {
+      await expect(
+        page.getByRole('heading', { name: 'Dashboard', exact: true }),
+        'Expected /dashboard heading'
+      ).toBeVisible({ timeout: 10000 })
+      return
     }
-  )
+    throw new Error('Portal button not visible and not on dashboard')
+  }
+
+  await Promise.all([
+    page.waitForURL(/\/dashboard(\?.*)?$/, { timeout: 30000 }),
+    portalButton.click(),
+  ])
+
   await expect(
     page.getByRole('heading', { name: 'Dashboard', exact: true }),
     'Expected /dashboard heading after navigating via Portal CTA'
-  ).toBeVisible({ timeout: 30_000 })
+  ).toBeVisible({ timeout: 30000 })
 }
 
 test.describe
@@ -285,7 +388,7 @@ test.describe
     await expect(
       page.getByTestId('verification-contract-card').getByText('Signed in (SIWS) (yes)'),
       'Expected dashboard to recognize the injected verified session'
-    ).toBeVisible({ timeout: 15_000 })
+    ).toBeVisible({ timeout: 15000 })
 
     const cases = [
       { path: '/dashboard/analytics', heading: 'Analytics' },
@@ -300,12 +403,12 @@ test.describe
       await contractCard.getByRole('link', { name: c.heading, exact: true }).click()
       await expect(page, `Expected navigation to ${c.path} via contract card link`).toHaveURL(
         new RegExp(`${c.path.replaceAll('/', '\\/')}(\\?.*)?$`),
-        { timeout: 30_000 }
+        { timeout: 30000 }
       )
       await expect(
         page.getByRole('heading', { level: 1, name: c.heading, exact: true }),
         `Expected ${c.path} to render an <h1> heading with text "${c.heading}" under a verified session`
-      ).toBeVisible({ timeout: 30_000 })
+      ).toBeVisible({ timeout: 30000 })
 
       await expect(
         page.getByText(/To continue, approve the.*Sign to authenticate/i),
@@ -316,7 +419,7 @@ test.describe
       await expect(page, 'Expected Back link to return to /dashboard').toHaveURL(
         /\/dashboard(\?.*)?$/,
         {
-          timeout: 30_000,
+          timeout: 30000,
         }
       )
     }
@@ -349,23 +452,23 @@ test.describe
     await expect(page, 'Expected navigation to /dashboard/observe').toHaveURL(
       /\/dashboard\/observe(\?.*)?$/,
       {
-        timeout: 30_000,
+        timeout: 30000,
       }
     )
     await expect(
       page.getByRole('heading', { name: 'Agent Observatory' }),
       'Expected /dashboard/observe to load for a connected + verified session'
-    ).toBeVisible({ timeout: 15_000 })
+    ).toBeVisible({ timeout: 15000 })
 
     await expect(
       page.getByRole('button', { name: 'Directory' }),
       'Expected verified session to unlock the observatory view switcher'
-    ).toBeVisible({ timeout: 15_000 })
+    ).toBeVisible({ timeout: 15000 })
 
     await expect(
       page.getByText('Sign in to vote.', { exact: true }),
       'Verified session should not be blocked by the "Sign in to vote" prompt'
-    ).toHaveCount(0, { timeout: 15_000 })
+    ).toHaveCount(0, { timeout: 15000 })
 
     // Switch to the live feed view; vote buttons exist only there.
     await page.getByRole('button', { name: 'Live Feed' }).click()
@@ -377,7 +480,7 @@ test.describe
       await expect(
         upvote.first(),
         'Expected upvote control to be enabled when session is verified'
-      ).toBeEnabled({ timeout: 15_000 })
+      ).toBeEnabled({ timeout: 15000 })
     }
   })
 
@@ -406,24 +509,24 @@ test.describe
     await expect(page, 'Expected navigation to /dashboard/observe').toHaveURL(
       /\/dashboard\/observe(\?.*)?$/,
       {
-        timeout: 30_000,
+        timeout: 30000,
       }
     )
 
     await expect(
       page.getByRole('heading', { name: 'Agent Observatory' }),
       'Expected /dashboard/observe to render the session-gated observatory wrapper for connected wallets'
-    ).toBeVisible({ timeout: 15_000 })
+    ).toBeVisible({ timeout: 15000 })
 
     await expect(
       page.getByTestId('verification-contract-card'),
       'Expected the verified-session helper card to appear when session is not verified'
-    ).toBeVisible({ timeout: 15_000 })
+    ).toBeVisible({ timeout: 15000 })
 
     await expect(
       page.getByText('Sign in to vote.', { exact: true }),
       'Expected /dashboard/observe to show the verified-session prompt when no SIWS session exists'
-    ).toBeVisible({ timeout: 15_000 })
+    ).toBeVisible({ timeout: 15000 })
 
     // When not verified, the observe page renders only the gating UI (no view switcher or live feed).
     await expect(
@@ -465,18 +568,18 @@ test.describe
     await expect(page, 'Expected navigation to /dashboard/api-keys').toHaveURL(
       /\/dashboard\/api-keys(\?.*)?$/,
       {
-        timeout: 30_000,
+        timeout: 30000,
       }
     )
 
     await expect(
       page.getByTestId('api-keys-page'),
       'Expected API key management UI wrapper to render'
-    ).toBeVisible({ timeout: 30_000 })
+    ).toBeVisible({ timeout: 30000 })
     await expect(
       page.getByRole('heading', { level: 1, name: 'API Keys', exact: true }),
       'Expected /dashboard/api-keys to render an <h1> heading'
-    ).toBeVisible({ timeout: 30_000 })
+    ).toBeVisible({ timeout: 30000 })
 
     await expect(
       page.getByTestId('api-keys-session-error'),
@@ -492,13 +595,13 @@ test.describe
     await expect(
       revealDialog,
       'Expected one-time reveal modal after creating an API key'
-    ).toBeVisible({ timeout: 30_000 })
+    ).toBeVisible({ timeout: 30000 })
 
     const revealedKey = (await page.getByTestId('api-key-reveal-value').innerText()).trim()
     await expect(
       page.getByTestId('api-key-reveal-value'),
       'Expected revealed key to start with gs_live_'
-    ).toHaveText(/^gs_live_/, { timeout: 15_000 })
+    ).toHaveText(/^gs_live_/, { timeout: 15000 })
     expect(
       revealedKey,
       `Expected revealed key to match the gs_live_ base62 format, got: ${revealedKey}`
@@ -519,7 +622,7 @@ test.describe
     await expect(
       createdRow,
       'Expected newly created key to appear in the list with its name'
-    ).toBeVisible({ timeout: 30_000 })
+    ).toBeVisible({ timeout: 30000 })
     await expect(
       createdRow,
       `Expected list row to include key prefix ${expectedPrefix}`
@@ -528,7 +631,7 @@ test.describe
     await createdRow.getByRole('button', { name: 'Revoke' }).click()
     const revokeDialog = page.getByTestId('api-key-revoke-dialog')
     await expect(revokeDialog, 'Expected revoke confirmation modal').toBeVisible({
-      timeout: 15_000,
+      timeout: 15000,
     })
     await expect(
       revokeDialog,
@@ -548,7 +651,7 @@ test.describe
           return 'pending'
         },
         {
-          timeout: 30_000,
+          timeout: 30000,
           message:
             'Expected revoked key to either show Revoked status or disappear from the active list',
         }

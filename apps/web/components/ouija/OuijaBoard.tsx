@@ -13,28 +13,55 @@ import { cn } from '@/lib/utils'
 const LETTER_ARC_RADIUS = 300
 const NUMBER_LINE_Y = 150
 
-type SpiritInternal = {
+interface SpiritInternal {
   spiritShort: string
   spiritLong: string
   reliability: 'Trustworthy' | 'Deceptive' | 'Unknown'
 }
 
-type ReportData = {
+interface ReportData {
   summary: SpiritInternal
   reputation?: any
   reports: any[]
   transactions: any[]
 }
 
-export default function OuijaBoard() {
-  const [address, setAddress] = useState('')
+interface OuijaBoardProps {
+  agentAddress?: string
+  summary?: any
+  reputation?: any
+  reports?: any[]
+  transactions?: any[]
+}
+
+export default function OuijaBoard({
+  agentAddress: initialAddress = '',
+  summary,
+  reputation,
+  reports,
+  transactions,
+}: OuijaBoardProps) {
+  const [address, setAddress] = useState(initialAddress)
   const [isSummoning, setIsSummoning] = useState(false)
-  const [report, setReport] = useState<ReportData | null>(null)
+  const [report, setReport] = useState<ReportData | null>(
+    summary
+      ? { summary, reputation, reports: reports || [], transactions: transactions || [] }
+      : null
+  )
   const [spellingMessage, setSpellingMessage] = useState<string | null>(null)
   const [currentLetter, setCurrentLetter] = useState<string | null>(null)
 
   const generateOuijaReport = useAction(api.reports.generateOuijaReport)
   const boardRef = useRef<HTMLDivElement>(null)
+
+  // Start spelling message if report is provided initially
+  useEffect(() => {
+    if (summary?.spiritShort && !spellingMessage && !isSummoning) {
+      setTimeout(() => {
+        setSpellingMessage(summary.spiritShort.toUpperCase())
+      }, 1000)
+    }
+  }, [summary])
 
   const handleSummon = async () => {
     if (!address) return
@@ -100,30 +127,32 @@ export default function OuijaBoard() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] w-full max-w-4xl mx-auto p-4">
-      {/* Controls */}
-      <div className="mb-8 w-full max-w-lg z-20">
-        <div className="flex space-x-2">
-          <Input
-            placeholder="Enter Entity Address (Wallet)"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            className="bg-black/50 border-white/20 text-white placeholder:text-white/30 font-serif"
-          />
-          <Button
-            onClick={handleSummon}
-            disabled={isSummoning || !address}
-            className="bg-purple-900/80 hover:bg-purple-800 text-purple-100 border border-purple-500/50 font-serif"
-          >
-            {isSummoning ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-            ) : (
-              <Search className="w-4 h-4 mr-2" />
-            )}
-            SUMMON
-          </Button>
+    <div className="flex flex-col items-center justify-center min-h-[50vh] w-full max-w-4xl mx-auto p-4">
+      {/* Controls - Only show if not pre-populated */}
+      {!summary && (
+        <div className="mb-8 w-full max-w-lg z-20">
+          <div className="flex space-x-2">
+            <Input
+              placeholder="Enter Entity Address (Wallet)"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="bg-black/50 border-white/20 text-white placeholder:text-white/30 font-serif"
+            />
+            <Button
+              onClick={handleSummon}
+              disabled={isSummoning || !address}
+              className="bg-purple-900/80 hover:bg-purple-800 text-purple-100 border border-purple-500/50 font-serif"
+            >
+              {isSummoning ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Search className="w-4 h-4 mr-2" />
+              )}
+              SUMMON
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* The Board */}
       <div

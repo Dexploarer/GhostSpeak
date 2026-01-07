@@ -6,14 +6,21 @@
  */
 
 import { NextRequest } from 'next/server'
-import { completeWideEvent } from '@/lib/logging/wide-event'
+import { completeWideEvent } from '@/lib/logging/hooks'
 
-export async function GET(request: NextRequest, { params }: { params: { slug: string[] } }) {
-  const path = `/api/${params.slug.join('/')}`
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string[] }> }
+) {
+  const resolvedParams = await params
+  const path = `/api/${resolvedParams.slug.join('/')}`
 
   completeWideEvent((request as any).wideEvent, {
     statusCode: 404,
-    durationMs: Date.now() - (request as any).wideEvent?.timestamp ? new Date((request as any).wideEvent.timestamp).getTime() : Date.now(),
+    durationMs:
+      Date.now() - (request as any).wideEvent?.timestamp
+        ? new Date((request as any).wideEvent.timestamp).getTime()
+        : Date.now(),
     error: {
       type: 'NotFoundError',
       code: 'ENDPOINT_NOT_FOUND',
@@ -30,19 +37,26 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
         '/api/health',
         '/api/v1/health',
         '/api/v1/agent/[address]',
-        '/api/agent/chat'
-      ]
+        '/api/agent/chat',
+      ],
     },
     { status: 404 }
   )
 }
 
-export async function POST(request: NextRequest, { params }: { params: { slug: string[] } }) {
-  const path = `/api/${params.slug.join('/')}`
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string[] }> }
+) {
+  const resolvedParams = await params
+  const path = `/api/${resolvedParams.slug.join('/')}`
 
   completeWideEvent((request as any).wideEvent, {
     statusCode: 404,
-    durationMs: Date.now() - (request as any).wideEvent?.timestamp ? new Date((request as any).wideEvent.timestamp).getTime() : Date.now(),
+    durationMs:
+      Date.now() - (request as any).wideEvent?.timestamp
+        ? new Date((request as any).wideEvent.timestamp).getTime()
+        : Date.now(),
     error: {
       type: 'NotFoundError',
       code: 'ENDPOINT_NOT_FOUND',
@@ -59,8 +73,8 @@ export async function POST(request: NextRequest, { params }: { params: { slug: s
         '/api/health',
         '/api/v1/health',
         '/api/v1/agent/[address]',
-        '/api/agent/chat'
-      ]
+        '/api/agent/chat',
+      ],
     },
     { status: 404 }
   )

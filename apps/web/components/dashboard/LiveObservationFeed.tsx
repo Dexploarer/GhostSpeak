@@ -134,108 +134,112 @@ export function LiveObservationFeed() {
                   : 'border-white/10 hover:border-white/20'
               }`}
             >
-              <CollapsibleTrigger className="w-full group">
-                <div className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    {/* Status Icon */}
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        isSuccess ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
-                      }`}
-                    >
-                      {isSuccess ? (
-                        <CheckCircle2 className="w-5 h-5" />
-                      ) : (
-                        <XCircle className="w-5 h-5" />
-                      )}
-                    </div>
-
-                    <div className="text-left">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm px-2 py-0.5 rounded bg-white/5 text-white/80">
-                          {obs.endpoint?.method || 'GET'}
-                        </span>
-                        <span
-                          className="text-white font-medium truncate max-w-[300px]"
-                          title={obs.endpoint?.endpoint}
-                        >
-                          {obs.endpoint?.endpoint || 'Unknown Endpoint'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-white/40 mt-1">
-                        <span className="flex items-center gap-1">
-                          <Activity className="w-3 h-3" />
-                          {obs.responseTimeMs}ms
-                        </span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <DollarSign className="w-3 h-3" />
-                          {formatPrice(obs.paymentAmountUsdc || 0)}
-                        </span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {formatTimeAgo(obs._creationTime)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    {/* Voting Buttons */}
-                    <div
-                      className="flex items-center bg-white/5 rounded-lg border border-white/5 mr-2"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        onClick={(e) => handleVote(e, obs._id, 'upvote')}
-                        disabled={!walletAddress || !hasVerifiedSession}
-                        className={`p-1.5 px-2 flex items-center gap-1.5 text-xs transition-colors hover:bg-white/10 ${
-                          myVote === 'upvote'
-                            ? 'text-green-400 bg-green-500/10'
-                            : 'text-white/40 hover:text-white/80'
-                        }`}
-                        title="Good result (fast/correct)"
-                      >
-                        <ThumbsUp className="w-3.5 h-3.5" />
-                        {(obs.upvotes || 0) > 0 && <span>{obs.upvotes}</span>}
-                      </button>
-                      <div className="w-px h-4 bg-white/10" />
-                      <button
-                        onClick={(e) => handleVote(e, obs._id, 'downvote')}
-                        disabled={!walletAddress || !hasVerifiedSession}
-                        className={`p-1.5 px-2 flex items-center gap-1.5 text-xs transition-colors hover:bg-white/10 ${
-                          myVote === 'downvote'
-                            ? 'text-red-400 bg-red-500/10'
-                            : 'text-white/40 hover:text-white/80'
-                        }`}
-                        title="Bad result (slow/failed/expensive)"
-                      >
-                        <ThumbsDown className="w-3.5 h-3.5" />
-                        {(obs.downvotes || 0) > 0 && <span>{obs.downvotes}</span>}
-                      </button>
-                    </div>
-
-                    {hasTranscript && (
-                      <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-blue-500/10 text-blue-400 text-xs">
-                        <MessageSquare className="w-3 h-3" />
-                        Transcript
-                      </div>
-                    )}
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-mono ${
-                        obs.responseStatus === 200
-                          ? 'bg-green-500/10 text-green-400'
-                          : obs.responseStatus === 402
-                            ? 'bg-orange-500/10 text-orange-400'
+              <CollapsibleTrigger asChild>
+                <div className="w-full group cursor-pointer">
+                  <div className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {/* Status Icon */}
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          isSuccess
+                            ? 'bg-green-500/10 text-green-400'
                             : 'bg-red-500/10 text-red-400'
-                      }`}
-                    >
-                      {obs.responseStatus || 'ERR'}
-                    </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-white/40 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                    />
+                        }`}
+                      >
+                        {isSuccess ? (
+                          <CheckCircle2 className="w-5 h-5" />
+                        ) : (
+                          <XCircle className="w-5 h-5" />
+                        )}
+                      </div>
+
+                      <div className="text-left">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm px-2 py-0.5 rounded bg-white/5 text-white/80">
+                            {obs.endpoint?.method || 'GET'}
+                          </span>
+                          <span
+                            className="text-white font-medium truncate max-w-[300px]"
+                            title={obs.endpoint?.endpoint}
+                          >
+                            {obs.endpoint?.endpoint || 'Unknown Endpoint'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-white/40 mt-1">
+                          <span className="flex items-center gap-1">
+                            <Activity className="w-3 h-3" />
+                            {obs.responseTimeMs}ms
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <DollarSign className="w-3 h-3" />
+                            {formatPrice(obs.paymentAmountUsdc || 0)}
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {formatTimeAgo(obs._creationTime)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      {/* Voting Buttons */}
+                      <div
+                        className="flex items-center bg-white/5 rounded-lg border border-white/5 mr-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          onClick={(e) => handleVote(e, obs._id, 'upvote')}
+                          disabled={!walletAddress || !hasVerifiedSession}
+                          className={`p-1.5 px-2 flex items-center gap-1.5 text-xs transition-colors hover:bg-white/10 ${
+                            myVote === 'upvote'
+                              ? 'text-green-400 bg-green-500/10'
+                              : 'text-white/40 hover:text-white/80'
+                          }`}
+                          title="Good result (fast/correct)"
+                        >
+                          <ThumbsUp className="w-3.5 h-3.5" />
+                          {(obs.upvotes || 0) > 0 && <span>{obs.upvotes}</span>}
+                        </button>
+                        <div className="w-px h-4 bg-white/10" />
+                        <button
+                          onClick={(e) => handleVote(e, obs._id, 'downvote')}
+                          disabled={!walletAddress || !hasVerifiedSession}
+                          className={`p-1.5 px-2 flex items-center gap-1.5 text-xs transition-colors hover:bg-white/10 ${
+                            myVote === 'downvote'
+                              ? 'text-red-400 bg-red-500/10'
+                              : 'text-white/40 hover:text-white/80'
+                          }`}
+                          title="Bad result (slow/failed/expensive)"
+                        >
+                          <ThumbsDown className="w-3.5 h-3.5" />
+                          {(obs.downvotes || 0) > 0 && <span>{obs.downvotes}</span>}
+                        </button>
+                      </div>
+
+                      {hasTranscript && (
+                        <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-blue-500/10 text-blue-400 text-xs">
+                          <MessageSquare className="w-3 h-3" />
+                          Transcript
+                        </div>
+                      )}
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-mono ${
+                          obs.responseStatus === 200
+                            ? 'bg-green-500/10 text-green-400'
+                            : obs.responseStatus === 402
+                              ? 'bg-orange-500/10 text-orange-400'
+                              : 'bg-red-500/10 text-red-400'
+                        }`}
+                      >
+                        {obs.responseStatus || 'ERR'}
+                      </span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-white/40 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                      />
+                    </div>
                   </div>
                 </div>
               </CollapsibleTrigger>

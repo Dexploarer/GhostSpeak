@@ -12,7 +12,7 @@ interface ChatMarkdownProps {
  * Elegant markdown renderer for chat messages
  * Renders Caisper's markdown responses with clean, styled typography
  */
-export function ChatMarkdown({ content, className = '' }: ChatMarkdownProps) {
+export function ChatMarkdown({ content, className = '' }: ChatMarkdownProps): React.JSX.Element {
   const components: Components = {
     // Headers - clean, subtle styling
     h1: ({ children }) => (

@@ -138,7 +138,8 @@ export async function POST(req: NextRequest) {
         }
       }
     } catch (fetchError: unknown) {
-      responseError = fetchError.message || 'Unknown fetch error'
+      const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown fetch error'
+      responseError = errorMessage
       responseData = {
         error: responseError,
       }

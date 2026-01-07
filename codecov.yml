@@ -1,0 +1,51 @@
+# Codecov Configuration for GhostSpeak
+
+codecov:
+  require_ci_to_pass: true
+  bot: "codecov-io"
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 5%
+        if_not_found: success
+        informational: false
+    patch:
+      default:
+        target: 80%
+        threshold: 5%
+        if_not_found: success
+        informational: false
+
+comment:
+  layout: "files,header,footer"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+  show_carryforward_flags: false
+
+flag_management:
+  default_rules:
+    carryforward: false
+    statuses:
+      - type: project
+        target: auto
+        threshold: 5%
+      - type: patch
+        target: auto
+        threshold: 5%
+  individual_flags:
+    - name: unittests
+      paths:
+        - apps/web/__tests__/
+      carryforward: false
+    - name: e2e
+      paths:
+        - apps/web/e2e/
+      carryforward: false

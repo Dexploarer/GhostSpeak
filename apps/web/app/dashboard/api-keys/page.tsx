@@ -7,6 +7,11 @@ import { useMutation, useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import type { Id } from '@/convex/_generated/dataModel'
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { cn } from '@/lib/utils'
+import { StatCard } from '@/components/ui/enhanced/StatCard'
+import { StatusBadge } from '@/components/ui/enhanced/StatusBadge'
+import { GhostLoader } from '@/components/ui/enhanced/GhostLoader'
 import {
   Dialog,
   DialogContent,
@@ -335,97 +340,133 @@ export default function DashboardApiKeysPage() {
 
         {/* List */}
         <section
-          className="p-5 sm:p-6 bg-[#111111] border border-white/10 rounded-xl"
+          className="space-y-6"
           data-testid="api-keys-list-card"
         >
-          <div className="flex items-center gap-2 mb-4">
-            <KeyRound className="w-4 h-4 text-primary" aria-hidden="true" />
-            <h2 className="text-sm font-medium text-white">Your keys</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-primary" aria-hidden="true" />
+              <h2 className="text-xl font-bold text-white">Your API Keys</h2>
+            </div>
           </div>
 
           {apiKeys === undefined ? (
-            <div
-              className="flex items-center gap-2 text-sm text-white/60"
-              data-testid="api-keys-loading"
-            >
-              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-              Loading keys…
-            </div>
+            <GhostLoader variant="list" count={3} />
           ) : apiKeys.length === 0 ? (
-            <p className="text-sm text-white/60" data-testid="api-keys-empty">
-              No API keys yet. Create one to start authenticating requests.
-            </p>
+            <div className="p-12 border border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center text-center">
+              <KeyRound className="w-12 h-12 text-white/10 mb-4" />
+              <p className="text-sm text-white/60">No API keys yet. Create one to start authenticating requests.</p>
+            </div>
           ) : (
-            <ul className="space-y-2" data-testid="api-keys-list">
-              {apiKeys.map((k) => (
-                <li
-                  key={k.id}
-                  className="p-4 bg-white/5 border border-white/10 rounded-lg"
-                  data-testid={`api-key-row-${k.id}`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm text-white/90 font-medium">
-                          {k.name?.trim() ? k.name : 'Unnamed key'}
-                        </p>
-                        <span className="text-xs text-white/40 font-mono">{k.keyPrefix}</span>
-                        <span className="text-xs px-2 py-0.5 rounded border bg-white/5 text-white/70 border-white/10">
-                          {formatTier(k.tier)}
-                        </span>
-                        <span className="text-xs px-2 py-0.5 rounded border bg-white/5 text-white/70 border-white/10">
-                          {formatRateLimit(k.rateLimit)}
-                        </span>
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded border ${
-                            k.isActive
-                              ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                              : 'bg-white/5 text-white/50 border-white/10'
-                          }`}
-                        >
-                          {k.isActive ? 'Active' : 'Revoked'}
-                        </span>
-                      </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4" data-testid="api-keys-list">
+              <AnimatePresence mode="popLayout" initial={false}>
+                {apiKeys.map((k) => (
+                  <motion.div
+                    layout
+                    key={k.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className="p-6 bg-[#111111] border border-white/10 rounded-2xl relative overflow-hidden group hover:border-white/20 transition-all duration-300"
+                    data-testid={`api-key-row-${k.id}`}
+                  >
+                    <div className="relative z-10">
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-bold text-white uppercase tracking-tight">
+                              {k.name?.trim() ? k.name : 'Production Key'}
+                            </h3>
+                            <StatusBadge
+                              label={k.isActive ? 'Active' : 'Revoked'}
+                              variant={k.isActive ? 'premium' : 'neutral'}
+                              pulse={k.isActive}
+                            />
+                          </div>
+                          <p className="text-[10px] text-white/40 font-mono tracking-wider">{k.id}</p>
+                        </div>
 
-                      <div className="mt-2 text-xs text-white/40 space-y-1">
-                        <p>
-                          Created:{' '}
-                          <span className="text-white/70">{formatTimestamp(k.createdAt)}</span>
-                        </p>
-                        <p>
-                          Last used:{' '}
-                          <span className="text-white/70">{formatTimestamp(k.lastUsedAt)}</span>
-                        </p>
-                        {!k.isActive && (
-                          <p>
-                            Revoked:{' '}
-                            <span className="text-white/70">{formatTimestamp(k.revokedAt)}</span>
-                          </p>
+                        {k.isActive && (
+                          <button
+                            onClick={() => {
+                              setRevokeError(null)
+                              setRevokeTarget(k)
+                              setRevokeOpen(true)
+                            }}
+                            className="p-2 bg-white/5 border border-white/10 rounded-lg text-white/40 hover:text-red-400 hover:bg-red-400/10 hover:border-red-400/20 transition-all"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         )}
                       </div>
+
+                      <div className="bg-[#0a0a0a] border border-white/5 rounded-xl p-4 mb-6 group-hover:bg-[#0c0c0c] transition-colors">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] uppercase font-bold text-white/30 tracking-widest">Key Prefix</span>
+                            <span className="text-sm font-mono text-white/70 tracking-widest">{k.keyPrefix}••••••••</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {/* Masked display visual */}
+                            <div className="px-3 py-1 bg-white/5 border border-white/10 rounded text-xs text-white/40 font-mono">
+                              ••••••••••••••
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-6 mb-6">
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-[10px] uppercase font-bold text-white/30">Tier</span>
+                            <span className="text-[11px] text-white font-medium">{formatTier(k.tier)}</span>
+                          </div>
+                          <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                            <div
+                              className={cn(
+                                "h-full rounded-full transition-all duration-1000",
+                                k.tier === 'enterprise' ? 'w-full bg-purple-500' :
+                                  k.tier === 'growth' ? 'w-[66%] bg-blue-500' : 'w-[33%] bg-lime-500'
+                              )}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-[10px] uppercase font-bold text-white/30">Rate Limit</span>
+                            <span className="text-[11px] text-white font-medium">{formatRateLimit(k.rateLimit)}</span>
+                          </div>
+                          <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: '80%' }}
+                              className="h-full bg-white/20 rounded-full"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-6 pt-4 border-t border-white/5">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[9px] uppercase font-bold text-white/20">Last Used</span>
+                          <span className="text-[11px] text-white/60">{formatTimestamp(k.lastUsedAt)}</span>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[9px] uppercase font-bold text-white/20">Created</span>
+                          <span className="text-[11px] text-white/60">{formatTimestamp(k.createdAt)}</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="shrink-0 flex items-center gap-2">
-                      {k.isActive && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setRevokeError(null)
-                            setRevokeTarget(k)
-                            setRevokeOpen(true)
-                          }}
-                          className="inline-flex min-h-[36px] items-center justify-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white/70 hover:bg-white/10 hover:border-white/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]"
-                          data-testid={`api-key-revoke-${k.id}`}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-                          Revoke
-                        </button>
-                      )}
+                    {/* Aesthetic Background Accents */}
+                    <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
+                      <KeyRound className="w-32 h-32" />
                     </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
           )}
         </section>
       </div>

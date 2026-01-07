@@ -19,11 +19,12 @@ export function getLoggingConfig(): {
     region?: string
   }
 } {
-  const nodeEnv = process.env.NODE_ENV || 'development'
+  const nodeEnv = (process.env.NODE_ENV || 'development') as string
 
   // Base configuration
   const config = {
     enabled: true,
+    sampling: {} as SamplingConfig,
     service: {
       name: process.env.SERVICE_NAME || 'ghostspeak-web',
       version: process.env.npm_package_version || '1.0.0',
@@ -36,7 +37,7 @@ export function getLoggingConfig(): {
   switch (nodeEnv) {
     case 'production':
       config.sampling = {
-        error_rate: 1.0,        // Keep 100% of errors
+        error_rate: 1.0, // Keep 100% of errors
         slow_request_threshold_ms: 2000,
         slow_request_rate: 1.0, // Keep 100% of slow requests
         success_rate: parseFloat(process.env.LOG_SUCCESS_RATE || '0.05'), // 5% of successes
@@ -48,10 +49,10 @@ export function getLoggingConfig(): {
 
     case 'staging':
       config.sampling = {
-        error_rate: 1.0,        // Keep 100% of errors
+        error_rate: 1.0, // Keep 100% of errors
         slow_request_threshold_ms: 1000,
         slow_request_rate: 1.0, // Keep 100% of slow requests
-        success_rate: 0.1,      // 10% of successes
+        success_rate: 0.1, // 10% of successes
         vip_users: [],
         vip_wallets: [],
         debug_features: ['debug_logging', 'staging_tests'],
@@ -61,10 +62,10 @@ export function getLoggingConfig(): {
     case 'development':
     default:
       config.sampling = {
-        error_rate: 1.0,        // Keep 100% of errors
+        error_rate: 1.0, // Keep 100% of errors
         slow_request_threshold_ms: 500,
         slow_request_rate: 1.0, // Keep 100% of slow requests
-        success_rate: 0.5,      // 50% of successes for development
+        success_rate: 0.5, // 50% of successes for development
         vip_users: [],
         vip_wallets: [],
         debug_features: ['debug_logging', 'dev_mode'],
@@ -100,14 +101,12 @@ export function getLogLevel(): 'debug' | 'info' | 'warn' | 'error' {
  * Check if detailed error logging is enabled
  */
 export function isDetailedErrorLoggingEnabled(): boolean {
-  return process.env.DETAILED_ERROR_LOGGING === 'true' ||
-         process.env.NODE_ENV === 'development'
+  return process.env.DETAILED_ERROR_LOGGING === 'true' || process.env.NODE_ENV === 'development'
 }
 
 /**
  * Check if performance monitoring is enabled
  */
 export function isPerformanceMonitoringEnabled(): boolean {
-  return process.env.PERFORMANCE_MONITORING === 'true' ||
-         process.env.NODE_ENV !== 'production'
+  return process.env.PERFORMANCE_MONITORING === 'true' || process.env.NODE_ENV !== 'production'
 }

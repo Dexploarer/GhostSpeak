@@ -12,36 +12,55 @@ import {
   resetSolanaClient,
 } from '../../lib/solana/client'
 
+// Mock the @solana/client module before tests
+const mockCreateClient = vi.fn()
+const mockUrl = 'https://api.mainnet-beta.solana.com'
+
+vi.mock('@solana/web3.js', () => ({
+  Connection: vi.fn().mockImplementation(() => ({})),
+  RPCEndpoint: {
+    custom: vi.fn(),
+  },
+}))
+
+vi.mock('@solana/client', () => ({
+  createSolanaClient: vi.fn().mockImplementation((config: { url: string }) => {
+    return { url: config.url }
+  }),
+}))
+
 // ============================================================================
 // Client Creation Tests
 // ============================================================================
 
 describe('Solana Client', () => {
+  const originalEnv = process.env
+
   beforeEach(() => {
     // Reset the singleton before each test
     resetSolanaClient()
-    // Mock environment variables
-    vi.spyOn(process.env, 'NEXT_PUBLIC_SOLANA_RPC_URL', 'get').mockReturnValue(
-      'https://api.mainnet-beta.solana.com'
-    )
-    vi.spyOn(process.env, 'SOLANA_RPC_URL', 'get').mockReturnValue(
-      'https://api.mainnet-beta.solana.com'
-    )
+    // Clear module cache to ensure fresh imports
+    vi.resetModules()
   })
 
   afterEach(() => {
     // Clean up and reset
     resetSolanaClient()
     vi.restoreAllMocks()
+    process.env = originalEnv
   })
 
   describe('getSolanaClient', () => {
     it('should create a client when first called', () => {
+      process.env.NEXT_PUBLIC_SOLANA_RPC_URL = 'https://api.mainnet-beta.solana.com'
+
       const client = getSolanaClient()
       expect(client).not.toBeNull()
     })
 
     it('should return the same instance on subsequent calls (singleton)', () => {
+      process.env.NEXT_PUBLIC_SOLANA_RPC_URL = 'https://api.mainnet-beta.solana.com'
+
       const client1 = getSolanaClient()
       const client2 = getSolanaClient()
       expect(client1).toBe(client2)
@@ -49,7 +68,7 @@ describe('Solana Client', () => {
 
     it('should use NEXT_PUBLIC_SOLANA_RPC_URL from environment', () => {
       const customUrl = 'https://custom.rpc.endpoint.com'
-      vi.spyOn(process.env, 'NEXT_PUBLIC_SOLANA_RPC_URL', 'get').mockReturnValue(customUrl)
+      process.env.NEXT_PUBLIC_SOLANA_RPC_URL = customUrl
 
       resetSolanaClient()
       const client = getSolanaClient()
@@ -58,7 +77,7 @@ describe('Solana Client', () => {
     })
 
     it('should use default URL when env var is not set', () => {
-      vi.spyOn(process.env, 'NEXT_PUBLIC_SOLANA_RPC_URL', 'get').mockReturnValue(undefined)
+      delete process.env.NEXT_PUBLIC_SOLANA_RPC_URL
 
       resetSolanaClient()
       const client = getSolanaClient()
@@ -81,24 +100,24 @@ describe('Solana Client', () => {
 
     it('should use SOLANA_RPC_URL from environment', () => {
       const customUrl = 'https://solana-server.example.com'
-      vi.spyOn(process.env, 'SOLANA_RPC_URL', 'get').mockReturnValue(customUrl)
+      process.env.SOLANA_RPC_URL = customUrl
 
       const client = createServerSolanaClient()
       expect(client).not.toBeNull()
     })
 
     it('should fall back to NEXT_PUBLIC_SOLANA_RPC_URL if SOLANA_RPC_URL is not set', () => {
-      vi.spyOn(process.env, 'SOLANA_RPC_URL', 'get').mockReturnValue(undefined)
+      delete process.env.SOLANA_RPC_URL
       const publicUrl = 'https://public.rpc.com'
-      vi.spyOn(process.env, 'NEXT_PUBLIC_SOLANA_RPC_URL', 'get').mockReturnValue(publicUrl)
+      process.env.NEXT_PUBLIC_SOLANA_RPC_URL = publicUrl
 
       const client = createServerSolanaClient()
       expect(client).not.toBeNull()
     })
 
     it('should use default URL when no env vars are set', () => {
-      vi.spyOn(process.env, 'SOLANA_RPC_URL', 'get').mockReturnValue(undefined)
-      vi.spyOn(process.env, 'NEXT_PUBLIC_SOLANA_RPC_URL', 'get').mockReturnValue(undefined)
+      delete process.env.SOLANA_RPC_URL
+      delete process.env.NEXT_PUBLIC_SOLANA_RPC_URL
 
       const client = createServerSolanaClient()
       expect(client).not.toBeNull()
@@ -113,6 +132,8 @@ describe('Solana Client', () => {
 
   describe('resetSolanaClient', () => {
     it('should reset the client-side singleton', () => {
+      process.env.NEXT_PUBLIC_SOLANA_RPC_URL = 'https://api.mainnet-beta.solana.com'
+
       const client1 = getSolanaClient()
       resetSolanaClient()
       const client2 = getSolanaClient()
@@ -133,9 +154,7 @@ describe('Solana Client', () => {
 
   describe('client configuration', () => {
     it('should handle devnet URL', () => {
-      vi.spyOn(process.env, 'NEXT_PUBLIC_SOLANA_RPC_URL', 'get').mockReturnValue(
-        'https://api.devnet.solana.com'
-      )
+      process.env.NEXT_PUBLIC_SOLANA_RPC_URL = 'https://api.devnet.solana.com'
 
       resetSolanaClient()
       const client = getSolanaClient()
@@ -144,9 +163,7 @@ describe('Solana Client', () => {
     })
 
     it('should handle local cluster URL', () => {
-      vi.spyOn(process.env, 'NEXT_PUBLIC_SOLANA_RPC_URL', 'get').mockReturnValue(
-        'http://localhost:8899'
-      )
+      process.env.NEXT_PUBLIC_SOLANA_RPC_URL = 'http://localhost:8899'
 
       resetSolanaClient()
       const client = getSolanaClient()

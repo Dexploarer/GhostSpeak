@@ -24,6 +24,35 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: false,
   },
 
+  // Turbopack configuration to mirror webpack rules and resolve warnings
+  turbopack: {
+    rules: {
+      // Handle .md and .node files as in webpack config
+      '*.md': {
+        loaders: ['ignore-loader'],
+        as: '*.js',
+      },
+      '*.node': {
+        loaders: ['node-loader'],
+        as: '*.js',
+      },
+    },
+    resolveAlias: {
+      // Mirror browser fallbacks from webpack config
+      // Use an empty module for ignored server-side packages ONLY in the browser
+      fs: { browser: './lib/empty.js' },
+      path: { browser: './lib/empty.js' },
+      os: { browser: './lib/empty.js' },
+      crypto: { browser: './lib/empty.js' },
+      stream: { browser: './lib/empty.js' },
+      http: { browser: './lib/empty.js' },
+      https: { browser: './lib/empty.js' },
+      net: { browser: './lib/empty.js' },
+      tls: { browser: './lib/empty.js' },
+      child_process: { browser: './lib/empty.js' },
+    },
+  },
+
   // Optimize memory usage during build
   experimental: {
     // Reduce webpack cache size

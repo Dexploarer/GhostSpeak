@@ -1023,3 +1023,589 @@ export const getAgentCredentialsPublic = query({
     return allCredentials
   },
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PUBLIC CREDENTIAL LOOKUP LAYER (normalized summaries + detail envelope)
+// ─────────────────────────────────────────────────────────────────────────────
+
+type PublicCredentialStatus = 'active' | 'expired' | 'revocation_unknown'
+
+type TxSignaturePointer = {
+  kind:
+    | 'solana_signature'
+    | 'transaction_signature'
+    | 'verification_signature'
+    | 'first_seen_signature'
+  signature: string
+}
+
+function computeStatus(now: number, expiresAt?: number | null): PublicCredentialStatus {
+  if (expiresAt === undefined || expiresAt === null) return 'active'
+  return expiresAt <= now ? 'expired' : 'active'
+}
+
+function stripInternalFields<T extends Record<string, any>>(doc: T): Omit<T, '_id' | '_creationTime'> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { _id, _creationTime, ...rest } = doc
+  return rest
+}
+
+export type CredentialTypePublic =
+  | 'agent_identity'
+  | 'reputation_tier'
+  | 'payment_milestone'
+  | 'staking'
+  | 'verified_hire'
+  | 'capability_verification'
+  | 'uptime_attestation'
+  | 'api_quality_grade'
+  | 'tee_attestation'
+  | 'model_provenance'
+
+/**
+ * List a normalized set of credential summaries for an agent.
+ *
+ * Public-safe: returns only credential metadata + validation pointers.
+ */
+export const listAgentCredentialSummariesPublic = query({
+  args: {
+    agentAddress: v.string(),
+    limit: v.optional(v.number()),
+    offset: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const [
+      identity,
+      reputation,
+      paymentMilestones,
+      staking,
+      verifiedHires,
+      capabilityVerification,
+      uptimeAttestation,
+      apiQualityGrade,
+      teeAttestation,
+      modelProvenance,
+    ] = await Promise.all([
+      ctx.db
+        .query('agentIdentityCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('payaiCredentialsIssued')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('paymentMilestoneCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('stakingCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('verifiedHireCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('capabilityVerificationCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('uptimeAttestationCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('apiQualityGradeCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('teeAttestationCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+      ctx.db
+        .query('modelProvenanceCredentials')
+        .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
+        .collect(),
+    ])
+
+    const now = Date.now()
+
+    const summaries = [
+      ...identity.map((c) => {
+        const txSignatures: TxSignaturePointer[] = []
+        return {
+          credentialType: 'agent_identity' as const,
+          credentialId: c.credentialId,
+          issuedAt: c.issuedAt,
+          expiresAt: null as number | null,
+          status: computeStatus(now, null),
+          crossmintCredentialId: c.crossmintCredentialId ?? null,
+          txSignatures,
+          display: {
+            did: c.did,
+          },
+        }
+      }),
+      ...reputation.map((c) => {
+        const txSignatures: TxSignaturePointer[] = []
+        if (c.solanaSignature) {
+          txSignatures.push({ kind: 'solana_signature', signature: c.solanaSignature })
+        }
+        return {
+          credentialType: 'reputation_tier' as const,
+          credentialId: c.credentialId,
+          issuedAt: c.issuedAt,
+          expiresAt: null as number | null,
+          status: computeStatus(now, null),
+          crossmintCredentialId: c.crossmintCredentialId ?? null,
+          txSignatures,
+          display: {
+            tier: c.tier,
+            milestone: c.milestone,
+            ghostScore: c.ghostScore,
+          },
+        }
+      }),
+      ...paymentMilestones.map((c) => ({
+        credentialType: 'payment_milestone' as const,
+        credentialId: c.credentialId,
+        issuedAt: c.issuedAt,
+        expiresAt: null as number | null,
+        status: computeStatus(now, null),
+        crossmintCredentialId: c.crossmintCredentialId ?? null,
+        txSignatures: [] as TxSignaturePointer[],
+        display: {
+          tier: c.tier,
+          milestone: c.milestone,
+        },
+      })),
+      ...staking.map((c) => ({
+        credentialType: 'staking' as const,
+        credentialId: c.credentialId,
+        issuedAt: c.issuedAt,
+        expiresAt: null as number | null,
+        status: computeStatus(now, null),
+        crossmintCredentialId: c.crossmintCredentialId ?? null,
+        txSignatures: [] as TxSignaturePointer[],
+        display: {
+          tier: c.tier,
+          stakingTier: c.stakingTier,
+          amountStaked: c.amountStaked,
+        },
+      })),
+      ...verifiedHires.map((c) => ({
+        credentialType: 'verified_hire' as const,
+        credentialId: c.credentialId,
+        issuedAt: c.issuedAt,
+        expiresAt: null as number | null,
+        status: computeStatus(now, null),
+        crossmintCredentialId: c.crossmintCredentialId ?? null,
+        txSignatures: [{ kind: 'transaction_signature', signature: c.transactionSignature }],
+        display: {
+          rating: c.rating,
+          clientAddress: c.clientAddress,
+        },
+      })),
+      ...capabilityVerification.map((c) => {
+        const expiresAt = c.validUntil
+        return {
+          credentialType: 'capability_verification' as const,
+          credentialId: c.credentialId,
+          issuedAt: c.issuedAt,
+          expiresAt,
+          status: computeStatus(now, expiresAt),
+          crossmintCredentialId: c.crossmintCredentialId ?? null,
+          txSignatures: [] as TxSignaturePointer[],
+          display: {
+            verificationMethod: c.verificationMethod,
+            successRate: c.successRate,
+            testsRun: c.testsRun,
+            testsPassed: c.testsPassed,
+            capabilities: c.capabilities,
+          },
+        }
+      }),
+      ...uptimeAttestation.map((c) => ({
+        credentialType: 'uptime_attestation' as const,
+        credentialId: c.credentialId,
+        issuedAt: c.issuedAt,
+        expiresAt: null as number | null,
+        status: computeStatus(now, null),
+        crossmintCredentialId: c.crossmintCredentialId ?? null,
+        txSignatures: [] as TxSignaturePointer[],
+        display: {
+          tier: c.tier,
+          uptimePercentage: c.uptimePercentage,
+          observationPeriodDays: c.observationPeriodDays,
+          periodStart: c.periodStart,
+          periodEnd: c.periodEnd,
+        },
+      })),
+      ...apiQualityGrade.map((c) => ({
+        credentialType: 'api_quality_grade' as const,
+        credentialId: c.credentialId,
+        issuedAt: c.issuedAt,
+        expiresAt: null as number | null,
+        status: computeStatus(now, null),
+        crossmintCredentialId: c.crossmintCredentialId ?? null,
+        txSignatures: [] as TxSignaturePointer[],
+        display: {
+          grade: c.grade,
+          gradeScore: c.gradeScore,
+          reportDate: c.reportDate,
+          endpointsTested: c.endpointsTested,
+        },
+      })),
+      ...teeAttestation.map((c) => {
+        const txSignatures: TxSignaturePointer[] = []
+        if (c.verificationTxSignature) {
+          txSignatures.push({ kind: 'verification_signature', signature: c.verificationTxSignature })
+        }
+        const expiresAt = c.validUntil
+        return {
+          credentialType: 'tee_attestation' as const,
+          credentialId: c.credentialId,
+          issuedAt: c.issuedAt,
+          expiresAt,
+          status: computeStatus(now, expiresAt),
+          crossmintCredentialId: c.crossmintCredentialId ?? null,
+          txSignatures,
+          display: {
+            teeType: c.teeType,
+            teeProvider: c.teeProvider,
+            verifiedBy: c.verifiedBy,
+          },
+        }
+      }),
+      ...modelProvenance.map((c) => ({
+        credentialType: 'model_provenance' as const,
+        credentialId: c.credentialId,
+        issuedAt: c.issuedAt,
+        expiresAt: null as number | null,
+        status: computeStatus(now, null),
+        crossmintCredentialId: c.crossmintCredentialId ?? null,
+        txSignatures: [] as TxSignaturePointer[],
+        display: {
+          modelName: c.modelName,
+          modelProvider: c.modelProvider,
+          modelVersion: c.modelVersion,
+          selfAttested: c.selfAttested,
+        },
+      })),
+    ]
+
+    // Apply pagination if specified
+    const limit = args.limit ?? 50 // Default limit of 50
+    const offset = args.offset ?? 0
+
+    // Stable ordering: newest first
+    const sortedSummaries = summaries.sort((a, b) => b.issuedAt - a.issuedAt)
+
+    // Apply pagination
+    const paginatedSummaries = sortedSummaries.slice(offset, offset + limit)
+
+    return {
+      credentials: paginatedSummaries,
+      total: summaries.length,
+      hasMore: offset + limit < summaries.length,
+      limit,
+      offset,
+    }
+  },
+})
+
+/**
+ * Fetch credential details for public validation view.
+ *
+ * Requirements:
+ * - Table lookup uses `by_credential_id`.
+ * - Returns a consistent envelope with validation-relevant fields.
+ */
+export const getCredentialDetailsPublic = query({
+  args: {
+    credentialType: v.union(
+      v.literal('agent_identity'),
+      v.literal('reputation_tier'),
+      v.literal('payment_milestone'),
+      v.literal('staking'),
+      v.literal('verified_hire'),
+      v.literal('capability_verification'),
+      v.literal('uptime_attestation'),
+      v.literal('api_quality_grade'),
+      v.literal('tee_attestation'),
+      v.literal('model_provenance')
+    ),
+    credentialId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now()
+
+    const mkEnvelope = (input: {
+      credentialType: CredentialTypePublic
+      credentialId: string
+      issuedAt: number
+      expiresAt?: number | null
+      subjectAgentAddress: string
+      evidence: Record<string, any>
+      raw: Record<string, any>
+    }) => {
+      const expiresAt = input.expiresAt ?? null
+      return {
+        credentialType: input.credentialType,
+        credentialId: input.credentialId,
+        issuedAt: input.issuedAt,
+        expiresAt,
+        status: computeStatus(now, expiresAt),
+        subjectAgentAddress: input.subjectAgentAddress,
+        evidence: input.evidence,
+        raw: input.raw,
+      }
+    }
+
+    switch (args.credentialType) {
+      case 'agent_identity': {
+        const doc = await ctx.db
+          .query('agentIdentityCredentials')
+          .withIndex('by_credential_id', (q) => q.eq('credentialId', args.credentialId))
+          .first()
+        if (!doc) return null
+        return mkEnvelope({
+          credentialType: 'agent_identity',
+          credentialId: doc.credentialId,
+          issuedAt: doc.issuedAt,
+          expiresAt: null,
+          subjectAgentAddress: doc.agentAddress,
+          evidence: {
+            did: doc.did,
+            crossmintCredentialId: doc.crossmintCredentialId ?? null,
+          },
+          raw: stripInternalFields(doc),
+        })
+      }
+
+      case 'reputation_tier': {
+        const doc = await ctx.db
+          .query('payaiCredentialsIssued')
+          .withIndex('by_credential_id', (q) => q.eq('credentialId', args.credentialId))
+          .first()
+        if (!doc) return null
+        return mkEnvelope({
+          credentialType: 'reputation_tier',
+          credentialId: doc.credentialId,
+          issuedAt: doc.issuedAt,
+          expiresAt: null,
+          subjectAgentAddress: doc.agentAddress,
+          evidence: {
+            tier: doc.tier,
+            milestone: doc.milestone,
+            ghostScore: doc.ghostScore,
+            crossmintCredentialId: doc.crossmintCredentialId ?? null,
+            solanaSignature: doc.solanaSignature ?? null,
+          },
+          raw: stripInternalFields(doc),
+        })
+      }
+
+      case 'payment_milestone': {
+        const doc = await ctx.db
+          .query('paymentMilestoneCredentials')
+          .withIndex('by_credential_id', (q) => q.eq('credentialId', args.credentialId))
+          .first()
+        if (!doc) return null
+        return mkEnvelope({
+          credentialType: 'payment_milestone',
+          credentialId: doc.credentialId,
+          issuedAt: doc.issuedAt,
+          expiresAt: null,
+          subjectAgentAddress: doc.agentAddress,
+          evidence: {
+            tier: doc.tier,
+            milestone: doc.milestone,
+            crossmintCredentialId: doc.crossmintCredentialId ?? null,
+          },
+          raw: stripInternalFields(doc),
+        })
+      }
+
+      case 'staking': {
+        const doc = await ctx.db
+          .query('stakingCredentials')
+          .withIndex('by_credential_id', (q) => q.eq('credentialId', args.credentialId))
+          .first()
+        if (!doc) return null
+        return mkEnvelope({
+          credentialType: 'staking',
+          credentialId: doc.credentialId,
+          issuedAt: doc.issuedAt,
+          expiresAt: null,
+          subjectAgentAddress: doc.agentAddress,
+          evidence: {
+            tier: doc.tier,
+            stakingTier: doc.stakingTier,
+            amountStaked: doc.amountStaked,
+            crossmintCredentialId: doc.crossmintCredentialId ?? null,
+          },
+          raw: stripInternalFields(doc),
+        })
+      }
+
+      case 'verified_hire': {
+        const doc = await ctx.db
+          .query('verifiedHireCredentials')
+          .withIndex('by_credential_id', (q) => q.eq('credentialId', args.credentialId))
+          .first()
+        if (!doc) return null
+        return mkEnvelope({
+          credentialType: 'verified_hire',
+          credentialId: doc.credentialId,
+          issuedAt: doc.issuedAt,
+          expiresAt: null,
+          subjectAgentAddress: doc.agentAddress,
+          evidence: {
+            clientAddress: doc.clientAddress,
+            rating: doc.rating,
+            transactionSignature: doc.transactionSignature,
+            crossmintCredentialId: doc.crossmintCredentialId ?? null,
+          },
+          raw: stripInternalFields(doc),
+        })
+      }
+
+      case 'capability_verification': {
+        const doc = await ctx.db
+          .query('capabilityVerificationCredentials')
+          .withIndex('by_credential_id', (q) => q.eq('credentialId', args.credentialId))
+          .first()
+        if (!doc) return null
+        return mkEnvelope({
+          credentialType: 'capability_verification',
+          credentialId: doc.credentialId,
+          issuedAt: doc.issuedAt,
+          expiresAt: doc.validUntil,
+          subjectAgentAddress: doc.agentAddress,
+          evidence: {
+            verificationMethod: doc.verificationMethod,
+            capabilities: doc.capabilities,
+            testsRun: doc.testsRun,
+            testsPassed: doc.testsPassed,
+            successRate: doc.successRate,
+            validFrom: doc.validFrom,
+            validUntil: doc.validUntil,
+            crossmintCredentialId: doc.crossmintCredentialId ?? null,
+          },
+          raw: stripInternalFields(doc),
+        })
+      }
+
+      case 'uptime_attestation': {
+        const doc = await ctx.db
+          .query('uptimeAttestationCredentials')
+          .withIndex('by_credential_id', (q) => q.eq('credentialId', args.credentialId))
+          .first()
+        if (!doc) return null
+        return mkEnvelope({
+          credentialType: 'uptime_attestation',
+          credentialId: doc.credentialId,
+          issuedAt: doc.issuedAt,
+          expiresAt: null,
+          subjectAgentAddress: doc.agentAddress,
+          evidence: {
+            uptimePercentage: doc.uptimePercentage,
+            tier: doc.tier,
+            observationPeriodDays: doc.observationPeriodDays,
+            totalTests: doc.totalTests,
+            successfulResponses: doc.successfulResponses,
+            avgResponseTimeMs: doc.avgResponseTimeMs,
+            periodStart: doc.periodStart,
+            periodEnd: doc.periodEnd,
+            crossmintCredentialId: doc.crossmintCredentialId ?? null,
+          },
+          raw: stripInternalFields(doc),
+        })
+      }
+
+      case 'api_quality_grade': {
+        const doc = await ctx.db
+          .query('apiQualityGradeCredentials')
+          .withIndex('by_credential_id', (q) => q.eq('credentialId', args.credentialId))
+          .first()
+        if (!doc) return null
+        return mkEnvelope({
+          credentialType: 'api_quality_grade',
+          credentialId: doc.credentialId,
+          issuedAt: doc.issuedAt,
+          expiresAt: null,
+          subjectAgentAddress: doc.agentAddress,
+          evidence: {
+            grade: doc.grade,
+            gradeScore: doc.gradeScore,
+            responseQuality: doc.responseQuality,
+            capabilityAccuracy: doc.capabilityAccuracy,
+            consistency: doc.consistency,
+            documentation: doc.documentation,
+            endpointsTested: doc.endpointsTested,
+            reportDate: doc.reportDate,
+            crossmintCredentialId: doc.crossmintCredentialId ?? null,
+          },
+          raw: stripInternalFields(doc),
+        })
+      }
+
+      case 'tee_attestation': {
+        const doc = await ctx.db
+          .query('teeAttestationCredentials')
+          .withIndex('by_credential_id', (q) => q.eq('credentialId', args.credentialId))
+          .first()
+        if (!doc) return null
+        return mkEnvelope({
+          credentialType: 'tee_attestation',
+          credentialId: doc.credentialId,
+          issuedAt: doc.issuedAt,
+          expiresAt: doc.validUntil,
+          subjectAgentAddress: doc.agentAddress,
+          evidence: {
+            teeType: doc.teeType,
+            teeProvider: doc.teeProvider,
+            attestationReport: doc.attestationReport,
+            enclaveId: doc.enclaveId ?? null,
+            verifiedBy: doc.verifiedBy,
+            verificationTxSignature: doc.verificationTxSignature ?? null,
+            validFrom: doc.validFrom,
+            validUntil: doc.validUntil,
+            crossmintCredentialId: doc.crossmintCredentialId ?? null,
+          },
+          raw: stripInternalFields(doc),
+        })
+      }
+
+      case 'model_provenance': {
+        const doc = await ctx.db
+          .query('modelProvenanceCredentials')
+          .withIndex('by_credential_id', (q) => q.eq('credentialId', args.credentialId))
+          .first()
+        if (!doc) return null
+        return mkEnvelope({
+          credentialType: 'model_provenance',
+          credentialId: doc.credentialId,
+          issuedAt: doc.issuedAt,
+          expiresAt: null,
+          subjectAgentAddress: doc.agentAddress,
+          evidence: {
+            modelName: doc.modelName,
+            modelProvider: doc.modelProvider,
+            modelVersion: doc.modelVersion,
+            contextWindow: doc.contextWindow ?? null,
+            temperature: doc.temperature ?? null,
+            maxTokens: doc.maxTokens ?? null,
+            frameworkName: doc.frameworkName ?? null,
+            frameworkVersion: doc.frameworkVersion ?? null,
+            selfAttested: doc.selfAttested,
+            verificationMethod: doc.verificationMethod ?? null,
+            crossmintCredentialId: doc.crossmintCredentialId ?? null,
+          },
+          raw: stripInternalFields(doc),
+        })
+      }
+    }
+  },
+})

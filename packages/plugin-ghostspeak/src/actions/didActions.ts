@@ -3,7 +3,14 @@
  * W3C DID document management on GhostSpeak blockchain
  */
 
-import type { Action, ActionResult, HandlerCallback, IAgentRuntime, Memory, State } from '@elizaos/core';
+import type {
+  Action,
+  ActionResult,
+  HandlerCallback,
+  IAgentRuntime,
+  Memory,
+  State,
+} from '@elizaos/core';
 import { logger } from '@elizaos/core';
 import type { Address } from '@solana/addresses';
 import { address } from '@solana/addresses';
@@ -81,7 +88,9 @@ export const createDidAction: Action = {
       // Parse optional DID parameters from message
       const text = message.content.text || '';
       const nameMatch = text.match(/name[:\s]+([^\s,]+)/i);
-      const didName = nameMatch ? nameMatch[1] : runtime.character?.name || 'Agent';
+      const didName = nameMatch
+        ? nameMatch[1]
+        : runtime.character?.name || 'Agent';
 
       // Note: In production, this would require wallet signing
       // For now, we provide instructions on how to create DID
@@ -213,7 +222,9 @@ export const resolveDidAction: Action = {
       const text = message.content.text || '';
 
       // Extract DID string or address from message
-      const didMatch = text.match(/did:sol:(devnet|mainnet|testnet):([A-Za-z0-9]{32,44})/);
+      const didMatch = text.match(
+        /did:sol:(devnet|mainnet|testnet):([A-Za-z0-9]{32,44})/
+      );
       const addressMatch = text.match(/([A-Za-z0-9]{32,44})/);
 
       let targetAddress: Address | undefined;
@@ -238,7 +249,8 @@ export const resolveDidAction: Action = {
       }
 
       if (!targetAddress) {
-        const errorMsg = 'Please provide a DID string (did:sol:devnet:...) or agent address';
+        const errorMsg =
+          'Please provide a DID string (did:sol:devnet:...) or agent address';
         if (callback) {
           await callback({
             text: errorMsg,

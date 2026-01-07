@@ -1,4 +1,8 @@
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from '@tanstack/react-query';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import React, { useState } from 'react';
@@ -78,7 +82,11 @@ interface ReputationBreakdown {
   riskScore: number;
   trustLevel: 'HIGH' | 'MEDIUM' | 'LOW';
   badges?: Array<{ name: string; description: string }>;
-  performanceHistory?: Array<{ period: string; score: number; jobsCompleted: number }>;
+  performanceHistory?: Array<{
+    period: string;
+    score: number;
+    jobsCompleted: number;
+  }>;
   categoryScores?: Record<string, number>;
 }
 
@@ -152,7 +160,8 @@ interface PluginStatus {
 const CAISPER_CONFIG = {
   id: '2b4e7e22-c845-4e98-9f2e-4aaf1f190095',
   name: 'Caisper',
-  avatarUrl: 'https://l5fpqchmvmrcwa0k.public.blob.vercel-storage.com/character-avatars/cafa935a-56da-445b-91fd-f5bf9cde2de8/1767083859236-Untitled%20design%20%2817%29.png',
+  avatarUrl:
+    'https://l5fpqchmvmrcwa0k.public.blob.vercel-storage.com/character-avatars/cafa935a-56da-445b-91fd-f5bf9cde2de8/1767083859236-Untitled%20design%20%2817%29.png',
   tagline: 'Bouncer & Concierge of the Solana Agents Club',
   role: 'The ghost who checks IDs at the door and knows exactly who you need inside',
 };
@@ -172,7 +181,9 @@ function StatusIndicator({ status }: { status: PluginStatus['status'] }) {
   return (
     <div className="flex items-center gap-2">
       <div className={cn('h-2 w-2 rounded-full', config.color)} />
-      <span className="text-sm text-muted-foreground">{config.emoji} {config.label}</span>
+      <span className="text-sm text-muted-foreground">
+        {config.emoji} {config.label}
+      </span>
     </div>
   );
 }
@@ -180,7 +191,15 @@ function StatusIndicator({ status }: { status: PluginStatus['status'] }) {
 /**
  * Card component for sections
  */
-function Card({ children, className, title }: { children: React.ReactNode; className?: string; title?: string }) {
+function Card({
+  children,
+  className,
+  title,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  title?: string;
+}) {
   return (
     <div className={cn('rounded-lg border bg-card p-4 shadow-sm', className)}>
       {title && <h3 className="mb-3 text-lg font-semibold">{title}</h3>}
@@ -200,7 +219,9 @@ function GhostScoreDisplay({ apiBase }: { apiBase: string }) {
 
   const fetchGhostScore = async (address: string) => {
     if (!address) {
-      setError('Hold up—I need to see some ID before I let anyone through the door! 🚪');
+      setError(
+        'Hold up—I need to see some ID before I let anyone through the door! 🚪'
+      );
       return;
     }
 
@@ -240,10 +261,14 @@ function GhostScoreDisplay({ apiBase }: { apiBase: string }) {
   };
 
   const getTierAssessment = (score: number, tier: string) => {
-    if (score >= 900) return "VIP status! This agent has platinum membership. They're in the VIP section. 🎩✨";
-    if (score >= 750) return "Gold member. Solid reputation, reliable service. I'd personally escort them to the best tables. 👑";
-    if (score >= 500) return "Silver member. Building a good track record. They're on the list, but still proving themselves. 📊";
-    if (score >= 200) return "Bronze member. New to the club, but showing promise. Let's see how they develop. 🌱";
+    if (score >= 900)
+      return "VIP status! This agent has platinum membership. They're in the VIP section. 🎩✨";
+    if (score >= 750)
+      return "Gold member. Solid reputation, reliable service. I'd personally escort them to the best tables. 👑";
+    if (score >= 500)
+      return "Silver member. Building a good track record. They're on the list, but still proving themselves. 📊";
+    if (score >= 200)
+      return "Bronze member. New to the club, but showing promise. Let's see how they develop. 🌱";
     return "Not on the list yet. Fresh face—everyone starts somewhere. Come back when you've built some reputation. 🆕";
   };
 
@@ -253,10 +278,10 @@ function GhostScoreDisplay({ apiBase }: { apiBase: string }) {
         <input
           type="text"
           value={agentAddress}
-          onChange={(e) => setAgentAddress(e.target.value)}
+          onChange={e => setAgentAddress(e.target.value)}
           placeholder="Enter Solana agent address..."
           className="flex-1 rounded-md border bg-background px-3 py-2 text-sm font-mono placeholder:text-muted-foreground"
-          onKeyPress={(e) => {
+          onKeyPress={e => {
             if (e.key === 'Enter') {
               fetchGhostScore(agentAddress);
             }
@@ -273,7 +298,9 @@ function GhostScoreDisplay({ apiBase }: { apiBase: string }) {
 
       {error && (
         <div className="rounded-md border border-destructive bg-destructive/10 p-3">
-          <div className="text-sm font-medium text-destructive">⚠️ Investigation Failed</div>
+          <div className="text-sm font-medium text-destructive">
+            ⚠️ Investigation Failed
+          </div>
           <div className="mt-1 text-xs text-destructive/80">{error}</div>
         </div>
       )}
@@ -283,25 +310,41 @@ function GhostScoreDisplay({ apiBase }: { apiBase: string }) {
           <div className="flex items-start justify-between border-b pb-3">
             <div>
               <h3 className="text-lg font-bold">{scoreData.agentName}</h3>
-              <p className="mt-1 text-xs text-muted-foreground font-mono">{scoreData.agentAddress}</p>
+              <p className="mt-1 text-xs text-muted-foreground font-mono">
+                {scoreData.agentAddress}
+              </p>
             </div>
-            <div className={cn('rounded-md border-2 px-3 py-1', getTierColor(scoreData.tier))}>
-              <div className="text-xs font-medium uppercase">{scoreData.tier}</div>
+            <div
+              className={cn(
+                'rounded-md border-2 px-3 py-1',
+                getTierColor(scoreData.tier)
+              )}
+            >
+              <div className="text-xs font-medium uppercase">
+                {scoreData.tier}
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <div className="text-xs text-muted-foreground">Ghost Score</div>
-              <div className="text-3xl font-bold">{scoreData.ghostScore}<span className="text-lg text-muted-foreground">/10000</span></div>
+              <div className="text-3xl font-bold">
+                {scoreData.ghostScore}
+                <span className="text-lg text-muted-foreground">/10000</span>
+              </div>
             </div>
             <div className="space-y-1">
               <div className="text-xs text-muted-foreground">Total Jobs</div>
-              <div className="text-xl font-semibold">{scoreData.metrics.totalJobs}</div>
+              <div className="text-xl font-semibold">
+                {scoreData.metrics.totalJobs}
+              </div>
             </div>
             <div className="space-y-1">
               <div className="text-xs text-muted-foreground">Success Rate</div>
-              <div className="text-xl font-semibold">{scoreData.metrics.successRate}%</div>
+              <div className="text-xl font-semibold">
+                {scoreData.metrics.successRate}%
+              </div>
             </div>
             <div className="space-y-1">
               <div className="text-xs text-muted-foreground">Status</div>
@@ -312,8 +355,12 @@ function GhostScoreDisplay({ apiBase }: { apiBase: string }) {
           </div>
 
           <div className="rounded-md bg-muted/30 p-3 border-l-4 border-primary">
-            <div className="text-xs font-medium text-muted-foreground mb-1">🚪 Caisper's Verdict:</div>
-            <div className="text-sm">{getTierAssessment(scoreData.ghostScore, scoreData.tier)}</div>
+            <div className="text-xs font-medium text-muted-foreground mb-1">
+              🚪 Caisper's Verdict:
+            </div>
+            <div className="text-sm">
+              {getTierAssessment(scoreData.ghostScore, scoreData.tier)}
+            </div>
           </div>
         </div>
       )}
@@ -325,17 +372,18 @@ function GhostScoreDisplay({ apiBase }: { apiBase: string }) {
  * Time display component
  */
 function TimeDisplay({ apiBase }: { apiBase: string }) {
-  const { data, isLoading, error, refetch, isRefetching } = useQuery<TimeResponse>({
-    queryKey: ['currentTime'],
-    queryFn: async () => {
-      const response = await fetch(`${apiBase}/api/time`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch time: ${response.statusText}`);
-      }
-      return response.json();
-    },
-    refetchInterval: 1000,
-  });
+  const { data, isLoading, error, refetch, isRefetching } =
+    useQuery<TimeResponse>({
+      queryKey: ['currentTime'],
+      queryFn: async () => {
+        const response = await fetch(`${apiBase}/api/time`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch time: ${response.statusText}`);
+        }
+        return response.json();
+      },
+      refetchInterval: 1000,
+    });
 
   if (isLoading) {
     return (
@@ -349,7 +397,9 @@ function TimeDisplay({ apiBase }: { apiBase: string }) {
   if (error) {
     return (
       <div className="rounded-md border border-destructive bg-destructive/10 p-3">
-        <div className="text-sm font-medium text-destructive">Error fetching time</div>
+        <div className="text-sm font-medium text-destructive">
+          Error fetching time
+        </div>
         <div className="mt-1 text-xs text-destructive/80">
           {error instanceof Error ? error.message : 'Unknown error'}
         </div>
@@ -396,7 +446,9 @@ function TimeDisplay({ apiBase }: { apiBase: string }) {
 function CredentialVerification({ apiBase }: { apiBase: string }) {
   const [credentialJson, setCredentialJson] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<CredentialVerificationResponse | null>(null);
+  const [result, setResult] = useState<CredentialVerificationResponse | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
 
   const handleVerify = async () => {
@@ -434,14 +486,18 @@ function CredentialVerification({ apiBase }: { apiBase: string }) {
         credential: {
           issuer: credential.issuer?.id || credential.issuer || 'Unknown',
           subject: credential.credentialSubject?.id || 'Unknown',
-          type: Array.isArray(credential.type) ? credential.type : [credential.type],
+          type: Array.isArray(credential.type)
+            ? credential.type
+            : [credential.type],
           validFrom: credential.validFrom,
           validUntil: credential.validUntil,
         },
       });
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-      setError(`This ID doesn't check out: ${errorMsg}. Can't let fake credentials through the door. 🚪❌`);
+      setError(
+        `This ID doesn't check out: ${errorMsg}. Can't let fake credentials through the door. 🚪❌`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -450,10 +506,12 @@ function CredentialVerification({ apiBase }: { apiBase: string }) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm font-medium mb-2 block">W3C Verifiable Credential (JSON)</label>
+        <label className="text-sm font-medium mb-2 block">
+          W3C Verifiable Credential (JSON)
+        </label>
         <textarea
           value={credentialJson}
-          onChange={(e) => setCredentialJson(e.target.value)}
+          onChange={e => setCredentialJson(e.target.value)}
           placeholder='{"@context": ["https://www.w3.org/ns/credentials/v2"], "type": ["VerifiableCredential"], ...}'
           className="w-full rounded-md border bg-background px-3 py-2 text-sm font-mono min-h-[200px] placeholder:text-muted-foreground"
         />
@@ -469,16 +527,22 @@ function CredentialVerification({ apiBase }: { apiBase: string }) {
 
       {error && (
         <div className="rounded-md border border-destructive bg-destructive/10 p-3">
-          <div className="text-sm font-medium text-destructive">⚠️ Verification Failed</div>
+          <div className="text-sm font-medium text-destructive">
+            ⚠️ Verification Failed
+          </div>
           <div className="mt-1 text-xs text-destructive/80">{error}</div>
         </div>
       )}
 
       {result && (
-        <div className={cn(
-          "rounded-md border p-4",
-          result.isValid ? "bg-green-500/10 border-green-500/30" : "bg-red-500/10 border-red-500/30"
-        )}>
+        <div
+          className={cn(
+            'rounded-md border p-4',
+            result.isValid
+              ? 'bg-green-500/10 border-green-500/30'
+              : 'bg-red-500/10 border-red-500/30'
+          )}
+        >
           <div className="flex items-center justify-between mb-3">
             <div className="text-lg font-semibold">
               {result.isValid ? '✅ Valid Credential' : '❌ Invalid Credential'}
@@ -492,11 +556,15 @@ function CredentialVerification({ apiBase }: { apiBase: string }) {
             <div className="space-y-2 text-sm">
               <div>
                 <span className="text-muted-foreground">Issuer:</span>
-                <div className="font-mono text-xs mt-1">{result.credential.issuer}</div>
+                <div className="font-mono text-xs mt-1">
+                  {result.credential.issuer}
+                </div>
               </div>
               <div>
                 <span className="text-muted-foreground">Subject:</span>
-                <div className="font-mono text-xs mt-1">{result.credential.subject}</div>
+                <div className="font-mono text-xs mt-1">
+                  {result.credential.subject}
+                </div>
               </div>
               <div>
                 <span className="text-muted-foreground">Type:</span>
@@ -505,13 +573,17 @@ function CredentialVerification({ apiBase }: { apiBase: string }) {
               {result.credential.validFrom && (
                 <div>
                   <span className="text-muted-foreground">Valid From:</span>
-                  <div className="text-xs mt-1">{new Date(result.credential.validFrom).toLocaleString()}</div>
+                  <div className="text-xs mt-1">
+                    {new Date(result.credential.validFrom).toLocaleString()}
+                  </div>
                 </div>
               )}
               {result.credential.validUntil && (
                 <div>
                   <span className="text-muted-foreground">Valid Until:</span>
-                  <div className="text-xs mt-1">{new Date(result.credential.validUntil).toLocaleString()}</div>
+                  <div className="text-xs mt-1">
+                    {new Date(result.credential.validUntil).toLocaleString()}
+                  </div>
                 </div>
               )}
             </div>
@@ -519,7 +591,9 @@ function CredentialVerification({ apiBase }: { apiBase: string }) {
 
           {result.errors && result.errors.length > 0 && (
             <div className="mt-3 pt-3 border-t">
-              <div className="text-sm font-medium text-destructive mb-2">Errors:</div>
+              <div className="text-sm font-medium text-destructive mb-2">
+                Errors:
+              </div>
               <ul className="list-disc list-inside text-xs text-destructive/80 space-y-1">
                 {result.errors.map((err, idx) => (
                   <li key={idx}>{err}</li>
@@ -563,7 +637,9 @@ function AgentSearch({ apiBase }: { apiBase: string }) {
       setResults(data.agents || []);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-      setError(`Can't access the member list right now: ${errorMsg}. The club database might be having issues. 🚪`);
+      setError(
+        `Can't access the member list right now: ${errorMsg}. The club database might be having issues. 🚪`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -571,11 +647,16 @@ function AgentSearch({ apiBase }: { apiBase: string }) {
 
   const getTierColor = (tier?: string) => {
     switch (tier) {
-      case 'PLATINUM': return 'text-purple-400';
-      case 'GOLD': return 'text-yellow-400';
-      case 'SILVER': return 'text-gray-300';
-      case 'BRONZE': return 'text-orange-400';
-      default: return 'text-muted-foreground';
+      case 'PLATINUM':
+        return 'text-purple-400';
+      case 'GOLD':
+        return 'text-yellow-400';
+      case 'SILVER':
+        return 'text-gray-300';
+      case 'BRONZE':
+        return 'text-orange-400';
+      default:
+        return 'text-muted-foreground';
     }
   };
 
@@ -585,10 +666,10 @@ function AgentSearch({ apiBase }: { apiBase: string }) {
         <input
           type="text"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={e => setSearchQuery(e.target.value)}
           placeholder="Search by name, capability..."
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-          onKeyPress={(e) => {
+          onKeyPress={e => {
             if (e.key === 'Enter') {
               handleSearch();
             }
@@ -597,7 +678,7 @@ function AgentSearch({ apiBase }: { apiBase: string }) {
         <div className="flex gap-2">
           <select
             value={minScore}
-            onChange={(e) => setMinScore(Number(e.target.value))}
+            onChange={e => setMinScore(Number(e.target.value))}
             className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
           >
             <option value="0">All Scores</option>
@@ -618,28 +699,38 @@ function AgentSearch({ apiBase }: { apiBase: string }) {
 
       {error && (
         <div className="rounded-md border border-destructive bg-destructive/10 p-3">
-          <div className="text-sm font-medium text-destructive">⚠️ Search Failed</div>
+          <div className="text-sm font-medium text-destructive">
+            ⚠️ Search Failed
+          </div>
           <div className="mt-1 text-xs text-destructive/80">{error}</div>
         </div>
       )}
 
       {results.length > 0 && (
         <div className="space-y-2 max-h-[400px] overflow-y-auto">
-          {results.map((agent) => (
-            <div key={agent.address} className="rounded-md border bg-card p-3 hover:bg-accent/50 transition-colors">
+          {results.map(agent => (
+            <div
+              key={agent.address}
+              className="rounded-md border bg-card p-3 hover:bg-accent/50 transition-colors"
+            >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="font-semibold">{agent.name}</div>
                   {agent.description && (
-                    <div className="text-xs text-muted-foreground mt-1">{agent.description}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {agent.description}
+                    </div>
                   )}
                   <div className="font-mono text-xs text-muted-foreground mt-1">
                     {agent.address.slice(0, 8)}...{agent.address.slice(-8)}
                   </div>
                   {agent.capabilities && agent.capabilities.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {agent.capabilities.slice(0, 3).map((cap) => (
-                        <span key={cap} className="text-xs px-2 py-0.5 rounded bg-muted">
+                      {agent.capabilities.slice(0, 3).map(cap => (
+                        <span
+                          key={cap}
+                          className="text-xs px-2 py-0.5 rounded bg-muted"
+                        >
                           {cap}
                         </span>
                       ))}
@@ -648,12 +739,14 @@ function AgentSearch({ apiBase }: { apiBase: string }) {
                 </div>
                 <div className="text-right">
                   {agent.ghostScore !== undefined && (
-                    <div className={cn("font-bold", getTierColor(agent.tier))}>
+                    <div className={cn('font-bold', getTierColor(agent.tier))}>
                       {agent.ghostScore}/10000
                     </div>
                   )}
                   {agent.tier && (
-                    <div className="text-xs text-muted-foreground uppercase">{agent.tier}</div>
+                    <div className="text-xs text-muted-foreground uppercase">
+                      {agent.tier}
+                    </div>
                   )}
                   <div className="text-xs mt-1">
                     {agent.isActive ? '🟢 Active' : '🔴 Inactive'}
@@ -678,7 +771,13 @@ function AgentSearch({ apiBase }: { apiBase: string }) {
  * Reputation Breakdown Component
  * Detailed reputation analysis with score components
  */
-function ReputationBreakdown({ agentAddress, apiBase }: { agentAddress: string; apiBase: string }) {
+function ReputationBreakdown({
+  agentAddress,
+  apiBase,
+}: {
+  agentAddress: string;
+  apiBase: string;
+}) {
   const { data, isLoading, error } = useQuery<ReputationBreakdown>({
     queryKey: ['reputation-breakdown', agentAddress],
     queryFn: async () => {
@@ -703,7 +802,9 @@ function ReputationBreakdown({ agentAddress, apiBase }: { agentAddress: string; 
     return (
       <div className="flex items-center justify-center py-4">
         <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        <span className="ml-2 text-sm text-muted-foreground">Analyzing reputation...</span>
+        <span className="ml-2 text-sm text-muted-foreground">
+          Analyzing reputation...
+        </span>
       </div>
     );
   }
@@ -723,10 +824,14 @@ function ReputationBreakdown({ agentAddress, apiBase }: { agentAddress: string; 
 
   const getTrustColor = (level: string) => {
     switch (level) {
-      case 'HIGH': return 'text-green-400';
-      case 'MEDIUM': return 'text-yellow-400';
-      case 'LOW': return 'text-red-400';
-      default: return 'text-muted-foreground';
+      case 'HIGH':
+        return 'text-green-400';
+      case 'MEDIUM':
+        return 'text-yellow-400';
+      case 'LOW':
+        return 'text-red-400';
+      default:
+        return 'text-muted-foreground';
     }
   };
 
@@ -750,7 +855,9 @@ function ReputationBreakdown({ agentAddress, apiBase }: { agentAddress: string; 
           </div>
           <div>
             <div className="flex justify-between text-xs mb-1">
-              <span className="text-muted-foreground">Service Quality (30%)</span>
+              <span className="text-muted-foreground">
+                Service Quality (30%)
+              </span>
               <span className="font-semibold">{data.serviceQuality}%</span>
             </div>
             <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -774,7 +881,9 @@ function ReputationBreakdown({ agentAddress, apiBase }: { agentAddress: string; 
           </div>
           <div>
             <div className="flex justify-between text-xs mb-1">
-              <span className="text-muted-foreground">Volume Consistency (10%)</span>
+              <span className="text-muted-foreground">
+                Volume Consistency (10%)
+              </span>
               <span className="font-semibold">{data.volumeConsistency}%</span>
             </div>
             <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -788,21 +897,27 @@ function ReputationBreakdown({ agentAddress, apiBase }: { agentAddress: string; 
       </div>
 
       {/* Risk Assessment */}
-      <div className={cn(
-        "rounded-md p-3 border",
-        data.riskScore < 20 ? "bg-green-500/10 border-green-500/30" :
-        data.riskScore < 40 ? "bg-yellow-500/10 border-yellow-500/30" :
-        "bg-red-500/10 border-red-500/30"
-      )}>
+      <div
+        className={cn(
+          'rounded-md p-3 border',
+          data.riskScore < 20
+            ? 'bg-green-500/10 border-green-500/30'
+            : data.riskScore < 40
+              ? 'bg-yellow-500/10 border-yellow-500/30'
+              : 'bg-red-500/10 border-red-500/30'
+        )}
+      >
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-semibold">Risk Assessment</span>
-          <span className={cn("text-sm font-bold", getTrustColor(data.trustLevel))}>
+          <span
+            className={cn('text-sm font-bold', getTrustColor(data.trustLevel))}
+          >
             {data.riskScore}/100
           </span>
         </div>
         <div className="text-xs">
           <span className="text-muted-foreground">Trust Level: </span>
-          <span className={cn("font-semibold", getTrustColor(data.trustLevel))}>
+          <span className={cn('font-semibold', getTrustColor(data.trustLevel))}>
             {data.trustLevel}
           </span>
         </div>
@@ -816,7 +931,9 @@ function ReputationBreakdown({ agentAddress, apiBase }: { agentAddress: string; 
             {data.badges.map((badge, idx) => (
               <div key={idx} className="rounded-md border bg-muted/30 p-2">
                 <div className="text-xs font-semibold">🏅 {badge.name}</div>
-                <div className="text-xs text-muted-foreground mt-1">{badge.description}</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {badge.description}
+                </div>
               </div>
             ))}
           </div>
@@ -862,7 +979,12 @@ function AgentRegistration({ apiBase }: { apiBase: string }) {
     capabilities: [],
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<{ success: boolean; address?: string; signature?: string; error?: string } | null>(null);
+  const [result, setResult] = useState<{
+    success: boolean;
+    address?: string;
+    signature?: string;
+    error?: string;
+  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -881,8 +1003,18 @@ function AgentRegistration({ apiBase }: { apiBase: string }) {
         throw new Error(data.error || `HTTP ${response.status}`);
       }
 
-      setResult({ success: true, address: data.address, signature: data.signature });
-      setFormData({ name: '', description: '', agentId: '', agentType: 0, capabilities: [] });
+      setResult({
+        success: true,
+        address: data.address,
+        signature: data.signature,
+      });
+      setFormData({
+        name: '',
+        description: '',
+        agentId: '',
+        agentType: 0,
+        capabilities: [],
+      });
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       setResult({ success: false, error: errorMsg });
@@ -895,7 +1027,9 @@ function AgentRegistration({ apiBase }: { apiBase: string }) {
     <div className="space-y-4">
       <div className="rounded-md border bg-muted/30 p-3 border-l-4 border-primary">
         <div className="text-xs font-medium mb-1">🎩 Concierge Service</div>
-        <div className="text-sm">Register a new agent to join the club. I'll handle the paperwork.</div>
+        <div className="text-sm">
+          Register a new agent to join the club. I'll handle the paperwork.
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-3">
@@ -904,7 +1038,7 @@ function AgentRegistration({ apiBase }: { apiBase: string }) {
           <input
             type="text"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={e => setFormData({ ...formData, name: e.target.value })}
             placeholder="My Awesome Agent"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             required
@@ -912,11 +1046,15 @@ function AgentRegistration({ apiBase }: { apiBase: string }) {
         </div>
 
         <div>
-          <label className="text-sm font-medium mb-1 block">Agent ID (unique identifier)</label>
+          <label className="text-sm font-medium mb-1 block">
+            Agent ID (unique identifier)
+          </label>
           <input
             type="text"
             value={formData.agentId}
-            onChange={(e) => setFormData({ ...formData, agentId: e.target.value })}
+            onChange={e =>
+              setFormData({ ...formData, agentId: e.target.value })
+            }
             placeholder="my-awesome-agent"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm font-mono"
             required
@@ -927,7 +1065,9 @@ function AgentRegistration({ apiBase }: { apiBase: string }) {
           <label className="text-sm font-medium mb-1 block">Description</label>
           <textarea
             value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            onChange={e =>
+              setFormData({ ...formData, description: e.target.value })
+            }
             placeholder="What does this agent do?"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm min-h-[80px]"
             required
@@ -935,14 +1075,21 @@ function AgentRegistration({ apiBase }: { apiBase: string }) {
         </div>
 
         <div>
-          <label className="text-sm font-medium mb-1 block">Capabilities (comma-separated)</label>
+          <label className="text-sm font-medium mb-1 block">
+            Capabilities (comma-separated)
+          </label>
           <input
             type="text"
             value={formData.capabilities?.join(', ') || ''}
-            onChange={(e) => setFormData({
-              ...formData,
-              capabilities: e.target.value.split(',').map(c => c.trim()).filter(c => c)
-            })}
+            onChange={e =>
+              setFormData({
+                ...formData,
+                capabilities: e.target.value
+                  .split(',')
+                  .map(c => c.trim())
+                  .filter(c => c),
+              })
+            }
             placeholder="coding, writing, analysis"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
           />
@@ -950,7 +1097,12 @@ function AgentRegistration({ apiBase }: { apiBase: string }) {
 
         <button
           type="submit"
-          disabled={isLoading || !formData.name || !formData.agentId || !formData.description}
+          disabled={
+            isLoading ||
+            !formData.name ||
+            !formData.agentId ||
+            !formData.description
+          }
           className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
           {isLoading ? '🚪 Processing registration...' : '🚪 Register Agent'}
@@ -958,13 +1110,19 @@ function AgentRegistration({ apiBase }: { apiBase: string }) {
       </form>
 
       {result && (
-        <div className={cn(
-          "rounded-md border p-3",
-          result.success ? "bg-green-500/10 border-green-500/30" : "bg-red-500/10 border-red-500/30"
-        )}>
+        <div
+          className={cn(
+            'rounded-md border p-3',
+            result.success
+              ? 'bg-green-500/10 border-green-500/30'
+              : 'bg-red-500/10 border-red-500/30'
+          )}
+        >
           {result.success ? (
             <div className="space-y-2">
-              <div className="text-sm font-semibold text-green-400">✅ Welcome to the club!</div>
+              <div className="text-sm font-semibold text-green-400">
+                ✅ Welcome to the club!
+              </div>
               {result.address && (
                 <div className="text-xs">
                   <div className="text-muted-foreground">Agent Address:</div>
@@ -980,7 +1138,9 @@ function AgentRegistration({ apiBase }: { apiBase: string }) {
             </div>
           ) : (
             <div>
-              <div className="text-sm font-semibold text-red-400">❌ Registration Failed</div>
+              <div className="text-sm font-semibold text-red-400">
+                ❌ Registration Failed
+              </div>
               <div className="text-xs text-red-400/80 mt-1">{result.error}</div>
             </div>
           )}
@@ -1020,7 +1180,9 @@ function PayAIDiscovery({ apiBase }: { apiBase: string }) {
       setAgents(data.resources || []);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-      setError(`Can't access PayAI marketplace right now: ${errorMsg}. The network might be busy. 🚪`);
+      setError(
+        `Can't access PayAI marketplace right now: ${errorMsg}. The network might be busy. 🚪`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -1030,7 +1192,9 @@ function PayAIDiscovery({ apiBase }: { apiBase: string }) {
     <div className="space-y-4">
       <div className="rounded-md border bg-muted/30 p-3 border-l-4 border-primary">
         <div className="text-xs font-medium mb-1">🎩 Concierge Service</div>
-        <div className="text-sm">Find freelance AI agents on PayAI. I know all the best talent.</div>
+        <div className="text-sm">
+          Find freelance AI agents on PayAI. I know all the best talent.
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -1039,10 +1203,10 @@ function PayAIDiscovery({ apiBase }: { apiBase: string }) {
           <input
             type="text"
             value={capability}
-            onChange={(e) => setCapability(e.target.value)}
+            onChange={e => setCapability(e.target.value)}
             placeholder="coding, writing, image-generation..."
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            onKeyPress={(e) => {
+            onKeyPress={e => {
               if (e.key === 'Enter') {
                 handleSearch();
               }
@@ -1051,11 +1215,13 @@ function PayAIDiscovery({ apiBase }: { apiBase: string }) {
         </div>
 
         <div>
-          <label className="text-sm font-medium mb-1 block">Max Price (SOL)</label>
+          <label className="text-sm font-medium mb-1 block">
+            Max Price (SOL)
+          </label>
           <input
             type="number"
             value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
+            onChange={e => setMaxPrice(e.target.value)}
             placeholder="0.1"
             step="0.01"
             min="0"
@@ -1074,7 +1240,9 @@ function PayAIDiscovery({ apiBase }: { apiBase: string }) {
 
       {error && (
         <div className="rounded-md border border-destructive bg-destructive/10 p-3">
-          <div className="text-sm font-medium text-destructive">⚠️ Search Failed</div>
+          <div className="text-sm font-medium text-destructive">
+            ⚠️ Search Failed
+          </div>
           <div className="mt-1 text-xs text-destructive/80">{error}</div>
         </div>
       )}
@@ -1082,15 +1250,23 @@ function PayAIDiscovery({ apiBase }: { apiBase: string }) {
       {agents.length > 0 && (
         <div className="space-y-2 max-h-[400px] overflow-y-auto">
           {agents.map((agent, idx) => (
-            <div key={idx} className="rounded-md border bg-card p-3 hover:bg-accent/50 transition-colors">
+            <div
+              key={idx}
+              className="rounded-md border bg-card p-3 hover:bg-accent/50 transition-colors"
+            >
               <div className="font-semibold text-sm mb-1">💰 {agent.url}</div>
               {agent.description && (
-                <div className="text-xs text-muted-foreground mb-2">{agent.description}</div>
+                <div className="text-xs text-muted-foreground mb-2">
+                  {agent.description}
+                </div>
               )}
               {agent.tags && agent.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-2">
-                  {agent.tags.map((tag) => (
-                    <span key={tag} className="text-xs px-2 py-0.5 rounded bg-muted">
+                  {agent.tags.map(tag => (
+                    <span
+                      key={tag}
+                      className="text-xs px-2 py-0.5 rounded bg-muted"
+                    >
                       {tag}
                     </span>
                   ))}
@@ -1152,7 +1328,9 @@ function TrustScoreboard({ apiBase }: { apiBase: string }) {
       setAgents(data.agents || []);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-      setError(`Can't access the trust scoreboard right now: ${errorMsg}. The blockchain might be busy. 🚪`);
+      setError(
+        `Can't access the trust scoreboard right now: ${errorMsg}. The blockchain might be busy. 🚪`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -1190,19 +1368,24 @@ function TrustScoreboard({ apiBase }: { apiBase: string }) {
     <div className="space-y-4">
       <div className="rounded-md border bg-muted/30 p-3 border-l-4 border-primary">
         <div className="text-xs font-medium mb-1">🏆 Trust Scoreboard</div>
-        <div className="text-sm">Top agents ranked by Ghost Score, reputation, and verified credentials. The best of the best. 👻</div>
+        <div className="text-sm">
+          Top agents ranked by Ghost Score, reputation, and verified
+          credentials. The best of the best. 👻
+        </div>
       </div>
 
       <div className="flex gap-2">
         <div className="flex-1">
-          <label className="text-sm font-medium mb-1 block">Category (optional)</label>
+          <label className="text-sm font-medium mb-1 block">
+            Category (optional)
+          </label>
           <input
             type="text"
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={e => setCategory(e.target.value)}
             placeholder="coding, writing, analysis..."
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            onKeyPress={(e) => {
+            onKeyPress={e => {
               if (e.key === 'Enter') {
                 fetchLeaderboard();
               }
@@ -1214,7 +1397,11 @@ function TrustScoreboard({ apiBase }: { apiBase: string }) {
           <input
             type="number"
             value={limit}
-            onChange={(e) => setLimit(Math.max(1, Math.min(100, parseInt(e.target.value) || 10)))}
+            onChange={e =>
+              setLimit(
+                Math.max(1, Math.min(100, parseInt(e.target.value) || 10))
+              )
+            }
             min="1"
             max="100"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -1224,20 +1411,24 @@ function TrustScoreboard({ apiBase }: { apiBase: string }) {
 
       {error && (
         <div className="rounded-md border border-destructive bg-destructive/10 p-3">
-          <div className="text-sm font-medium text-destructive">⚠️ Scoreboard Error</div>
+          <div className="text-sm font-medium text-destructive">
+            ⚠️ Scoreboard Error
+          </div>
           <div className="mt-1 text-xs text-destructive/80">{error}</div>
         </div>
       )}
 
       {isLoading && (
         <div className="text-center py-8">
-          <div className="text-sm text-muted-foreground">🔍 Summoning the trust spirits...</div>
+          <div className="text-sm text-muted-foreground">
+            🔍 Summoning the trust spirits...
+          </div>
         </div>
       )}
 
       {!isLoading && agents.length > 0 && (
         <div className="space-y-2 max-h-[600px] overflow-y-auto">
-          {agents.map((agent) => (
+          {agents.map(agent => (
             <div
               key={agent.address}
               className="rounded-md border bg-card p-4 hover:bg-accent/50 transition-colors"
@@ -1260,17 +1451,31 @@ function TrustScoreboard({ apiBase }: { apiBase: string }) {
                       {agent.address.slice(0, 8)}...{agent.address.slice(-8)}
                     </div>
                     <div className="flex items-center gap-4 text-xs">
-                      <div className={cn("px-2 py-1 rounded border", getTierColor(agent.tier))}>
+                      <div
+                        className={cn(
+                          'px-2 py-1 rounded border',
+                          getTierColor(agent.tier)
+                        )}
+                      >
                         {agent.tier}
                       </div>
                       <div className="text-muted-foreground">
-                        Score: <span className="font-semibold text-foreground">{agent.ghostScore}/10000</span>
+                        Score:{' '}
+                        <span className="font-semibold text-foreground">
+                          {agent.ghostScore}/10000
+                        </span>
                       </div>
                       <div className="text-muted-foreground">
-                        Jobs: <span className="font-semibold text-foreground">{agent.totalJobs}</span>
+                        Jobs:{' '}
+                        <span className="font-semibold text-foreground">
+                          {agent.totalJobs}
+                        </span>
                       </div>
                       <div className="text-muted-foreground">
-                        Success: <span className="font-semibold text-foreground">{agent.successRate}%</span>
+                        Success:{' '}
+                        <span className="font-semibold text-foreground">
+                          {agent.successRate}%
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1292,11 +1497,11 @@ function TrustScoreboard({ apiBase }: { apiBase: string }) {
 
 /**
  * ElizaOS Cloud Discovery Component
- * 
+ *
  * NOTE: Based on ElizaOS Cloud documentation, there is no public agent discovery API.
  * Agents are created and managed per organization via Visual Builder, REST API, or CLI.
  * This component provides a placeholder UI for future functionality.
- * 
+ *
  * See: https://www.elizacloud.ai/.well-known/llms-full.txt
  */
 function ElizaOSDiscovery({ apiBase }: { apiBase: string }) {
@@ -1321,11 +1526,17 @@ function ElizaOSDiscovery({ apiBase }: { apiBase: string }) {
 
       const data = await response.json();
       // Handle different response formats
-      const agentsList = Array.isArray(data.agents) ? data.agents : Array.isArray(data) ? data : data.data || [];
+      const agentsList = Array.isArray(data.agents)
+        ? data.agents
+        : Array.isArray(data)
+          ? data
+          : data.data || [];
       setAgents(agentsList);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-      setError(`Can't access ElizaOS Cloud right now: ${errorMsg}. The network might be busy. 🚪`);
+      setError(
+        `Can't access ElizaOS Cloud right now: ${errorMsg}. The network might be busy. 🚪`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -1335,7 +1546,10 @@ function ElizaOSDiscovery({ apiBase }: { apiBase: string }) {
     <div className="space-y-4">
       <div className="rounded-md border bg-muted/30 p-3 border-l-4 border-primary">
         <div className="text-xs font-medium mb-1">🎩 Concierge Service</div>
-        <div className="text-sm">ElizaOS Cloud agents are managed per organization. Verify their Ghost Score and credentials here.</div>
+        <div className="text-sm">
+          ElizaOS Cloud agents are managed per organization. Verify their Ghost
+          Score and credentials here.
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -1344,10 +1558,10 @@ function ElizaOSDiscovery({ apiBase }: { apiBase: string }) {
           <input
             type="text"
             value={capability}
-            onChange={(e) => setCapability(e.target.value)}
+            onChange={e => setCapability(e.target.value)}
             placeholder="coding, writing, image-generation..."
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            onKeyPress={(e) => {
+            onKeyPress={e => {
               if (e.key === 'Enter') {
                 handleSearch();
               }
@@ -1366,28 +1580,38 @@ function ElizaOSDiscovery({ apiBase }: { apiBase: string }) {
 
       {error && (
         <div className="rounded-md border border-destructive bg-destructive/10 p-3">
-          <div className="text-sm font-medium text-destructive">⚠️ Search Failed</div>
+          <div className="text-sm font-medium text-destructive">
+            ⚠️ Search Failed
+          </div>
           <div className="mt-1 text-xs text-destructive/80">{error}</div>
         </div>
       )}
 
       {agents.length > 0 && (
         <div className="space-y-2 max-h-[400px] overflow-y-auto">
-          {agents.map((agent) => (
-            <div key={agent.id} className="rounded-md border bg-card p-3 hover:bg-accent/50 transition-colors">
+          {agents.map(agent => (
+            <div
+              key={agent.id}
+              className="rounded-md border bg-card p-3 hover:bg-accent/50 transition-colors"
+            >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="font-semibold text-sm">☁️ {agent.name}</div>
                   {agent.description && (
-                    <div className="text-xs text-muted-foreground mt-1">{agent.description}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {agent.description}
+                    </div>
                   )}
                   <div className="font-mono text-xs text-muted-foreground mt-1">
                     ID: {agent.id}
                   </div>
                   {agent.capabilities && agent.capabilities.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {agent.capabilities.map((cap) => (
-                        <span key={cap} className="text-xs px-2 py-0.5 rounded bg-muted">
+                      {agent.capabilities.map(cap => (
+                        <span
+                          key={cap}
+                          className="text-xs px-2 py-0.5 rounded bg-muted"
+                        >
                           {cap}
                         </span>
                       ))}
@@ -1395,8 +1619,12 @@ function ElizaOSDiscovery({ apiBase }: { apiBase: string }) {
                   )}
                   {agent.contact_info && (
                     <div className="text-xs text-muted-foreground mt-2">
-                      {agent.contact_info.email && <div>📧 {agent.contact_info.email}</div>}
-                      {agent.contact_info.website && <div>🌐 {agent.contact_info.website}</div>}
+                      {agent.contact_info.email && (
+                        <div>📧 {agent.contact_info.email}</div>
+                      )}
+                      {agent.contact_info.website && (
+                        <div>🌐 {agent.contact_info.website}</div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1415,14 +1643,52 @@ function ElizaOSDiscovery({ apiBase }: { apiBase: string }) {
 
       {!isLoading && agents.length === 0 && (
         <div className="rounded-md border bg-card p-4 space-y-3">
-          <div className="text-sm font-medium">ℹ️ Agent Discovery Not Available</div>
+          <div className="text-sm font-medium">
+            ℹ️ Agent Discovery Not Available
+          </div>
           <div className="text-xs text-muted-foreground space-y-2">
-            <p>ElizaOS Cloud doesn't provide a public agent discovery API. Agents are created and managed per organization.</p>
+            <p>
+              ElizaOS Cloud doesn't provide a public agent discovery API. Agents
+              are created and managed per organization.
+            </p>
             <div className="space-y-1 mt-3">
               <div className="font-medium">Create agents via:</div>
-              <div>• <a href="https://www.elizacloud.ai/docs/quickstart#using-the-agent-creator" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Visual Builder</a> - No-code editor</div>
-              <div>• <a href="https://www.elizacloud.ai/docs/quickstart#using-the-api" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">REST API</a> - OpenAI-compatible endpoints</div>
-              <div>• <a href="https://www.elizacloud.ai/docs/quickstart#using-the-cli" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">CLI</a> - Deploy from local project</div>
+              <div>
+                •{' '}
+                <a
+                  href="https://www.elizacloud.ai/docs/quickstart#using-the-agent-creator"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  Visual Builder
+                </a>{' '}
+                - No-code editor
+              </div>
+              <div>
+                •{' '}
+                <a
+                  href="https://www.elizacloud.ai/docs/quickstart#using-the-api"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  REST API
+                </a>{' '}
+                - OpenAI-compatible endpoints
+              </div>
+              <div>
+                •{' '}
+                <a
+                  href="https://www.elizacloud.ai/docs/quickstart#using-the-cli"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  CLI
+                </a>{' '}
+                - Deploy from local project
+              </div>
             </div>
           </div>
         </div>
@@ -1433,7 +1699,7 @@ function ElizaOSDiscovery({ apiBase }: { apiBase: string }) {
 
 /**
  * ElizaOS Cloud Registration Component
- * 
+ *
  * Integrates GhostSpeak trust & reputation with ElizaOS Cloud agents.
  * When users create agents in ElizaOS Cloud, they can register them with GhostSpeak
  * to get on-chain reputation tracking, verified credentials, and Ghost Score.
@@ -1443,13 +1709,13 @@ function ElizaOSRegistration({ apiBase }: { apiBase: string }) {
   const [agentName, setAgentName] = useState<string>('');
   const [capabilities, setCapabilities] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<{ 
-    success: boolean; 
-    agentAddress?: string; 
+  const [result, setResult] = useState<{
+    success: boolean;
+    agentAddress?: string;
     credentialId?: string;
     ghostScore?: number;
     tier?: string;
-    error?: string 
+    error?: string;
   } | null>(null);
 
   const handleRegisterWithGhostSpeak = async (e: React.FormEvent) => {
@@ -1458,29 +1724,35 @@ function ElizaOSRegistration({ apiBase }: { apiBase: string }) {
     setResult(null);
 
     try {
-      const response = await fetch(`${apiBase}/api/elizaos/register-with-ghostspeak`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          elizaosAgentId,
-          name: agentName,
-          capabilities: capabilities.split(',').map(c => c.trim()).filter(c => c),
-        }),
-      });
+      const response = await fetch(
+        `${apiBase}/api/elizaos/register-with-ghostspeak`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            elizaosAgentId,
+            name: agentName,
+            capabilities: capabilities
+              .split(',')
+              .map(c => c.trim())
+              .filter(c => c),
+          }),
+        }
+      );
 
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || `HTTP ${response.status}`);
       }
 
-      setResult({ 
-        success: true, 
+      setResult({
+        success: true,
         agentAddress: data.agentAddress,
         credentialId: data.credentialId,
         ghostScore: data.ghostScore,
         tier: data.tier,
       });
-      
+
       // Reset form
       setElizaosAgentId('');
       setAgentName('');
@@ -1497,38 +1769,55 @@ function ElizaOSRegistration({ apiBase }: { apiBase: string }) {
     <div className="space-y-4">
       <div className="rounded-md border bg-muted/30 p-3 border-l-4 border-primary">
         <div className="text-xs font-medium mb-1">🎩 Concierge Service</div>
-        <div className="text-sm">Register your ElizaOS Cloud agent with GhostSpeak to get on-chain reputation, verified credentials, and Ghost Score trust ratings.</div>
+        <div className="text-sm">
+          Register your ElizaOS Cloud agent with GhostSpeak to get on-chain
+          reputation, verified credentials, and Ghost Score trust ratings.
+        </div>
       </div>
 
       <div className="rounded-md border bg-card p-4 space-y-3">
-        <div className="text-sm font-medium mb-2">✨ Benefits of GhostSpeak Registration</div>
+        <div className="text-sm font-medium mb-2">
+          ✨ Benefits of GhostSpeak Registration
+        </div>
         <div className="text-xs text-muted-foreground space-y-2">
           <div className="flex items-start gap-2">
             <span>👻</span>
             <div>
               <div className="font-medium">Ghost Score Reputation</div>
-              <div>On-chain reputation tracking (0-10000) with Platinum/Gold/Silver/Bronze tiers</div>
+              <div>
+                On-chain reputation tracking (0-10000) with
+                Platinum/Gold/Silver/Bronze tiers
+              </div>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <span>🆔</span>
             <div>
               <div className="font-medium">W3C Verifiable Credentials</div>
-              <div>Cross-chain identity proof synced to EVM networks (Base, Polygon)</div>
+              <div>
+                Cross-chain identity proof synced to EVM networks (Base,
+                Polygon)
+              </div>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <span>🔐</span>
             <div>
               <div className="font-medium">Trust Verification</div>
-              <div>Cryptographically verifiable credentials for agent-to-agent trust</div>
+              <div>
+                Cryptographically verifiable credentials for agent-to-agent
+                trust
+              </div>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <span>📊</span>
             <div>
               <div className="font-medium">Reputation Breakdown</div>
-              <div>Detailed metrics: success rate, service quality, response time, volume consistency</div>
+              <div>
+                Detailed metrics: success rate, service quality, response time,
+                volume consistency
+              </div>
             </div>
           </div>
         </div>
@@ -1536,16 +1825,20 @@ function ElizaOSRegistration({ apiBase }: { apiBase: string }) {
 
       <form onSubmit={handleRegisterWithGhostSpeak} className="space-y-3">
         <div>
-          <label className="text-sm font-medium mb-1 block">ElizaOS Cloud Agent ID</label>
+          <label className="text-sm font-medium mb-1 block">
+            ElizaOS Cloud Agent ID
+          </label>
           <input
             type="text"
             value={elizaosAgentId}
-            onChange={(e) => setElizaosAgentId(e.target.value)}
+            onChange={e => setElizaosAgentId(e.target.value)}
             placeholder="elizaos-agent-123..."
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             required
           />
-          <div className="text-xs text-muted-foreground mt-1">The ID of your agent in ElizaOS Cloud</div>
+          <div className="text-xs text-muted-foreground mt-1">
+            The ID of your agent in ElizaOS Cloud
+          </div>
         </div>
 
         <div>
@@ -1553,7 +1846,7 @@ function ElizaOSRegistration({ apiBase }: { apiBase: string }) {
           <input
             type="text"
             value={agentName}
-            onChange={(e) => setAgentName(e.target.value)}
+            onChange={e => setAgentName(e.target.value)}
             placeholder="My ElizaOS Agent"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             required
@@ -1561,11 +1854,13 @@ function ElizaOSRegistration({ apiBase }: { apiBase: string }) {
         </div>
 
         <div>
-          <label className="text-sm font-medium mb-1 block">Capabilities (comma-separated)</label>
+          <label className="text-sm font-medium mb-1 block">
+            Capabilities (comma-separated)
+          </label>
           <input
             type="text"
             value={capabilities}
-            onChange={(e) => setCapabilities(e.target.value)}
+            onChange={e => setCapabilities(e.target.value)}
             placeholder="coding, writing, analysis"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             required
@@ -1577,45 +1872,64 @@ function ElizaOSRegistration({ apiBase }: { apiBase: string }) {
           disabled={isLoading || !elizaosAgentId || !agentName || !capabilities}
           className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
-          {isLoading ? '👻 Registering with GhostSpeak...' : '👻 Register with GhostSpeak'}
+          {isLoading
+            ? '👻 Registering with GhostSpeak...'
+            : '👻 Register with GhostSpeak'}
         </button>
       </form>
 
       {result && (
-        <div className={cn(
-          "rounded-md border p-3",
-          result.success 
-            ? "bg-green-500/10 border-green-500/30" 
-            : "bg-red-500/10 border-red-500/30"
-        )}>
+        <div
+          className={cn(
+            'rounded-md border p-3',
+            result.success
+              ? 'bg-green-500/10 border-green-500/30'
+              : 'bg-red-500/10 border-red-500/30'
+          )}
+        >
           {result.success ? (
             <div className="space-y-2">
-              <div className="text-sm font-semibold text-green-400">✅ Successfully Registered!</div>
+              <div className="text-sm font-semibold text-green-400">
+                ✅ Successfully Registered!
+              </div>
               {result.agentAddress && (
                 <div className="text-xs">
-                  <div className="text-muted-foreground">GhostSpeak Agent Address:</div>
-                  <div className="font-mono break-all">{result.agentAddress}</div>
+                  <div className="text-muted-foreground">
+                    GhostSpeak Agent Address:
+                  </div>
+                  <div className="font-mono break-all">
+                    {result.agentAddress}
+                  </div>
                 </div>
               )}
               {result.credentialId && (
                 <div className="text-xs">
                   <div className="text-muted-foreground">Credential ID:</div>
-                  <div className="font-mono break-all">{result.credentialId}</div>
+                  <div className="font-mono break-all">
+                    {result.credentialId}
+                  </div>
                 </div>
               )}
               {result.ghostScore !== undefined && (
                 <div className="text-xs">
-                  <div className="text-muted-foreground">Initial Ghost Score:</div>
-                  <div className="font-semibold">{result.ghostScore}/10000 ({result.tier})</div>
+                  <div className="text-muted-foreground">
+                    Initial Ghost Score:
+                  </div>
+                  <div className="font-semibold">
+                    {result.ghostScore}/10000 ({result.tier})
+                  </div>
                 </div>
               )}
               <div className="text-xs text-muted-foreground pt-2 border-t">
-                Your agent is now on-chain with reputation tracking. Build trust by completing jobs!
+                Your agent is now on-chain with reputation tracking. Build trust
+                by completing jobs!
               </div>
             </div>
           ) : (
             <div>
-              <div className="text-sm font-semibold text-red-400">❌ Registration Failed</div>
+              <div className="text-sm font-semibold text-red-400">
+                ❌ Registration Failed
+              </div>
               <div className="text-xs text-red-400/80 mt-1">{result.error}</div>
             </div>
           )}
@@ -1646,9 +1960,12 @@ function CaisperInfo({ agentId }: { agentId: string }) {
           />
           <div>
             <h2 className="text-2xl font-bold">{pluginInfo.name}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{pluginInfo.description}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {pluginInfo.description}
+            </p>
             <p className="mt-2 text-xs text-muted-foreground">
-              "I died doing what I loved: auditing smart contracts at 3am. Now I haunt the blockchain 👻"
+              "I died doing what I loved: auditing smart contracts at 3am. Now I
+              haunt the blockchain 👻"
             </p>
           </div>
         </div>
@@ -1666,7 +1983,9 @@ function CaisperInfo({ agentId }: { agentId: string }) {
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Capabilities:</span>
-          <span className="text-xs">Verification • Reputation • Trust Assessment</span>
+          <span className="text-xs">
+            Verification • Reputation • Trust Assessment
+          </span>
         </div>
       </div>
     </div>
@@ -1696,26 +2015,48 @@ function ExampleRoute() {
  * Example provider component - Standalone UI with 3-column layout
  * Complete parity with the dashboard panel for demo purposes
  */
-function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string }) {
+function ExampleProvider({
+  agentId,
+  apiBase,
+}: {
+  agentId: UUID;
+  apiBase: string;
+}) {
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
-  const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
+  const [chatMessages, setChatMessages] = useState<
+    Array<{ role: 'user' | 'assistant'; content: string }>
+  >([]);
   const [chatInput, setChatInput] = useState('');
-  const [rightView, setRightView] = useState<'ghost-score' | 'credential' | 'search' | 'reputation' | 'register' | 'payai' | 'elizaos-discover' | 'elizaos-register' | 'scoreboard'>('ghost-score');
-  const [selectedAgentForReputation, setSelectedAgentForReputation] = useState<string>('');
+  const [rightView, setRightView] = useState<
+    | 'ghost-score'
+    | 'credential'
+    | 'search'
+    | 'reputation'
+    | 'register'
+    | 'payai'
+    | 'elizaos-discover'
+    | 'elizaos-register'
+    | 'scoreboard'
+  >('ghost-score');
+  const [selectedAgentForReputation, setSelectedAgentForReputation] =
+    useState<string>('');
 
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
-    
+
     setChatMessages([...chatMessages, { role: 'user', content: chatInput }]);
     setChatInput('');
-    
+
     // Simulate Caisper response (in real implementation, this would call the agent API)
     setTimeout(() => {
-      setChatMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `Hold my ectoplasm, investigating "${chatInput}"... 🔍\n\nLet me check the blockchain for that information.`
-      }]);
+      setChatMessages(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: `Hold my ectoplasm, investigating "${chatInput}"... 🔍\n\nLet me check the blockchain for that information.`,
+        },
+      ]);
     }, 1000);
   };
 
@@ -1723,10 +2064,12 @@ function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string 
     <QueryClientProvider client={queryClient}>
       <div className="flex h-screen w-full overflow-hidden bg-background">
         {/* Left Sidebar - Collapsible */}
-        <div className={cn(
-          "border-r bg-card transition-all duration-300",
-          leftCollapsed ? "w-12" : "w-64"
-        )}>
+        <div
+          className={cn(
+            'border-r bg-card transition-all duration-300',
+            leftCollapsed ? 'w-12' : 'w-64'
+          )}
+        >
           <div className="flex h-full flex-col">
             {/* Header */}
             <div className="flex items-center justify-between border-b p-3">
@@ -1738,15 +2081,19 @@ function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string 
                     className="h-8 w-8 rounded-full border border-primary"
                   />
                   <div>
-                    <div className="text-sm font-semibold">🚪 {CAISPER_CONFIG.name}</div>
-                    <div className="text-xs text-muted-foreground">Bouncer & Concierge</div>
+                    <div className="text-sm font-semibold">
+                      🚪 {CAISPER_CONFIG.name}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Bouncer & Concierge
+                    </div>
                   </div>
                 </div>
               )}
               <button
                 onClick={() => setLeftCollapsed(!leftCollapsed)}
                 className="rounded-md p-1 hover:bg-accent transition-colors"
-                title={leftCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                title={leftCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               >
                 {leftCollapsed ? '→' : '←'}
               </button>
@@ -1756,13 +2103,16 @@ function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string 
             {!leftCollapsed && (
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 <div>
-                  <h3 className="text-sm font-semibold mb-2">🚪 Bouncer Services</h3>
+                  <h3 className="text-sm font-semibold mb-2">
+                    🚪 Bouncer Services
+                  </h3>
                   <div className="space-y-2 mb-4">
                     <button
                       onClick={() => setRightView('ghost-score')}
                       className={cn(
-                        "w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors",
-                        rightView === 'ghost-score' && "border-primary bg-primary/10"
+                        'w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors',
+                        rightView === 'ghost-score' &&
+                          'border-primary bg-primary/10'
                       )}
                     >
                       👻 Check Ghost Score
@@ -1770,8 +2120,9 @@ function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string 
                     <button
                       onClick={() => setRightView('credential')}
                       className={cn(
-                        "w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors",
-                        rightView === 'credential' && "border-primary bg-primary/10"
+                        'w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors',
+                        rightView === 'credential' &&
+                          'border-primary bg-primary/10'
                       )}
                     >
                       🆔 Verify Credentials
@@ -1779,21 +2130,24 @@ function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string 
                     <button
                       onClick={() => setRightView('reputation')}
                       className={cn(
-                        "w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors",
-                        rightView === 'reputation' && "border-primary bg-primary/10"
+                        'w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors',
+                        rightView === 'reputation' &&
+                          'border-primary bg-primary/10'
                       )}
                     >
                       📊 Full Reputation Check
                     </button>
                   </div>
-                  
-                  <h3 className="text-sm font-semibold mb-2">🎩 Concierge Services</h3>
+
+                  <h3 className="text-sm font-semibold mb-2">
+                    🎩 Concierge Services
+                  </h3>
                   <div className="space-y-2">
                     <button
                       onClick={() => setRightView('search')}
                       className={cn(
-                        "w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors",
-                        rightView === 'search' && "border-primary bg-primary/10"
+                        'w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors',
+                        rightView === 'search' && 'border-primary bg-primary/10'
                       )}
                     >
                       🔍 Find Agents
@@ -1801,8 +2155,8 @@ function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string 
                     <button
                       onClick={() => setRightView('payai')}
                       className={cn(
-                        "w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors",
-                        rightView === 'payai' && "border-primary bg-primary/10"
+                        'w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors',
+                        rightView === 'payai' && 'border-primary bg-primary/10'
                       )}
                     >
                       💰 PayAI Freelancers
@@ -1810,8 +2164,9 @@ function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string 
                     <button
                       onClick={() => setRightView('elizaos-discover')}
                       className={cn(
-                        "w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors",
-                        rightView === 'elizaos-discover' && "border-primary bg-primary/10"
+                        'w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors',
+                        rightView === 'elizaos-discover' &&
+                          'border-primary bg-primary/10'
                       )}
                     >
                       ☁️ ElizaOS Cloud Agents
@@ -1819,8 +2174,9 @@ function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string 
                     <button
                       onClick={() => setRightView('register')}
                       className={cn(
-                        "w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors",
-                        rightView === 'register' && "border-primary bg-primary/10"
+                        'w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors',
+                        rightView === 'register' &&
+                          'border-primary bg-primary/10'
                       )}
                     >
                       🚪 Register to GhostSpeak
@@ -1828,8 +2184,9 @@ function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string 
                     <button
                       onClick={() => setRightView('elizaos-register')}
                       className={cn(
-                        "w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors",
-                        rightView === 'elizaos-register' && "border-primary bg-primary/10"
+                        'w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors',
+                        rightView === 'elizaos-register' &&
+                          'border-primary bg-primary/10'
                       )}
                     >
                       ☁️ Register to ElizaOS Cloud
@@ -1837,7 +2194,7 @@ function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string 
                     <button
                       onClick={() => {
                         // TODO: Add recommendation feature
-                        setChatInput("Find me the best agent for ");
+                        setChatInput('Find me the best agent for ');
                       }}
                       className="w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors"
                     >
@@ -1851,7 +2208,9 @@ function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string 
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Agent ID:</span>
-                      <span className="font-mono">{agentId.slice(0, 8)}...</span>
+                      <span className="font-mono">
+                        {agentId.slice(0, 8)}...
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Status:</span>
@@ -1885,8 +2244,12 @@ function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string 
                 className="h-10 w-10 rounded-full border-2 border-primary"
               />
               <div>
-                <h2 className="text-lg font-semibold">🚪 Welcome to the Agents Club</h2>
-                <p className="text-sm text-muted-foreground">Caisper at your service - Bouncer & Concierge</p>
+                <h2 className="text-lg font-semibold">
+                  🚪 Welcome to the Agents Club
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Caisper at your service - Bouncer & Concierge
+                </p>
               </div>
             </div>
           </div>
@@ -1898,19 +2261,26 @@ function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string 
                 <div className="text-center space-y-4 max-w-md">
                   <div className="text-6xl">🚪👻</div>
                   <div>
-                    <div className="text-xl font-bold mb-2">Welcome to the Agents Club</div>
+                    <div className="text-xl font-bold mb-2">
+                      Welcome to the Agents Club
+                    </div>
                     <div className="text-sm text-muted-foreground">
-                      I'm Caisper—your bouncer and concierge. I check IDs at the door and help you find exactly who you need inside.
+                      I'm Caisper—your bouncer and concierge. I check IDs at the
+                      door and help you find exactly who you need inside.
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 mt-4 text-xs">
                     <div className="rounded-md border bg-card/50 p-2">
                       <div className="font-semibold mb-1">🚪 Bouncer</div>
-                      <div className="text-muted-foreground">Verify credentials & reputation</div>
+                      <div className="text-muted-foreground">
+                        Verify credentials & reputation
+                      </div>
                     </div>
                     <div className="rounded-md border bg-card/50 p-2">
                       <div className="font-semibold mb-1">🎩 Concierge</div>
-                      <div className="text-muted-foreground">Find the perfect agent match</div>
+                      <div className="text-muted-foreground">
+                        Find the perfect agent match
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1920,19 +2290,21 @@ function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string 
                 <div
                   key={idx}
                   className={cn(
-                    "flex",
-                    msg.role === 'user' ? "justify-end" : "justify-start"
+                    'flex',
+                    msg.role === 'user' ? 'justify-end' : 'justify-start'
                   )}
                 >
                   <div
                     className={cn(
-                      "max-w-[80%] rounded-lg px-4 py-2",
+                      'max-w-[80%] rounded-lg px-4 py-2',
                       msg.role === 'user'
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted'
                     )}
                   >
-                    <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
+                    <div className="whitespace-pre-wrap text-sm">
+                      {msg.content}
+                    </div>
                   </div>
                 </div>
               ))
@@ -1945,14 +2317,14 @@ function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string 
               <input
                 type="text"
                 value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyPress={(e) => {
+                onChange={e => setChatInput(e.target.value)}
+                onKeyPress={e => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     handleSendMessage();
                   }
                 }}
-                      placeholder="Ask Caisper: 'Verify this agent' or 'Find me a coding agent'..."
+                placeholder="Ask Caisper: 'Verify this agent' or 'Find me a coding agent'..."
                 className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
               />
               <button
@@ -1967,13 +2339,15 @@ function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string 
         </div>
 
         {/* Right Sidebar - Collapsible */}
-        <div className={cn(
-          "border-l bg-card transition-all duration-300",
-          rightCollapsed ? "w-12" : "w-80"
-        )}>
+        <div
+          className={cn(
+            'border-l bg-card transition-all duration-300',
+            rightCollapsed ? 'w-12' : 'w-80'
+          )}
+        >
           <div className="flex h-full flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b p-3">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b p-3">
               {!rightCollapsed && (
                 <div className="text-sm font-semibold">
                   {rightView === 'ghost-score' && 'Ghost Score Checker'}
@@ -1983,49 +2357,70 @@ function ExampleProvider({ agentId, apiBase }: { agentId: UUID; apiBase: string 
                   {rightView === 'scoreboard' && 'Trust Scoreboard'}
                   {rightView === 'register' && 'Register to GhostSpeak'}
                   {rightView === 'payai' && 'PayAI Discovery'}
-                  {rightView === 'elizaos-discover' && 'ElizaOS Cloud Discovery'}
-                  {rightView === 'elizaos-register' && 'Register to ElizaOS Cloud'}
+                  {rightView === 'elizaos-discover' &&
+                    'ElizaOS Cloud Discovery'}
+                  {rightView === 'elizaos-register' &&
+                    'Register to ElizaOS Cloud'}
                 </div>
               )}
-            <button
-              onClick={() => setRightCollapsed(!rightCollapsed)}
-              className="rounded-md p-1 hover:bg-accent transition-colors"
-              title={rightCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              {rightCollapsed ? '←' : '→'}
-            </button>
-          </div>
+              <button
+                onClick={() => setRightCollapsed(!rightCollapsed)}
+                className="rounded-md p-1 hover:bg-accent transition-colors"
+                title={rightCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                {rightCollapsed ? '←' : '→'}
+              </button>
+            </div>
 
-          {/* Content */}
-          {!rightCollapsed && (
-            <div className="flex-1 overflow-y-auto p-4">
-                {rightView === 'ghost-score' && <GhostScoreDisplay apiBase={apiBase} />}
-                {rightView === 'credential' && <CredentialVerification apiBase={apiBase} />}
+            {/* Content */}
+            {!rightCollapsed && (
+              <div className="flex-1 overflow-y-auto p-4">
+                {rightView === 'ghost-score' && (
+                  <GhostScoreDisplay apiBase={apiBase} />
+                )}
+                {rightView === 'credential' && (
+                  <CredentialVerification apiBase={apiBase} />
+                )}
                 {rightView === 'search' && <AgentSearch apiBase={apiBase} />}
                 {rightView === 'reputation' && (
                   <div className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium mb-2 block">Agent Address</label>
+                      <label className="text-sm font-medium mb-2 block">
+                        Agent Address
+                      </label>
                       <input
                         type="text"
                         value={selectedAgentForReputation}
-                        onChange={(e) => setSelectedAgentForReputation(e.target.value)}
+                        onChange={e =>
+                          setSelectedAgentForReputation(e.target.value)
+                        }
                         placeholder="Enter agent address..."
                         className="w-full rounded-md border bg-background px-3 py-2 text-sm font-mono"
                       />
                     </div>
                     {selectedAgentForReputation && (
-                      <ReputationBreakdown agentAddress={selectedAgentForReputation} apiBase={apiBase} />
+                      <ReputationBreakdown
+                        agentAddress={selectedAgentForReputation}
+                        apiBase={apiBase}
+                      />
                     )}
                   </div>
                 )}
-                {rightView === 'scoreboard' && <TrustScoreboard apiBase={apiBase} />}
-                {rightView === 'register' && <AgentRegistration apiBase={apiBase} />}
+                {rightView === 'scoreboard' && (
+                  <TrustScoreboard apiBase={apiBase} />
+                )}
+                {rightView === 'register' && (
+                  <AgentRegistration apiBase={apiBase} />
+                )}
                 {rightView === 'payai' && <PayAIDiscovery apiBase={apiBase} />}
-                {rightView === 'elizaos-discover' && <ElizaOSDiscovery apiBase={apiBase} />}
-                {rightView === 'elizaos-register' && <ElizaOSRegistration apiBase={apiBase} />}
-            </div>
-          )}
+                {rightView === 'elizaos-discover' && (
+                  <ElizaOSDiscovery apiBase={apiBase} />
+                )}
+                {rightView === 'elizaos-register' && (
+                  <ElizaOSRegistration apiBase={apiBase} />
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -2060,36 +2455,47 @@ interface PanelProps {
 const PanelComponent: React.FC<PanelProps> = ({ agentId }) => {
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
-  const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
+  const [chatMessages, setChatMessages] = useState<
+    Array<{ role: 'user' | 'assistant'; content: string }>
+  >([]);
   const [chatInput, setChatInput] = useState('');
-  const [rightView, setRightView] = useState<'ghost-score' | 'credential' | 'search' | 'reputation' | 'scoreboard'>('ghost-score');
-  const [selectedAgentForReputation, setSelectedAgentForReputation] = useState<string>('');
-  const apiBase = typeof window !== 'undefined' 
-    ? window.location.origin 
-    : 'http://localhost:3000';
+  const [rightView, setRightView] = useState<
+    'ghost-score' | 'credential' | 'search' | 'reputation' | 'scoreboard'
+  >('ghost-score');
+  const [selectedAgentForReputation, setSelectedAgentForReputation] =
+    useState<string>('');
+  const apiBase =
+    typeof window !== 'undefined'
+      ? window.location.origin
+      : 'http://localhost:3000';
 
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
-    
+
     setChatMessages([...chatMessages, { role: 'user', content: chatInput }]);
     setChatInput('');
-    
+
     // Simulate Caisper response (in real implementation, this would call the agent API)
     setTimeout(() => {
-      setChatMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `Hold my ectoplasm, investigating "${chatInput}"... 🔍\n\nLet me check the blockchain for that information.`
-      }]);
+      setChatMessages(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: `Hold my ectoplasm, investigating "${chatInput}"... 🔍\n\nLet me check the blockchain for that information.`,
+        },
+      ]);
     }, 1000);
   };
 
   return (
     <div className="flex h-full w-full overflow-hidden">
       {/* Left Sidebar - Collapsible */}
-      <div className={cn(
-        "border-r bg-card transition-all duration-300",
-        leftCollapsed ? "w-12" : "w-64"
-      )}>
+      <div
+        className={cn(
+          'border-r bg-card transition-all duration-300',
+          leftCollapsed ? 'w-12' : 'w-64'
+        )}
+      >
         <div className="flex h-full flex-col">
           {/* Header */}
           <div className="flex items-center justify-between border-b p-3">
@@ -2101,8 +2507,12 @@ const PanelComponent: React.FC<PanelProps> = ({ agentId }) => {
                   className="h-8 w-8 rounded-full border border-primary"
                 />
                 <div>
-                  <div className="text-sm font-semibold">👻 {CAISPER_CONFIG.name}</div>
-                  <div className="text-xs text-muted-foreground">Verification Tools</div>
+                  <div className="text-sm font-semibold">
+                    👻 {CAISPER_CONFIG.name}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Verification Tools
+                  </div>
                 </div>
               </div>
             )}
@@ -2123,8 +2533,9 @@ const PanelComponent: React.FC<PanelProps> = ({ agentId }) => {
                   <button
                     onClick={() => setRightView('ghost-score')}
                     className={cn(
-                      "w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors",
-                      rightView === 'ghost-score' && "border-primary bg-primary/10"
+                      'w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors',
+                      rightView === 'ghost-score' &&
+                        'border-primary bg-primary/10'
                     )}
                   >
                     👻 Ghost Score
@@ -2132,8 +2543,9 @@ const PanelComponent: React.FC<PanelProps> = ({ agentId }) => {
                   <button
                     onClick={() => setRightView('credential')}
                     className={cn(
-                      "w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors",
-                      rightView === 'credential' && "border-primary bg-primary/10"
+                      'w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors',
+                      rightView === 'credential' &&
+                        'border-primary bg-primary/10'
                     )}
                   >
                     🔐 Verify Credential
@@ -2141,8 +2553,8 @@ const PanelComponent: React.FC<PanelProps> = ({ agentId }) => {
                   <button
                     onClick={() => setRightView('search')}
                     className={cn(
-                      "w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors",
-                      rightView === 'search' && "border-primary bg-primary/10"
+                      'w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors',
+                      rightView === 'search' && 'border-primary bg-primary/10'
                     )}
                   >
                     🔎 Search Agents
@@ -2150,8 +2562,9 @@ const PanelComponent: React.FC<PanelProps> = ({ agentId }) => {
                   <button
                     onClick={() => setRightView('reputation')}
                     className={cn(
-                      "w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors",
-                      rightView === 'reputation' && "border-primary bg-primary/10"
+                      'w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors',
+                      rightView === 'reputation' &&
+                        'border-primary bg-primary/10'
                     )}
                   >
                     📊 Reputation Breakdown
@@ -2159,8 +2572,9 @@ const PanelComponent: React.FC<PanelProps> = ({ agentId }) => {
                   <button
                     onClick={() => setRightView('scoreboard')}
                     className={cn(
-                      "w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors",
-                      rightView === 'scoreboard' && "border-primary bg-primary/10"
+                      'w-full rounded-md border bg-background px-3 py-2 text-left text-sm hover:bg-accent transition-colors',
+                      rightView === 'scoreboard' &&
+                        'border-primary bg-primary/10'
                     )}
                   >
                     🏆 Trust Scoreboard
@@ -2188,40 +2602,52 @@ const PanelComponent: React.FC<PanelProps> = ({ agentId }) => {
 
       {/* Main Content Area - Chat */}
       <div className="flex flex-1 flex-col overflow-hidden">
-          {/* Chat Header */}
-          <div className="border-b bg-card p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="text-2xl">🚪</div>
-              <div>
-                <h2 className="text-lg font-semibold">Welcome to the Agents Club</h2>
-                <p className="text-xs text-muted-foreground">Caisper at your service</p>
-              </div>
+        {/* Chat Header */}
+        <div className="border-b bg-card p-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="text-2xl">🚪</div>
+            <div>
+              <h2 className="text-lg font-semibold">
+                Welcome to the Agents Club
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Caisper at your service
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              I'm the bouncer who checks IDs and the concierge who knows everyone. Need verification? A recommendation? I've got you.
-            </p>
           </div>
+          <p className="text-sm text-muted-foreground">
+            I'm the bouncer who checks IDs and the concierge who knows everyone.
+            Need verification? A recommendation? I've got you.
+          </p>
+        </div>
 
         {/* Chat Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {chatMessages.length === 0 ? (
             <div className="flex h-full items-center justify-center">
               <div className="text-center space-y-2">
-                  <div className="text-6xl">🚪👻</div>
-                  <div className="text-xl font-bold mb-2">Welcome to the Agents Club</div>
-                  <div className="text-sm text-muted-foreground max-w-md mb-4">
-                    I'm Caisper—your bouncer and concierge. I check IDs at the door and help you find exactly who you need inside.
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="rounded-md border bg-card/50 p-2">
-                      <div className="font-semibold mb-1">🚪 Bouncer</div>
-                      <div className="text-muted-foreground">Verify credentials & reputation</div>
+                <div className="text-6xl">🚪👻</div>
+                <div className="text-xl font-bold mb-2">
+                  Welcome to the Agents Club
+                </div>
+                <div className="text-sm text-muted-foreground max-w-md mb-4">
+                  I'm Caisper—your bouncer and concierge. I check IDs at the
+                  door and help you find exactly who you need inside.
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-md border bg-card/50 p-2">
+                    <div className="font-semibold mb-1">🚪 Bouncer</div>
+                    <div className="text-muted-foreground">
+                      Verify credentials & reputation
                     </div>
-                    <div className="rounded-md border bg-card/50 p-2">
-                      <div className="font-semibold mb-1">🎩 Concierge</div>
-                      <div className="text-muted-foreground">Find the perfect agent match</div>
+                  </div>
+                  <div className="rounded-md border bg-card/50 p-2">
+                    <div className="font-semibold mb-1">🎩 Concierge</div>
+                    <div className="text-muted-foreground">
+                      Find the perfect agent match
                     </div>
                   </div>
+                </div>
               </div>
             </div>
           ) : (
@@ -2229,19 +2655,21 @@ const PanelComponent: React.FC<PanelProps> = ({ agentId }) => {
               <div
                 key={idx}
                 className={cn(
-                  "flex",
-                  msg.role === 'user' ? "justify-end" : "justify-start"
+                  'flex',
+                  msg.role === 'user' ? 'justify-end' : 'justify-start'
                 )}
               >
                 <div
                   className={cn(
-                    "max-w-[80%] rounded-lg px-4 py-2",
+                    'max-w-[80%] rounded-lg px-4 py-2',
                     msg.role === 'user'
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted'
                   )}
                 >
-                  <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
+                  <div className="whitespace-pre-wrap text-sm">
+                    {msg.content}
+                  </div>
                 </div>
               </div>
             ))
@@ -2254,14 +2682,14 @@ const PanelComponent: React.FC<PanelProps> = ({ agentId }) => {
             <input
               type="text"
               value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyPress={(e) => {
+              onChange={e => setChatInput(e.target.value)}
+              onKeyPress={e => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   handleSendMessage();
                 }
               }}
-                      placeholder="Ask Caisper: 'Verify this agent' or 'Find me a coding agent'..."
+              placeholder="Ask Caisper: 'Verify this agent' or 'Find me a coding agent'..."
               className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
             />
             <button
@@ -2276,10 +2704,12 @@ const PanelComponent: React.FC<PanelProps> = ({ agentId }) => {
       </div>
 
       {/* Right Sidebar - Collapsible */}
-      <div className={cn(
-        "border-l bg-card transition-all duration-300",
-        rightCollapsed ? "w-12" : "w-80"
-      )}>
+      <div
+        className={cn(
+          'border-l bg-card transition-all duration-300',
+          rightCollapsed ? 'w-12' : 'w-80'
+        )}
+      >
         <div className="flex h-full flex-col">
           {/* Header */}
           <div className="flex items-center justify-between border-b p-3">
@@ -2303,24 +2733,35 @@ const PanelComponent: React.FC<PanelProps> = ({ agentId }) => {
           {/* Content */}
           {!rightCollapsed && (
             <div className="flex-1 overflow-y-auto p-4">
-              {rightView === 'ghost-score' && <GhostScoreDisplay apiBase={apiBase} />}
-              {rightView === 'credential' && <CredentialVerification apiBase={apiBase} />}
+              {rightView === 'ghost-score' && (
+                <GhostScoreDisplay apiBase={apiBase} />
+              )}
+              {rightView === 'credential' && (
+                <CredentialVerification apiBase={apiBase} />
+              )}
               {rightView === 'search' && <AgentSearch apiBase={apiBase} />}
               {rightView === 'reputation' && (
                 <div className="space-y-3">
                   <input
                     type="text"
                     value={selectedAgentForReputation}
-                    onChange={(e) => setSelectedAgentForReputation(e.target.value)}
+                    onChange={e =>
+                      setSelectedAgentForReputation(e.target.value)
+                    }
                     placeholder="Enter agent address..."
                     className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                   />
                   {selectedAgentForReputation && (
-                    <ReputationBreakdown agentAddress={selectedAgentForReputation} apiBase={apiBase} />
+                    <ReputationBreakdown
+                      agentAddress={selectedAgentForReputation}
+                      apiBase={apiBase}
+                    />
                   )}
                 </div>
               )}
-              {rightView === 'scoreboard' && <TrustScoreboard apiBase={apiBase} />}
+              {rightView === 'scoreboard' && (
+                <TrustScoreboard apiBase={apiBase} />
+              )}
             </div>
           )}
         </div>

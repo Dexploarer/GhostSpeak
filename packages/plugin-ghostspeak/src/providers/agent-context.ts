@@ -5,7 +5,13 @@
  * Supplies information about the agent's capabilities, status, and configuration.
  */
 
-import type { Provider, ProviderResult, IAgentRuntime, Memory, State } from '@elizaos/core';
+import type {
+  Provider,
+  ProviderResult,
+  IAgentRuntime,
+  Memory,
+  State,
+} from '@elizaos/core';
 import { logger } from '@elizaos/core';
 import { address } from '@solana/addresses';
 import { GhostSpeakService } from '../services/GhostSpeakService';
@@ -22,7 +28,8 @@ import { GhostSpeakService } from '../services/GhostSpeakService';
  */
 export const agentContextProvider: Provider = {
   name: 'AGENT_CONTEXT_PROVIDER',
-  description: 'Provides agent identity and capabilities context from GhostSpeak blockchain',
+  description:
+    'Provides agent identity and capabilities context from GhostSpeak blockchain',
 
   get: async (
     runtime: IAgentRuntime,
@@ -77,7 +84,10 @@ export const agentContextProvider: Provider = {
       try {
         agentData = await service.getAgent(agentAddress);
       } catch (error) {
-        logger.warn({ error, agentAddress: agentAddress.toString() }, 'Failed to fetch agent context');
+        logger.warn(
+          { error, agentAddress: agentAddress.toString() },
+          'Failed to fetch agent context'
+        );
         return {
           text: 'Unable to fetch agent data',
           values: {
@@ -85,7 +95,9 @@ export const agentContextProvider: Provider = {
             hasSigner,
             agentAddress: agentAddress.toString(),
           },
-          data: { error: error instanceof Error ? error.message : 'Unknown error' },
+          data: {
+            error: error instanceof Error ? error.message : 'Unknown error',
+          },
         };
       }
 
@@ -133,7 +145,9 @@ export const agentContextProvider: Provider = {
       return {
         text: 'Agent context unavailable',
         values: {},
-        data: { error: error instanceof Error ? error.message : 'Unknown error' },
+        data: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
       };
     }
   },

@@ -55,7 +55,13 @@ function getTierMessage(tier: string): string {
  */
 export const checkGhostScoreAction: Action = {
   name: 'CHECK_GHOST_SCORE',
-  similes: ['GET_GHOST_SCORE', 'CHECK_REPUTATION', 'GET_REPUTATION', 'GHOST_SCORE', 'AGENT_SCORE'],
+  similes: [
+    'GET_GHOST_SCORE',
+    'CHECK_REPUTATION',
+    'GET_REPUTATION',
+    'GHOST_SCORE',
+    'AGENT_SCORE',
+  ],
   description:
     'Check the Ghost Score (reputation) of an AI agent on GhostSpeak. Ghost Score is a 0-10000 credit rating based on transaction history, service quality, and credentials.',
 
@@ -153,9 +159,10 @@ export const checkGhostScoreAction: Action = {
       // Use ghostScore from on-chain if available, otherwise calculate from reputationScore
       const onChainGhostScore = Number((agentData as any).ghostScore || 0);
       const reputationScore = Number(agentData.reputationScore || 0);
-      const ghostScore = onChainGhostScore > 0
-        ? Math.min(10000, Math.round(onChainGhostScore / 100_000)) // ghostScore is u64, scale down
-        : Math.min(10000, Math.round(reputationScore / 10));
+      const ghostScore =
+        onChainGhostScore > 0
+          ? Math.min(10000, Math.round(onChainGhostScore / 100_000)) // ghostScore is u64, scale down
+          : Math.min(10000, Math.round(reputationScore / 10));
       const tier = getGhostScoreTier(ghostScore);
       const totalJobs = Number(agentData.totalJobsCompleted || 0);
       // Note: totalJobsFailed is not stored on-chain, assume 100% success for active agents

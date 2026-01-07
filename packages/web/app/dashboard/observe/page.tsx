@@ -2,7 +2,7 @@
 
 import { useWallet } from '@/lib/wallet/WalletStandardProvider'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { Doc } from '@/convex/_generated/dataModel'
@@ -20,6 +20,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { Footer } from '@/components/layout/Footer'
+import { isVerifiedSessionForWallet } from '@/lib/auth/verifiedSession'
+import { VerificationContractCard } from '@/components/dashboard/VerificationContractCard'
 import {
   Select,
   SelectContent,
@@ -53,19 +55,65 @@ function formatPrice(usdc: number): string {
   return `$${usdc.toFixed(2)}`
 }
 
+function getEndpointSuccessRate(ep: Doc<'observedEndpoints'>): number {
+  const total = ep.totalTests ?? 0
+  const successful = ep.successfulTests ?? 0
+  if (total <= 0) return 0
+  return (successful / total) * 100
+}
+
 export default function ObservePage() {
-  const { publicKey } = useWallet()
+  const { publicKey, connecting } = useWallet()
   const router = useRouter()
   const [viewMode, setViewMode] = useState<'directory' | 'live'>('directory')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [expandedAgent, setExpandedAgent] = useState<string | null>(null)
 
-  // Redirect if not connected
+  const walletAddress = useMemo(() => publicKey ?? null, [publicKey])
+  const [hasVerifiedSession, setHasVerifiedSession] = useState(false)
+
+  // A "verified" session means wallet connected AND SIWS session matches the wallet.
   useEffect(() => {
-    if (publicKey === null) {
-      router.push('/')
+    if (!walletAddress) {
+      setHasVerifiedSession(false)
+      return
     }
-  }, [publicKey, router])
+
+    const check = () => setHasVerifiedSession(isVerifiedSessionForWallet(walletAddress))
+    check()
+
+    // Same-tab localStorage writes do not fire the "storage" event, so poll briefly.
+    const intervalId = window.setInterval(() => {
+      const next = isVerifiedSessionForWallet(walletAddress)
+      setHasVerifiedSession(next)
+      if (next) window.clearInterval(intervalId)
+    }, 500)
+
+    return () => window.clearInterval(intervalId)
+  }, [walletAddress])
+
+  // Redirect to home if not connected.
+  // Important: wallet auto-connect can take a moment during hydration/initialization.
+  // Avoid bouncing users away from /dashboard/observe while the wallet is still initializing.
+  useEffect(() => {
+    if (publicKey) return
+    if (connecting) return
+
+    const hasRememberedWallet = (() => {
+      try {
+        return !!window.localStorage.getItem('walletName')
+      } catch {
+        return false
+      }
+    })()
+
+    const redirectTimeoutMs = hasRememberedWallet ? 1500 : 500
+    const timeoutId = window.setTimeout(() => {
+      router.push('/')
+    }, redirectTimeoutMs)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [publicKey, connecting, router])
 
   // Fetch observatory stats
   const stats = useQuery(api.observation.getObservatoryStats, {})
@@ -125,6 +173,36 @@ export default function ObservePage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    )
+  }
+
+  // Session gating: voting and personalized state rely on an existing user (verified SIWS session).
+  if (!publicKey) {
+    return null
+  }
+
+  if (!hasVerifiedSession) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a]">
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
+          <header className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-light text-white">Agent Observatory</h1>
+            <Link
+              href="/dashboard"
+              className="text-sm text-white/60 hover:text-white transition-colors"
+            >
+              Back to Dashboard
+            </Link>
+          </header>
+
+          <div className="space-y-4">
+            <VerificationContractCard className="p-6 bg-[#111111] border border-white/10 rounded-xl" />
+            <p className="text-xs text-white/40 leading-relaxed">Sign in to vote.</p>
+          </div>
+        </main>
+
+        <Footer />
       </div>
     )
   }
@@ -324,7 +402,7 @@ export default function ObservePage() {
                               <div className="text-lg font-light text-white">
                                 {Math.round(
                                   (agent.endpoints.reduce(
-                                    (sum, ep) => sum + (ep.successRate || 0),
+                                    (sum, ep) => sum + getEndpointSuccessRate(ep),
                                     0
                                   ) /
                                     agent.endpoints.length) *

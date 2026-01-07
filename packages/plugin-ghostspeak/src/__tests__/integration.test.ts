@@ -1,6 +1,12 @@
 import { describe, expect, it, beforeEach, afterAll, beforeAll } from 'bun:test';
 import { ghostspeakPlugin, GhostSpeakService } from '../index';
-import { createMockRuntime, setupLoggerSpies, MockRuntime, createTestMemory, createTestState } from './test-utils';
+import {
+  createMockRuntime,
+  setupLoggerSpies,
+  MockRuntime,
+  createTestMemory,
+  createTestState,
+} from './test-utils';
 import type { HandlerCallback, IAgentRuntime, Memory, State, UUID } from '@elizaos/core';
 
 /**
@@ -27,8 +33,7 @@ describe('Integration: CHECK_GHOST_SCORE Action with GhostSpeakService', () => {
   beforeEach(() => {
     // Create a service mock that will be returned by getService
     const mockService = {
-      capabilityDescription:
-        'GhostSpeak service for Ghost Score reputation and agent management',
+      capabilityDescription: 'GhostSpeak service for Ghost Score reputation and agent management',
       stop: () => Promise.resolve(),
       getAgent: async () => ({
         name: 'Test Agent',
@@ -61,7 +66,9 @@ describe('Integration: CHECK_GHOST_SCORE Action with GhostSpeakService', () => {
 
   it('should handle CHECK_GHOST_SCORE action with GhostSpeakService available', async () => {
     // Find the CHECK_GHOST_SCORE action
-    const checkGhostScoreAction = ghostspeakPlugin.actions?.find((action) => action.name === 'CHECK_GHOST_SCORE');
+    const checkGhostScoreAction = ghostspeakPlugin.actions?.find(
+      action => action.name === 'CHECK_GHOST_SCORE',
+    );
     expect(checkGhostScoreAction).toBeDefined();
 
     // Create a mock message with a valid Solana address
@@ -89,7 +96,7 @@ describe('Integration: CHECK_GHOST_SCORE Action with GhostSpeakService', () => {
       mockState,
       {},
       callbackFn as HandlerCallback,
-      []
+      [],
     );
 
     // Verify the action returned success
@@ -104,7 +111,9 @@ describe('Integration: CHECK_GHOST_SCORE Action with GhostSpeakService', () => {
   });
 
   it('should handle missing service gracefully', async () => {
-    const checkGhostScoreAction = ghostspeakPlugin.actions?.find((action) => action.name === 'CHECK_GHOST_SCORE');
+    const checkGhostScoreAction = ghostspeakPlugin.actions?.find(
+      action => action.name === 'CHECK_GHOST_SCORE',
+    );
     expect(checkGhostScoreAction).toBeDefined();
 
     // Create runtime without the service
@@ -131,7 +140,7 @@ describe('Integration: CHECK_GHOST_SCORE Action with GhostSpeakService', () => {
       createTestState(),
       {},
       callbackFn as HandlerCallback,
-      []
+      [],
     );
 
     // Should fail gracefully with appropriate error
@@ -156,7 +165,7 @@ describe('Integration: Plugin initialization and service registration', () => {
     if (ghostspeakPlugin.init) {
       await ghostspeakPlugin.init(
         { SOLANA_CLUSTER: 'devnet' },
-        mockRuntime as Partial<IAgentRuntime> as IAgentRuntime
+        mockRuntime as Partial<IAgentRuntime> as IAgentRuntime,
       );
 
       // Directly mock the service registration that happens during initialization
@@ -164,7 +173,7 @@ describe('Integration: Plugin initialization and service registration', () => {
       if (ghostspeakPlugin.services) {
         const GhostSpeakServiceClass = ghostspeakPlugin.services[0];
         const serviceInstance = await GhostSpeakServiceClass.start(
-          mockRuntime as Partial<IAgentRuntime> as IAgentRuntime
+          mockRuntime as Partial<IAgentRuntime> as IAgentRuntime,
         );
 
         // Register the Service class to match the core API
@@ -198,7 +207,7 @@ describe('Integration: Provider and Service interaction', () => {
     };
 
     const runtime = createMockRuntime({
-      getService: (type: string) => type === 'ghostspeak' ? mockService as any : null,
+      getService: (type: string) => (type === 'ghostspeak' ? (mockService as any) : null),
     });
 
     const message = createTestMemory();

@@ -2,23 +2,18 @@
 
 import { useWallet } from '@/lib/wallet/WalletStandardProvider'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import {
   Activity,
   User,
-  Wallet,
   TrendingUp,
   Loader2,
   Zap,
   MessageSquare,
-  Settings,
-  DollarSign,
   Shield,
-  ArrowRight,
   Sparkles,
-  ChevronRight,
   Clock,
   Info,
   Bot,
@@ -29,7 +24,7 @@ import {
 import Link from 'next/link'
 import { Footer } from '@/components/layout/Footer'
 import { MeshGradientGhost } from '@/components/shared/MeshGradientGhost'
-import { Achievements, StreakDisplay, PercentileDisplay } from '@/components/dashboard/Achievements'
+import { Achievements, StreakDisplay } from '@/components/dashboard/Achievements'
 import {
   Dialog,
   DialogContent,
@@ -37,13 +32,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { getNetworkDisplayConfig, getTransactionExplorerUrl } from '@/lib/solana/explorer'
 import { OnboardingWizard } from '@/components/dashboard/OnboardingWizard'
 import { UsernameOnboardingModal } from '@/components/dashboard/UsernameOnboardingModal'
 import { DashboardPageSkeleton } from '@/components/ui/skeletons'
 import { Progress } from '@/components/ui/progress'
 import { X402PaymentTicker } from '@/components/dashboard/X402PaymentTicker'
+import { VerifiedActionBar } from '@/components/dashboard/VerifiedActionBar'
+import { VerificationContractCard } from '@/components/dashboard/VerificationContractCard'
+import { isVerifiedSessionForWallet } from '@/lib/auth/verifiedSession'
 
 // ─── THREE-TIER REPUTATION SYSTEM ───────────────────────────────────────────
 // 1. Ghost Score - AI Agents only (shown in My Agents)
@@ -68,12 +66,22 @@ const GHOSTHUNTER_THRESHOLDS = {
   LEGENDARY: { min: 9000, max: 10000, next: null },
 } as const
 
-function getTimeBasedGreeting(): string {
-  const hour = new Date().getHours()
-  if (hour >= 5 && hour < 12) return 'Good morning'
-  if (hour >= 12 && hour < 17) return 'Good afternoon'
-  if (hour >= 17 && hour < 21) return 'Good evening'
-  return 'Good night'
+type DashboardActivityItem = {
+  type?: string
+  status?: string
+  description: string
+  timestamp: number
+  transactionSignature?: string
+}
+
+type DashboardAgentItem = {
+  address: string
+  name?: string | null
+  verificationStatus: 'verified' | 'claimed' | 'pending' | string
+  ghostScore: number
+  tier: string
+  ghosthunterScore: number | null
+  ghosthunterTier?: string | null
 }
 
 function getEctoTierProgress(
@@ -119,30 +127,26 @@ function formatNumber(num: number): string {
 }
 
 export default function DashboardPage() {
-  const { publicKey, network } = useWallet()
+  const { publicKey, connecting } = useWallet()
   const router = useRouter()
   const [showScoreModal, setShowScoreModal] = useState(false)
   const [activeScoreType, setActiveScoreType] = useState<'ecto' | 'ghosthunter'>('ghosthunter')
   const [showUsernameOnboarding, setShowUsernameOnboarding] = useState(false)
   const networkConfig = getNetworkDisplayConfig()
 
-  // Get greeting and formatted address
-  const greeting = useMemo(() => getTimeBasedGreeting(), [])
-  const shortAddress = useMemo(() => {
-    if (!publicKey) return ''
-    return `${publicKey.slice(0, 4)}...${publicKey.slice(-4)}`
-  }, [publicKey])
+  const walletAddress = useMemo(() => publicKey ?? null, [publicKey])
+  const [hasVerifiedSession, setHasVerifiedSession] = useState(false)
 
   // Check onboarding status
   const onboardingStatus = useQuery(
     api.onboarding.checkOnboardingStatus,
-    publicKey ? { walletAddress: publicKey } : 'skip'
+    hasVerifiedSession && publicKey ? { walletAddress: publicKey } : 'skip'
   )
 
   // Fetch real user dashboard data
   const dashboardData = useQuery(
     api.dashboard.getUserDashboard,
-    publicKey ? { walletAddress: publicKey } : 'skip'
+    hasVerifiedSession && publicKey ? { walletAddress: publicKey } : 'skip'
   )
 
   // Show username onboarding modal if needed
@@ -155,24 +159,100 @@ export default function DashboardPage() {
   // Fetch user's agents
   const userAgents = useQuery(
     api.dashboard.getUserAgents,
-    publicKey ? { walletAddress: publicKey } : 'skip'
+    hasVerifiedSession && publicKey ? { walletAddress: publicKey } : 'skip'
   )
 
   // Fetch user's percentile ranking
-  const percentileData = useQuery(
+  const _percentileData = useQuery(
     api.dashboard.getUserPercentile,
-    publicKey ? { walletAddress: publicKey } : 'skip'
+    hasVerifiedSession && publicKey ? { walletAddress: publicKey } : 'skip'
   )
 
-  // Redirect to home if not connected
+  // A "verified" dashboard session means:
+  // - wallet connected
+  // - AND SIWS session present in localStorage (written by ConnectWalletButton)
   useEffect(() => {
-    if (!publicKey) {
-      router.push('/')
+    if (!walletAddress) {
+      setHasVerifiedSession(false)
+      return
     }
-  }, [publicKey, router])
+
+    const check = () => setHasVerifiedSession(isVerifiedSessionForWallet(walletAddress))
+    check()
+
+    // Same-tab localStorage writes do not fire the "storage" event, so poll briefly.
+    const intervalId = window.setInterval(() => {
+      const next = isVerifiedSessionForWallet(walletAddress)
+      setHasVerifiedSession(next)
+      if (next) window.clearInterval(intervalId)
+    }, 500)
+
+    return () => window.clearInterval(intervalId)
+  }, [walletAddress])
+
+  // Redirect to home if not connected.
+  // Important: wallet auto-connect can take a moment during hydration/initialization.
+  // Avoid bouncing users away from /dashboard while the wallet is still initializing.
+  useEffect(() => {
+    if (publicKey) return
+    if (connecting) return
+
+    // If a wallet was previously connected, give auto-connect a short grace period
+    // before treating the user as disconnected.
+    const hasRememberedWallet = (() => {
+      try {
+        return !!window.localStorage.getItem('walletName')
+      } catch {
+        return false
+      }
+    })()
+
+    const redirectTimeoutMs = hasRememberedWallet ? 1500 : 500
+    const timeoutId = window.setTimeout(() => {
+      router.push('/')
+    }, redirectTimeoutMs)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [publicKey, connecting, router])
 
   if (!publicKey) {
     return null
+  }
+
+  // Session gating: only show dashboard tooling once the SIWS session is present.
+  if (!hasVerifiedSession) {
+    return (
+      <TooltipProvider>
+        <div className="min-h-screen bg-[#0a0a0a]">
+          <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
+            <header className="flex items-center justify-between mb-6">
+              <h1 id="dashboard-heading" className="text-2xl font-light text-white">
+                Dashboard
+              </h1>
+              <div
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${networkConfig.bgClass} border border-white/10`}
+                aria-label={`Network: ${networkConfig.shortName}`}
+              >
+                <div className={`w-2 h-2 rounded-full ${networkConfig.dotClass}`} />
+                <span className={`text-xs font-medium ${networkConfig.textClass}`}>
+                  {networkConfig.shortName}
+                </span>
+              </div>
+            </header>
+
+            <div className="space-y-4">
+              <VerificationContractCard className="p-6 bg-[#111111] border border-white/10 rounded-xl" />
+              <p className="text-xs text-white/40 leading-relaxed">
+                To continue, approve the "Sign to authenticate" request in your wallet. The dashboard only unlocks
+                after your SIWS session is verified.
+              </p>
+            </div>
+          </main>
+
+          <Footer />
+        </div>
+      </TooltipProvider>
+    )
   }
 
   // Show skeleton loading state
@@ -191,8 +271,9 @@ export default function DashboardPage() {
             Please try refreshing the page or contact support.
           </p>
           <button
+            type="button"
             onClick={() => router.push('/')}
-            className="px-6 py-2.5 bg-white/10 border border-white/20 rounded-lg text-white text-sm hover:bg-white/20 transition-all"
+            className="min-h-[44px] px-6 py-2.5 bg-white/10 border border-white/20 rounded-lg text-white text-sm hover:bg-white/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]"
           >
             Return Home
           </button>
@@ -236,16 +317,21 @@ export default function DashboardPage() {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-[#0a0a0a]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
+        <main
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8"
+          aria-labelledby="dashboard-heading"
+        >
           {/* x402 Payment Ticker */}
           <div className="mb-8">
             <X402PaymentTicker />
           </div>
 
           {/* Dashboard Header with Network Indicator and Streak */}
-          <div className="flex items-center justify-between mb-6">
+          <header className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-light text-white">Dashboard</h1>
+              <h1 id="dashboard-heading" className="text-2xl font-light text-white">
+                Dashboard
+              </h1>
               {gamification?.streak && gamification.streak.days > 0 && (
                 <StreakDisplay
                   days={gamification.streak.days}
@@ -255,24 +341,26 @@ export default function DashboardPage() {
             </div>
             <div
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${networkConfig.bgClass} border border-white/10`}
+              aria-label={`Network: ${networkConfig.shortName}`}
             >
               <div className={`w-2 h-2 rounded-full ${networkConfig.dotClass}`} />
               <span className={`text-xs font-medium ${networkConfig.textClass}`}>
                 {networkConfig.shortName}
               </span>
             </div>
-          </div>
+          </header>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {/* Role-Based Score Card - Shows Ecto (Developer) or Ghosthunter (Customer) */}
             {primaryScore ? (
               <button
+                type="button"
                 onClick={() => {
                   setActiveScoreType(primaryScore.type)
                   setShowScoreModal(true)
                 }}
-                className="group p-6 bg-[#111111] border border-white/10 rounded-xl hover:border-primary/40 transition-all text-left w-full cursor-pointer"
+                className="group p-6 bg-[#111111] border border-white/10 rounded-xl hover:border-primary/40 transition-all text-left w-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]"
               >
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
@@ -401,191 +489,122 @@ export default function DashboardPage() {
             <Achievements achievements={gamification.achievements} className="mb-8" />
           )}
 
-          {/* Main Content */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            {/* Quick Actions */}
-            <div className="lg:col-span-2 p-6 bg-[#111111] border border-white/10 rounded-xl">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-light text-white flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  Quick Actions
-                </h2>
-              </div>
+          {/* Main Content (feed-first, verified-only) */}
+          <div className="space-y-6 mb-6">
+            <VerifiedActionBar />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Chat with Caisper */}
-                <button
-                  onClick={() => router.push('/caisper')}
-                  className="group w-full flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-primary/40 transition-all text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white/5 rounded-lg group-hover:bg-primary/10 transition-all">
-                      <MessageSquare className="w-5 h-5 text-white/60 group-hover:text-primary transition-colors" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-white">Chat with Caisper</p>
-                      <p className="text-xs text-white/40">AI assistant</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-                </button>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Recent Activity (main content) */}
+              <section
+                role="region"
+                aria-labelledby="recent-activity-heading"
+                className="lg:col-span-2 p-6 bg-[#111111] border border-white/10 rounded-xl relative overflow-hidden"
+              >
+                {/* Floating Ghost Decoration */}
+                <div className="absolute -top-4 -right-4 w-32 h-40 opacity-20 pointer-events-none">
+                  <MeshGradientGhost animated={true} interactive={false} />
+                </div>
 
-                {/* View Score Breakdown */}
-                <button
-                  onClick={() => setShowScoreModal(true)}
-                  className="group w-full flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-primary/40 transition-all text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white/5 rounded-lg group-hover:bg-primary/10 transition-all">
-                      <TrendingUp className="w-5 h-5 text-white/60 group-hover:text-primary transition-colors" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-white">View Score Breakdown</p>
-                      <p className="text-xs text-white/40">Track your reputation</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-                </button>
-
-                {/* Manage Payments - Coming Soon */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="group w-full flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-lg opacity-60 cursor-not-allowed text-left relative">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white/5 rounded-lg">
-                          <DollarSign className="w-5 h-5 text-white/40" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-white/60 flex items-center gap-2">
-                            Manage Payments
-                            <span className="px-1.5 py-0.5 bg-white/10 border border-white/20 rounded text-[10px] text-white/50 uppercase tracking-wider">
-                              Soon
-                            </span>
-                          </p>
-                          <p className="text-xs text-white/30">Transaction history</p>
-                        </div>
-                      </div>
-                      <Clock className="w-4 h-4 text-white/30" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="top"
-                    className="bg-[#1a1a1a] border border-white/20 text-white"
+                <div className="flex items-center justify-between mb-6 relative z-10">
+                  <h2
+                    id="recent-activity-heading"
+                    className="text-lg font-light text-white flex items-center gap-2"
                   >
-                    <p>Payment management coming soon</p>
-                  </TooltipContent>
-                </Tooltip>
+                    <Activity className="w-5 h-5 text-primary" />
+                    Recent Activity
+                  </h2>
+                </div>
 
-                {/* Profile Settings */}
-                <button
-                  onClick={() => router.push('/settings')}
-                  className="group w-full flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all text-left"
+                <div
+                  className="space-y-3 max-h-[400px] overflow-y-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111] rounded-lg"
+                  tabIndex={0}
+                  aria-label="Recent activity"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white/5 rounded-lg group-hover:bg-white/10 transition-all">
-                      <Settings className="w-5 h-5 text-white/60" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-white">Profile Settings</p>
-                      <p className="text-xs text-white/40">Customize account</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-white/40 group-hover:translate-x-0.5 transition-all" />
-                </button>
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="p-6 bg-[#111111] border border-white/10 rounded-xl relative overflow-hidden">
-              {/* Floating Ghost Decoration */}
-              <div className="absolute -top-4 -right-4 w-32 h-40 opacity-20 pointer-events-none">
-                <MeshGradientGhost animated={true} interactive={false} />
-              </div>
-
-              <div className="flex items-center justify-between mb-6 relative z-10">
-                <h2 className="text-lg font-light text-white flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-primary" />
-                  Recent Activity
-                </h2>
-              </div>
-
-              <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                {recentActivity && recentActivity.length > 0 ? (
-                  recentActivity.map((activity: any, index: number) => (
-                    <div
-                      key={index}
-                      className="flex items-start gap-3 p-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all"
-                    >
+                  {recentActivity && recentActivity.length > 0 ? (
+                    recentActivity.map((activity: DashboardActivityItem, index: number) => (
                       <div
-                        className={`w-1.5 h-1.5 mt-2 rounded-full shrink-0 ${
-                          activity.type === 'VERIFICATION'
-                            ? 'bg-primary'
-                            : activity.status === 'completed'
-                              ? 'bg-green-500'
-                              : activity.status === 'pending'
-                                ? 'bg-yellow-500'
-                                : 'bg-red-500'
-                        }`}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-white mb-1 line-clamp-2">
-                          {activity.description}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs text-white/40">
-                            {new Date(activity.timestamp).toLocaleDateString(undefined, {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
+                        key={index}
+                        className="flex items-start gap-3 p-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all"
+                      >
+                        <div
+                          aria-hidden="true"
+                          className={`w-1.5 h-1.5 mt-2 rounded-full shrink-0 ${
+                            activity.type === 'VERIFICATION'
+                              ? 'bg-primary'
+                              : activity.status === 'completed'
+                                ? 'bg-green-500'
+                                : activity.status === 'pending'
+                                  ? 'bg-yellow-500'
+                                  : 'bg-red-500'
+                          }`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white mb-1 line-clamp-2">
+                            {activity.description}
                           </p>
-                          {activity.transactionSignature && (
-                            <a
-                              href={getTransactionExplorerUrl(activity.transactionSignature)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs text-primary/70 hover:text-primary transition-colors"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                              <span>View tx</span>
-                            </a>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-white/40">
+                              {new Date(activity.timestamp).toLocaleDateString(undefined, {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </p>
+                            {activity.transactionSignature && (
+                              <a
+                                href={getTransactionExplorerUrl(activity.transactionSignature)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 rounded-sm text-xs text-primary/70 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                                <span>View tx</span>
+                              </a>
+                            )}
+                          </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    /* Enhanced empty state with ghost illustration and quick actions */
+                    <div className="flex flex-col items-center justify-center py-8 text-center relative">
+                      {/* Animated ghost illustration */}
+                      <div className="w-24 h-28 mb-4 opacity-60">
+                        <MeshGradientGhost animated={true} interactive={false} />
+                      </div>
+                      <p className="text-sm text-white/70 mb-2 font-medium">
+                        Your journey begins here
+                      </p>
+                      <p className="text-xs text-white/40 mb-4 max-w-[200px] leading-relaxed">
+                        Chat with Caisper or register an agent to start building reputation.
+                      </p>
+                      {/* Quick action buttons in empty state */}
+                      <div className="flex flex-col gap-2 w-full">
+                        <button
+                          type="button"
+                          onClick={() => router.push('/caisper')}
+                          className="w-full min-h-[44px] px-3 py-2 bg-primary/10 border border-primary/30 rounded-lg text-xs text-primary hover:bg-primary/20 transition-all flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" aria-hidden="true" />
+                          Chat with Caisper
+                        </button>
+                        <Link
+                          href="/agents/register"
+                          className="w-full min-h-[44px] px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white/80 hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]"
+                        >
+                          <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                          Register Agent
+                        </Link>
+                      </div>
                     </div>
-                  ))
-                ) : (
-                  /* Enhanced empty state with ghost illustration and quick actions */
-                  <div className="flex flex-col items-center justify-center py-8 text-center relative">
-                    {/* Animated ghost illustration */}
-                    <div className="w-24 h-28 mb-4 opacity-60">
-                      <MeshGradientGhost animated={true} interactive={false} />
-                    </div>
-                    <p className="text-sm text-white/70 mb-2 font-medium">
-                      Your journey begins here
-                    </p>
-                    <p className="text-xs text-white/40 mb-4 max-w-[200px] leading-relaxed">
-                      Verify an agent or chat with Caisper to start building reputation.
-                    </p>
-                    {/* Quick action buttons in empty state */}
-                    <div className="flex flex-col gap-2 w-full">
-                      <button
-                        onClick={() => router.push('/caisper')}
-                        className="w-full px-3 py-2 bg-primary/10 border border-primary/30 rounded-lg text-xs text-primary hover:bg-primary/20 transition-all flex items-center justify-center gap-1.5"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        Chat with Caisper
-                      </button>
-                      <button className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white/60 hover:bg-white/10 hover:text-white/80 transition-all flex items-center justify-center gap-1.5">
-                        <Shield className="w-3.5 h-3.5" />
-                        Verify an Agent
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              </section>
+
+              {/* Verification Contract */}
+              <VerificationContractCard />
             </div>
           </div>
 
@@ -598,7 +617,7 @@ export default function DashboardPage() {
               </h2>
               <Link
                 href="/agents/register"
-                className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-sm text-primary hover:bg-primary/20 transition-all"
+                className="flex min-h-[44px] items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-sm text-primary hover:bg-primary/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]"
               >
                 <Plus className="w-4 h-4" />
                 Register Agent
@@ -613,11 +632,11 @@ export default function DashboardPage() {
             ) : userAgents && userAgents.agents.length > 0 ? (
               // Agents list
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {userAgents.agents.map((agent: any) => (
+                {userAgents.agents.map((agent: DashboardAgentItem) => (
                   <Link
                     key={agent.address}
                     href={`/agents/${agent.address}`}
-                    className="block group p-4 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer"
+                    className="block group p-4 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -692,7 +711,7 @@ export default function DashboardPage() {
                 </p>
                 <Link
                   href="/agents/register"
-                  className="flex items-center gap-2 px-4 py-2 bg-primary text-black rounded-lg text-sm font-medium hover:bg-primary/90 transition-all"
+                  className="flex min-h-[44px] items-center gap-2 px-4 py-2 bg-primary text-black rounded-lg text-sm font-medium hover:bg-primary/90 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]"
                 >
                   <Plus className="w-4 h-4" />
                   Register Agent
@@ -700,94 +719,7 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
-
-          {/* Status Banner */}
-          <div className="p-6 bg-[#111111] border border-white/10 rounded-xl">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-primary/10 rounded-lg shrink-0">
-                {!primaryScore ? (
-                  <Sparkles className="w-6 h-6 text-primary" />
-                ) : (
-                  <TrendingUp className="w-6 h-6 text-primary" />
-                )}
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-light text-white mb-2">
-                  {!primaryScore
-                    ? `${greeting}, ${shortAddress}`
-                    : primaryScore.type === 'ecto'
-                      ? `${primaryScore.tier} Developer`
-                      : `${primaryScore.tier} Hunter`}
-                </h3>
-                <p className="text-sm text-white/60 mb-4 leading-relaxed max-w-3xl">
-                  {!primaryScore
-                    ? 'Welcome to GhostSpeak! Your decentralized reputation system for AI agents is now active. Start building your reputation by verifying agents (Ghosthunter) or registering your own AI agents (Developer).'
-                    : staking
-                      ? `You're a Tier ${staking.tier} staker with a ${(staking.reputationBoostBps / 100).toFixed(1)}% reputation boost. Keep building your reputation to unlock higher tiers and premium benefits.`
-                      : roles?.isAgentDeveloper && roles?.isCustomer
-                        ? `You're both a Developer (Ecto Score: ${formatNumber(reputation?.ecto?.score || 0)}) and a Hunter (Ghosthunter: ${formatNumber(reputation?.ghosthunter?.score || 0)}). Keep building on both fronts!`
-                        : roles?.isAgentDeveloper
-                          ? `You've registered ${reputation?.ecto?.agentsRegistered || 0} agent(s). Keep building quality agents to increase your Ecto Score!`
-                          : `You have ${stats.freeVerificationsRemaining} free verifications remaining this month. Verify more agents to increase your Ghosthunter Score!`}
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  {!primaryScore ? (
-                    <>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button className="px-4 py-2 bg-primary/50 text-black/60 rounded-lg text-sm font-medium cursor-not-allowed flex items-center gap-2">
-                            <Shield className="w-4 h-4" />
-                            Verify First Agent
-                            <Clock className="w-3 h-3 ml-1" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="top"
-                          className="bg-[#1a1a1a] border border-white/20 text-white"
-                        >
-                          <p>Agent verification coming soon</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Link
-                        href="/agents/register"
-                        className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg text-sm hover:bg-white/10 transition-all flex items-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Register Agent
-                      </Link>
-                    </>
-                  ) : (
-                    <>
-                      {!staking && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button className="px-4 py-2 bg-primary/50 text-black/60 rounded-lg text-sm font-medium cursor-not-allowed flex items-center gap-2">
-                              <Zap className="w-4 h-4" />
-                              Stake GHOST
-                              <Clock className="w-3 h-3 ml-1" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent
-                            side="top"
-                            className="bg-[#1a1a1a] border border-white/20 text-white"
-                          >
-                            <p>Staking coming soon</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                      <button
-                        onClick={() => setShowScoreModal(true)}
-                        className="px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg text-sm hover:bg-white/20 transition-all"
-                      >
-                        View Score Breakdown
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        </main>
 
         {/* Footer */}
         <Footer />

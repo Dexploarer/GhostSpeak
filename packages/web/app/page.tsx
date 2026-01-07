@@ -1,15 +1,16 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { Hero } from '@/components/landing/Hero'
+import { HeroEnhanced } from '@/components/landing/HeroEnhanced'
 import { GhostIcon } from '@/components/shared/GhostIcon'
 import { ManifestoSection } from '@/components/landing/ManifestoSection'
 import { IntegrationMarquee } from '@/components/landing/IntegrationMarquee'
 import { DeveloperIntegration } from '@/components/landing/DeveloperIntegration'
-import { UseCases } from '@/components/landing/UseCases'
-import { CaisperCTA } from '@/components/landing/CaisperCTA'
-import { TechnicalFlow } from '@/components/landing/TechnicalFlow'
+import { BentoUseCases } from '@/components/landing/BentoUseCases'
+import { CaisperCTAEnhanced } from '@/components/landing/CaisperCTAEnhanced'
+import { TechnicalFlowEnhanced } from '@/components/landing/TechnicalFlowEnhanced'
 import { FloatingGhostScroll } from '@/components/landing/FloatingGhostScroll'
+import { CursorFollower } from '@/components/animations/CursorFollower'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
@@ -21,28 +22,28 @@ if (typeof window !== 'undefined') {
 export default function LandingPage() {
   const pageRef = useRef<HTMLDivElement>(null)
 
-  // Setup scroll-triggered animations
+  // Setup scroll-triggered animations for remaining sections
   useEffect(() => {
     if (!pageRef.current) return
 
     const ctx = gsap.context(() => {
-      // Animate sections on scroll
+      // Animate sections on scroll with smoother easing
       gsap.utils.toArray<HTMLElement>('.animate-on-scroll').forEach((section) => {
         gsap.from(section, {
           scrollTrigger: {
             trigger: section,
-            start: 'top 80%',
-            end: 'top 20%',
+            start: 'top 75%',
+            end: 'top 25%',
             toggleActions: 'play none none reverse',
           },
           opacity: 0,
-          y: 60,
-          duration: 1,
-          ease: 'power3.out',
+          y: 80,
+          duration: 1.2,
+          ease: 'power4.out',
         })
       })
 
-      // Stagger animations for grid items
+      // Enhanced stagger animations for grid items
       gsap.utils.toArray<HTMLElement>('.stagger-item').forEach((item, index) => {
         gsap.from(item, {
           scrollTrigger: {
@@ -50,10 +51,11 @@ export default function LandingPage() {
             start: 'top 85%',
           },
           opacity: 0,
-          y: 40,
-          duration: 0.8,
-          delay: index * 0.1,
-          ease: 'power2.out',
+          y: 50,
+          scale: 0.95,
+          duration: 1,
+          delay: index * 0.08,
+          ease: 'back.out(1.4)',
         })
       })
     }, pageRef)
@@ -66,11 +68,14 @@ export default function LandingPage() {
       ref={pageRef}
       className="relative min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30"
     >
+      {/* Custom cursor follower (desktop only) */}
+      <CursorFollower />
+
       {/* Floating ghosts that drift across as user scrolls */}
       <FloatingGhostScroll />
 
-      {/* 1. Hero - Value Proposition */}
-      <Hero />
+      {/* 1. Enhanced Hero - Value Proposition with advanced animations */}
+      <HeroEnhanced />
 
       {/* 2. Social Proof */}
       <div className="animate-on-scroll">
@@ -82,20 +87,14 @@ export default function LandingPage() {
         <ManifestoSection />
       </div>
 
-      {/* 4. How It Works */}
-      <div className="animate-on-scroll">
-        <TechnicalFlow />
-      </div>
+      {/* 4. How It Works - Interactive Flow */}
+      <TechnicalFlowEnhanced />
 
-      {/* 5. Try It - Caisper Demo */}
-      <div className="animate-on-scroll">
-        <CaisperCTA />
-      </div>
+      {/* 5. Try It - Enhanced Caisper Demo with 3D effects */}
+      <CaisperCTAEnhanced />
 
-      {/* 6. Use Cases */}
-      <div className="animate-on-scroll">
-        <UseCases />
-      </div>
+      {/* 6. Use Cases - Bento Grid Layout */}
+      <BentoUseCases />
 
       {/* 7. For Developers */}
       <div className="animate-on-scroll">

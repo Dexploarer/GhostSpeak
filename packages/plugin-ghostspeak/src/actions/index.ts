@@ -14,7 +14,11 @@ export { issueCredentialAction } from './issueCredential';
 export { acceptPaymentAction } from './acceptPayment';
 
 // DID Actions
-export { createDidAction, resolveDidAction, updateDidAction } from './didActions';
+export {
+  createDidAction,
+  resolveDidAction,
+  updateDidAction,
+} from './didActions';
 
 // Protocol Actions (without governance)
 export {

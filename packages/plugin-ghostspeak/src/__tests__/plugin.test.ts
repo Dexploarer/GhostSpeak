@@ -8,11 +8,7 @@ import {
   logger,
 } from '@elizaos/core';
 import dotenv from 'dotenv';
-import {
-  createMockRuntime,
-  createTestMemory,
-  createTestState,
-} from './test-utils';
+import { createMockRuntime, createTestMemory, createTestState } from './test-utils';
 
 // Setup environment variables
 dotenv.config();
@@ -141,7 +137,7 @@ describe('CHECK_GHOST_SCORE Action', () => {
       message,
       undefined,
       undefined,
-      callback
+      callback,
     );
 
     expect(result).toHaveProperty('success', false);

@@ -1,5 +1,9 @@
 import React from 'react';
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from '@tanstack/react-query';
 import { panels } from '../../../frontend/index';
 
 // Time response interface
@@ -86,9 +90,14 @@ describe('PanelComponent Tests', () => {
     });
 
     it('should handle different agent IDs', () => {
-      const agentIds = ['agent-1', 'agent-2', '12345678-1234-1234-1234-123456789abc', 'test-agent'];
+      const agentIds = [
+        'agent-1',
+        'agent-2',
+        '12345678-1234-1234-1234-123456789abc',
+        'test-agent',
+      ];
 
-      agentIds.forEach((agentId) => {
+      agentIds.forEach(agentId => {
         cy.mount(<PanelComponent agentId={agentId} />);
         cy.contains(`Hello ${agentId}!`).should('be.visible');
       });
@@ -111,7 +120,7 @@ describe('PanelComponent Tests', () => {
 
     beforeEach(() => {
       // Set up ELIZA_CONFIG for API testing
-      cy.window().then((win) => {
+      cy.window().then(win => {
         win.ELIZA_CONFIG = {
           agentId: 'test-agent',
           apiBase: 'http://localhost:3000',
@@ -169,7 +178,7 @@ describe('PanelComponent Tests', () => {
     });
 
     it('should show loading state in panel', () => {
-      cy.intercept('GET', '**/api/time', (req) => {
+      cy.intercept('GET', '**/api/time', req => {
         // Use simpler delay approach
         req.reply({
           statusCode: 200,
@@ -225,7 +234,9 @@ describe('PanelComponent Tests', () => {
       cy.get('.agent-ui-container').should('be.visible');
       cy.get('.panel-icon').contains('Book').should('be.visible');
       cy.get('.panel-name').contains('Example').should('be.visible');
-      cy.get('.panel-content').contains('Hello ui-test-agent!').should('be.visible');
+      cy.get('.panel-content')
+        .contains('Hello ui-test-agent!')
+        .should('be.visible');
     });
 
     it('should handle panel switching', () => {
@@ -235,7 +246,9 @@ describe('PanelComponent Tests', () => {
         {
           name: 'Second Panel',
           path: 'second',
-          component: ({ agentId }: { agentId: string }) => <div>Second panel for {agentId}</div>,
+          component: ({ agentId }: { agentId: string }) => (
+            <div>Second panel for {agentId}</div>
+          ),
           icon: 'Settings',
           public: false,
           shortLabel: 'Second',

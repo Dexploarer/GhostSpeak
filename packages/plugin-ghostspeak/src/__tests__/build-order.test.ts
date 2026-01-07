@@ -28,11 +28,11 @@ describe('Build Output Test', () => {
     const distFiles = fs.readdirSync(distDir);
 
     // Should have tsup outputs (JS bundle)
-    expect(distFiles.some((file) => file === 'index.js')).toBe(true);
+    expect(distFiles.some(file => file === 'index.js')).toBe(true);
 
     // TypeScript declarations are optional (may fail due to test file type errors)
     // The build is still considered successful if .d.ts generation fails
-    const hasDeclarations = distFiles.some((file) => file === 'index.d.ts');
+    const hasDeclarations = distFiles.some(file => file === 'index.d.ts');
     if (!hasDeclarations) {
       console.log('Warning: TypeScript declarations not generated (build still valid)');
     }

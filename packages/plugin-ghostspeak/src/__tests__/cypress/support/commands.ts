@@ -18,8 +18,8 @@ Cypress.Commands.add('shouldBeDarkMode', () => {
 });
 
 // Custom command to set ELIZA_CONFIG
-Cypress.Commands.add('setElizaConfig', (config) => {
-  cy.window().then((win) => {
+Cypress.Commands.add('setElizaConfig', config => {
+  cy.window().then(win => {
     (win as any).ELIZA_CONFIG = config;
   });
 });
@@ -29,7 +29,10 @@ declare global {
   namespace Cypress {
     interface Chainable {
       shouldBeDarkMode(): Chainable<JQuery<HTMLElement>>;
-      setElizaConfig(config: { agentId: string; apiBase?: string }): Chainable<Window>;
+      setElizaConfig(config: {
+        agentId: string;
+        apiBase?: string;
+      }): Chainable<Window>;
       mount(component: React.ReactElement): Chainable<any>;
     }
   }

@@ -38,7 +38,9 @@ export function createUUID(): UUID {
 /**
  * Creates a test character
  */
-export function createTestCharacter(overrides: Partial<Character> = {}): Character {
+export function createTestCharacter(
+  overrides: Partial<Character> = {}
+): Character {
   return {
     id: createUUID(),
     name: 'Test Character',
@@ -112,7 +114,9 @@ function createMockFn<T extends (...args: any[]) => any>(
 /**
  * Creates a properly typed mock runtime
  */
-export function createMockRuntime(overrides: Partial<IAgentRuntime> = {}): IAgentRuntime {
+export function createMockRuntime(
+  overrides: Partial<IAgentRuntime> = {}
+): IAgentRuntime {
   const agentId = overrides.agentId || createUUID();
   const character = overrides.character || createTestCharacter();
 
@@ -164,7 +168,9 @@ export function createMockRuntime(overrides: Partial<IAgentRuntime> = {}): IAgen
     getMemoriesByRoomIds: mock().mockResolvedValue([]),
     searchMemories: mock().mockResolvedValue([]),
 
-    addEmbeddingToMemory: mock().mockImplementation(async (memory: Memory) => memory),
+    addEmbeddingToMemory: mock().mockImplementation(
+      async (memory: Memory) => memory
+    ),
     queueEmbeddingGeneration: mock().mockResolvedValue(undefined),
     getAllMemories: mock().mockResolvedValue([]),
     clearAllAgentMemories: mock().mockResolvedValue(undefined),
@@ -377,7 +383,9 @@ export function assertSpyCalledWith(spy: any, ...args: any[]) {
   );
 
   if (!found) {
-    throw new Error(`Spy was not called with expected arguments: ${JSON.stringify(args)}`);
+    throw new Error(
+      `Spy was not called with expected arguments: ${JSON.stringify(args)}`
+    );
   }
 }
 

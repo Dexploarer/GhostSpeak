@@ -43,7 +43,7 @@ const PRICING_TIERS = {
 const SERVICE_PRICES: Record<string, number> = {
   'ghost-score-check': 0.01,
   'credential-issuance': 0.05,
-  'agent-registration': 0.10,
+  'agent-registration': 0.1,
   'did-creation': 0.02,
   'did-resolution': 0.005,
   'reputation-report': 0.03,
@@ -99,8 +99,12 @@ function parsePaymentRequest(message: Memory): PaymentRequest | null {
   }
 
   // Extract payment signature if present (from x402 header or message)
-  const signatureMatch = message.content.text?.match(/signature[:\s]+([A-Za-z0-9]{87,88})/i);
-  const payerMatch = message.content.text?.match(/payer[:\s]+([A-HJ-NP-Za-km-z1-9]{32,44})/i);
+  const signatureMatch = message.content.text?.match(
+    /signature[:\s]+([A-Za-z0-9]{87,88})/i
+  );
+  const payerMatch = message.content.text?.match(
+    /payer[:\s]+([A-HJ-NP-Za-km-z1-9]{32,44})/i
+  );
   const amountMatch = message.content.text?.match(/amount[:\s]+(\d+)/i);
 
   return {
@@ -231,7 +235,9 @@ Supports: ghost-score-check, credential-issuance, agent-registration, did-creati
         process.env.AGENT_WALLET_ADDRESS;
 
       if (!merchantAddress) {
-        throw new Error('GHOSTSPEAK_MERCHANT_ADDRESS not configured - required for x402 payments');
+        throw new Error(
+          'GHOSTSPEAK_MERCHANT_ADDRESS not configured - required for x402 payments'
+        );
       }
 
       // If no payment signature, return 402 Payment Required
@@ -293,11 +299,14 @@ Or use PayAI client: \`npx @payai/cli pay ${merchantAddress} ${priceInMicroUsdc}
       }
 
       // Verify payment via PayAI
-      logger.info({
-        signature: request.paymentSignature,
-        amount: price,
-        merchant: merchantAddress,
-      }, 'Verifying payment with PayAI');
+      logger.info(
+        {
+          signature: request.paymentSignature,
+          amount: price,
+          merchant: merchantAddress,
+        },
+        'Verifying payment with PayAI'
+      );
 
       const verification = await verifyPaymentWithPayAI(
         request.paymentSignature,
@@ -333,10 +342,13 @@ Please ensure:
       }
 
       // Payment verified! Execute the requested service
-      logger.info({
-        signature: request.paymentSignature,
-        serviceType: request.serviceType,
-      }, 'Payment verified, executing service');
+      logger.info(
+        {
+          signature: request.paymentSignature,
+          serviceType: request.serviceType,
+        },
+        'Payment verified, executing service'
+      );
 
       const successMsg = `✅ **Payment Verified!**
 

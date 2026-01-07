@@ -31,9 +31,11 @@
     "precommit": "lint-staged",
     "prepare": "cd ../.. && husky install packages/web/.husky",
     "test:x402-payment": "bun run scripts/test-x402-payment.ts",
-    "generate:keypairs": "bun run scripts/generate-keypairs.ts"
+    "test:x402-merchant": "bun run scripts/test-x402-merchant.ts",
+    "generate:keypairs": "bun run scripts/generate-keypairs.ts",
+    "check:usdc-balance": "bun run scripts/check-usdc-balance.ts",
+    "analyze": "ANALYZE=true next build"
   },
-  "dependencies": {
     "@ai-sdk/react": "^3.0.6",
     "@ai-sdk/ui-utils": "^1.2.11",
     "@elizaos/core": "^1.7.0",
@@ -65,8 +67,10 @@
     "@scalar/api-reference-react": "^0.8.15",
     "@scalar/nextjs-api-reference": "^0.9.7",
     "@sentry/nextjs": "^10.32.1",
+    "@solana-program/compute-budget": "^0.11.0",
     "@solana-program/system": "^0.10.0",
     "@solana-program/token": "^0.9.0",
+    "@solana-program/token-2022": "^0.6.1",
     "@solana/addresses": "^5.1.0",
     "@solana/kit": "5.1.0",
     "@solana/rpc": "5.1.0",
@@ -111,7 +115,8 @@
     "zod": "^3.23.8",
     "zustand": "^5.0.9"
   },
-  "devDependencies": {
+  "dependencies": {
+    "convex": "^1.31.2",
     "@eslint/eslintrc": "^3",
     "@next/eslint-plugin-next": "^16.0.5",
     "@playwright/test": "^1.57.0",

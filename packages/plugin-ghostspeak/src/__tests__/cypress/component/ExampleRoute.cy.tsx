@@ -3,7 +3,11 @@
 /// <reference types="@testing-library/cypress" />
 
 import React from 'react';
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from '@tanstack/react-query';
 import '../../../frontend/index.css';
 
 // Define the interface for time response
@@ -48,7 +52,8 @@ describe('ExampleRoute Component Tests', () => {
     if (error) {
       return (
         <div className="text-red-600">
-          Error fetching time: {error instanceof Error ? error.message : 'Unknown error'}
+          Error fetching time:{' '}
+          {error instanceof Error ? error.message : 'Unknown error'}
         </div>
       );
     }
@@ -89,7 +94,9 @@ describe('ExampleRoute Component Tests', () => {
     if (!config?.agentId) {
       return (
         <div className="p-4 text-center">
-          <div className="text-red-600 font-medium">Error: Agent ID not found</div>
+          <div className="text-red-600 font-medium">
+            Error: Agent ID not found
+          </div>
           <div className="text-sm text-gray-600 mt-2">
             The server should inject the agent ID configuration.
           </div>
@@ -102,7 +109,9 @@ describe('ExampleRoute Component Tests', () => {
         <div className="p-6 space-y-6">
           <div>
             <h1 className="text-2xl font-bold mb-2">Plugin Starter Example</h1>
-            <div className="text-sm text-muted-foreground">Agent ID: {config.agentId}</div>
+            <div className="text-sm text-muted-foreground">
+              Agent ID: {config.agentId}
+            </div>
           </div>
           <TimeDisplay apiBase={apiBase} />
         </div>
@@ -118,7 +127,7 @@ describe('ExampleRoute Component Tests', () => {
 
     it('should show error when agent ID is missing', () => {
       // Clear the config before mounting
-      cy.window().then((win) => {
+      cy.window().then(win => {
         win.ELIZA_CONFIG = undefined;
       });
 
@@ -126,14 +135,16 @@ describe('ExampleRoute Component Tests', () => {
 
       // Check error message is displayed
       cy.contains('Error: Agent ID not found').should('be.visible');
-      cy.contains('The server should inject the agent ID configuration.').should('be.visible');
+      cy.contains(
+        'The server should inject the agent ID configuration.'
+      ).should('be.visible');
     });
 
     it('should render correctly with agent ID', () => {
       const testAgentId = '12345678-1234-1234-1234-123456789abc';
 
       // Set config before mounting
-      cy.window().then((win) => {
+      cy.window().then(win => {
         win.ELIZA_CONFIG = {
           agentId: testAgentId,
           apiBase: 'http://localhost:3000',
@@ -151,7 +162,7 @@ describe('ExampleRoute Component Tests', () => {
   describe('API Communication', () => {
     beforeEach(() => {
       // Set up ELIZA_CONFIG
-      cy.window().then((win) => {
+      cy.window().then(win => {
         win.ELIZA_CONFIG = {
           agentId: 'test-agent-123',
           apiBase: 'http://localhost:3000',
@@ -188,7 +199,7 @@ describe('ExampleRoute Component Tests', () => {
       let callCount = 0;
 
       // Mock multiple API responses
-      cy.intercept('GET', '**/api/time', (req) => {
+      cy.intercept('GET', '**/api/time', req => {
         callCount++;
         req.reply({
           statusCode: 200,
@@ -218,7 +229,7 @@ describe('ExampleRoute Component Tests', () => {
     it('should verify auto-refresh behavior', () => {
       let callCount = 0;
 
-      cy.intercept('GET', '**/api/time', (req) => {
+      cy.intercept('GET', '**/api/time', req => {
         callCount++;
         req.reply({
           statusCode: 200,
@@ -244,7 +255,7 @@ describe('ExampleRoute Component Tests', () => {
 
     it('should show loading state', () => {
       // Add delay to see loading state
-      cy.intercept('GET', '**/api/time', (req) => {
+      cy.intercept('GET', '**/api/time', req => {
         // Instead of req.reply with a callback, use a simpler approach
         req.reply({
           statusCode: 200,
@@ -274,7 +285,7 @@ describe('ExampleRoute Component Tests', () => {
     it('should handle different API base URLs', () => {
       const customApiBase = 'https://api.example.com';
 
-      cy.window().then((win) => {
+      cy.window().then(win => {
         win.ELIZA_CONFIG = {
           agentId: 'test-agent',
           apiBase: customApiBase,
@@ -299,7 +310,7 @@ describe('ExampleRoute Component Tests', () => {
     });
 
     it('should use default API base when not provided', () => {
-      cy.window().then((win) => {
+      cy.window().then(win => {
         win.ELIZA_CONFIG = {
           agentId: 'test-agent',
           // No apiBase provided - this is now valid with optional apiBase
@@ -326,7 +337,7 @@ describe('ExampleRoute Component Tests', () => {
 
   describe('Accessibility', () => {
     beforeEach(() => {
-      cy.window().then((win) => {
+      cy.window().then(win => {
         win.ELIZA_CONFIG = {
           agentId: 'test-agent',
           apiBase: 'http://localhost:3000',

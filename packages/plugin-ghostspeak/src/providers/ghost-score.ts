@@ -5,7 +5,13 @@
  * Fetches real on-chain data from GhostSpeak blockchain.
  */
 
-import type { Provider, ProviderResult, IAgentRuntime, Memory, State } from '@elizaos/core';
+import type {
+  Provider,
+  ProviderResult,
+  IAgentRuntime,
+  Memory,
+  State,
+} from '@elizaos/core';
 import { logger } from '@elizaos/core';
 import { address } from '@solana/addresses';
 import { GhostSpeakService } from '../services/GhostSpeakService';
@@ -32,7 +38,8 @@ function getGhostScoreTier(ghostScore: number): string {
  */
 export const ghostScoreProvider: Provider = {
   name: 'GHOST_SCORE_PROVIDER',
-  description: 'Provides Ghost Score reputation data for agents from on-chain GhostSpeak data',
+  description:
+    'Provides Ghost Score reputation data for agents from on-chain GhostSpeak data',
 
   get: async (
     runtime: IAgentRuntime,
@@ -64,9 +71,15 @@ export const ghostScoreProvider: Provider = {
       let agentAddress;
       try {
         agentAddress = address(runtime.agentId);
-        logger.debug({ agentAddress: agentAddress.toString() }, 'Ghost Score Provider: Resolved agent address');
+        logger.debug(
+          { agentAddress: agentAddress.toString() },
+          'Ghost Score Provider: Resolved agent address'
+        );
       } catch (error) {
-        logger.warn({ agentId: runtime.agentId, error }, 'Ghost Score Provider: Invalid agent ID format');
+        logger.warn(
+          { agentId: runtime.agentId, error },
+          'Ghost Score Provider: Invalid agent ID format'
+        );
         return {
           text: 'Agent ID is not a valid Solana address',
           values: {},
@@ -78,9 +91,15 @@ export const ghostScoreProvider: Provider = {
       let agentData;
       try {
         agentData = await service.getAgent(agentAddress);
-        logger.debug({ found: !!agentData }, 'Ghost Score Provider: Fetched agent account');
+        logger.debug(
+          { found: !!agentData },
+          'Ghost Score Provider: Fetched agent account'
+        );
       } catch (error) {
-        logger.error({ agentAddress: agentAddress.toString(), error }, 'Ghost Score Provider: Failed to fetch agent');
+        logger.error(
+          { agentAddress: agentAddress.toString(), error },
+          'Ghost Score Provider: Failed to fetch agent'
+        );
         return {
           text: `Failed to fetch agent data: ${error instanceof Error ? error.message : 'Unknown error'}`,
           values: {},
@@ -92,7 +111,10 @@ export const ghostScoreProvider: Provider = {
       }
 
       if (!agentData) {
-        logger.warn({ agentAddress: agentAddress.toString() }, 'Ghost Score Provider: Agent not found');
+        logger.warn(
+          { agentAddress: agentAddress.toString() },
+          'Ghost Score Provider: Agent not found'
+        );
         return {
           text: 'Agent not found on GhostSpeak blockchain',
           values: { registered: false },
@@ -106,9 +128,10 @@ export const ghostScoreProvider: Provider = {
       // Calculate Ghost Score from on-chain data (0-10000 scale)
       const onChainGhostScore = Number((agentData as any).ghostScore || 0);
       const reputationScore = Number(agentData.reputationScore || 0);
-      const ghostScore = onChainGhostScore > 0
-        ? Math.min(10000, Math.round(onChainGhostScore / 100_000))
-        : Math.min(10000, Math.round(reputationScore / 10));
+      const ghostScore =
+        onChainGhostScore > 0
+          ? Math.min(10000, Math.round(onChainGhostScore / 100_000))
+          : Math.min(10000, Math.round(reputationScore / 10));
       const tier = getGhostScoreTier(ghostScore);
       const totalJobs = Number(agentData.totalJobsCompleted || 0);
       // Note: totalJobsFailed is not stored on-chain
@@ -126,13 +149,20 @@ export const ghostScoreProvider: Provider = {
         reputationScoreBasisPoints: reputationScore,
         createdAt: agentData.createdAt ? Number(agentData.createdAt) : null,
         x402Enabled: agentData.x402Enabled || false,
-        x402TotalCalls: agentData.x402TotalCalls ? Number(agentData.x402TotalCalls) : 0,
-        x402TotalPayments: agentData.x402TotalPayments ? Number(agentData.x402TotalPayments) : 0,
+        x402TotalCalls: agentData.x402TotalCalls
+          ? Number(agentData.x402TotalCalls)
+          : 0,
+        x402TotalPayments: agentData.x402TotalPayments
+          ? Number(agentData.x402TotalPayments)
+          : 0,
         source: 'blockchain',
         fetchedAt: Date.now(),
       };
 
-      logger.debug({ ghostScore, tier, totalJobs }, 'Ghost Score Provider: Calculated reputation data');
+      logger.debug(
+        { ghostScore, tier, totalJobs },
+        'Ghost Score Provider: Calculated reputation data'
+      );
 
       return {
         text: `Ghost Score: ${ghostScore}/10000 (${tier} tier) - ${totalJobs} jobs completed, ${successRate}% success rate`,

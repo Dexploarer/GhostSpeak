@@ -1,6 +1,13 @@
 import type { NextConfig } from 'next'
 import { withSentryConfig } from '@sentry/nextjs'
+import withBundleAnalyzer from '@next/bundle-analyzer'
 
+// Bundle analyzer configuration
+const bundleAnalyzerConfig = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+})
+
+// Main Next.js configuration
 const nextConfig: NextConfig = {
   // Note: Static export disabled - this is a dynamic web3 app with wallet connections
   // and real-time blockchain data that requires client-side rendering
@@ -31,6 +38,54 @@ const nextConfig: NextConfig = {
 
   // Configure asset prefix for GitHub Pages
   // assetPrefix: process.env.NODE_ENV === 'production' ? '/ghostspeak/' : '',
+
+  // Security headers
+  async headers() {
+    return [
+      {
+        // Apply to all routes
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on',
+          },
+          // Content Security Policy - adjust based on your needs
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.vercel-analytics.com *.posthog.com",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https: *.posthog.com",
+              "font-src 'self'",
+              "connect-src 'self' *.convex.cloud *.solana.com *.helius-rpc.com wss://*.convex.cloud",
+              "frame-src 'none'",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join('; '),
+          },
+        ],
+      },
+    ]
+  },
 
   // Externalize server-only packages from client bundle
   serverExternalPackages: [
@@ -117,8 +172,13 @@ const sentryWebpackPluginOptions = {
   tunnelRoute: '/monitoring',
 }
 
-// Export with Sentry config only if DSN is set AND not in memory-constrained build
+// Export with both bundle analyzer and Sentry config
+let config = bundleAnalyzerConfig(nextConfig)
+
+// Add Sentry config only if DSN is set AND not in memory-constrained build
 // Disable Sentry plugin during Vercel builds to save memory
-export default process.env.SENTRY_DSN && process.env.ENABLE_SENTRY_BUILD === 'true'
-  ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
-  : nextConfig
+if (process.env.SENTRY_DSN && process.env.ENABLE_SENTRY_BUILD === 'true') {
+  config = withSentryConfig(config, sentryWebpackPluginOptions)
+}
+
+export default config

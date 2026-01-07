@@ -83,11 +83,9 @@ export const sendSolPayment = internalAction({
       throw new Error('Caisper wallet not configured')
     }
 
-    // 2. Setup RPC URL - x402 payments should use mainnet where Caisper has real funds
-    const network = getNetworkMetadata()
-    // Force mainnet for payments since Caisper has real SOL/USDC
-    const rpcUrl = 'https://api.mainnet-beta.solana.com'
-    console.log(`[Caisper] Using RPC: ${rpcUrl} (env: ${network.environment})`)
+    // 2. Setup RPC URL (using environment variable with mainnet fallback)
+    const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
+    console.log(`[Caisper] Using RPC URL: ${rpcUrl}`)
 
     // 3. Key material
     const secretKeyBytes = new Uint8Array(wallet.secretKey)

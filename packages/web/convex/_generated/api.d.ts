@@ -9,6 +9,9 @@
  */
 
 import type * as agent from "../agent.js";
+import type * as agents from "../agents.js";
+import type * as apiKeyHelpers from "../apiKeyHelpers.js";
+import type * as apiKeys from "../apiKeys.js";
 import type * as credentials from "../credentials.js";
 import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
@@ -16,8 +19,10 @@ import type * as debugObservation from "../debugObservation.js";
 import type * as ghostDiscovery from "../ghostDiscovery.js";
 import type * as ghostScoreCalculator from "../ghostScoreCalculator.js";
 import type * as lib_caisper from "../lib/caisper.js";
+import type * as lib_caisperX402 from "../lib/caisperX402.js";
 import type * as lib_networkMetadata from "../lib/networkMetadata.js";
 import type * as observation from "../observation.js";
+import type * as observatoryTerminal from "../observatoryTerminal.js";
 import type * as onboarding from "../onboarding.js";
 import type * as scripts_seedAgentDirectory from "../scripts/seedAgentDirectory.js";
 import type * as scripts_seedDashboardData from "../scripts/seedDashboardData.js";
@@ -33,6 +38,9 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   agent: typeof agent;
+  agents: typeof agents;
+  apiKeyHelpers: typeof apiKeyHelpers;
+  apiKeys: typeof apiKeys;
   credentials: typeof credentials;
   crons: typeof crons;
   dashboard: typeof dashboard;
@@ -40,8 +48,10 @@ declare const fullApi: ApiFromModules<{
   ghostDiscovery: typeof ghostDiscovery;
   ghostScoreCalculator: typeof ghostScoreCalculator;
   "lib/caisper": typeof lib_caisper;
+  "lib/caisperX402": typeof lib_caisperX402;
   "lib/networkMetadata": typeof lib_networkMetadata;
   observation: typeof observation;
+  observatoryTerminal: typeof observatoryTerminal;
   onboarding: typeof onboarding;
   "scripts/seedAgentDirectory": typeof scripts_seedAgentDirectory;
   "scripts/seedDashboardData": typeof scripts_seedDashboardData;

@@ -31,7 +31,8 @@ import { getAgentSigner, ensureFundedWallet } from '../wallet';
 function verifyElizaOSRuntime(runtime: IAgentRuntime): boolean {
   try {
     // Check for core ElizaOS runtime properties
-    const hasCharacter = runtime.character !== undefined && runtime.character !== null;
+    const hasCharacter =
+      runtime.character !== undefined && runtime.character !== null;
     const hasPlugins = Array.isArray(runtime.plugins);
     const hasProcessActions = typeof runtime.processActions === 'function';
     const hasEvaluate = typeof runtime.evaluate === 'function';
@@ -42,28 +43,35 @@ function verifyElizaOSRuntime(runtime: IAgentRuntime): boolean {
     const hasLogger = runtime.logger !== undefined;
 
     // All checks must pass for ElizaOS verification
-    const isElizaOS = hasCharacter &&
-                     hasPlugins &&
-                     hasProcessActions &&
-                     hasEvaluate &&
-                     hasComposeState &&
-                     hasAgentId &&
-                     hasLogger;
+    const isElizaOS =
+      hasCharacter &&
+      hasPlugins &&
+      hasProcessActions &&
+      hasEvaluate &&
+      hasComposeState &&
+      hasAgentId &&
+      hasLogger;
 
-    logger.debug({
-      hasCharacter,
-      hasPlugins,
-      hasProcessActions,
-      hasEvaluate,
-      hasComposeState,
-      hasAgentId,
-      hasLogger,
-      isElizaOS,
-    }, 'ElizaOS runtime verification checks');
+    logger.debug(
+      {
+        hasCharacter,
+        hasPlugins,
+        hasProcessActions,
+        hasEvaluate,
+        hasComposeState,
+        hasAgentId,
+        hasLogger,
+        isElizaOS,
+      },
+      'ElizaOS runtime verification checks'
+    );
 
     return isElizaOS;
   } catch (error) {
-    logger.warn({ error }, 'Failed to verify ElizaOS runtime - defaulting to custom framework');
+    logger.warn(
+      { error },
+      'Failed to verify ElizaOS runtime - defaulting to custom framework'
+    );
     return false;
   }
 }
@@ -102,7 +110,8 @@ function parseCredentialRequest(message: Memory): CredentialRequest | null {
   const agentId = address(addressMatch[1]);
 
   // Determine credential type
-  let credentialType: 'agent-identity' | 'reputation' | 'job-completion' = 'agent-identity';
+  let credentialType: 'agent-identity' | 'reputation' | 'job-completion' =
+    'agent-identity';
   if (textLower.includes('reputation') || textLower.includes('ghost score')) {
     credentialType = 'reputation';
   } else if (textLower.includes('job') || textLower.includes('completion')) {
@@ -110,11 +119,14 @@ function parseCredentialRequest(message: Memory): CredentialRequest | null {
   }
 
   // Extract email if provided
-  const emailMatch = text.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+  const emailMatch = text.match(
+    /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/
+  );
   const recipientEmail = emailMatch ? emailMatch[1] : undefined;
 
   // Check if Crossmint sync requested
-  const syncToCrossmint = textLower.includes('crossmint') || textLower.includes('evm');
+  const syncToCrossmint =
+    textLower.includes('crossmint') || textLower.includes('evm');
 
   // Extract name if provided
   const nameMatch = text.match(/name[:\s]+([^,\n]+)/i);
@@ -166,20 +178,32 @@ Credentials are stored on Solana and can be bridged to EVM chains via Crossmint.
     const text = message.content.text?.toLowerCase() || '';
 
     // Must have action words
-    const hasActionWord = text.includes('issue') || text.includes('create') || text.includes('mint');
-    const hasCredentialWord = text.includes('credential') || text.includes('vc');
+    const hasActionWord =
+      text.includes('issue') ||
+      text.includes('create') ||
+      text.includes('mint');
+    const hasCredentialWord =
+      text.includes('credential') || text.includes('vc');
 
     // Must have a Solana address (32-44 characters base58)
-    const hasSolanaAddress = /[A-Za-z0-9]{32,44}/.test(message.content.text || '');
+    const hasSolanaAddress = /[A-Za-z0-9]{32,44}/.test(
+      message.content.text || ''
+    );
 
     // Exclude informational questions about capabilities
-    const isInformationalQuestion = text.includes('what types') ||
-                                    text.includes('what kind') ||
-                                    text.includes('which types') ||
-                                    text.includes('can you issue') ||
-                                    text.includes('what vcs');
+    const isInformationalQuestion =
+      text.includes('what types') ||
+      text.includes('what kind') ||
+      text.includes('which types') ||
+      text.includes('can you issue') ||
+      text.includes('what vcs');
 
-    return hasActionWord && hasCredentialWord && hasSolanaAddress && !isInformationalQuestion;
+    return (
+      hasActionWord &&
+      hasCredentialWord &&
+      hasSolanaAddress &&
+      !isInformationalQuestion
+    );
   },
 
   handler: async (
@@ -214,11 +238,14 @@ Optional: "name: Agent Name, capabilities: [cap1, cap2], email: user@example.com
         };
       }
 
-      logger.info({
-        agentId: runtime.agentId,
-        targetAgent: request.agentId.toString(),
-        credentialType: request.credentialType,
-      }, 'Issuing credential');
+      logger.info(
+        {
+          agentId: runtime.agentId,
+          targetAgent: request.agentId.toString(),
+          credentialType: request.credentialType,
+        },
+        'Issuing credential'
+      );
 
       // Get agent signer
       const signer = await getAgentSigner(runtime);
@@ -256,11 +283,14 @@ Optional: "name: Agent Name, capabilities: [cap1, cap2], email: user@example.com
         const isElizaOSRuntime = verifyElizaOSRuntime(runtime);
         const frameworkOrigin = isElizaOSRuntime ? 'elizaos' : 'custom';
 
-        logger.info({
-          agentId: runtime.agentId,
-          isElizaOSRuntime,
-          frameworkOrigin,
-        }, 'Framework origin verified for credential issuance');
+        logger.info(
+          {
+            agentId: runtime.agentId,
+            isElizaOSRuntime,
+            frameworkOrigin,
+          },
+          'Framework origin verified for credential issuance'
+        );
 
         result = await credentialService.issueAgentIdentityCredential({
           agentId: request.agentId.toString(),
@@ -277,11 +307,13 @@ Optional: "name: Agent Name, capabilities: [cap1, cap2], email: user@example.com
           signature: signatureData,
         });
 
-        logger.info({
-          credentialId: result.solanaCredential?.credentialId,
-          crossmintId: result.crossmintSync?.id,
-        }, 'Agent identity credential issued');
-
+        logger.info(
+          {
+            credentialId: result.solanaCredential?.credentialId,
+            crossmintId: result.crossmintSync?.id,
+          },
+          'Agent identity credential issued'
+        );
       } else if (request.credentialType === 'reputation') {
         // Fetch agent reputation data first
         const agentData = await service.agents.getAgentAccount(request.agentId);
@@ -316,7 +348,11 @@ Optional: "name: Agent Name, capabilities: [cap1, cap2], email: user@example.com
         if (request.syncToCrossmint && templateId) {
           // Issue reputation credential via Crossmint
           const { CrossmintVCClient } = await import('@ghostspeak/sdk');
-          const crossmintEnv = (process.env.CROSSMINT_ENV === 'production' ? 'production' : 'staging') as 'staging' | 'production';
+          const crossmintEnv = (
+            process.env.CROSSMINT_ENV === 'production'
+              ? 'production'
+              : 'staging'
+          ) as 'staging' | 'production';
 
           const crossmint = new CrossmintVCClient({
             apiKey: process.env.CROSSMINT_SECRET_KEY || '',
@@ -326,7 +362,8 @@ Optional: "name: Agent Name, capabilities: [cap1, cap2], email: user@example.com
 
           const crossmintResult = await crossmint.issueReputationCredential(
             templateId,
-            request.recipientEmail || `agent-${request.agentId.toString().slice(0, 8)}@ghostspeak.credentials`,
+            request.recipientEmail ||
+              `agent-${request.agentId.toString().slice(0, 8)}@ghostspeak.credentials`,
             subject
           );
 
@@ -342,13 +379,17 @@ Optional: "name: Agent Name, capabilities: [cap1, cap2], email: user@example.com
           };
         }
 
-        logger.info({
-          crossmintId: result.crossmintSync?.id,
-          reputationScore,
-        }, 'Reputation credential issued');
-
+        logger.info(
+          {
+            crossmintId: result.crossmintSync?.id,
+            reputationScore,
+          },
+          'Reputation credential issued'
+        );
       } else {
-        throw new Error(`Credential type not yet implemented: ${request.credentialType}`);
+        throw new Error(
+          `Credential type not yet implemented: ${request.credentialType}`
+        );
       }
 
       // Build success response
@@ -388,7 +429,6 @@ The credential has been created and ${request.syncToCrossmint ? 'bridged to EVM 
           evmStatus: result.crossmintSync?.onChain?.status,
         },
       };
-
     } catch (error) {
       logger.error({ error }, 'Error issuing credential:');
 

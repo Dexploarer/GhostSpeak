@@ -4,13 +4,14 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
-import { Menu, X, Moon, Sun, Coins, FileText } from 'lucide-react'
+import { Menu, X, Moon, Sun, Coins, FileText, Eye } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from 'next-themes'
 import { BrandLogo } from '@/components/shared/BrandLogo'
 import { ConnectWalletButton } from '@/components/auth/ConnectWalletButton'
 
 const marketingNavItems = [
+  { href: '/observatory', label: 'Observatory', icon: Eye },
   { href: 'https://docs.ghostspeak.io', label: 'Docs', icon: FileText, external: true },
   {
     href: 'https://dexscreener.com/solana/e44xj7jyjxyermlqqwrpu4nekcphawfjf3ppn2uokgdb',
@@ -41,7 +42,10 @@ export const Navigation: React.FC = () => {
   const isDashboardPage =
     pathname?.startsWith('/dashboard') ||
     pathname?.startsWith('/caisper') ||
-    pathname?.startsWith('/settings')
+    pathname?.startsWith('/settings') ||
+    // Only treat known authenticated agent routes as dashboard context.
+    // Most /agents/* pages (e.g. /agents/[address]) are public/marketing context.
+    pathname === '/agents/register'
   const isMarketingPage = !isDashboardPage
 
   // Show marketing nav items only on marketing pages
@@ -86,11 +90,15 @@ export const Navigation: React.FC = () => {
         style={{
           transition: 'none',
         }}
+        aria-label="Primary"
       >
         <motion.div layout className="flex items-center justify-between w-full max-w-7xl mx-auto">
           {/* Logo Section */}
           <motion.div layout className="flex items-center gap-2 shrink-0">
-            <Link href="/" className="relative group">
+            <Link
+              href="/"
+              className="relative group rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+            >
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <div className="absolute inset-0 bg-lime-400/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -117,13 +125,15 @@ export const Navigation: React.FC = () => {
               {navItems.map((item) => {
                 const Icon = item.icon
                 const LinkComponent = item.external ? 'a' : Link
+                const isCurrent = !item.external && pathname === item.href
 
                 return (
                   <LinkComponent
                     key={item.href}
                     href={item.href}
                     {...(item.external && { target: '_blank', rel: 'noopener noreferrer' })}
-                    className="relative px-3 py-2 rounded-full group overflow-hidden shrink-0"
+                    aria-current={isCurrent ? 'page' : undefined}
+                    className="relative px-3 py-2 rounded-full group overflow-hidden shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                   >
                     <span
                       className={cn(
@@ -153,9 +163,11 @@ export const Navigation: React.FC = () => {
             </div>
 
             <button
+              type="button"
               onClick={toggleDarkMode}
+              aria-label="Toggle theme"
               className={cn(
-                'p-2 rounded-full transition-colors',
+                'h-11 w-11 inline-flex items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                 isMarketingPage && !isScrolled
                   ? 'text-white/70 hover:text-white hover:bg-white/10'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10'
@@ -167,10 +179,14 @@ export const Navigation: React.FC = () => {
 
             {/* Mobile Menu Toggle */}
             <button
+              type="button"
               className={cn(
-                'md:hidden p-2',
+                'md:hidden h-11 w-11 inline-flex items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                 isMarketingPage && !isScrolled ? 'text-white' : 'text-gray-600 dark:text-gray-300'
               )}
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-menu"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X /> : <Menu />}
@@ -186,6 +202,7 @@ export const Navigation: React.FC = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
+            id="mobile-menu"
             className="fixed inset-0 z-40 bg-white/95 dark:bg-black/95 backdrop-blur-xl md:hidden pt-24 px-6"
           >
             <div className="flex flex-col space-y-4">
@@ -200,6 +217,7 @@ export const Navigation: React.FC = () => {
 
               {navItems.map((item, idx) => {
                 const LinkComponent = item.external ? 'a' : Link
+                const isCurrent = !item.external && pathname === item.href
 
                 return (
                   <motion.div
@@ -212,7 +230,8 @@ export const Navigation: React.FC = () => {
                       href={item.href}
                       {...(item.external && { target: '_blank', rel: 'noopener noreferrer' })}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10"
+                      aria-current={isCurrent ? 'page' : undefined}
+                      className="flex items-center p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-black"
                     >
                       <item.icon className="w-6 h-6 mr-4 text-lime-500" />
                       <span className="text-lg font-medium text-gray-900 dark:text-white">

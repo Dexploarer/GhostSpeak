@@ -1265,7 +1265,7 @@ export default defineSchema({
     blockTime: v.number(), // Unix timestamp from chain
     // Discovery metadata
     discoveredAt: v.number(), // When we found this interaction
-    discoverySource: v.string(), // 'wallet_onboarding' | 'x402_indexer' | 'manual'
+    discoverySource: v.string(), // 'wallet_onboarding' | 'x402_indexer' | 'caisper_observation' | 'manual'
     // Status tracking
     agentKnown: v.boolean(), // Was agent already in our system when discovered?
     reviewPromptSent: v.optional(v.boolean()), // Have we prompted for review?

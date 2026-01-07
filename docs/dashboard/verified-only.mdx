@@ -1,0 +1,97 @@
+---
+title: 'Verified Session Dashboard'
+description: 'Explains the session-gated dashboard landing page and what “verified session” means (wallet + SIWS)'
+---
+
+# Verified session dashboard
+
+The `/dashboard` landing page is intentionally **minimalist** — but it’s also **session-gated**.
+
+In dashboard docs, a **verified session** means:
+
+- a **connected wallet**, **and**
+- an active **SIWS (Sign-In With Solana)** session for that wallet.
+
+In other words: “verified” here refers to the **user session state**, not whether features are “tested-only” or “stable-only.”
+
+This gating is enforced in the dashboard page ([`packages/web/app/dashboard/page.tsx`](packages/web/app/dashboard/page.tsx:1)) using the helper [`isVerifiedSessionForWallet()`](packages/web/lib/auth/verifiedSession.ts:43), and communicated in the “Verification Contract” panel [`VerificationContractCard`](packages/web/components/dashboard/VerificationContractCard.tsx:1).
+
+## What “verified session” means
+
+“Verified session dashboard” means:
+
+- You can reach `/dashboard`, but **most dashboard UI remains locked** until SIWS authentication has completed.
+- The wallet must be connected, and the SIWS session must match the connected wallet address.
+
+The UI explicitly communicates this contract in [`VerificationContractCard`](packages/web/components/dashboard/VerificationContractCard.tsx:1).
+
+## Why the landing page is minimalist
+
+After a verified session is present, the dashboard still uses a small set of entrypoints. This is **by design**:
+
+- Keep the hub focused on core onboarding loops.
+- Avoid “coming soon” shortcuts on the landing page.
+- Avoid duplicating the full sidebar/navigation sitemap.
+
+This does **not** imply other features are untested; it’s a UX choice about what `/dashboard` should be.
+
+The compact entrypoints are rendered by [`VerifiedActionBar`](packages/web/components/dashboard/VerifiedActionBar.tsx:1):
+
+- **Chat** → `/caisper` (primary product entrypoint)
+- **Register Agent** → `/agents/register` (developer onboarding entrypoint)
+- **Settings** → `/settings` (account/profile entrypoint)
+- **Observe** → `/dashboard/observe` (optional; controlled by `showObserveLink` in [`VerificationContractCard`](packages/web/components/dashboard/VerificationContractCard.tsx:8))
+
+## What is intentionally not surfaced on the hub
+
+The `/dashboard` hub intentionally does **not** surface CTAs for:
+
+- **Payments / “Manage Payments”**
+- **Staking / “Stake GHOST”**
+- **Agent verification flows** (e.g. “Verify an Agent”, “Verify First Agent”)
+
+Rationale (hub-only): keep `/dashboard` focused and predictable. Roadmap and ongoing work is tracked elsewhere (for example [`CHANGELOG.md`](CHANGELOG.md:1) and [`docs/resources/community.mdx`](docs/resources/community.mdx:1)).
+
+## How the verified-session gate is enforced
+
+The gate is enforced as UI + tests:
+
+1) **Session check in the dashboard page**
+   - `/dashboard` computes `hasVerifiedSession` using [`isVerifiedSessionForWallet()`](packages/web/lib/auth/verifiedSession.ts:43) and only renders the full dashboard UI when it is true (see the “Session gating” branch in [`packages/web/app/dashboard/page.tsx`](packages/web/app/dashboard/page.tsx:222)).
+
+2) **Navigation “dashboard context” is explicit**
+   - The header/nav switches into dashboard context for a small, explicit set of routes via [`isDashboardPage`](packages/web/components/layout/Navigation.tsx:41). This keeps `/caisper`, `/settings`, and `/agents/register` treated as authenticated/dashboard-adjacent pages.
+
+3) **End-to-end invariant test**
+   - The Playwright spec [`packages/web/e2e/dashboard-verified-only.spec.ts`](packages/web/e2e/dashboard-verified-only.spec.ts:1) asserts session-gated UI invariants for `/dashboard` (expected links, removed CTAs, and the presence of the verified-session contract panel).
+
+## Developer notes
+
+### Where the session check lives
+
+- Session parsing + wallet match: [`readGhostSpeakAuthSessionFromLocalStorage()`](packages/web/lib/auth/verifiedSession.ts:14) and [`isVerifiedSessionForWallet()`](packages/web/lib/auth/verifiedSession.ts:43)
+- Dashboard gate and “locked” state UI: [`packages/web/app/dashboard/page.tsx`](packages/web/app/dashboard/page.tsx:171)
+
+### Updating the contract list / surfaced actions
+
+- **Contract panel list** (copy + action list): [`VerificationContractCard`](packages/web/components/dashboard/VerificationContractCard.tsx:1)
+- **Action bar buttons** (primary CTA layout): [`VerifiedActionBar`](packages/web/components/dashboard/VerifiedActionBar.tsx:1)
+- **Dashboard composition** (what the hub renders): [`packages/web/app/dashboard/page.tsx`](packages/web/app/dashboard/page.tsx:430)
+
+When updating the list, keep the **contract panel** and the **action bar** aligned.
+
+### Running the Playwright spec
+
+From the repo root:
+
+```bash
+bun run test:e2e -- e2e/dashboard-verified-only.spec.ts
+```
+
+Or from within `packages/web`:
+
+```bash
+bun run test:e2e e2e/dashboard-verified-only.spec.ts
+```
+
+Note: the spec seeds a Convex user via `NEXT_PUBLIC_CONVEX_URL` (see [`getConvexUrlFromDotenv()`](packages/web/e2e/dashboard-verified-only.spec.ts:7)).

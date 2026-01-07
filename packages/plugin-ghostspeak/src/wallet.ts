@@ -10,7 +10,10 @@
 
 import type { IAgentRuntime } from '@elizaos/core';
 import { logger } from '@elizaos/core';
-import { generateKeyPairSigner, createKeyPairSignerFromBytes } from '@solana/signers';
+import {
+  generateKeyPairSigner,
+  createKeyPairSignerFromBytes,
+} from '@solana/signers';
 import type { KeyPairSigner } from '@solana/signers';
 import { address } from '@solana/addresses';
 import type { Address } from '@solana/addresses';
@@ -46,13 +49,18 @@ export async function getAgentSigner(
     logger.debug('Using wallet from agent runtime');
 
     try {
-      const privateKeyBytes = parsePrivateKey((runtime as any).wallet.privateKey);
+      const privateKeyBytes = parsePrivateKey(
+        (runtime as any).wallet.privateKey
+      );
       const signer = await createKeyPairSignerFromBytes(privateKeyBytes);
 
-      logger.info({
-        agentId: runtime.agentId,
-        walletAddress: signer.address,
-      }, 'Agent signer loaded from runtime wallet');
+      logger.info(
+        {
+          agentId: runtime.agentId,
+          walletAddress: signer.address,
+        },
+        'Agent signer loaded from runtime wallet'
+      );
 
       return signer;
     } catch (error) {
@@ -66,13 +74,18 @@ export async function getAgentSigner(
     logger.debug('Using wallet from environment variable');
 
     try {
-      const privateKeyBytes = parsePrivateKey(process.env.AGENT_WALLET_PRIVATE_KEY);
+      const privateKeyBytes = parsePrivateKey(
+        process.env.AGENT_WALLET_PRIVATE_KEY
+      );
       const signer = await createKeyPairSignerFromBytes(privateKeyBytes);
 
-      logger.info({
-        agentId: runtime.agentId,
-        walletAddress: signer.address,
-      }, 'Agent signer loaded from environment');
+      logger.info(
+        {
+          agentId: runtime.agentId,
+          walletAddress: signer.address,
+        },
+        'Agent signer loaded from environment'
+      );
 
       return signer;
     } catch (error) {
@@ -83,16 +96,20 @@ export async function getAgentSigner(
 
   // Generate new keypair (dev mode only)
   if (allowGenerate) {
-    logger.warn({ agentId: runtime.agentId },
+    logger.warn(
+      { agentId: runtime.agentId },
       'No wallet found, generating new keypair (DEV MODE ONLY)'
     );
 
     const signer = await generateKeyPairSigner();
 
-    logger.info({
-      agentId: runtime.agentId,
-      walletAddress: signer.address,
-    }, 'Generated new keypair for agent');
+    logger.info(
+      {
+        agentId: runtime.agentId,
+        walletAddress: signer.address,
+      },
+      'Generated new keypair for agent'
+    );
 
     return signer;
   }
@@ -136,7 +153,9 @@ function parsePrivateKey(privateKey: string | Uint8Array): Uint8Array {
   if (keyString.startsWith('0x')) {
     try {
       const hex = keyString.slice(2);
-      const bytes = new Uint8Array(hex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+      const bytes = new Uint8Array(
+        hex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16))
+      );
       if (bytes.length === 64) {
         return bytes;
       }
@@ -170,8 +189,7 @@ function parsePrivateKey(privateKey: string | Uint8Array): Uint8Array {
  */
 export function hasWalletConfigured(runtime: IAgentRuntime): boolean {
   return !!(
-    (runtime as any).wallet?.privateKey ||
-    process.env.AGENT_WALLET_PRIVATE_KEY
+    (runtime as any).wallet?.privateKey || process.env.AGENT_WALLET_PRIVATE_KEY
   );
 }
 
@@ -183,7 +201,9 @@ export function hasWalletConfigured(runtime: IAgentRuntime): boolean {
  * @param runtime - ElizaOS agent runtime
  * @returns Agent's Solana address
  */
-export async function getAgentAddress(runtime: IAgentRuntime): Promise<Address> {
+export async function getAgentAddress(
+  runtime: IAgentRuntime
+): Promise<Address> {
   if ((runtime as any).wallet?.address) {
     return address((runtime as any).wallet.address);
   }
@@ -222,20 +242,30 @@ export async function airdropToAgent(
 
   const agentAddress = await getAgentAddress(runtime);
 
-  logger.info({
-    agentId: runtime.agentId,
-    address: agentAddress,
-    amount,
-  }, 'Requesting SOL airdrop');
+  logger.info(
+    {
+      agentId: runtime.agentId,
+      address: agentAddress,
+      amount,
+    },
+    'Requesting SOL airdrop'
+  );
 
   // Cast to the Lamports branded type expected by the RPC
-  const lamportsAmount = BigInt(amount) as bigint & { readonly __brand: unique symbol };
-  const signature = await rpc.requestAirdrop(agentAddress, lamportsAmount as any).send();
+  const lamportsAmount = BigInt(amount) as bigint & {
+    readonly __brand: unique symbol;
+  };
+  const signature = await rpc
+    .requestAirdrop(agentAddress, lamportsAmount as any)
+    .send();
 
-  logger.info({
-    agentId: runtime.agentId,
-    signature,
-  }, 'Airdrop successful');
+  logger.info(
+    {
+      agentId: runtime.agentId,
+      signature,
+    },
+    'Airdrop successful'
+  );
 
   return signature.toString();
 }
@@ -284,32 +314,41 @@ export async function ensureFundedWallet(
   const balance = await getAgentBalance(runtime);
 
   if (balance >= BigInt(minBalance)) {
-    logger.debug({
-      agentId: runtime.agentId,
-      balance: formatSolBalance(balance),
-    }, 'Agent wallet has sufficient balance');
+    logger.debug(
+      {
+        agentId: runtime.agentId,
+        balance: formatSolBalance(balance),
+      },
+      'Agent wallet has sufficient balance'
+    );
     return true;
   }
 
   // Auto-airdrop on devnet
   const cluster = process.env.SOLANA_CLUSTER || 'devnet';
   if (cluster === 'devnet') {
-    logger.warn({
-      agentId: runtime.agentId,
-      balance: formatSolBalance(balance),
-      minBalance: formatSolBalance(BigInt(minBalance)),
-    }, 'Agent wallet balance low, requesting airdrop');
+    logger.warn(
+      {
+        agentId: runtime.agentId,
+        balance: formatSolBalance(balance),
+        minBalance: formatSolBalance(BigInt(minBalance)),
+      },
+      'Agent wallet balance low, requesting airdrop'
+    );
 
     await airdropToAgent(runtime, 1_000_000_000); // 1 SOL
     return true;
   }
 
   // Mainnet - need manual funding
-  logger.error({
-    agentId: runtime.agentId,
-    balance: formatSolBalance(balance),
-    minBalance: formatSolBalance(BigInt(minBalance)),
-  }, 'Agent wallet has insufficient balance (mainnet - requires manual funding)');
+  logger.error(
+    {
+      agentId: runtime.agentId,
+      balance: formatSolBalance(balance),
+      minBalance: formatSolBalance(BigInt(minBalance)),
+    },
+    'Agent wallet has insufficient balance (mainnet - requires manual funding)'
+  );
 
   return false;
 }

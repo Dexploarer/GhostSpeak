@@ -4,7 +4,14 @@
  * NOTE: Governance actions have been removed per redesign
  */
 
-import type { Action, ActionResult, HandlerCallback, IAgentRuntime, Memory, State } from '@elizaos/core';
+import type {
+  Action,
+  ActionResult,
+  HandlerCallback,
+  IAgentRuntime,
+  Memory,
+  State,
+} from '@elizaos/core';
 import { logger } from '@elizaos/core';
 
 // ======================
@@ -21,9 +28,17 @@ export const stakeGhostAction: Action = {
   description:
     'Stake GHOST tokens to increase reputation weight and earn staking rewards. Staked tokens are locked for a minimum period.',
 
-  validate: async (_runtime: IAgentRuntime, message: Memory, _state: State | undefined): Promise<boolean> => {
+  validate: async (
+    _runtime: IAgentRuntime,
+    message: Memory,
+    _state: State | undefined
+  ): Promise<boolean> => {
     const text = message.content.text?.toLowerCase() || '';
-    return text.includes('stake') || text.includes('lock ghost') || text.includes('deposit ghost');
+    return (
+      text.includes('stake') ||
+      text.includes('lock ghost') ||
+      text.includes('deposit ghost')
+    );
   },
 
   handler: async (
@@ -122,9 +137,14 @@ await client.staking.stakeGhost(signer, {
 export const checkStakingAction: Action = {
   name: 'CHECK_STAKING',
   similes: ['STAKING_STATUS', 'MY_STAKES', 'STAKING_INFO'],
-  description: 'Check your GHOST token staking status, rewards, and unlock schedule.',
+  description:
+    'Check your GHOST token staking status, rewards, and unlock schedule.',
 
-  validate: async (_runtime: IAgentRuntime, message: Memory, _state: State | undefined): Promise<boolean> => {
+  validate: async (
+    _runtime: IAgentRuntime,
+    message: Memory,
+    _state: State | undefined
+  ): Promise<boolean> => {
     const text = message.content.text?.toLowerCase() || '';
     return (
       text.includes('staking status') ||
@@ -193,11 +213,20 @@ console.log('Unlock Time:', status.unlockTimestamp);
 export const setPrivacyModeAction: Action = {
   name: 'SET_PRIVACY_MODE',
   similes: ['PRIVACY_MODE', 'HIDE_REPUTATION', 'PRIVACY_SETTINGS'],
-  description: 'Set privacy mode for reputation visibility: PUBLIC, SELECTIVE, or PRIVATE.',
+  description:
+    'Set privacy mode for reputation visibility: PUBLIC, SELECTIVE, or PRIVATE.',
 
-  validate: async (_runtime: IAgentRuntime, message: Memory, _state: State | undefined): Promise<boolean> => {
+  validate: async (
+    _runtime: IAgentRuntime,
+    message: Memory,
+    _state: State | undefined
+  ): Promise<boolean> => {
     const text = message.content.text?.toLowerCase() || '';
-    return text.includes('privacy') || text.includes('hide reputation') || text.includes('private mode');
+    return (
+      text.includes('privacy') ||
+      text.includes('hide reputation') ||
+      text.includes('private mode')
+    );
   },
 
   handler: async (
@@ -290,9 +319,14 @@ await client.privacy.setPrivacyMode(signer, {
 export const createEscrowAction: Action = {
   name: 'CREATE_ESCROW',
   similes: ['NEW_ESCROW', 'GHOST_PROTECT', 'CREATE_GHOST_PROTECT'],
-  description: 'Create a Ghost Protect escrow for secure B2C transactions with buyer protection.',
+  description:
+    'Create a Ghost Protect escrow for secure B2C transactions with buyer protection.',
 
-  validate: async (_runtime: IAgentRuntime, message: Memory, _state: State | undefined): Promise<boolean> => {
+  validate: async (
+    _runtime: IAgentRuntime,
+    message: Memory,
+    _state: State | undefined
+  ): Promise<boolean> => {
     const text = message.content.text?.toLowerCase() || '';
     return (
       text.includes('create escrow') ||

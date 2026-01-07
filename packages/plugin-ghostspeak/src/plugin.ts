@@ -50,7 +50,8 @@ import { ghostspeakConfigSchema } from './config';
  */
 export const ghostspeakPlugin: Plugin = {
   name: 'plugin-ghostspeak',
-  description: 'GhostSpeak - AI agent reputation, credentials, and identity on Solana',
+  description:
+    'GhostSpeak - AI agent reputation, credentials, and identity on Solana',
 
   // Configuration schema
   config: {
@@ -58,7 +59,8 @@ export const ghostspeakPlugin: Plugin = {
     SOLANA_CLUSTER: process.env.SOLANA_CLUSTER,
     SOLANA_RPC_URL: process.env.SOLANA_RPC_URL,
     CROSSMINT_SECRET_KEY: process.env.CROSSMINT_SECRET_KEY,
-    CROSSMINT_REPUTATION_TEMPLATE_ID: process.env.CROSSMINT_REPUTATION_TEMPLATE_ID,
+    CROSSMINT_REPUTATION_TEMPLATE_ID:
+      process.env.CROSSMINT_REPUTATION_TEMPLATE_ID,
     CROSSMINT_ENV: process.env.CROSSMINT_ENV,
     GHOSTSPEAK_MERCHANT_ADDRESS: process.env.GHOSTSPEAK_MERCHANT_ADDRESS,
     PAYAI_FACILITATOR_URL: process.env.PAYAI_FACILITATOR_URL,
@@ -81,15 +83,19 @@ export const ghostspeakPlugin: Plugin = {
         }
       }
 
-      logger.info({
-        cluster: validatedConfig.SOLANA_CLUSTER || 'devnet',
-        hasWallet: !!validatedConfig.AGENT_WALLET_PRIVATE_KEY,
-        hasCrossmint: !!validatedConfig.CROSSMINT_SECRET_KEY,
-      }, 'GhostSpeak plugin configured');
-
+      logger.info(
+        {
+          cluster: validatedConfig.SOLANA_CLUSTER || 'devnet',
+          hasWallet: !!validatedConfig.AGENT_WALLET_PRIVATE_KEY,
+          hasCrossmint: !!validatedConfig.CROSSMINT_SECRET_KEY,
+        },
+        'GhostSpeak plugin configured'
+      );
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const errorMessages = error.issues?.map((e) => e.message)?.join(', ') || 'Unknown validation error';
+        const errorMessages =
+          error.issues?.map(e => e.message)?.join(', ') ||
+          'Unknown validation error';
         throw new Error(`Invalid plugin configuration: ${errorMessages}`);
       }
       throw new Error(
@@ -130,7 +136,10 @@ export const ghostspeakPlugin: Plugin = {
   events: {
     MESSAGE_RECEIVED: [
       async (payload: any) => {
-        logger.debug({ roomId: payload.message?.roomId }, 'GhostSpeak: Message received');
+        logger.debug(
+          { roomId: payload.message?.roomId },
+          'GhostSpeak: Message received'
+        );
       },
     ],
 
@@ -139,8 +148,15 @@ export const ghostspeakPlugin: Plugin = {
         // Track successful blockchain operations
         const action = payload.action || '';
         const result = payload.result || {};
-        if (result.success && typeof action === 'string' && action.includes('GHOST')) {
-          logger.info({ action, data: result.data }, 'GhostSpeak action completed');
+        if (
+          result.success &&
+          typeof action === 'string' &&
+          action.includes('GHOST')
+        ) {
+          logger.info(
+            { action, data: result.data },
+            'GhostSpeak action completed'
+          );
         }
       },
     ],

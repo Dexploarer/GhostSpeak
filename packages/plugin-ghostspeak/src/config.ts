@@ -101,10 +101,7 @@ export const ghostspeakConfigSchema = z.object({
   /**
    * GHOST token mint address
    */
-  GHOST_TOKEN_MINT: z
-    .string()
-    .optional()
-    .describe('GHOST token mint address'),
+  GHOST_TOKEN_MINT: z.string().optional().describe('GHOST token mint address'),
 
   // =====================================================
   // ESCROW CONFIGURATION
@@ -152,7 +149,9 @@ export type GhostSpeakPluginConfig = z.infer<typeof ghostspeakConfigSchema>;
 /**
  * Validate and parse configuration
  */
-export function parseConfig(config: Record<string, string | undefined>): GhostSpeakPluginConfig {
+export function parseConfig(
+  config: Record<string, string | undefined>
+): GhostSpeakPluginConfig {
   return ghostspeakConfigSchema.parse(config);
 }
 
@@ -180,7 +179,8 @@ export function getConfigFromEnv(): GhostSpeakPluginConfig {
     SOLANA_CLUSTER: process.env.SOLANA_CLUSTER,
     SOLANA_RPC_URL: process.env.SOLANA_RPC_URL,
     CROSSMINT_SECRET_KEY: process.env.CROSSMINT_SECRET_KEY,
-    CROSSMINT_REPUTATION_TEMPLATE_ID: process.env.CROSSMINT_REPUTATION_TEMPLATE_ID,
+    CROSSMINT_REPUTATION_TEMPLATE_ID:
+      process.env.CROSSMINT_REPUTATION_TEMPLATE_ID,
     CROSSMINT_ENV: process.env.CROSSMINT_ENV,
     CROSSMINT_CHAIN: process.env.CROSSMINT_CHAIN,
     STAKING_CONFIG_ADDRESS: process.env.STAKING_CONFIG_ADDRESS,

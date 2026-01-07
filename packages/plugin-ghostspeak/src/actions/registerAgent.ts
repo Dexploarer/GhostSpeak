@@ -64,7 +64,8 @@ function parseRegistrationRequest(message: Memory): RegistrationRequest | null {
   const agentType = typeMatch ? parseInt(typeMatch[1]) : 0;
 
   // Check if compressed NFT requested
-  const useCompressedNFT = text.toLowerCase().includes('compressed') ||
+  const useCompressedNFT =
+    text.toLowerCase().includes('compressed') ||
     text.toLowerCase().includes('cnft');
 
   return {
@@ -109,7 +110,9 @@ Registered agents can:
   ): Promise<boolean> => {
     const text = message.content.text?.toLowerCase() || '';
     return (
-      (text.includes('register') || text.includes('create') || text.includes('onboard')) &&
+      (text.includes('register') ||
+        text.includes('create') ||
+        text.includes('onboard')) &&
       text.includes('agent')
     );
   },
@@ -146,23 +149,31 @@ Optional: "model: gpt-4, type: 0, compressed"`;
         };
       }
 
-      logger.info({
-        agentId: runtime.agentId,
-        agentName: request.name,
-        useCompressedNFT: request.useCompressedNFT,
-      }, 'Registering agent on GhostSpeak');
+      logger.info(
+        {
+          agentId: runtime.agentId,
+          agentName: request.name,
+          useCompressedNFT: request.useCompressedNFT,
+        },
+        'Registering agent on GhostSpeak'
+      );
 
       // Get agent signer
       const signer = await getAgentSigner(runtime);
 
-      logger.info({
-        signerAddress: signer.address,
-      }, 'Using signer for registration');
+      logger.info(
+        {
+          signerAddress: signer.address,
+        },
+        'Using signer for registration'
+      );
 
       // Ensure wallet is funded
       const hasFunds = await ensureFundedWallet(runtime);
       if (!hasFunds) {
-        throw new Error('Insufficient SOL balance. Please fund your wallet or wait for airdrop.');
+        throw new Error(
+          'Insufficient SOL balance. Please fund your wallet or wait for airdrop.'
+        );
       }
 
       // Get the GhostSpeak service
@@ -190,7 +201,9 @@ Optional: "model: gpt-4, type: 0, compressed"`;
         // Use compressed NFT (requires merkle tree)
         // For now, fall back to regular registration
         // TODO: Implement compressed NFT registration with merkle tree
-        logger.warn('Compressed NFT registration not yet implemented, using standard registration');
+        logger.warn(
+          'Compressed NFT registration not yet implemented, using standard registration'
+        );
 
         result = await service.agents.register(signer, {
           name: request.name,
@@ -210,15 +223,21 @@ Optional: "model: gpt-4, type: 0, compressed"`;
         });
       }
 
-      logger.info({
-        agentAddress: result.address,
-        signature: result.signature,
-      }, 'Agent registered successfully');
+      logger.info(
+        {
+          agentAddress: result.address,
+          signature: result.signature,
+        },
+        'Agent registered successfully'
+      );
 
       // Log the agent address for reference
-      logger.debug({
-        agentAddress: result.address.toString(),
-      }, 'Agent registered - address can be used for future operations');
+      logger.debug(
+        {
+          agentAddress: result.address.toString(),
+        },
+        'Agent registered - address can be used for future operations'
+      );
 
       // Build success response
       const responseText = `✅ Agent registered successfully on GhostSpeak!
@@ -267,7 +286,6 @@ Next steps:
           network: process.env.SOLANA_CLUSTER || 'devnet',
         },
       };
-
     } catch (error) {
       logger.error({ error }, 'Error registering agent:');
 

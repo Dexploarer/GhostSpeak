@@ -85,6 +85,28 @@ export const getTestsForEndpoint = query({
 })
 
 /**
+ * Internal version of `getTestsForEndpoint`.
+ *
+ * Used by debug validation flows so we can read the DB directly without
+ * importing the generated `api` object (which creates self-referential types).
+ */
+export const getTestsForEndpointInternal = internalQuery({
+  args: {
+    endpointId: v.id('observedEndpoints'),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const tests = await ctx.db
+      .query('endpointTests')
+      .withIndex('by_endpoint', (q) => q.eq('endpointId', args.endpointId))
+      .order('desc')
+      .collect()
+
+    return args.limit ? tests.slice(0, args.limit) : tests
+  },
+})
+
+/**
  * List test results for an agent (across all endpoints)
  */
 export const getTestsForAgent = query({
@@ -107,6 +129,24 @@ export const getTestsForAgent = query({
  * Get daily report for an agent on a specific date
  */
 export const getDailyReport = query({
+  args: {
+    agentAddress: v.string(),
+    date: v.string(), // YYYY-MM-DD
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query('dailyObservationReports')
+      .withIndex('by_agent_date', (q) =>
+        q.eq('agentAddress', args.agentAddress).eq('date', args.date)
+      )
+      .first()
+  },
+})
+
+/**
+ * Internal version of `getDailyReport` (see note on generated `api` imports).
+ */
+export const getDailyReportInternal = internalQuery({
   args: {
     agentAddress: v.string(),
     date: v.string(), // YYYY-MM-DD
@@ -311,6 +351,43 @@ export const addEndpoint = mutation({
 })
 
 /**
+ * Internal helper for deterministic verification/debug flows.
+ *
+ * Creates the endpoint if it doesn't exist (keyed by `endpoint` URL).
+ */
+export const upsertObservedEndpointInternal = internalMutation({
+  args: {
+    agentAddress: v.string(),
+    baseUrl: v.string(),
+    endpoint: v.string(),
+    method: v.string(),
+    priceUsdc: v.number(),
+    description: v.string(),
+    category: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query('observedEndpoints')
+      .filter((q) => q.eq(q.field('endpoint'), args.endpoint))
+      .first()
+
+    if (existing) {
+      return { id: existing._id, created: false }
+    }
+
+    const id = await ctx.db.insert('observedEndpoints', {
+      ...args,
+      isActive: true,
+      addedAt: Date.now(),
+      totalTests: 0,
+      successfulTests: 0,
+    })
+
+    return { id, created: true }
+  },
+})
+
+/**
  * Bulk import endpoints from validated JSON
  */
 export const bulkImportEndpoints = mutation({
@@ -404,11 +481,59 @@ export const recordTestResult = internalMutation({
     ),
   },
   handler: async (ctx, args) => {
+    // Use a single timestamp so related records (test + any derived activity)
+    // are tied to the same moment.
+    const testedAtMs = Date.now()
+
     // Insert test result
     const testId = await ctx.db.insert('endpointTests', {
       ...args,
-      testedAt: Date.now(),
+      testedAt: testedAtMs,
     })
+
+    // If this observation required an x402 payment, also record a corresponding
+    // historical interaction for Observatory.
+    //
+    // NOTE: `historicalInteractions` historically came from onboarding/seed data.
+    // For the public Observatory feed, we only want Observatory-originated rows.
+    if (args.paymentSignature) {
+      const existingInteraction = await ctx.db
+        .query('historicalInteractions')
+        .withIndex('by_signature', (q: any) =>
+          q.eq('transactionSignature', args.paymentSignature as string)
+        )
+        .first()
+
+      if (!existingInteraction) {
+        const caisperWallet = await ctx.db.query('caisperWallet').first()
+        const payerWalletAddress = caisperWallet?.publicKey || 'caisper_unconfigured'
+
+        const discoveredAgent = await ctx.db
+          .query('discoveredAgents')
+          .withIndex('by_address', (q: any) => q.eq('ghostAddress', args.agentAddress))
+          .first()
+
+        // Store amount as a string for compatibility with existing schema.
+        // We record micro-USDC (6 decimals) derived from `paymentAmountUsdc`.
+        const amountMicroUsdc = Math.round((args.paymentAmountUsdc ?? 0) * 1e6)
+
+        await ctx.db.insert('historicalInteractions', {
+          userWalletAddress: payerWalletAddress,
+          agentWalletAddress: args.agentAddress,
+          agentId: discoveredAgent?._id,
+          transactionSignature: args.paymentSignature,
+          amount: String(amountMicroUsdc),
+          // The cron test flow currently pays via a direct SOL transfer.
+          // This is not a PayAI-facilitated payment, so we use a descriptive sentinel.
+          facilitatorAddress: 'caisper_observation',
+          // `historicalInteractions.blockTime` is seconds.
+          blockTime: Math.floor(testedAtMs / 1000),
+          discoveredAt: testedAtMs,
+          discoverySource: 'caisper_observation',
+          agentKnown: !!discoveredAgent,
+        })
+      }
+    }
 
     // Update endpoint stats
     const endpoint = await ctx.db.get(args.endpointId)
@@ -427,7 +552,7 @@ export const recordTestResult = internalMutation({
       )
 
       await ctx.db.patch(args.endpointId, {
-        lastTestedAt: Date.now(),
+        lastTestedAt: testedAtMs,
         totalTests,
         successfulTests,
         avgResponseTimeMs,
@@ -666,22 +791,24 @@ export const issueObservationCredentials = internalMutation({
   },
   handler: async (ctx, args) => {
     const results = {
-      capabilityCredential: null as Id<'credentials'> | null,
-      apiQualityCredential: null as Id<'credentials'> | null,
-      uptimeCredential: null as Id<'credentials'> | null,
+      // These internal credential issuance helpers return logical `credentialId` strings,
+      // not Convex document IDs.
+      capabilityCredentialId: null as string | null,
+      apiQualityCredentialId: null as string | null,
+      uptimeCredentialId: null as string | null,
     }
 
     // 1. Issue Capability Verification Credential if capabilities verified
     if (args.verifiedCapabilities.length > 0 && args.testsRun >= 5) {
-      results.capabilityCredential = await ctx.runMutation(
-        internal.credentials.issueCapabilityVerificationCredential,
-        {
-          agentAddress: args.agentAddress,
-          capabilities: args.verifiedCapabilities,
-          testsRun: args.testsRun,
-          testsPassed: args.testsSucceeded,
-        }
-      )
+      const res = await ctx.runMutation(internal.credentials.issueCapabilityVerificationCredential, {
+        agentAddress: args.agentAddress,
+        capabilities: args.verifiedCapabilities,
+        testsRun: args.testsRun,
+        testsPassed: args.testsSucceeded,
+      })
+      if (res.success && 'credentialId' in res && typeof res.credentialId === 'string') {
+        results.capabilityCredentialId = res.credentialId
+      }
     }
 
     // 2. Issue API Quality Grade Credential
@@ -699,18 +826,16 @@ export const issueObservationCredentials = internalMutation({
         Math.round(capabilityAccuracy * 0.8 + responseQuality * 0.2)
       )
 
-      results.apiQualityCredential = await ctx.runMutation(
-        internal.credentials.issueAPIQualityGradeCredential,
-        {
-          agentAddress: args.agentAddress,
-          responseQuality,
-          capabilityAccuracy,
-          consistency,
-          documentation,
-          endpointsTested: args.testsRun,
-          reportDate: args.date,
-        }
-      )
+      const res = await ctx.runMutation(internal.credentials.issueAPIQualityGradeCredential, {
+        agentAddress: args.agentAddress,
+        responseQuality,
+        capabilityAccuracy,
+        consistency,
+        documentation,
+        endpointsTested: args.testsRun,
+        reportDate: args.date,
+      })
+      if (res.success) results.apiQualityCredentialId = res.credentialId
     }
 
     // 3. Check for Uptime Attestation Credential
@@ -737,17 +862,17 @@ export const issueObservationCredentials = internalMutation({
       const periodEnd =
         new Date(sortedDates[sortedDates.length - 1]).getTime() + 24 * 60 * 60 * 1000
 
-      results.uptimeCredential = await ctx.runMutation(
-        internal.credentials.issueUptimeAttestationCredential,
-        {
-          agentAddress: args.agentAddress,
-          totalTests,
-          successfulResponses: successfulTests,
-          avgResponseTimeMs: Math.round(avgResponseTime),
-          periodStart,
-          periodEnd,
-        }
-      )
+      const res = await ctx.runMutation(internal.credentials.issueUptimeAttestationCredential, {
+        agentAddress: args.agentAddress,
+        totalTests,
+        successfulResponses: successfulTests,
+        avgResponseTimeMs: Math.round(avgResponseTime),
+        periodStart,
+        periodEnd,
+      })
+      if (res.success && 'credentialId' in res && typeof res.credentialId === 'string') {
+        results.uptimeCredentialId = res.credentialId
+      }
     }
 
     return results
@@ -792,16 +917,35 @@ export const getNextEndpointToTest = internalMutation({
 })
 
 /**
+ * Internal fetch-by-id helper.
+ *
+ * Used by debug validation flows to force a specific endpoint through the
+ * *same* execution path as the hourly cron runner.
+ */
+export const getObservedEndpointInternal = internalQuery({
+  args: { endpointId: v.id('observedEndpoints') },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.endpointId)
+  },
+})
+
+/**
  * Run hourly endpoint tests
  * Called by cron job, tests multiple endpoints per hour
  */
 export const runHourlyTests = internalAction({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    // Debug overrides (defaults preserve existing cron behavior)
+    maxTests: v.optional(v.number()),
+    hourlyBudgetUsdc: v.optional(v.number()),
+    maxPriceUsdc: v.optional(v.number()),
+    forceEndpointId: v.optional(v.id('observedEndpoints')),
+  },
+  handler: async (ctx, args) => {
     // Budget: ~$1/day = ~$0.04/hour
     // With $0.01 endpoints, that's ~4 tests per hour
-    const HOURLY_BUDGET_USDC = 0.05
-    const MAX_TESTS_PER_HOUR = 10
+    const HOURLY_BUDGET_USDC = args.hourlyBudgetUsdc ?? 0.05
+    const MAX_TESTS_PER_HOUR = args.maxTests ?? 10
 
     let totalSpent = 0
     let testsRun = 0
@@ -811,9 +955,30 @@ export const runHourlyTests = internalAction({
     while (testsRun < MAX_TESTS_PER_HOUR && totalSpent < HOURLY_BUDGET_USDC) {
       // Get next endpoint to test (prioritize cheap ones within budget)
       const remainingBudget = HOURLY_BUDGET_USDC - totalSpent
-      const endpoint = await ctx.runMutation(internal.observation.getNextEndpointToTest, {
-        maxPriceUsdc: remainingBudget,
-      })
+
+      // In debug/validation flows we sometimes need to force the first test to
+      // hit a specific endpoint while keeping the rest of the cron logic intact.
+      const endpoint =
+        args.forceEndpointId && testsRun === 0
+          ? await ctx.runQuery(internal.observation.getObservedEndpointInternal, {
+              endpointId: args.forceEndpointId,
+            })
+          : await ctx.runMutation(internal.observation.getNextEndpointToTest, {
+              maxPriceUsdc:
+                typeof args.maxPriceUsdc === 'number'
+                  ? Math.min(args.maxPriceUsdc, remainingBudget)
+                  : remainingBudget,
+            })
+
+      // If we forced an endpoint that is outside budget, stop early.
+      if (endpoint && typeof endpoint.priceUsdc === 'number' && endpoint.priceUsdc > remainingBudget) {
+        console.log(
+          `[Observation] Forced endpoint price ($${endpoint.priceUsdc}) exceeds remaining budget ($${remainingBudget.toFixed(
+            4
+          )}); stopping.`
+        )
+        break
+      }
 
       if (!endpoint) {
         console.log('[Observation] No more endpoints within budget')
@@ -873,113 +1038,105 @@ export const runHourlyTests = internalAction({
 
           responseStatus = response.status
 
-          // 2. Handle 402 Payment Required
+          // 2. Handle 402 Payment Required (x402 Protocol with USDC)
           if (responseStatus === 402) {
-            const authHeader = response.headers.get('www-authenticate') || ''
-            console.log(`[Observation Debug] 402 received. AuthHeader: "${authHeader}"`)
+            console.log(`[Observation] 402 Payment Required received`)
 
-            let recipient = ''
-            let amount = 0
-            let token = 'SOL' // Default to SOL
+            // Parse x402 payment requirements from response body
+            let paymentRequirements: {
+              scheme: string
+              network: string
+              asset: string
+              payTo: string
+              maxAmountRequired: string
+              extra?: { feePayer?: string }
+            } | null = null
 
-            // Try to parse from header or body
-            if (authHeader.includes('recipient=')) {
-              const match = authHeader.match(/recipient="?([a-zA-Z0-9]+)"?/)
-              if (match) recipient = match[1]
+            try {
+              const json = await response.json()
 
-              const amountMatch = authHeader.match(/amount="?(\d+)"?/)
-              if (amountMatch) amount = parseInt(amountMatch[1])
-            } else {
-              // Try body
-              try {
-                const json = await response.json()
-                // Simple format: { recipient, amount, token }
-                if (json.recipient) {
-                  recipient = json.recipient
-                  if (json.amount) amount = json.amount
-                  if (json.token) token = json.token
-                }
-                // x402 standard format: { accepts: [{ payTo, maxAmountRequired, asset, ... }] }
-                else if (json.accepts && Array.isArray(json.accepts) && json.accepts.length > 0) {
-                  const offer =
-                    json.accepts.find((a: { network?: string }) => a.network === 'solana') ||
-                    json.accepts[0]
-                  if (offer) {
-                    recipient = offer.payTo || ''
-                    amount = parseInt(offer.maxAmountRequired || '0')
-                    if (offer.asset) token = offer.asset
+              // x402 standard format: { accepts: [{ scheme, network, asset, payTo, maxAmountRequired, extra }] }
+              if (json.accepts && Array.isArray(json.accepts) && json.accepts.length > 0) {
+                // Find Solana offer (prefer mainnet, then devnet, then any)
+                const offer =
+                  json.accepts.find(
+                    (a: { network?: string }) =>
+                      a.network === 'solana' ||
+                      a.network === 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'
+                  ) ||
+                  json.accepts.find(
+                    (a: { network?: string }) =>
+                      a.network === 'solana-devnet' ||
+                      a.network === 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1'
+                  ) ||
+                  json.accepts.find((a: { network?: string }) => a.network?.startsWith('solana'))
+
+                if (offer) {
+                  paymentRequirements = {
+                    scheme: offer.scheme || 'exact',
+                    network: offer.network,
+                    asset: offer.asset,
+                    payTo: offer.payTo,
+                    maxAmountRequired: offer.maxAmountRequired || '0',
+                    extra: offer.extra,
                   }
                 }
-              } catch (e) {
-                // Ignore JSON parse error on 402 if body is empty
-                console.log(`[Observation Debug] 402 Body parse error:`, e)
               }
+            } catch (e) {
+              console.log(`[Observation] Failed to parse 402 body:`, e)
             }
 
-            console.log(
-              `[Observation Debug] Parsed: Recipient=${recipient}, Amount=${amount}, Token=${token}`
-            )
+            if (paymentRequirements) {
+              const amountMicro = parseInt(paymentRequirements.maxAmountRequired)
+              const amountUsdc = amountMicro / 1e6 // Convert to USDC for display
 
-            if (recipient && amount > 0) {
-              console.log(`[Observation] Payment required: ${amount} ${token} to ${recipient}`)
+              console.log(`[Observation] x402 Payment Required:`, {
+                network: paymentRequirements.network,
+                payTo: paymentRequirements.payTo,
+                amount: `${amountMicro} micro-USDC ($${amountUsdc.toFixed(4)})`,
+                feePayer: paymentRequirements.extra?.feePayer,
+              })
+
               transcript.push({
                 role: 'system',
-                content: `Payment Required: ${amount} ${token} to ${recipient}`,
+                content: `x402 Payment Required: ${amountMicro} micro-USDC ($${amountUsdc.toFixed(4)}) to ${paymentRequirements.payTo}`,
                 timestamp: Date.now(),
               })
 
-              // Check sanity (don't spend too much)
-              // USDC amounts are in micro-units (1000 = $0.001 USDC)
-              // SOL amounts are in lamports (1e9 = 1 SOL)
-              const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
-              const MAX_USDC_PAYMENT = 100000 // 100000 micro-USDC = $0.10 max
-              const MAX_SOL_PAYMENT = 0.01 * 1e9 // 0.01 SOL limit
+              // Safety check: max $0.10 USDC (100,000 micro-USDC)
+              const MAX_USDC_PAYMENT_MICRO = 100_000
 
-              // Determine if we should pay and how much SOL to send
-              let shouldPay = false
-              let solAmount = 0
-
-              if (token === 'SOL' && amount <= MAX_SOL_PAYMENT) {
-                shouldPay = true
-                solAmount = amount / 1e9
-              } else if (token === USDC_MINT && amount <= MAX_USDC_PAYMENT) {
-                // Pay in SOL equivalent - assume ~$150/SOL for rough conversion
-                // USDC amount is in micro-units (6 decimals): 1000 = $0.001
-                shouldPay = true
-                const usdcValue = amount / 1e6 // Convert to dollars
-                const solPrice = 150 // Rough SOL price in USD
-                solAmount = usdcValue / solPrice // Convert to SOL
-              }
-
-              if (shouldPay && solAmount > 0) {
-                // PAY IT!
-                const payResult = await ctx.runAction(internal.lib.caisper.sendSolPayment, {
-                  recipient,
-                  amountSol: solAmount,
+              if (amountMicro <= MAX_USDC_PAYMENT_MICRO && paymentRequirements.extra?.feePayer) {
+                // Create x402-compliant USDC payment
+                const payResult = await ctx.runAction(internal.lib.caisperX402.createX402Payment, {
+                  paymentRequirements: {
+                    scheme: paymentRequirements.scheme,
+                    network: paymentRequirements.network,
+                    asset: paymentRequirements.asset,
+                    payTo: paymentRequirements.payTo,
+                    maxAmountRequired: paymentRequirements.maxAmountRequired,
+                    extra: { feePayer: paymentRequirements.extra.feePayer },
+                  },
                 })
 
-                if (payResult.success) {
-                  const signature = payResult.signature
+                if (payResult.success && payResult.encodedPayload) {
                   transcript.push({
                     role: 'system',
-                    content: `Payment Sent. Signature: ${signature}`,
+                    content: `x402 Payment payload created. Sending with X-PAYMENT header...`,
                     timestamp: Date.now(),
                   })
-                  transcript.push({
-                    role: 'user',
-                    content: 'Payment completed. Retrying request with Authorization header...',
-                    timestamp: Date.now(),
-                  })
-                  console.log(`[Observation] Paid! Sig: ${signature}`)
+                  console.log(`[Observation] x402 payment payload created, retrying request`)
 
-                  // 3. Retry with Authorization
+                  // 3. Retry with X-PAYMENT header (correct x402 format)
                   response = await fetch(endpoint.endpoint, {
                     method: endpoint.method,
                     headers: {
                       'Content-Type': 'application/json',
                       Accept: 'application/json',
-                      Authorization: `Solana ${signature}`,
+                      'X-PAYMENT': payResult.encodedPayload,
                     },
+                    body:
+                      endpoint.method === 'POST' ? JSON.stringify({ message: prompt }) : undefined,
                     redirect: 'manual',
                   })
 
@@ -987,11 +1144,22 @@ export const runHourlyTests = internalAction({
                   success = responseStatus === 200
 
                   if (success) {
-                    caisperNotes = `Successfully negotiated x402 payment! Paid ${amount} lamports. Content unlocked.`
+                    // Parse X-PAYMENT-RESPONSE header for settlement info
+                    const xPaymentResponse = response.headers.get('X-PAYMENT-RESPONSE')
+                    if (xPaymentResponse) {
+                      try {
+                        const settlement = JSON.parse(atob(xPaymentResponse))
+                        paymentSignature = settlement.transaction || ''
+                        console.log(`[Observation] x402 settled! TX: ${paymentSignature}`)
+                      } catch (e) {
+                        console.log(`[Observation] Failed to parse X-PAYMENT-RESPONSE:`, e)
+                      }
+                    }
+
+                    caisperNotes = `x402 payment successful! Paid ${amountMicro} micro-USDC ($${amountUsdc.toFixed(4)}). TX: ${paymentSignature || 'pending'}`
                     qualityScore = 100
                     capabilityVerified = true
-                    paymentSignature = signature
-                    paymentAmountUsdc = (amount / 1e9) * 150 // Approx $150/SOL for tracking stats (mock rate)
+                    paymentAmountUsdc = amountUsdc
 
                     const text = await response.text()
                     responseBody = text.substring(0, 1000)
@@ -1000,18 +1168,32 @@ export const runHourlyTests = internalAction({
                       content: responseBody.substring(0, 5000),
                       timestamp: Date.now(),
                     })
+                  } else {
+                    caisperNotes = `x402 payment sent but request failed with status ${responseStatus}`
+                    qualityScore = 60
+                    capabilityVerified = true
                   }
+                } else {
+                  // Payment creation failed
+                  caisperNotes = `x402 payment creation failed: ${payResult.error || 'Unknown error'}`
+                  capabilityVerified = true
+                  qualityScore = 70
+                  success = true // Endpoint is alive, just payment issue
                 }
+              } else if (!paymentRequirements.extra?.feePayer) {
+                caisperNotes = `x402 response missing feePayer in extra field - cannot process payment`
+                capabilityVerified = true
+                qualityScore = 60
+                success = true
               } else {
-                caisperNotes = `Payment requested (${amount} ${token}) exceeded safety limit or unsupported token.`
-                // Mark as capabilities verified (it acts like an agent) but failed test
+                caisperNotes = `Payment amount ${amountMicro} micro-USDC exceeds safety limit of ${MAX_USDC_PAYMENT_MICRO} ($0.10)`
                 capabilityVerified = true
                 qualityScore = 80
-                success = true // It's alive
+                success = true
               }
             } else {
-              // 402 but couldn't parse params
-              caisperNotes = 'returned 402 but missing payment params'
+              // 402 but couldn't parse x402 payment requirements
+              caisperNotes = 'Returned 402 but missing valid x402 payment requirements'
               qualityScore = 60
               success = true
             }

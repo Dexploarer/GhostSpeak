@@ -59,7 +59,8 @@ const CACHE_TTL_MS = 60_000; // 60 seconds
  */
 export class GhostSpeakService extends Service {
   static serviceType = 'ghostspeak';
-  capabilityDescription = 'GhostSpeak blockchain operations for AI agent reputation, credentials, and identity';
+  capabilityDescription =
+    'GhostSpeak blockchain operations for AI agent reputation, credentials, and identity';
 
   private client: GhostSpeakClient | null = null;
   private signer: KeyPairSigner | null = null;
@@ -92,7 +93,9 @@ export class GhostSpeakService extends Service {
    * Initialize the SDK client
    */
   private async initialize(): Promise<void> {
-    const cluster = (process.env.SOLANA_CLUSTER as 'devnet' | 'mainnet-beta' | 'testnet') || 'devnet';
+    const cluster =
+      (process.env.SOLANA_CLUSTER as 'devnet' | 'mainnet-beta' | 'testnet') ||
+      'devnet';
     const rpcEndpoint = process.env.SOLANA_RPC_URL;
 
     this.client = new GhostSpeakClient({
@@ -104,15 +107,21 @@ export class GhostSpeakService extends Service {
     if (hasWalletConfigured(this.runtime)) {
       try {
         this.signer = await getAgentSigner(this.runtime);
-        logger.info({
-          address: this.signer.address,
-          cluster,
-        }, 'GhostSpeak service initialized with signer');
+        logger.info(
+          {
+            address: this.signer.address,
+            cluster,
+          },
+          'GhostSpeak service initialized with signer'
+        );
       } catch (error) {
         logger.warn({ error }, 'Failed to load wallet - read-only mode');
       }
     } else {
-      logger.info({ cluster }, 'GhostSpeak service initialized (read-only mode - no wallet configured)');
+      logger.info(
+        { cluster },
+        'GhostSpeak service initialized (read-only mode - no wallet configured)'
+      );
     }
   }
 
@@ -125,7 +134,9 @@ export class GhostSpeakService extends Service {
    */
   getClient(): GhostSpeakClient {
     if (!this.client) {
-      throw new Error('GhostSpeak client not initialized. Service may not have started properly.');
+      throw new Error(
+        'GhostSpeak client not initialized. Service may not have started properly.'
+      );
     }
     return this.client;
   }
@@ -182,12 +193,18 @@ export class GhostSpeakService extends Service {
           data: agent as unknown as AgentAccount,
           expires: Date.now() + CACHE_TTL_MS,
         });
-        logger.debug({ agentAddress: cacheKey }, 'Cached agent data from blockchain');
+        logger.debug(
+          { agentAddress: cacheKey },
+          'Cached agent data from blockchain'
+        );
       }
 
       return agent as unknown as AgentAccount | null;
     } catch (error) {
-      logger.error({ error, agentAddress: cacheKey }, 'Failed to fetch agent from blockchain');
+      logger.error(
+        { error, agentAddress: cacheKey },
+        'Failed to fetch agent from blockchain'
+      );
       throw error;
     }
   }

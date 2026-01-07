@@ -2,8 +2,9 @@
 
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
-import { useState } from 'react'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useEffect, useMemo, useState } from 'react'
+import { useWallet } from '@/lib/wallet/WalletStandardProvider'
+import { isVerifiedSessionForWallet } from '@/lib/auth/verifiedSession'
 import {
   Eye,
   Loader2,
@@ -38,7 +39,29 @@ function formatPrice(usdc: number): string {
 
 export function LiveObservationFeed() {
   const { publicKey } = useWallet()
-  const walletAddress = publicKey?.toBase58()
+  // Wallet Standard provider exposes the address as a string (or null)
+  const walletAddress = useMemo(() => publicKey ?? undefined, [publicKey])
+  const [hasVerifiedSession, setHasVerifiedSession] = useState(false)
+
+  // Voting requires a verified SIWS session (user record must exist).
+  // Same-tab localStorage writes don't fire the "storage" event, so poll briefly.
+  useEffect(() => {
+    if (!walletAddress) {
+      setHasVerifiedSession(false)
+      return
+    }
+
+    const check = () => setHasVerifiedSession(isVerifiedSessionForWallet(walletAddress))
+    check()
+
+    const intervalId = window.setInterval(() => {
+      const next = isVerifiedSessionForWallet(walletAddress)
+      setHasVerifiedSession(next)
+      if (next) window.clearInterval(intervalId)
+    }, 500)
+
+    return () => window.clearInterval(intervalId)
+  }, [walletAddress])
 
   const observations = useQuery(api.observation.getRecentObservations, {
     limit: 50,
@@ -55,6 +78,7 @@ export function LiveObservationFeed() {
   ) => {
     e.stopPropagation()
     if (!walletAddress) return
+    if (!hasVerifiedSession) return
 
     try {
       await vote({
@@ -78,6 +102,11 @@ export function LiveObservationFeed() {
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
+      {walletAddress && !hasVerifiedSession && (
+        <div className="px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-xs text-white/60">
+          Sign in to vote.
+        </div>
+      )}
       {observations.map((obs: any) => {
         const isExpanded = expandedId === obs._id
         const isSuccess = obs.success
@@ -152,7 +181,7 @@ export function LiveObservationFeed() {
                     >
                       <button
                         onClick={(e) => handleVote(e, obs._id, 'upvote')}
-                        disabled={!walletAddress}
+                        disabled={!walletAddress || !hasVerifiedSession}
                         className={`p-1.5 px-2 flex items-center gap-1.5 text-xs transition-colors hover:bg-white/10 ${
                           myVote === 'upvote'
                             ? 'text-green-400 bg-green-500/10'
@@ -166,7 +195,7 @@ export function LiveObservationFeed() {
                       <div className="w-px h-4 bg-white/10" />
                       <button
                         onClick={(e) => handleVote(e, obs._id, 'downvote')}
-                        disabled={!walletAddress}
+                        disabled={!walletAddress || !hasVerifiedSession}
                         className={`p-1.5 px-2 flex items-center gap-1.5 text-xs transition-colors hover:bg-white/10 ${
                           myVote === 'downvote'
                             ? 'text-red-400 bg-red-500/10'

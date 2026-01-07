@@ -255,9 +255,7 @@ export const recordHistoricalInteraction = internalMutation({
     // Check if we already recorded this interaction
     const existing = await ctx.db
       .query('historicalInteractions')
-      .withIndex('by_signature', (q) =>
-        q.eq('transactionSignature', args.transactionSignature)
-      )
+      .withIndex('by_signature', (q) => q.eq('transactionSignature', args.transactionSignature))
       .first()
 
     if (existing) {
@@ -672,10 +670,10 @@ export const getUserInteractions = query({
           ...interaction,
           agent: agent
             ? {
-              address: agent.ghostAddress,
-              status: agent.status,
-              claimedBy: agent.claimedBy,
-            }
+                address: agent.ghostAddress,
+                status: agent.status,
+                claimedBy: agent.claimedBy,
+              }
             : null,
         }
       })

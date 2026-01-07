@@ -13,11 +13,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { processAgentMessage } from '@/server/elizaos/runtime'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
+import { completeWideEvent } from '@/lib/logging/wide-event'
 
 // Initialize Convex client
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
 export async function POST(req: NextRequest) {
+  const correlationId = req.headers.get('x-correlation-id') || `corr_${Date.now()}`
+
+  // Propagate correlation ID to wide event
+  if ((req as any).wideEvent) {
+    (req as any).wideEvent.correlation_id = correlationId
+  }
+
   try {
     const body = await req.json()
 
@@ -50,28 +58,43 @@ export async function POST(req: NextRequest) {
 
     console.log(`📨 Received message from ${walletAddress}: ${message}`)
 
-    // Store user message in Convex
-    await convex.mutation(api.agent.storeUserMessage, {
-      walletAddress,
-      message,
-    })
+    // Try to store user message in Convex (optional)
+    try {
+      if (process.env.NEXT_PUBLIC_CONVEX_URL) {
+        await convex.mutation(api.agent.storeUserMessage, {
+          walletAddress,
+          message,
+        })
+      }
+    } catch (storageError) {
+      console.warn('Failed to store user message:', storageError)
+      // Continue without failing - storage is optional
+    }
 
     // Process message with ElizaOS agent
     const agentResponse = await processAgentMessage({
       userId: walletAddress,
       message,
       roomId: `user-${walletAddress}`,
+      correlationId,
     })
 
     console.log(`🤖 Agent response: ${agentResponse.text}`)
 
-    // Store agent response in Convex
-    await convex.mutation(api.agent.storeAgentResponse, {
-      walletAddress,
-      response: agentResponse.text,
-      actionTriggered: agentResponse.action,
-      metadata: agentResponse.metadata,
-    })
+    // Try to store agent response in Convex (optional)
+    try {
+      if (process.env.NEXT_PUBLIC_CONVEX_URL) {
+        await convex.mutation(api.agent.storeAgentResponse, {
+          walletAddress,
+          response: agentResponse.text,
+          actionTriggered: agentResponse.action,
+          metadata: agentResponse.metadata,
+        })
+      }
+    } catch (storageError) {
+      console.warn('Failed to store agent response:', storageError)
+      // Continue without failing - storage is optional
+    }
 
     // Return in AI SDK compatible format
     // Note: AI SDK's useChat hook will look for messages in the response
@@ -83,6 +106,12 @@ export async function POST(req: NextRequest) {
       // Include metadata for custom rendering
       metadata: agentResponse.metadata,
     }
+
+    // Complete wide event with success
+    completeWideEvent((req as any).wideEvent, {
+      statusCode: 200,
+      durationMs: Date.now() - (req as any).wideEvent?.timestamp ? new Date((req as any).wideEvent.timestamp).getTime() : Date.now(),
+    })
 
     return NextResponse.json({
       // AI SDK expects messages array or a single message
@@ -97,6 +126,18 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('❌ Agent API error:', error)
 
+    // Complete wide event with error
+    completeWideEvent((req as any).wideEvent, {
+      statusCode: 500,
+      durationMs: Date.now() - (req as any).wideEvent?.timestamp ? new Date((req as any).wideEvent.timestamp).getTime() : Date.now(),
+      error: {
+        type: 'AgentAPIError',
+        code: 'AGENT_CHAT_FAILED',
+        message: error instanceof Error ? error.message : 'Agent chat failed',
+        retriable: true,
+      },
+    })
+
     return NextResponse.json(
       {
         error: 'Failed to process message with agent',
@@ -108,7 +149,7 @@ export async function POST(req: NextRequest) {
 }
 
 // Add OPTIONS for CORS if needed
-export async function OPTIONS(req: NextRequest) {
+export async function OPTIONS(_req: NextRequest) {
   return new NextResponse(null, {
     status: 200,
     headers: {

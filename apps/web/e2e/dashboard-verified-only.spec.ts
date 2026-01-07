@@ -101,7 +101,7 @@ async function installMockWalletStandard(
         },
         'standard:disconnect': {
           version: '1.0.0',
-          disconnect: async () => { },
+          disconnect: async () => {},
         },
         // Minimal Solana feature stubs (required so the wallet is considered a Solana wallet).
         'solana:signTransaction': {

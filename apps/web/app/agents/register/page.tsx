@@ -10,7 +10,6 @@ import {
   ChevronLeft,
   Loader2,
   Search,
-  Shield,
   AlertCircle,
   CheckCircle2,
   Sparkles,
@@ -24,7 +23,7 @@ export default function RegisterAgentPage() {
   const { toast } = useToast()
 
   const [address, setAddress] = useState('')
-  const [isSearching, setIsSearching] = useState(false)
+  const [_isSearching, _setIsSearching] = useState(false)
   const [isRegistering, setIsRegistering] = useState(false)
 
   // Redirect if not connected
@@ -49,7 +48,7 @@ export default function RegisterAgentPage() {
     try {
       // Basic claim without tx signature for now (assuming devnet/off-chain claim allowed)
       // or if backend requires it, this will fail.
-      const result = await claimAgent({
+      const _result = await claimAgent({
         ghostAddress: address,
         claimedBy: publicKey,
         // claimTxSignature: undefined // Optional in schema
@@ -61,7 +60,7 @@ export default function RegisterAgentPage() {
       })
 
       router.push('/dashboard')
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Registration failed:', error)
       toast({
         title: 'Registration Failed',

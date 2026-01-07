@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react'
+import { getWideEventLogger } from '@/lib/logging/wide-event'
 
 interface Props {
   children?: ReactNode
@@ -61,6 +62,26 @@ export class SDKErrorBoundary extends Component<Props, State> {
     // Log the error for debugging
     console.error('GhostSpeak SDK Error:', error)
     console.error('Error Info:', errorInfo)
+
+    // Enrich the current wide event with error context
+    if (typeof window !== 'undefined' && (window as any).__wideEvent) {
+      const logger = getWideEventLogger()
+      logger.enrichWithBusiness((window as any).__wideEvent, {
+        error: {
+          type: 'ReactErrorBoundary',
+          code: 'COMPONENT_ERROR',
+          message: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        },
+        metadata: {
+          error_boundary: true,
+          component_stack: errorInfo.componentStack,
+        },
+      })
+
+      // Emit the error event
+      logger.emit((window as any).__wideEvent)
+    }
 
     // Call optional error handler
     this.props.onError?.(error, errorInfo)

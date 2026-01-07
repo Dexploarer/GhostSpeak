@@ -27,6 +27,8 @@ const eslintConfig = [
       'scripts/**',
       'test*.ts',
       'convex/test*.ts',
+      '../../packages/web/scripts/**',
+      '../../packages/web/test*.ts',
     ],
   },
   {

@@ -117,7 +117,10 @@ export function LazyLoad3D({
  * Prebuilt lazy loaders for common 3D components
  */
 
-export function LazyAgentSwarm3D({ className, ...props }: Record<string, unknown> & { className?: string }) {
+export function LazyAgentSwarm3D({
+  className,
+  ...props
+}: Record<string, unknown> & { className?: string }) {
   return (
     <LazyLoad3D
       component={async () => {
@@ -131,7 +134,10 @@ export function LazyAgentSwarm3D({ className, ...props }: Record<string, unknown
   )
 }
 
-export function LazyCostVisualizer3D({ className, ...props }: Record<string, unknown> & { className?: string }) {
+export function LazyCostVisualizer3D({
+  className,
+  ...props
+}: Record<string, unknown> & { className?: string }) {
   return (
     <LazyLoad3D
       component={async () => {
@@ -145,7 +151,10 @@ export function LazyCostVisualizer3D({ className, ...props }: Record<string, unk
   )
 }
 
-export function LazyGhostMascot3D({ className, ...props }: Record<string, unknown> & { className?: string }) {
+export function LazyGhostMascot3D({
+  className,
+  ...props
+}: Record<string, unknown> & { className?: string }) {
   return (
     <LazyLoad3D
       component={async () => {

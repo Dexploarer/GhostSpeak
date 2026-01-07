@@ -128,18 +128,20 @@ export function LiveObservationFeed() {
             onOpenChange={(open) => setExpandedId(open ? obs._id : null)}
           >
             <div
-              className={`bg-[#111111] border rounded-xl overflow-hidden transition-all ${isExpanded
-                ? 'border-primary/50 ring-1 ring-primary/20'
-                : 'border-white/10 hover:border-white/20'
-                }`}
+              className={`bg-[#111111] border rounded-xl overflow-hidden transition-all ${
+                isExpanded
+                  ? 'border-primary/50 ring-1 ring-primary/20'
+                  : 'border-white/10 hover:border-white/20'
+              }`}
             >
               <CollapsibleTrigger className="w-full group">
                 <div className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     {/* Status Icon */}
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${isSuccess ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
-                        }`}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        isSuccess ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                      }`}
                     >
                       {isSuccess ? (
                         <CheckCircle2 className="w-5 h-5" />
@@ -188,10 +190,11 @@ export function LiveObservationFeed() {
                       <button
                         onClick={(e) => handleVote(e, obs._id, 'upvote')}
                         disabled={!walletAddress || !hasVerifiedSession}
-                        className={`p-1.5 px-2 flex items-center gap-1.5 text-xs transition-colors hover:bg-white/10 ${myVote === 'upvote'
-                          ? 'text-green-400 bg-green-500/10'
-                          : 'text-white/40 hover:text-white/80'
-                          }`}
+                        className={`p-1.5 px-2 flex items-center gap-1.5 text-xs transition-colors hover:bg-white/10 ${
+                          myVote === 'upvote'
+                            ? 'text-green-400 bg-green-500/10'
+                            : 'text-white/40 hover:text-white/80'
+                        }`}
                         title="Good result (fast/correct)"
                       >
                         <ThumbsUp className="w-3.5 h-3.5" />
@@ -201,10 +204,11 @@ export function LiveObservationFeed() {
                       <button
                         onClick={(e) => handleVote(e, obs._id, 'downvote')}
                         disabled={!walletAddress || !hasVerifiedSession}
-                        className={`p-1.5 px-2 flex items-center gap-1.5 text-xs transition-colors hover:bg-white/10 ${myVote === 'downvote'
-                          ? 'text-red-400 bg-red-500/10'
-                          : 'text-white/40 hover:text-white/80'
-                          }`}
+                        className={`p-1.5 px-2 flex items-center gap-1.5 text-xs transition-colors hover:bg-white/10 ${
+                          myVote === 'downvote'
+                            ? 'text-red-400 bg-red-500/10'
+                            : 'text-white/40 hover:text-white/80'
+                        }`}
                         title="Bad result (slow/failed/expensive)"
                       >
                         <ThumbsDown className="w-3.5 h-3.5" />
@@ -219,12 +223,13 @@ export function LiveObservationFeed() {
                       </div>
                     )}
                     <span
-                      className={`px-2 py-1 rounded text-xs font-mono ${obs.responseStatus === 200
-                        ? 'bg-green-500/10 text-green-400'
-                        : obs.responseStatus === 402
-                          ? 'bg-orange-500/10 text-orange-400'
-                          : 'bg-red-500/10 text-red-400'
-                        }`}
+                      className={`px-2 py-1 rounded text-xs font-mono ${
+                        obs.responseStatus === 200
+                          ? 'bg-green-500/10 text-green-400'
+                          : obs.responseStatus === 402
+                            ? 'bg-orange-500/10 text-orange-400'
+                            : 'bg-red-500/10 text-red-400'
+                      }`}
                     >
                       {obs.responseStatus || 'ERR'}
                     </span>
@@ -243,16 +248,18 @@ export function LiveObservationFeed() {
                         {obs.transcript?.map((entry, i) => (
                           <div
                             key={i}
-                            className={`flex gap-3 ${entry.role === 'user' ? 'justify-end' : 'justify-start'
-                              }`}
+                            className={`flex gap-3 ${
+                              entry.role === 'user' ? 'justify-end' : 'justify-start'
+                            }`}
                           >
                             <div
-                              className={`max-w-[85%] rounded-lg p-3 ${entry.role === 'user'
-                                ? 'bg-primary/10 text-primary-foreground border border-primary/20'
-                                : entry.role === 'system'
-                                  ? 'bg-yellow-500/5 text-yellow-200/80 border border-yellow-500/10 text-xs'
-                                  : 'bg-white/5 text-white/80 border border-white/10'
-                                }`}
+                              className={`max-w-[85%] rounded-lg p-3 ${
+                                entry.role === 'user'
+                                  ? 'bg-primary/10 text-primary-foreground border border-primary/20'
+                                  : entry.role === 'system'
+                                    ? 'bg-yellow-500/5 text-yellow-200/80 border border-yellow-500/10 text-xs'
+                                    : 'bg-white/5 text-white/80 border border-white/10'
+                              }`}
                             >
                               <div className="flex items-center justify-between gap-4 mb-1 opacity-50 text-[10px] uppercase">
                                 <span>

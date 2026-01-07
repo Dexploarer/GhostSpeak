@@ -298,11 +298,11 @@ export const getRecentObservations = query({
           myVote,
           endpoint: endpoint
             ? {
-              baseUrl: endpoint.baseUrl,
-              method: endpoint.method,
-              endpoint: endpoint.endpoint,
-              description: endpoint.description,
-            }
+                baseUrl: endpoint.baseUrl,
+                method: endpoint.method,
+                endpoint: endpoint.endpoint,
+                description: endpoint.description,
+              }
             : null,
         }
       })
@@ -964,14 +964,14 @@ export const runHourlyTests = internalAction({
       const endpoint =
         args.forceEndpointId && testsRun === 0
           ? await ctx.runQuery(internal.observation.getObservedEndpointInternal, {
-            endpointId: args.forceEndpointId,
-          })
+              endpointId: args.forceEndpointId,
+            })
           : await ctx.runMutation(internal.observation.getNextEndpointToTest, {
-            maxPriceUsdc:
-              typeof args.maxPriceUsdc === 'number'
-                ? Math.min(args.maxPriceUsdc, remainingBudget)
-                : remainingBudget,
-          })
+              maxPriceUsdc:
+                typeof args.maxPriceUsdc === 'number'
+                  ? Math.min(args.maxPriceUsdc, remainingBudget)
+                  : remainingBudget,
+            })
 
       // If we forced an endpoint that is outside budget, stop early.
       if (

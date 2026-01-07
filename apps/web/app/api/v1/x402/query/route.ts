@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
 
     const startTime = Date.now()
     let responseStatus = 0
-    let responseData: any = null
+    let responseData: unknown = null
     const responseHeaders: Record<string, string> = {}
     let responseError = null
     let isStructured = false
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
           isStructured = true
         }
       }
-    } catch (fetchError: any) {
+    } catch (fetchError: unknown) {
       responseError = fetchError.message || 'Unknown fetch error'
       responseData = {
         error: responseError,
@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
 }
 
 // Add OPTIONS for CORS
-export async function OPTIONS(req: NextRequest) {
+export async function OPTIONS(_req: NextRequest) {
   return new NextResponse(null, {
     status: 200,
     headers: {

@@ -154,15 +154,17 @@ export function TechnicalFlow() {
                       scale: isExpanded ? 1.05 : 1,
                     }}
                     transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                    className={`relative p-6 rounded-2xl bg-background border transition-all duration-300 cursor-pointer overflow-hidden ${isExpanded
+                    className={`relative p-6 rounded-2xl bg-background border transition-all duration-300 cursor-pointer overflow-hidden ${
+                      isExpanded
                         ? 'border-primary shadow-[0_0_40px_rgba(var(--primary-rgb),0.2)]'
                         : 'border-border hover:border-primary/40'
-                      }`}
+                    }`}
                   >
                     {/* Gradient overlay */}
                     <div
-                      className={`absolute inset-0 bg-gradient-to-br ${step.color} opacity-0 ${isExpanded ? 'opacity-10' : ''
-                        } transition-opacity duration-300`}
+                      className={`absolute inset-0 bg-gradient-to-br ${step.color} opacity-0 ${
+                        isExpanded ? 'opacity-10' : ''
+                      } transition-opacity duration-300`}
                     />
 
                     {/* Content */}

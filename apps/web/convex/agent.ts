@@ -19,7 +19,9 @@ export const searchContext = action({
   },
   handler: async (ctx, args) => {
     // Default to searching all namespaces if none specified
-    const namespaces = args.namespace ? [args.namespace] : ['docs', 'agents', 'observability', 'transactions']
+    const namespaces = args.namespace
+      ? [args.namespace]
+      : ['docs', 'agents', 'observability', 'transactions']
     const limit = args.limit || 5
 
     console.log(`🔍 Searching RAG context: "${args.query}" in namespaces: ${namespaces.join(', ')}`)
@@ -40,9 +42,7 @@ export const searchContext = action({
     }
 
     // Sort by score (descending) and take top N
-    const sortedResults = allResults
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit)
+    const sortedResults = allResults.sort((a, b) => b.score - a.score).slice(0, limit)
 
     return { results: sortedResults }
   },

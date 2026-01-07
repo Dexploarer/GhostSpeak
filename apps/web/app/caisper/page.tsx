@@ -25,6 +25,10 @@ import { ChatMarkdown } from '@/components/chat/ChatMarkdown'
 import { CredentialCard } from '@/components/chat/CredentialCard'
 import { X402ResultCard } from '@/components/chat/X402ResultCard'
 import { ScoreHistoryCard } from '@/components/chat/ScoreHistoryCard'
+
+// Wide Event Logging
+import { useWideEventUserEnrichment, useWideEventFeatureEnrichment } from '@/lib/logging/hooks'
+import OuijaBoard from '@/components/ouija/OuijaBoard'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 
@@ -32,7 +36,7 @@ interface Message {
   role: 'user' | 'agent'
   content: string
   actionTriggered?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   timestamp: number
 }
 
@@ -87,6 +91,20 @@ export default function CaisperPage() {
     api.ghostScoreCalculator.calculateAgentScore,
     publicKey ? { agentAddress: publicKey } : 'skip'
   )
+
+  // Comprehensive Wide Event Enrichment
+  useWideEventUserEnrichment(publicKey)
+  useWideEventBusinessEnrichment('agent_interaction', 'agent_chat', 'consult_ai_agent')
+  useWideEventFrontendMetrics()
+  useWideEventComponentTracking('CaisperChatPage')
+
+  const trackInteraction = useWideEventUserInteraction('chat_interaction', 'caisper_chat')
+
+  // Track chat interactions
+  useWideEventFeatureEnrichment({
+    chat_interface: true,
+    agent_interaction: true,
+  })
 
   // Update local messages when chat history loads (but not during a new session)
   useEffect(() => {
@@ -529,17 +547,17 @@ export default function CaisperPage() {
                     {/* Render credential card (issued or list) */}
                     {(msg.metadata?.type === 'credential-issued' ||
                       msg.metadata?.type === 'credentials') && (
-                        <CredentialCard
-                          mode={msg.metadata.type === 'credential-issued' ? 'issued' : 'list'}
-                          credentialId={msg.metadata.credentialId}
-                          did={msg.metadata.did}
-                          agentAddress={msg.metadata.agentAddress}
-                          credentials={msg.metadata.credentials}
-                          validCount={msg.metadata.validCount}
-                          totalCount={msg.metadata.totalCount}
-                          onActionClick={handleSend}
-                        />
-                      )}
+                      <CredentialCard
+                        mode={msg.metadata.type === 'credential-issued' ? 'issued' : 'list'}
+                        credentialId={msg.metadata.credentialId}
+                        did={msg.metadata.did}
+                        agentAddress={msg.metadata.agentAddress}
+                        credentials={msg.metadata.credentials}
+                        validCount={msg.metadata.validCount}
+                        totalCount={msg.metadata.totalCount}
+                        onActionClick={handleSend}
+                      />
+                    )}
 
                     {/* Render x402 query result */}
                     {msg.metadata?.type === 'x402-query-result' && (
@@ -563,6 +581,19 @@ export default function CaisperPage() {
                         stats={msg.metadata.stats}
                         onActionClick={handleSend}
                       />
+                    )}
+
+                    {/* Render Ouija Board visualization */}
+                    {msg.metadata?.type === 'ouija' && (
+                      <div className="mt-4">
+                        <OuijaBoard
+                          agentAddress={msg.metadata.agentAddress}
+                          summary={msg.metadata.summary}
+                          reputation={msg.metadata.reputation}
+                          reports={msg.metadata.reports}
+                          transactions={msg.metadata.transactions}
+                        />
+                      </div>
                     )}
                   </div>
                 </div>

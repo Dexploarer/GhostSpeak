@@ -17,11 +17,11 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
 
-  // ESLint configuration - allow build to succeed with warnings
+  // ESLint configuration - enforce strict error checking
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
+    // Error: This ensures production builds fail if there are ESLint errors.
+    // Proper code quality is mandatory for production deployments.
+    ignoreDuringBuilds: false,
   },
 
   // Optimize memory usage during build

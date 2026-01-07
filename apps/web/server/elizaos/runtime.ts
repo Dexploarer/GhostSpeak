@@ -27,6 +27,9 @@ import { evaluateAgentTokensAction } from './actions/evaluateAgentTokens'
 import { scoreHistoryAction } from './actions/scoreHistory'
 import { generateOuijaAction } from './actions/generateOuija'
 
+// Wide Event Logging
+import { createRequestEvent, emitWideEvent, WideEvent } from '@/lib/logging/wide-event'
+
 // Convex database adapter for ElizaOS
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -59,7 +62,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     console.log('📦 Convex database adapter initialized')
   }
 
-  async close(): Promise<void> { }
+  async close(): Promise<void> {}
 
   // Memories are stored in Convex agentMessages table
   async getMemories(params: any): Promise<any[]> {
@@ -115,8 +118,8 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     // Return a UUID as required by the interface
     return crypto.randomUUID() as `${string}-${string}-${string}-${string}-${string}`
   }
-  async removeMemory(memoryId: string, tableName?: string): Promise<void> { }
-  async removeAllMemories(roomId: string, tableName?: string): Promise<void> { }
+  async removeMemory(memoryId: string, tableName?: string): Promise<void> {}
+  async removeAllMemories(roomId: string, tableName?: string): Promise<void> {}
   async countMemories(roomId: string, unique?: boolean, tableName?: string): Promise<number> {
     return 0
   }
@@ -125,10 +128,10 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async getGoals(params: any): Promise<any[]> {
     return []
   }
-  async updateGoal(goal: any): Promise<void> { }
-  async createGoal(goal: any): Promise<void> { }
-  async removeGoal(goalId: string): Promise<void> { }
-  async removeAllGoals(roomId: string): Promise<void> { }
+  async updateGoal(goal: any): Promise<void> {}
+  async createGoal(goal: any): Promise<void> {}
+  async removeGoal(goalId: string): Promise<void> {}
+  async removeAllGoals(roomId: string): Promise<void> {}
 
   async getRoom(roomId: string): Promise<any | null> {
     return { id: roomId }
@@ -136,7 +139,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async createRoom(roomId?: string): Promise<string> {
     return roomId || `room-${Date.now()}`
   }
-  async removeRoom(roomId: string): Promise<void> { }
+  async removeRoom(roomId: string): Promise<void> {}
 
   async getRoomsForParticipant(userId: string): Promise<any[]> {
     return []
@@ -163,7 +166,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     roomId: string,
     userId: string,
     state: 'FOLLOWED' | 'MUTED' | null
-  ): Promise<void> { }
+  ): Promise<void> {}
   async getParticipantsForRoom(roomId: string): Promise<any[]> {
     return []
   }
@@ -177,7 +180,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async createRelationship(params: any): Promise<boolean> {
     return true
   }
-  async updateRelationship(relationship: any): Promise<void> { }
+  async updateRelationship(relationship: any): Promise<void> {}
 
   async getCache<T>(key: string): Promise<T | undefined> {
     return undefined
@@ -212,7 +215,9 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     try {
       const { roomId, query, count = 10, namespace = 'docs' } = params
 
-      console.log(`🔍 ConvexDatabaseAdapter: Searching memories for "${query}" in namespace ${namespace}`)
+      console.log(
+        `🔍 ConvexDatabaseAdapter: Searching memories for "${query}" in namespace ${namespace}`
+      )
 
       // Call the Convex searchContext action
       const { results } = await this.convex.action(api.agent.searchContext, {
@@ -244,9 +249,9 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async updateMemory(memory: any): Promise<boolean> {
     return true
   }
-  async deleteMemory(memoryId: any): Promise<void> { }
-  async deleteManyMemories(memoryIds: any[]): Promise<void> { }
-  async deleteAllMemories(roomId: string, tableName: string): Promise<void> { }
+  async deleteMemory(memoryId: any): Promise<void> {}
+  async deleteManyMemories(memoryIds: any[]): Promise<void> {}
+  async deleteAllMemories(roomId: string, tableName: string): Promise<void> {}
 
   async getEntitiesByIds(entityIds: any[]): Promise<any[] | null> {
     // Return entity objects for elizaOS v1.7.0
@@ -266,7 +271,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async createEntities(entities: any[]): Promise<boolean> {
     return true
   }
-  async updateEntity(entity: any): Promise<void> { }
+  async updateEntity(entity: any): Promise<void> {}
 
   async getComponent(
     entityId: any,
@@ -282,8 +287,8 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async createComponent(component: any): Promise<boolean> {
     return true
   }
-  async updateComponent(component: any): Promise<void> { }
-  async deleteComponent(componentId: any): Promise<void> { }
+  async updateComponent(component: any): Promise<void> {}
+  async deleteComponent(componentId: any): Promise<void> {}
 
   async getAgent(agentId: any): Promise<any | null> {
     // Return a proper Agent object for elizaOS v1.7.0
@@ -318,11 +323,11 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     // GhostSpeak uses Gateway-Ghost with 3072 dimensions (openai/text-embedding-3-large)
   }
 
-  async log(params: any): Promise<void> { }
+  async log(params: any): Promise<void> {}
   async getLogs(params: any): Promise<any[]> {
     return []
   }
-  async deleteLog(logId: any): Promise<void> { }
+  async deleteLog(logId: any): Promise<void> {}
 
   async createWorld(world: any): Promise<any> {
     return world.id || `world-${Date.now()}`
@@ -330,20 +335,20 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async getWorld(id: any): Promise<any | null> {
     return { id }
   }
-  async removeWorld(id: any): Promise<void> { }
+  async removeWorld(id: any): Promise<void> {}
   async getAllWorlds(): Promise<any[]> {
     return []
   }
-  async updateWorld(world: any): Promise<void> { }
+  async updateWorld(world: any): Promise<void> {}
   async getRoomsByIds(roomIds: any[]): Promise<any[] | null> {
     return roomIds.map((id) => ({ id }))
   }
   async createRooms(rooms: any[]): Promise<any[]> {
     return rooms.map((r) => r.id || `room-${Date.now()}`)
   }
-  async deleteRoom(roomId: any): Promise<void> { }
-  async deleteRoomsByWorldId(worldId: any): Promise<void> { }
-  async updateRoom(room: any): Promise<void> { }
+  async deleteRoom(roomId: any): Promise<void> {}
+  async deleteRoomsByWorldId(worldId: any): Promise<void> {}
+  async updateRoom(room: any): Promise<void> {}
   async getRoomsByWorld(worldId: any): Promise<any[]> {
     return []
   }
@@ -373,12 +378,12 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async getTask(taskId: any): Promise<any | null> {
     return null
   }
-  async updateTask(taskId: any, task: any): Promise<void> { }
-  async deleteTask(taskId: any): Promise<void> { }
+  async updateTask(taskId: any, task: any): Promise<void> {}
+  async deleteTask(taskId: any): Promise<void> {}
   async getTasksByName(name: string): Promise<any[]> {
     return []
   }
-  async deleteTasks(params: any): Promise<void> { }
+  async deleteTasks(params: any): Promise<void> {}
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 /* eslint-enable @typescript-eslint/no-unused-vars */
@@ -470,15 +475,39 @@ export async function processAgentMessage(params: {
   userId: string
   message: string
   roomId?: string
+  correlationId?: string
 }): Promise<{
   text: string
   action?: string
   metadata?: any
 }> {
-  try {
-    const runtime = await getAgentRuntime()
-    const roomId = params.roomId || `user-${params.userId}`
+  const startTime = Date.now()
+  const { correlationId } = params
+  const runtime = await getAgentRuntime()
+  const roomId = params.roomId || `user-${params.userId}`
 
+  // Create wide event for agent interaction
+  const wideEvent = createRequestEvent({
+    method: 'POST',
+    path: '/api/agent/chat',
+    userId: params.userId,
+    sessionId: roomId,
+  })
+
+  // Add correlation ID for cross-service tracing
+  if (correlationId) {
+    wideEvent.correlation_id = correlationId
+  }
+
+  // Enrich with agent context
+  wideEvent.service = 'elizaos-agent'
+  wideEvent.metadata = {
+    agent_interaction: true,
+    message_length: params.message.length,
+    room_id: roomId,
+  }
+
+  try {
     // Create memory object for the current message
     // Use type assertion for UUIDs since web app uses wallet addresses as IDs
     const memory = {
@@ -493,16 +522,19 @@ export async function processAgentMessage(params: {
       createdAt: Date.now(),
     } as Memory
 
-    console.log('📨 Processing message:', params.message)
+    console.log('📨 Processing agent message:', params.message)
     console.log('🏠 Room ID:', roomId)
 
     // Track response
     let responseText = ''
     let triggeredAction: string | undefined
     let actionMetadata: any = {}
+    let actionCount = 0
+    let actionErrors: string[] = []
 
     // Evaluate all actions directly
     for (const action of runtime.actions) {
+      actionCount++
       try {
         const isValid = await action.validate(runtime, memory, undefined)
 
@@ -514,6 +546,7 @@ export async function processAgentMessage(params: {
           let tempMetadata = {}
 
           // Execute action
+          const actionStartTime = Date.now()
           const result = await action.handler(
             runtime,
             memory,
@@ -528,6 +561,7 @@ export async function processAgentMessage(params: {
               return []
             }
           )
+          const actionDuration = Date.now() - actionStartTime
 
           // Only keep the response if action succeeded
           if (result && result.success) {
@@ -537,14 +571,27 @@ export async function processAgentMessage(params: {
             if (result.data) {
               actionMetadata = { ...actionMetadata, ...result.data }
             }
+
+            // Enrich wide event with successful action context
+            wideEvent.metadata = {
+              ...wideEvent.metadata,
+              triggered_action: action.name,
+              action_duration_ms: actionDuration,
+              action_success: true,
+              actions_evaluated: actionCount,
+            }
+
             console.log(`🎯 Action executed successfully: ${action.name}`)
             break // First successful action wins
           } else {
             console.log(`⚠️ Action ${action.name} executed but returned success: false`)
+            actionErrors.push(`${action.name}: returned success=false`)
           }
         }
       } catch (error) {
-        console.error(`❌ Error in action ${action.name}:`, error)
+        const errorMsg = `Error in action ${action.name}: ${error instanceof Error ? error.message : String(error)}`
+        console.error(`❌ ${errorMsg}`)
+        actionErrors.push(errorMsg)
       }
     }
 
@@ -552,15 +599,16 @@ export async function processAgentMessage(params: {
     if (!responseText) {
       console.log('💬 No action triggered, generating conversational response...')
 
+      const llmStartTime = Date.now()
       try {
         // Build a rich prompt with context about Caisper's knowledge
-        const prompt = `You are Caisper, GhostSpeak's credential and reputation verification ghost. 
+        const prompt = `You are Caisper, GhostSpeak's credential and reputation verification ghost.
 Answer this user question conversationally, with personality. You know about:
 
 **Ghost Score System (0-10000):**
 - NEWCOMER: 0-1999 pts
 - BRONZE: 2000-4999 pts
-- SILVER: 5000-7499 pts  
+- SILVER: 5000-7499 pts
 - GOLD: 7500-8999 pts
 - PLATINUM: 9000-10000 pts
 - Score sources: payment history, credentials, staking, endpoint quality, fraud clearance
@@ -588,20 +636,60 @@ Respond in character as Caisper - be helpful, slightly sarcastic, use ghost puns
           includeCharacter: true,
         })
 
+        const llmDuration = Date.now() - llmStartTime
+
         responseText =
           result?.text ||
           "I'm having trouble formulating a response. Try asking me something specific about agents, credentials, or reputation!"
+
+        // Enrich wide event with LLM context
+        wideEvent.metadata = {
+          ...wideEvent.metadata,
+          conversational_response: true,
+          llm_duration_ms: llmDuration,
+          actions_evaluated: actionCount,
+          action_errors: actionErrors,
+        }
+
         console.log('✅ Generated conversational response')
       } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error)
         console.error('❌ Error generating LLM response:', error)
+
+        // Enrich wide event with LLM error
+        wideEvent.error = {
+          type: 'LLMGenerationError',
+          code: 'LLM_RESPONSE_FAILED',
+          message: errorMsg,
+          retriable: true,
+        }
+
         responseText =
           "I'm having some technical difficulties right now. Try asking me about available agents or credential verification!"
       }
+    } else {
+      // Action was triggered - enrich with action metadata
+      wideEvent.metadata = {
+        ...wideEvent.metadata,
+        actions_evaluated: actionCount,
+        action_errors: actionErrors.length > 0 ? actionErrors : undefined,
+      }
     }
 
-    console.log('✅ Message processed:', {
+    const totalDuration = Date.now() - startTime
+
+    // Complete and emit the wide event
+    emitWideEvent({
+      ...wideEvent,
+      status_code: 200,
+      duration_ms: totalDuration,
+      outcome: 'success',
+    })
+
+    console.log('✅ Agent message processed:', {
       hasAction: !!triggeredAction,
       action: triggeredAction,
+      duration: totalDuration,
     })
 
     return {
@@ -614,6 +702,24 @@ Respond in character as Caisper - be helpful, slightly sarcastic, use ghost puns
       },
     }
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    const totalDuration = Date.now() - startTime
+
+    // Complete and emit the wide event with error
+    emitWideEvent({
+      ...wideEvent,
+      status_code: 500,
+      duration_ms: totalDuration,
+      outcome: 'error',
+      error: {
+        type: 'AgentProcessingError',
+        code: 'AGENT_MESSAGE_FAILED',
+        message: errorMsg,
+        stack: error instanceof Error && process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        retriable: true,
+      },
+    })
+
     console.error('❌ Error processing agent message:', error)
     throw new Error('Failed to process message with agent')
   }

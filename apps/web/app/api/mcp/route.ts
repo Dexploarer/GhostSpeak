@@ -11,12 +11,22 @@ import { NextRequest } from 'next/server'
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
+interface SearchAgentsArgs {
+  status?: string
+  limit?: number
+}
+
+interface ClaimAgentArgs {
+  agentAddress: string
+  claimedBy: string
+}
+
 // JSON-RPC 2.0 response helpers
-function jsonRpcSuccess(id: any, result: any) {
+function jsonRpcSuccess(id: string | number | null, result: unknown) {
   return { jsonrpc: '2.0', id, result }
 }
 
-function jsonRpcError(id: any, code: number, message: string) {
+function jsonRpcError(id: string | number | null, code: number, message: string) {
   return { jsonrpc: '2.0', id, error: { code, message } }
 }
 
@@ -25,7 +35,7 @@ function jsonRpcError(id: any, code: number, message: string) {
  * ACCESS CONTROL: FREE TIER (Public)
  * Rate Limit: 100 req/hour
  */
-async function handleSearchAgents(args: any) {
+async function handleSearchAgents(args: SearchAgentsArgs) {
   const { status = 'discovered', limit = 20 } = args || {}
 
   // Enforce free tier limits
@@ -37,7 +47,7 @@ async function handleSearchAgents(args: any) {
   ])
 
   return {
-    agents: agents.map((agent: any) => ({
+    agents: agents.map((agent: unknown) => ({
       ghostAddress: agent.ghostAddress,
       status: agent.status,
       discoverySource: agent.discoverySource,
@@ -58,7 +68,7 @@ async function handleSearchAgents(args: any) {
  * Requires: Valid Signature or x402 Payment
  * Status: Placeholder - currently unrestricted for MVP, but marked for upgrade.
  */
-async function handleClaimAgent(args: any) {
+async function handleClaimAgent(args: ClaimAgentArgs) {
   const { agentAddress, claimedBy } = args
 
   // TODO: [x402] Verify payment/signature here before processing claim
@@ -113,7 +123,7 @@ export async function POST(request: NextRequest) {
       return Response.json(jsonRpcError(id, -32600, 'Invalid Request'), { status: 400 })
     }
 
-    let result: any
+    let result: unknown
 
     switch (method) {
       case 'tools/list':

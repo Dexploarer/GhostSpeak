@@ -11,10 +11,10 @@ import { NextRequest } from 'next/server'
 // This should be fetched from on-chain config in production
 const PROGRAM_ID = '4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Create Solana client using Gill (cleaner API)
-    const client = createServerSolanaClient()
+    const _client = createServerSolanaClient()
 
     // For now, return treasury stats from Convex
     // In production, this should query the actual on-chain treasury account

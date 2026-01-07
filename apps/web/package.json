@@ -27,6 +27,11 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
+    "test:wide-events": "bun run scripts/test-wide-events.ts",
+    "test:integration": "bun run scripts/integration-tests.ts",
+    "test:full-integration": "bun run scripts/full-integration-tests.ts",
+    "test:comprehensive": "bun run scripts/comprehensive-integration-runner.ts",
+    "test:dashboard": "bun run scripts/serve-test-dashboard.ts",
     "qa": "bun run lint && bun run type-check && bun run format:check",
     "precommit": "lint-staged",
     "prepare": "cd ../.. && husky install apps/web/.husky",
@@ -121,7 +126,6 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
-    "convex": "^1.31.2",
     "@eslint/eslintrc": "^3",
     "@next/eslint-plugin-next": "^16.0.5",
     "@playwright/test": "^1.57.0",
@@ -137,6 +141,7 @@
     "@vitest/coverage-v8": "4.0.16",
     "@vitest/ui": "4.0.16",
     "concurrently": "^9.2.1",
+    "convex": "^1.31.2",
     "eslint": "^9",
     "eslint-config-next": "15.4.5",
     "eslint-config-prettier": "^10.1.8",
@@ -147,6 +152,7 @@
     "lint-staged": "^16.1.2",
     "playwright": "^1.57.0",
     "prettier": "^3.6.2",
+    "puppeteer": "^24.34.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "4.0.16"

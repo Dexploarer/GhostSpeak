@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
+import { useWideEventUserEnrichment, useWideEventFeatureEnrichment } from '@/lib/logging/hooks'
 import {
   Activity,
   User,
@@ -136,6 +137,18 @@ export default function DashboardPage() {
 
   const walletAddress = useMemo(() => publicKey ?? null, [publicKey])
   const [hasVerifiedSession, setHasVerifiedSession] = useState(false)
+
+  // Comprehensive Wide Event Enrichment
+  useWideEventUserEnrichment(publicKey)
+  useWideEventBusinessEnrichment('dashboard_viewing', 'user_dashboard', 'view_account_metrics')
+  useWideEventFrontendMetrics()
+  useWideEventComponentTracking('DashboardPage')
+
+  // Enrich wide event with feature flags
+  useWideEventFeatureEnrichment({
+    dashboard: true,
+    reputation_tracking: true,
+  })
 
   // Check onboarding status
   const onboardingStatus = useQuery(

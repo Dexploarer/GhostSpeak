@@ -1,0 +1,234 @@
+name: GhostSpeak Web CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/web/**'
+      - '.github/workflows/apps-web-ci.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/web/**'
+      - '.github/workflows/apps-web-ci.yml'
+
+env:
+  BUN_VERSION: latest
+  NODE_VERSION: '24'
+
+jobs:
+  lint:
+    name: Lint & Format
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            apps/web/node_modules
+          key: ${{ runner.os }}-web-lint-${{ hashFiles('apps/web/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-web-lint-
+
+      - name: Install dependencies
+        working-directory: ./apps/web
+        run: bun install
+
+      - name: Run ESLint
+        working-directory: ./apps/web
+        run: bun run lint
+
+      - name: Check Prettier formatting
+        working-directory: ./apps/web
+        run: bun run format:check
+
+  type-check:
+    name: Type Check
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            apps/web/node_modules
+          key: ${{ runner.os }}-web-typecheck-${{ hashFiles('apps/web/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-web-typecheck-
+
+      - name: Install dependencies
+        working-directory: ./apps/web
+        run: bun install
+
+      - name: Run TypeScript type check
+        working-directory: ./apps/web
+        run: bun run type-check
+
+  unit-tests:
+    name: Unit Tests (Vitest)
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    needs: [lint, type-check]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            apps/web/node_modules
+          key: ${{ runner.os }}-web-unit-${{ hashFiles('apps/web/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-web-unit-
+
+      - name: Install dependencies
+        working-directory: ./apps/web
+        run: bun install
+
+      - name: Run Vitest with coverage
+        working-directory: ./apps/web
+        run: bun run test:coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: apps/web/coverage/
+          retention-days: 7
+
+      - name: Publish to Codecov
+        if: always() && github.event_name == 'push'
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./apps/web/coverage
+          flags: unittests
+          fail_ci_if_error: false
+
+  build:
+    name: Build
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    needs: [lint, type-check]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            apps/web/node_modules
+          key: ${{ runner.os }}-web-build-${{ hashFiles('apps/web/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-web-build-
+
+      - name: Install dependencies
+        working-directory: ./apps/web
+        run: bun install
+
+      - name: Build Next.js application
+        working-directory: ./apps/web
+        run: bun run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextjs-build
+          path: apps/web/.next/
+          retention-days: 7
+
+  e2e-tests:
+    name: E2E Tests (Playwright)
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    needs: build
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            apps/web/node_modules
+          key: ${{ runner.os }}-web-e2e-${{ hashFiles('apps/web/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-web-e2e-
+
+      - name: Install dependencies
+        working-directory: ./apps/web
+        run: bun install
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: nextjs-build
+          path: apps/web/.next/
+
+      - name: Install Playwright browsers
+        working-directory: ./apps/web
+        run: bun exec playwright install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        working-directory: ./apps/web
+        env:
+          BASE_URL: http://localhost:3333
+        run: bun run test:e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/test-results/
+          retention-days: 7
+
+  # Security audit job
+  security:
+    name: Security Audit
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Audit Node dependencies
+        working-directory: ./apps/web
+        run: bun audit --audit-level=high || true
+
+  # Concurrency control - cancel in-progress runs for same branch
+concurrency: ${{ github.workflow }}-${{ github.ref }}

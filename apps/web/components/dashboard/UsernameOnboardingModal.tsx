@@ -114,12 +114,13 @@ export function UsernameOnboardingModal({
                   value={username}
                   onChange={(e) => setUsername(e.target.value.toLowerCase())}
                   placeholder="ghosthunter"
-                  className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 transition-all ${validation.status === 'available'
+                  className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 transition-all ${
+                    validation.status === 'available'
                       ? 'border-green-500/50 focus:ring-green-500/30'
                       : validation.status === 'taken' || validation.status === 'invalid'
                         ? 'border-red-500/50 focus:ring-red-500/30'
                         : 'border-white/10 focus:ring-primary/30'
-                    }`}
+                  }`}
                   autoFocus
                   disabled={isSubmitting}
                 />
@@ -138,12 +139,13 @@ export function UsernameOnboardingModal({
               </div>
               {validation.message && (
                 <p
-                  className={`text-xs ${validation.status === 'available'
+                  className={`text-xs ${
+                    validation.status === 'available'
                       ? 'text-green-400'
                       : validation.status === 'taken' || validation.status === 'invalid'
                         ? 'text-red-400'
                         : 'text-white/40'
-                    }`}
+                  }`}
                 >
                   {validation.message}
                 </p>
@@ -201,10 +203,11 @@ export function UsernameOnboardingModal({
             <button
               type="submit"
               disabled={!canSubmit}
-              className={`w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-medium transition-all ${canSubmit
+              className={`w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-medium transition-all ${
+                canSubmit
                   ? 'bg-primary text-black hover:bg-primary/90'
                   : 'bg-white/10 text-white/40 cursor-not-allowed'
-                }`}
+              }`}
             >
               {isSubmitting || isAnalyzingWallet ? (
                 <>

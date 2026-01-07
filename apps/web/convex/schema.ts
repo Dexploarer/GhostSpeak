@@ -48,8 +48,19 @@ export default defineSchema({
     // Individual B2B API billing - GHOST token account (alternative payment)
     ghostTokenAccount: v.optional(v.string()), // User's GHOST token account for API payments
     currentGhostBalance: v.optional(v.number()), // Current GHOST balance (in micro GHOST, 9 decimals)
-    preferredPaymentToken: v.optional(v.string()), // 'usdc' | 'ghost' - user's preferred payment method
+    preferredPaymentToken: v.optional(v.string()), // 'usdc' | 'ghost' | 'sol' - user's preferred payment method
+    // ─── API CREDITS SYSTEM ───────────────────────────────────────────────────────
+    // Subscription tier: 'free' | 'developer' | 'growth' | 'enterprise'
+    subscriptionTier: v.optional(v.string()),
+    // Free tier credits (reset monthly)
+    freeCreditsRemaining: v.optional(v.number()), // Remaining free credits for the month
+    lastFreeCreditsReset: v.optional(v.number()), // When free credits were last reset
+    // Paid credits balance (never expires)
+    paidCreditsBalance: v.optional(v.number()), // Purchased credits balance
+    // Total lifetime credits purchased
+    lifetimeCreditsPurchased: v.optional(v.number()),
     // ─── THREE-TIER REPUTATION SYSTEM ───────────────────────────────────────────
+
     // Users can be Developers (Ecto Score), Customers (Ghosthunter Score), or both
     // Ghost Score is reserved for AI agents only
     //

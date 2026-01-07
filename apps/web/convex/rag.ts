@@ -17,7 +17,8 @@ export const gateway = createOpenAI({
 })
 
 // Configure the RAG component with the text embedding model
+// Note: @ai-sdk/openai expects just the model ID, not the gateway routing format
 export const rag = new RAG(components.rag, {
-  textEmbeddingModel: gateway.embedding('openai/text-embedding-3-large'),
+  textEmbeddingModel: gateway.embedding('text-embedding-3-large'),
   embeddingDimension: 3072,
 })

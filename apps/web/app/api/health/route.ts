@@ -6,9 +6,10 @@
 
 import { NextResponse } from 'next/server'
 
-export async function GET() {
-  // Redirect to v1 health check
-  return NextResponse.redirect(new URL('/api/v1/health', 'http://localhost:3333'))
+export async function GET(request: Request) {
+  // Get the origin from the request to handle any port
+  const url = new URL(request.url)
+  return NextResponse.redirect(new URL('/api/v1/health', url.origin))
 }
 
 export async function OPTIONS() {

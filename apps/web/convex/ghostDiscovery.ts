@@ -179,6 +179,74 @@ export const claimAgent = mutation({
 })
 
 /**
+ * Update agent metadata (name, description, x402 config)
+ * Only the agent owner (claimedBy) can update metadata
+ */
+export const updateAgentMetadata = mutation({
+  args: {
+    ghostAddress: v.string(),
+    callerWallet: v.string(),
+    // Optional metadata fields
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+    // x402 service configuration
+    x402ServiceEndpoint: v.optional(v.string()),
+    x402Enabled: v.optional(v.boolean()),
+    x402PricePerCall: v.optional(v.number()),
+    x402AcceptedTokens: v.optional(v.array(v.string())),
+    // IPFS metadata
+    ipfsCid: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const agent = await ctx.db
+      .query('discoveredAgents')
+      .withIndex('by_address', (q) => q.eq('ghostAddress', args.ghostAddress))
+      .first()
+
+    if (!agent) {
+      throw new Error(`Agent ${args.ghostAddress} not found`)
+    }
+
+    // Only the owner can update metadata
+    if (agent.claimedBy !== args.callerWallet) {
+      throw new Error(`Only the agent owner can update metadata. Owner: ${agent.claimedBy}`)
+    }
+
+    // Build update object with only provided fields
+    const updates: Record<string, unknown> = {
+      updatedAt: Date.now(),
+    }
+
+    if (args.name !== undefined) updates.name = args.name
+    if (args.description !== undefined) updates.description = args.description
+    if (args.x402ServiceEndpoint !== undefined) updates.x402ServiceEndpoint = args.x402ServiceEndpoint
+    if (args.x402Enabled !== undefined) updates.x402Enabled = args.x402Enabled
+    if (args.x402PricePerCall !== undefined) updates.x402PricePerCall = args.x402PricePerCall
+    if (args.x402AcceptedTokens !== undefined) updates.x402AcceptedTokens = args.x402AcceptedTokens
+    if (args.ipfsCid !== undefined) {
+      updates.ipfsCid = args.ipfsCid
+      updates.ipfsUri = args.ipfsCid ? `ipfs://${args.ipfsCid}` : undefined
+    }
+
+    await ctx.db.patch(agent._id, updates)
+
+    // Log metadata update event
+    await ctx.db.insert('discoveryEvents', {
+      eventType: 'metadata_updated',
+      ghostAddress: args.ghostAddress,
+      timestamp: Date.now(),
+    })
+
+    return {
+      success: true,
+      agentId: agent._id,
+      ghostAddress: args.ghostAddress,
+      updatedFields: Object.keys(updates).filter(k => k !== 'updatedAt'),
+    }
+  },
+})
+
+/**
  * Add external ID mapping for an agent (called by actions)
  */
 export const addExternalIdMapping = internalMutation({

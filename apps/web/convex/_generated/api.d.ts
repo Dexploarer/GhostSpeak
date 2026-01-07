@@ -10,6 +10,7 @@
 
 import type * as agent from "../agent.js";
 import type * as agents from "../agents.js";
+import type * as analytics from "../analytics.js";
 import type * as apiKeyHelpers from "../apiKeyHelpers.js";
 import type * as apiKeys from "../apiKeys.js";
 import type * as credentials from "../credentials.js";
@@ -20,9 +21,13 @@ import type * as ghostDiscovery from "../ghostDiscovery.js";
 import type * as ghostScoreCalculator from "../ghostScoreCalculator.js";
 import type * as ghostScoreHistory from "../ghostScoreHistory.js";
 import type * as knowledge from "../knowledge.js";
+import type * as lib_api_keys from "../lib/api_keys.js";
 import type * as lib_caisper from "../lib/caisper.js";
 import type * as lib_caisperX402 from "../lib/caisperX402.js";
+import type * as lib_credits from "../lib/credits.js";
 import type * as lib_networkMetadata from "../lib/networkMetadata.js";
+import type * as lib_treasury from "../lib/treasury.js";
+import type * as lib_x402Merchant from "../lib/x402Merchant.js";
 import type * as observation from "../observation.js";
 import type * as observatoryTerminal from "../observatoryTerminal.js";
 import type * as onboarding from "../onboarding.js";
@@ -45,6 +50,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   agent: typeof agent;
   agents: typeof agents;
+  analytics: typeof analytics;
   apiKeyHelpers: typeof apiKeyHelpers;
   apiKeys: typeof apiKeys;
   credentials: typeof credentials;
@@ -55,9 +61,13 @@ declare const fullApi: ApiFromModules<{
   ghostScoreCalculator: typeof ghostScoreCalculator;
   ghostScoreHistory: typeof ghostScoreHistory;
   knowledge: typeof knowledge;
+  "lib/api_keys": typeof lib_api_keys;
   "lib/caisper": typeof lib_caisper;
   "lib/caisperX402": typeof lib_caisperX402;
+  "lib/credits": typeof lib_credits;
   "lib/networkMetadata": typeof lib_networkMetadata;
+  "lib/treasury": typeof lib_treasury;
+  "lib/x402Merchant": typeof lib_x402Merchant;
   observation: typeof observation;
   observatoryTerminal: typeof observatoryTerminal;
   onboarding: typeof onboarding;

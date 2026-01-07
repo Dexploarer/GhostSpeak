@@ -26,6 +26,12 @@ export const searchContext = action({
 
     console.log(`🔍 Searching RAG context: "${args.query}" in namespaces: ${namespaces.join(', ')}`)
 
+    // Validate query is not empty (OpenAI embeddings API rejects empty input)
+    if (!args.query || args.query.trim().length === 0) {
+      console.warn('⚠️ Empty query provided to searchContext, returning empty results')
+      return { results: [] }
+    }
+
     const allResults = []
 
     // Serial search across namespaces to avoid rate limits and SDK version conflicts

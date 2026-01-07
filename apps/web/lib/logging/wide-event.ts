@@ -470,13 +470,17 @@ export function emitWideEvent(event: WideEvent): void {
  * Complete and emit a wide event in one step
  */
 export function completeWideEvent(
-  event: WideEvent,
+  event: WideEvent | null | undefined,
   result: {
     statusCode?: number
     durationMs?: number
     error?: Error | { type: string; code?: string; message: string; retriable?: boolean }
   }
 ): void {
+  // Guard against undefined event (e.g., when middleware doesn't set wideEvent)
+  if (!event) {
+    return
+  }
   const logger = getWideEventLogger()
   logger.completeEvent(event, result)
   logger.emit(event)

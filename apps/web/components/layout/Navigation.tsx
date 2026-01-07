@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
-import { Menu, X, Moon, Sun, Coins, FileText, Eye, User, MessageSquare } from 'lucide-react'
+import { Menu, X, Moon, Sun, Coins, FileText, Eye, User, MessageSquare, Key } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from 'next-themes'
 import { BrandLogo } from '@/components/shared/BrandLogo'
@@ -51,6 +51,8 @@ export const Navigation: React.FC = () => {
   // Show dashboard-specific items if on a dashboard page
   const dashboardNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: User, external: false },
+    { href: '/dashboard/billing', label: 'Billing', icon: Coins, external: false },
+    { href: '/dashboard/api-keys', label: 'API Keys', icon: Key, external: false },
     { href: '/caisper', label: 'Chat', icon: MessageSquare, external: false },
   ]
 

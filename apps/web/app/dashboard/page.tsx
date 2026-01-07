@@ -386,7 +386,7 @@ export default function DashboardPage() {
                 icon={TrendingUp}
                 glowColor={primaryScore.type === 'ecto' ? 'lime' : 'blue'}
                 subtitle={primaryScore.tier}
-                trend={5.2} // Calculated trend mock for now
+                // Trend will be calculated from historical data when available
                 trendLabel="this week"
                 description={
                   primaryScore.type === 'ecto'
@@ -418,7 +418,7 @@ export default function DashboardPage() {
               icon={Shield}
               glowColor="emerald"
               subtitle={`${stats.freeVerificationsRemaining} free remaining`}
-              trend={12}
+              // Trend requires historical comparison query
               trendLabel="vs last month"
               description="Total credential verifications performed this month."
             />
@@ -430,7 +430,7 @@ export default function DashboardPage() {
               icon={Activity}
               glowColor="blue"
               subtitle="Lifetime Activity"
-              trend={8}
+              // Trend requires historical comparison query
               description="Total on-chain transactions associated with your wallet."
             />
 

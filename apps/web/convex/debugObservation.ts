@@ -1,35 +1,35 @@
+/**
+ * Debug Observation Functions
+ *
+ * Testing and verification utilities for the observation pipeline.
+ * IMPORTANT: These functions use the EXISTING Caisper wallet configuration.
+ * They do NOT seed or overwrite wallet configurations.
+ */
+
 import { v } from 'convex/values'
 import type { Id } from './_generated/dataModel'
 import { action, internalAction } from './_generated/server'
 import { internal } from './_generated/api'
 
+/**
+ * Debug run for testing observation pipeline.
+ * Uses the EXISTING Caisper wallet - does NOT seed or overwrite it.
+ */
 export const debugRun = internalAction({
   args: {},
   handler: async (ctx) => {
     console.log('=== START DEBUG OBSERVATION RUN ===')
 
-    // 0. SEED WALLET (Temporary Fix from .env.local)
-    const secretKey = [
-      114, 134, 95, 219, 29, 189, 88, 124, 77, 192, 107, 166, 121, 18, 105, 194, 216, 93, 89, 17,
-      141, 233, 2, 159, 67, 31, 69, 245, 83, 213, 222, 151, 174, 75, 73, 203, 55, 63, 108, 34, 199,
-      25, 195, 177, 46, 129, 232, 10, 115, 134, 81, 155, 57, 1, 35, 63, 31, 152, 119, 122, 19, 92,
-      77, 39,
-    ]
-    const publicKey = 'CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc'
-
-    await ctx.runMutation(internal.lib.caisper.setCaisperWallet, {
-      publicKey,
-      secretKey,
-    })
-    console.log('[Debug] Wallet seeded.')
-
-    // 1. Check Wallet
+    // 1. Check for existing wallet - DO NOT SEED
     const wallet = await ctx.runQuery(internal.lib.caisper.getCaisperWalletInternal)
-    if (wallet) {
-      console.log(`[Debug] Wallet configured: ${wallet.publicKey}`)
-    } else {
-      console.error('[Debug] CAISPER WALLET NOT CONFIGURED! Payment will fail.')
+    if (!wallet) {
+      console.error('[Debug] CAISPER WALLET NOT CONFIGURED!')
+      console.error('[Debug] Please configure the Caisper wallet via the admin interface or environment variables.')
+      console.error('[Debug] Aborting debug run.')
+      throw new Error('Caisper wallet not configured. Cannot proceed with debug run.')
     }
+
+    console.log(`[Debug] Using existing wallet: ${wallet.publicKey}`)
 
     // 2. Define target
     const url = 'https://x402factory.ai/solana/note'
@@ -56,7 +56,7 @@ export const debugRun = internalAction({
 
         let recipient = ''
         let amount = 0
-        let token = 'SOL' // Assume SOL unless specified otherwise
+        let token = 'SOL'
 
         if (authHeader.includes('recipient=')) {
           console.log('[Debug] Parsing from Header...')
@@ -69,15 +69,12 @@ export const debugRun = internalAction({
           console.log('[Debug] Parsing from Body...')
           try {
             const json = await response.json()
-            // console.log('[Debug] Body JSON:', JSON.stringify(json, null, 2))
 
             if (json.recipient) {
               recipient = json.recipient
               if (json.amount) amount = json.amount
               if (json.token) token = json.token
             } else if (json.accepts && Array.isArray(json.accepts) && json.accepts.length > 0) {
-              // Parse x402 style accepts array
-              // Find solana network offer
               const offer =
                 json.accepts.find(
                   (a: unknown) => (a as Record<string, unknown>).network === 'solana'
@@ -85,8 +82,6 @@ export const debugRun = internalAction({
               if (offer) {
                 recipient = offer.payTo
                 amount = parseInt(offer.maxAmountRequired || '0')
-                // TODO: Handle Asset/Token check. x402factory uses USDC.
-                // But let's see if we can extract it.
                 if (offer.asset) token = offer.asset
               }
             }
@@ -99,39 +94,20 @@ export const debugRun = internalAction({
           `[Debug] Parsed Result: Recipient=${recipient}, Amount=${amount}, Token=${token}`
         )
 
-        // Try to PAY if parsed
         if (recipient && amount > 0) {
           console.log(`[Debug] Attempting Payment: ${amount} ${token} to ${recipient}`)
-
-          // If token is NOT 'SOL' and NOT 'USDC-mock' (or whatever), warn.
-          // Caisper assumes 'SOL' in sendSolPayment.
-          // If the amount is small (1000 lamports = 0.000001 SOL), let's try sending SOL?
-          // But wait, "1000" in x402 usually means units of the ASSET.
-          // USDC has 6 decimals. 1000 = 0.001 USDC.
-          // Sending 1000 lamports is 0.000001 SOL.
-          // The Recipient expects USDC. sending SOL might fail or be lost.
-          // BUT maybe Caisper needs a `sendSplPayment`?
 
           if (token !== 'SOL') {
             console.warn(
               '[Debug] WARNING: Token is ' +
-                token +
-                '. Caisper only supports SOL native currently (via sendSolPayment). Payment might fail or be rejected.'
+              token +
+              '. Caisper only supports SOL native currently (via sendSolPayment). Payment might fail or be rejected.'
             )
           }
 
-          // Override amountSol for test:
-          // If it wants 1000 units of USDC, we need to send equivalent Value? No.
-          // We need to send USDC.
-          // But let's try sending standard SOL amount for now just to trigger the flow?
-          // Recipient wallet handles both?
-
-          // Let's call sendSolPayment just to test the mechanism.
-          // 1000 lamports is safely small.
-          // sendSolPayment takes amountSol. 1000 / 1e9 = 0.000001 SOL.
           const payResult = await ctx.runAction(internal.lib.caisper.sendSolPayment, {
             recipient,
-            amountSol: 0.00001, // Mock small amount test
+            amountSol: 0.00001, // Small test amount
           })
 
           if (payResult.success) {
@@ -158,6 +134,8 @@ export const debugRun = internalAction({
  * - writes an `endpointTests` row via `recordTestResult` with a fake payment signature
  * - asserts a corresponding `historicalInteractions` row exists with `discoverySource=caisper_observation`
  * - asserts public Observatory x402 query can see it (and payer is redacted)
+ *
+ * IMPORTANT: Uses the EXISTING Caisper wallet. Fails if wallet is not configured.
  */
 export const verifyObservationPaymentInteractionWiringInternal = internalAction({
   args: {
@@ -173,24 +151,25 @@ export const verifyObservationPaymentInteractionWiringInternal = internalAction(
     publicMerchant: string
     publicTimestamp: number
   }> => {
-    const signature = args.signature ?? 'caisper_observation_test_signature'
+    const signature = args.signature ?? `caisper_observation_test_${Date.now()}`
 
-    // Ensure a Caisper wallet exists so the interaction has a payer address.
+    // Use existing Caisper wallet - DO NOT CREATE OR OVERWRITE
     const wallet = await ctx.runQuery(internal.lib.caisper.getCaisperWalletInternal)
     if (!wallet) {
-      await ctx.runMutation(internal.lib.caisper.setCaisperWallet, {
-        publicKey: 'CaisperTestWalletPublicKey1111111111111111111111111',
-        secretKey: [0],
-      })
+      throw new Error(
+        'Caisper wallet not configured. Please configure via admin interface before running verification tests.'
+      )
     }
 
-    const caisperWalletPublicKey =
-      (await ctx.runQuery(internal.lib.caisper.getCaisperWalletInternal))?.publicKey ||
-      'caisper_unconfigured'
+    const caisperWalletPublicKey = wallet.publicKey
+    console.log(`[Verify] Using Caisper wallet: ${caisperWalletPublicKey}`)
+
+    // Use Caisper's actual address for test endpoints
+    const agentAddress = caisperWalletPublicKey
 
     // Ensure an endpoint exists to attach the test to.
     const addRes = await ctx.runMutation(internal.observation.upsertObservedEndpointInternal, {
-      agentAddress: 'CaisperTestAgent11111111111111111111111111111111',
+      agentAddress,
       baseUrl: 'example.com',
       endpoint: 'https://example.com/observatory-payment-wiring-test',
       method: 'POST',
@@ -201,10 +180,10 @@ export const verifyObservationPaymentInteractionWiringInternal = internalAction(
 
     const endpointId = addRes.id
 
-    // Record a test result with a payment signature; this should create a historical interaction.
+    // Record a test result with a payment signature
     await ctx.runMutation(internal.observation.recordTestResult, {
       endpointId,
-      agentAddress: 'CaisperTestAgent11111111111111111111111111111111',
+      agentAddress,
       requestPayload: '{"message":"test"}',
       paymentSignature: signature,
       paymentAmountUsdc: 0.01,
@@ -286,18 +265,11 @@ export const verifyObservationPaymentInteractionWiring = action({
 }) as unknown
 
 /**
- * End-to-end Convex validation proving the full observation pipeline works:
- * - selection from `observedEndpoints`
- * - real fetch/test run through the same code path as cron (`runHourlyTests`)
- * - persistence to `endpointTests`
- * - endpoint aggregates update
- * - public Observatory feed sees the new test
- * - ghost-score apiQualityMetrics consumes the new data
- * - (optional) daily report compilation consumes the new data
+ * End-to-end Convex validation proving the full observation pipeline works.
+ * Uses EXISTING Caisper wallet and real agent addresses.
  */
 export const verifyEndToEndObservationRunInternal = internalAction({
   args: {
-    // Safety knobs (optional) so callers can keep spending low.
     maxPriceUsdc: v.optional(v.number()),
     hourlyBudgetUsdc: v.optional(v.number()),
     includeDailyReport: v.optional(v.boolean()),
@@ -331,8 +303,7 @@ export const verifyEndToEndObservationRunInternal = internalAction({
       throw new Error(`Selected endpoint not found by id: ${endpointId}`)
     }
 
-    // 2) Real fetch/test run: execute the same runner used by cron, but force maxTests=1
-    //    and force the first endpoint to be the one we selected.
+    // 2) Real fetch/test run
     const runResult: unknown = await ctx.runAction(internal.observation.runHourlyTests, {
       maxTests: 1,
       hourlyBudgetUsdc,
@@ -340,7 +311,7 @@ export const verifyEndToEndObservationRunInternal = internalAction({
       forceEndpointId: endpointId,
     })
 
-    // 3) Persistence proof: confirm a new `endpointTests` row exists very recently.
+    // 3) Persistence proof
     const tests: unknown[] = await ctx.runQuery(internal.observation.getTestsForEndpointInternal, {
       endpointId,
       limit: 10,
@@ -356,7 +327,7 @@ export const verifyEndToEndObservationRunInternal = internalAction({
       const newest = tests[0]
       const newestAt = newest
         ? (((newest as Record<string, unknown>).testedAt ??
-            (newest as Record<string, unknown>)._creationTime) as number | undefined)
+          (newest as Record<string, unknown>)._creationTime) as number | undefined)
         : null
       throw new Error(
         `Expected a new endpointTests row for endpointId=${endpointId} after startedAtMs=${startedAtMs}. newestTestedAt=${newestAt}`
@@ -367,7 +338,7 @@ export const verifyEndToEndObservationRunInternal = internalAction({
     const testedAtMs = ((recentTest as Record<string, unknown>).testedAt ??
       (recentTest as Record<string, unknown>)._creationTime) as number | undefined
 
-    // 4) Aggregates proof: endpoint row patched (totalTests incremented, lastTestedAt updated)
+    // 4) Aggregates proof
     const endpointAfter = (await ctx.runQuery(internal.observation.getObservedEndpointInternal, {
       endpointId,
     })) as Record<string, unknown> | null
@@ -393,7 +364,6 @@ export const verifyEndToEndObservationRunInternal = internalAction({
       )
     }
 
-    // recordTestResult uses a single timestamp for test + endpoint patch; verify consistency.
     if (typeof testedAtMs === 'number' && typeof afterLastTestedAt === 'number') {
       const driftMs = Math.abs(testedAtMs - afterLastTestedAt)
       if (driftMs > 5_000) {
@@ -403,7 +373,7 @@ export const verifyEndToEndObservationRunInternal = internalAction({
       }
     }
 
-    // 5) Public reads proof: new test appears in Observatory public live feed.
+    // 5) Public reads proof
     const liveFeed: unknown[] = await ctx.runQuery(
       internal.observatoryTerminal.getPublicLiveFeedInternal,
       {
@@ -420,7 +390,7 @@ export const verifyEndToEndObservationRunInternal = internalAction({
     }
     const feedItem = (liveFeed as unknown[])[feedIndex]
 
-    // 6) Downstream computations proof: ghost-score apiQualityMetrics sees >= 1 data point.
+    // 6) Ghost score proof
     const ghostScore: unknown = await ctx.runQuery(
       internal.ghostScoreCalculator.calculateAgentScoreInternal,
       {
@@ -439,7 +409,7 @@ export const verifyEndToEndObservationRunInternal = internalAction({
       )
     }
 
-    // 7) Optional: compile daily report for *today* (not yesterday) and assert it exists.
+    // 7) Optional: compile daily report
     const dailyReport: Record<string, unknown> = {
       attempted: false,
       date: null as string | null,
@@ -546,9 +516,6 @@ export const verifyEndToEndObservationRunInternal = internalAction({
 
 /**
  * Public CLI-callable wrapper.
- *
- * Allows running:
- *   bunx convex run debugObservation:verifyEndToEndObservationRun
  */
 export const verifyEndToEndObservationRun = action({
   args: {
@@ -557,9 +524,6 @@ export const verifyEndToEndObservationRun = action({
     includeDailyReport: v.optional(v.boolean()),
   },
   handler: async (ctx, args): Promise<unknown> => {
-    // NOTE: `_generated/api` is regenerated by `convex dev/deploy`.
-    // During development or in CI type-checks that don't regenerate, the new
-    // function may not exist in the committed types yet, so we cast.
     return await ctx.runAction(
       (internal as any).debugObservation.verifyEndToEndObservationRunInternal,
       args as any

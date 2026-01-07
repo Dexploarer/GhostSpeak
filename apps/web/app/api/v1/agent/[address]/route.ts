@@ -38,11 +38,8 @@ export async function GET(
       return Response.json({ error: 'Invalid Solana address format' }, { status: 400 })
     }
 
-    // Initialize Convex client
-    let convex: ConvexHttpClient | null = null
-    if (process.env.NEXT_PUBLIC_CONVEX_URL) {
-      convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL)
-    }
+    // Use the Convex client initialized at module level
+    const client = convex
 
     let discoveredAgent: {
       ghostAddress: string
@@ -66,20 +63,18 @@ export async function GET(
       verifiedAt?: number
     }> = []
 
-    // Try to fetch from Convex if available
-    if (convex) {
-      try {
-        discoveredAgent = await convex.query(api.ghostDiscovery.getDiscoveredAgent, {
-          ghostAddress: agentAddress,
-        })
+    // Try to fetch from Convex
+    try {
+      discoveredAgent = await client.query(api.ghostDiscovery.getDiscoveredAgent, {
+        ghostAddress: agentAddress,
+      })
 
-        externalMappings = await convex.query(api.ghostDiscovery.getExternalIdMappings, {
-          ghostAddress: agentAddress,
-        })
-      } catch (convexError) {
-        console.warn('Convex connection failed, returning mock data:', convexError)
-        // Continue with mock data for testing purposes
-      }
+      externalMappings = await client.query(api.ghostDiscovery.getExternalIdMappings, {
+        ghostAddress: agentAddress,
+      })
+    } catch (convexError) {
+      console.warn('Convex query failed, agent lookup will return 404:', convexError)
+      // Agent not found - will return 404 below
     }
 
     // If no agent found (or Convex not available), return 404

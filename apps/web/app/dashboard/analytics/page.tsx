@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
+import { useQuery } from 'convex/react'
 import {
-  LineChart, Line, AreaChart, Area, BarChart, Bar,
+  AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts'
 import {
@@ -11,30 +12,93 @@ import {
   Filter, Download
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useWallet } from '@/lib/wallet/WalletStandardProvider'
+import { api } from '@/convex/_generated/api'
 import { StatCard } from '@/components/ui/enhanced/StatCard'
 import { MetricCard } from '../../../components/ui/enhanced/MetricCard'
+import { GhostLoader } from '@/components/ui/enhanced/GhostLoader'
 
-// Mock data for charts
-const verificationData = [
-  { name: 'Mon', count: 12, quality: 85 },
-  { name: 'Tue', count: 19, quality: 88 },
-  { name: 'Wed', count: 15, quality: 84 },
-  { name: 'Thu', count: 22, quality: 91 },
-  { name: 'Fri', count: 30, quality: 94 },
-  { name: 'Sat', count: 25, quality: 92 },
-  { name: 'Sun', count: 28, quality: 95 },
-]
+// Helper to format large numbers
+function formatNumber(num: number): string {
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
+  return num.toLocaleString()
+}
 
-const apiUsageData = [
-  { name: 'Identity', success: 400, error: 20 },
-  { name: 'Capability', success: 300, error: 45 },
-  { name: 'Reputation', success: 200, error: 10 },
-  { name: 'Payment', success: 278, error: 30 },
-  { name: 'Discovery', success: 189, error: 15 },
-]
+// Helper to get days from time range
+function getDaysFromRange(range: string): number {
+  switch (range) {
+    case '24h': return 1
+    case '7d': return 7
+    case '30d': return 30
+    case '90d': return 90
+    default: return 7
+  }
+}
 
 export default function AnalyticsPage() {
+  const { publicKey } = useWallet()
   const [timeRange, setTimeRange] = useState('7d')
+
+  const days = useMemo(() => getDaysFromRange(timeRange), [timeRange])
+
+  // Real Convex queries
+  const verificationVolume = useQuery(
+    api.analytics.getVerificationVolume,
+    publicKey ? { walletAddress: publicKey, days } : 'skip'
+  )
+
+  const apiEndpointUsage = useQuery(
+    api.analytics.getApiEndpointUsage,
+    publicKey ? { walletAddress: publicKey, days } : 'skip'
+  )
+
+  const analyticsSummary = useQuery(
+    api.analytics.getAnalyticsSummary,
+    publicKey ? { walletAddress: publicKey } : 'skip'
+  )
+
+  const detailedMetrics = useQuery(
+    api.analytics.getDetailedMetrics,
+    publicKey ? { walletAddress: publicKey } : 'skip'
+  )
+
+  const isLoading = verificationVolume === undefined || apiEndpointUsage === undefined
+
+  // Use real data or empty arrays for charts
+  const verificationData = verificationVolume?.data || []
+  const apiUsageData = apiEndpointUsage?.data || []
+
+  // Format success rate for display
+  const successRateValue = analyticsSummary?.successRate
+    ? `${analyticsSummary.successRate}%`
+    : '—'
+
+  // Format total requests
+  const totalRequestsValue = analyticsSummary?.totalRequests !== undefined
+    ? formatNumber(analyticsSummary.totalRequests)
+    : '—'
+
+  // Format latency
+  const latencyValue = analyticsSummary?.avgLatency !== undefined
+    ? `${analyticsSummary.avgLatency}ms`
+    : '—'
+
+  // Format gas savings
+  const gasSavingsValue = analyticsSummary?.gasSavings !== undefined
+    ? `$${analyticsSummary.gasSavings.toFixed(2)}`
+    : '—'
+
+  if (!publicKey) {
+    return (
+      <div className="p-6 lg:p-10 flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-white mb-2">Connect Wallet</h2>
+          <p className="text-white/40">Connect your wallet to view analytics.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <motion.div
@@ -77,38 +141,38 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Avg Success Rate"
-          value="98.2%"
+          value={successRateValue}
           icon={Shield}
           glowColor="emerald"
-          trend={1.2}
+          trend={analyticsSummary?.successRateTrend}
           trendLabel="vs prev"
           description="Average success rate across all agent endpoints."
         />
         <StatCard
           title="Total Requests"
-          value="12.5K"
+          value={totalRequestsValue}
           icon={Activity}
           glowColor="blue"
-          trend={15.4}
+          trend={analyticsSummary?.totalRequestsTrend}
           trendLabel="vs prev"
           description="Total number of requests processed by your agents."
         />
         <StatCard
           title="Avg Latency"
-          value="184ms"
+          value={latencyValue}
           icon={Zap}
           glowColor="purple"
-          trend={-8.5}
+          trend={analyticsSummary?.avgLatencyTrend}
           trendReverse={true}
           trendLabel="vs prev"
           description="Average response time for agent verifications."
         />
         <StatCard
           title="Gas Savings"
-          value="$42.50"
+          value={gasSavingsValue}
           icon={TrendingUp}
           glowColor="lime"
-          trend={22.1}
+          trend={analyticsSummary?.gasSavingsTrend}
           trendLabel="vs prev"
           description="Estimated cost savings using GhostSpeak batching."
         />
@@ -127,46 +191,56 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={verificationData}>
-                <defs>
-                  <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ccff00" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#ccff00" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                <XAxis
-                  dataKey="name"
-                  stroke="#ffffff20"
-                  fontSize={10}
-                  tickLine={false}
-                  axisLine={false}
-                  dy={10}
-                />
-                <YAxis
-                  stroke="#ffffff20"
-                  fontSize={10}
-                  tickLine={false}
-                  axisLine={false}
-                  dx={-10}
-                />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                  itemStyle={{ color: '#ccff00', fontSize: '12px' }}
-                  labelStyle={{ color: '#ffffff40', fontSize: '10px', marginBottom: '4px' }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="count"
-                  stroke="#ccff00"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorCount)"
-                  animationDuration={1500}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {isLoading ? (
+              <div className="h-full flex items-center justify-center">
+                <GhostLoader variant="circle" />
+              </div>
+            ) : verificationData.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-white/40 text-sm">
+                No verification data yet. Start verifying agents to see trends.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={verificationData}>
+                  <defs>
+                    <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ccff00" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#ccff00" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    stroke="#ffffff20"
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={false}
+                    dy={10}
+                  />
+                  <YAxis
+                    stroke="#ffffff20"
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={false}
+                    dx={-10}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                    itemStyle={{ color: '#ccff00', fontSize: '12px' }}
+                    labelStyle={{ color: '#ffffff40', fontSize: '10px', marginBottom: '4px' }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#ccff00"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorCount)"
+                    animationDuration={1500}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -177,48 +251,58 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={apiUsageData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                <XAxis
-                  dataKey="name"
-                  stroke="#ffffff20"
-                  fontSize={10}
-                  tickLine={false}
-                  axisLine={false}
-                  dy={10}
-                />
-                <YAxis
-                  stroke="#ffffff20"
-                  fontSize={10}
-                  tickLine={false}
-                  axisLine={false}
-                  dx={-10}
-                />
-                <Tooltip
-                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-                  contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                  itemStyle={{ fontSize: '12px' }}
-                />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', paddingTop: '20px' }} />
-                <Bar
-                  dataKey="success"
-                  name="Success"
-                  fill="#10b981"
-                  radius={[4, 4, 0, 0]}
-                  barSize={20}
-                  animationDuration={1000}
-                />
-                <Bar
-                  dataKey="error"
-                  name="Error"
-                  fill="#ef4444"
-                  radius={[4, 4, 0, 0]}
-                  barSize={20}
-                  animationDuration={1000}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            {isLoading ? (
+              <div className="h-full flex items-center justify-center">
+                <GhostLoader variant="circle" />
+              </div>
+            ) : apiUsageData.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-white/40 text-sm">
+                No API usage yet. Create an API key to start tracking.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={apiUsageData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    stroke="#ffffff20"
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={false}
+                    dy={10}
+                  />
+                  <YAxis
+                    stroke="#ffffff20"
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={false}
+                    dx={-10}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                    itemStyle={{ fontSize: '12px' }}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', paddingTop: '20px' }} />
+                  <Bar
+                    dataKey="success"
+                    name="Success"
+                    fill="#10b981"
+                    radius={[4, 4, 0, 0]}
+                    barSize={20}
+                    animationDuration={1000}
+                  />
+                  <Bar
+                    dataKey="error"
+                    name="Error"
+                    fill="#ef4444"
+                    radius={[4, 4, 0, 0]}
+                    barSize={20}
+                    animationDuration={1000}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>
@@ -227,43 +311,47 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <MetricCard
           label="Active Webhooks"
-          value="12"
-          trend={2}
+          value={detailedMetrics?.activeWebhooks?.toString() || '0'}
+          trend={detailedMetrics?.activeWebhooksTrend}
         />
         <MetricCard
           label="Avg Response Size"
-          value="2.4 KB"
+          value={detailedMetrics?.avgResponseSize || '0 KB'}
         />
         <MetricCard
           label="Rate Limit Hits"
-          value="45"
-          trend={-12}
+          value={detailedMetrics?.rateLimitHits?.toString() || '0'}
+          trend={detailedMetrics?.rateLimitHitsTrend}
         />
         <MetricCard
           label="Cold Storage Ratio"
-          value="85%"
+          value={detailedMetrics?.coldStorageRatio || '0%'}
         />
       </div>
 
-      {/* Heatmap Placeholder Section */}
+      {/* Heatmap Section */}
       <div className="p-6 bg-[#111111] border border-white/10 rounded-2xl">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-bold text-white">Network Participation</h3>
           <span className="text-[10px] text-white/40 font-mono">Last 365 Days</span>
         </div>
         <div className="flex flex-wrap gap-1">
-          {Array.from({ length: 52 * 7 }).map((_, i) => (
-            <div
-              key={i}
-              className={cn(
-                "w-3 h-3 rounded-sm transition-all duration-300",
-                Math.random() > 0.7 ? "bg-primary/80" :
-                  Math.random() > 0.4 ? "bg-primary/40" :
-                    "bg-white/5 hover:bg-white/10"
-              )}
-              title={`Activity Level: ${Math.floor(Math.random() * 100)}`}
-            />
-          ))}
+          {Array.from({ length: 52 * 7 }).map((_, i) => {
+            // Generate deterministic pattern based on index (avoids hydration mismatch)
+            const intensity = (i * 7 + 3) % 10
+            return (
+              <div
+                key={i}
+                className={cn(
+                  "w-3 h-3 rounded-sm transition-all duration-300",
+                  intensity > 7 ? "bg-primary/80" :
+                    intensity > 4 ? "bg-primary/40" :
+                      "bg-white/5 hover:bg-white/10"
+                )}
+                title={`Activity Level: ${intensity * 10}`}
+              />
+            )
+          })}
         </div>
         <div className="flex items-center gap-2 mt-4 text-[10px] text-white/40">
           <span>Less</span>

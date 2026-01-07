@@ -106,7 +106,7 @@ jobs:
         run: cd packages/cli && bun run build
       
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: build-artifacts
           path: |

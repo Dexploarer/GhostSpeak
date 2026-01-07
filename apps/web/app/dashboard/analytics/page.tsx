@@ -4,13 +4,18 @@ import React, { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useQuery } from 'convex/react'
 import {
-  AreaChart, Area, BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
 } from 'recharts'
-import {
-  Shield, Activity, Zap, TrendingUp,
-  Filter, Download
-} from 'lucide-react'
+import { Shield, Activity, Zap, TrendingUp, Filter, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useWallet } from '@/lib/wallet/WalletStandardProvider'
 import { api } from '@/convex/_generated/api'
@@ -28,11 +33,16 @@ function formatNumber(num: number): string {
 // Helper to get days from time range
 function getDaysFromRange(range: string): number {
   switch (range) {
-    case '24h': return 1
-    case '7d': return 7
-    case '30d': return 30
-    case '90d': return 90
-    default: return 7
+    case '24h':
+      return 1
+    case '7d':
+      return 7
+    case '30d':
+      return 30
+    case '90d':
+      return 90
+    default:
+      return 7
   }
 }
 
@@ -70,24 +80,21 @@ export default function AnalyticsPage() {
   const apiUsageData = apiEndpointUsage?.data || []
 
   // Format success rate for display
-  const successRateValue = analyticsSummary?.successRate
-    ? `${analyticsSummary.successRate}%`
-    : '—'
+  const successRateValue = analyticsSummary?.successRate ? `${analyticsSummary.successRate}%` : '—'
 
   // Format total requests
-  const totalRequestsValue = analyticsSummary?.totalRequests !== undefined
-    ? formatNumber(analyticsSummary.totalRequests)
-    : '—'
+  const totalRequestsValue =
+    analyticsSummary?.totalRequests !== undefined
+      ? formatNumber(analyticsSummary.totalRequests)
+      : '—'
 
   // Format latency
-  const latencyValue = analyticsSummary?.avgLatency !== undefined
-    ? `${analyticsSummary.avgLatency}ms`
-    : '—'
+  const latencyValue =
+    analyticsSummary?.avgLatency !== undefined ? `${analyticsSummary.avgLatency}ms` : '—'
 
   // Format gas savings
-  const gasSavingsValue = analyticsSummary?.gasSavings !== undefined
-    ? `$${analyticsSummary.gasSavings.toFixed(2)}`
-    : '—'
+  const gasSavingsValue =
+    analyticsSummary?.gasSavings !== undefined ? `$${analyticsSummary.gasSavings.toFixed(2)}` : '—'
 
   if (!publicKey) {
     return (
@@ -101,16 +108,14 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="p-6 lg:p-10 space-y-8"
-    >
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 lg:p-10 space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white tracking-tight">Performance Analytics</h1>
-          <p className="text-white/40 mt-1">Deep insights into your agent's performance and protocol activity.</p>
+          <p className="text-white/40 mt-1">
+            Deep insights into your agent's performance and protocol activity.
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -120,8 +125,8 @@ export default function AnalyticsPage() {
                 key={range}
                 onClick={() => setTimeRange(range)}
                 className={cn(
-                  "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
-                  timeRange === range ? "bg-primary text-black" : "text-white/60 hover:text-white"
+                  'px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                  timeRange === range ? 'bg-primary text-black' : 'text-white/60 hover:text-white'
                 )}
               >
                 {range}
@@ -186,7 +191,9 @@ export default function AnalyticsPage() {
             <h3 className="text-lg font-bold text-white">Verification Volume</h3>
             <div className="flex items-center gap-1.5 px-2 py-1 bg-white/5 rounded-md border border-white/5">
               <span className="w-2 h-2 rounded-full bg-primary" />
-              <span className="text-[10px] text-white/60 font-medium uppercase tracking-wider">Live Feed</span>
+              <span className="text-[10px] text-white/60 font-medium uppercase tracking-wider">
+                Live Feed
+              </span>
             </div>
           </div>
 
@@ -225,7 +232,11 @@ export default function AnalyticsPage() {
                     dx={-10}
                   />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                    contentStyle={{
+                      backgroundColor: '#1a1a1a',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '8px',
+                    }}
                     itemStyle={{ color: '#ccff00', fontSize: '12px' }}
                     labelStyle={{ color: '#ffffff40', fontSize: '10px', marginBottom: '4px' }}
                   />
@@ -280,10 +291,17 @@ export default function AnalyticsPage() {
                   />
                   <Tooltip
                     cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                    contentStyle={{
+                      backgroundColor: '#1a1a1a',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '8px',
+                    }}
                     itemStyle={{ fontSize: '12px' }}
                   />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', paddingTop: '20px' }} />
+                  <Legend
+                    iconType="circle"
+                    wrapperStyle={{ fontSize: '10px', paddingTop: '20px' }}
+                  />
                   <Bar
                     dataKey="success"
                     name="Success"
@@ -314,19 +332,13 @@ export default function AnalyticsPage() {
           value={detailedMetrics?.activeWebhooks?.toString() || '0'}
           trend={detailedMetrics?.activeWebhooksTrend}
         />
-        <MetricCard
-          label="Avg Response Size"
-          value={detailedMetrics?.avgResponseSize || '0 KB'}
-        />
+        <MetricCard label="Avg Response Size" value={detailedMetrics?.avgResponseSize || '0 KB'} />
         <MetricCard
           label="Rate Limit Hits"
           value={detailedMetrics?.rateLimitHits?.toString() || '0'}
           trend={detailedMetrics?.rateLimitHitsTrend}
         />
-        <MetricCard
-          label="Cold Storage Ratio"
-          value={detailedMetrics?.coldStorageRatio || '0%'}
-        />
+        <MetricCard label="Cold Storage Ratio" value={detailedMetrics?.coldStorageRatio || '0%'} />
       </div>
 
       {/* Heatmap Section */}
@@ -343,10 +355,12 @@ export default function AnalyticsPage() {
               <div
                 key={i}
                 className={cn(
-                  "w-3 h-3 rounded-sm transition-all duration-300",
-                  intensity > 7 ? "bg-primary/80" :
-                    intensity > 4 ? "bg-primary/40" :
-                      "bg-white/5 hover:bg-white/10"
+                  'w-3 h-3 rounded-sm transition-all duration-300',
+                  intensity > 7
+                    ? 'bg-primary/80'
+                    : intensity > 4
+                      ? 'bg-primary/40'
+                      : 'bg-white/5 hover:bg-white/10'
                 )}
                 title={`Activity Level: ${intensity * 10}`}
               />

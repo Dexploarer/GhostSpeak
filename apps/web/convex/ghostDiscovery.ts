@@ -219,7 +219,8 @@ export const updateAgentMetadata = mutation({
 
     if (args.name !== undefined) updates.name = args.name
     if (args.description !== undefined) updates.description = args.description
-    if (args.x402ServiceEndpoint !== undefined) updates.x402ServiceEndpoint = args.x402ServiceEndpoint
+    if (args.x402ServiceEndpoint !== undefined)
+      updates.x402ServiceEndpoint = args.x402ServiceEndpoint
     if (args.x402Enabled !== undefined) updates.x402Enabled = args.x402Enabled
     if (args.x402PricePerCall !== undefined) updates.x402PricePerCall = args.x402PricePerCall
     if (args.x402AcceptedTokens !== undefined) updates.x402AcceptedTokens = args.x402AcceptedTokens
@@ -241,7 +242,7 @@ export const updateAgentMetadata = mutation({
       success: true,
       agentId: agent._id,
       ghostAddress: args.ghostAddress,
-      updatedFields: Object.keys(updates).filter(k => k !== 'updatedAt'),
+      updatedFields: Object.keys(updates).filter((k) => k !== 'updatedAt'),
     }
   },
 })

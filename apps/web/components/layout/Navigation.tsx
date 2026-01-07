@@ -88,11 +88,11 @@ export const Navigation: React.FC = () => {
           isScrolled
             ? 'glass-panel px-6 py-3 border border-white/20 dark:border-white/10 shadow-2xl shadow-lime-500/10 w-fit'
             : cn(
-              'border-b py-4 px-6 md:px-8',
-              isMarketingPage
-                ? 'bg-transparent border-transparent'
-                : 'glass border-gray-200 dark:border-gray-800'
-            )
+                'border-b py-4 px-6 md:px-8',
+                isMarketingPage
+                  ? 'bg-transparent border-transparent'
+                  : 'glass border-gray-200 dark:border-gray-800'
+              )
         )}
         style={{
           transition: 'none',

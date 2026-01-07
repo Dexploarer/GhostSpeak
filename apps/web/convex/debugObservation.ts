@@ -24,7 +24,9 @@ export const debugRun = internalAction({
     const wallet = await ctx.runQuery(internal.lib.caisper.getCaisperWalletInternal)
     if (!wallet) {
       console.error('[Debug] CAISPER WALLET NOT CONFIGURED!')
-      console.error('[Debug] Please configure the Caisper wallet via the admin interface or environment variables.')
+      console.error(
+        '[Debug] Please configure the Caisper wallet via the admin interface or environment variables.'
+      )
       console.error('[Debug] Aborting debug run.')
       throw new Error('Caisper wallet not configured. Cannot proceed with debug run.')
     }
@@ -100,8 +102,8 @@ export const debugRun = internalAction({
           if (token !== 'SOL') {
             console.warn(
               '[Debug] WARNING: Token is ' +
-              token +
-              '. Caisper only supports SOL native currently (via sendSolPayment). Payment might fail or be rejected.'
+                token +
+                '. Caisper only supports SOL native currently (via sendSolPayment). Payment might fail or be rejected.'
             )
           }
 
@@ -327,7 +329,7 @@ export const verifyEndToEndObservationRunInternal = internalAction({
       const newest = tests[0]
       const newestAt = newest
         ? (((newest as Record<string, unknown>).testedAt ??
-          (newest as Record<string, unknown>)._creationTime) as number | undefined)
+            (newest as Record<string, unknown>)._creationTime) as number | undefined)
         : null
       throw new Error(
         `Expected a new endpointTests row for endpointId=${endpointId} after startedAtMs=${startedAtMs}. newestTestedAt=${newestAt}`

@@ -322,18 +322,18 @@ export default function DashboardPage() {
   const primaryScore =
     roles?.isAgentDeveloper && reputation?.ecto
       ? {
-        type: 'ecto' as const,
-        score: reputation.ecto.score,
-        tier: reputation.ecto.tier,
-        progress: ectoTierProgress,
-      }
+          type: 'ecto' as const,
+          score: reputation.ecto.score,
+          tier: reputation.ecto.tier,
+          progress: ectoTierProgress,
+        }
       : roles?.isCustomer && reputation?.ghosthunter
         ? {
-          type: 'ghosthunter' as const,
-          score: reputation.ghosthunter.score,
-          tier: reputation.ghosthunter.tier,
-          progress: ghosthunterTierProgress,
-        }
+            type: 'ghosthunter' as const,
+            score: reputation.ghosthunter.score,
+            tier: reputation.ghosthunter.tier,
+            progress: ghosthunterTierProgress,
+          }
         : null
 
   const formatAddress = (address: string) => {
@@ -441,7 +441,11 @@ export default function DashboardPage() {
               icon={staking ? Zap : User}
               glowColor="purple"
               subtitle={staking ? `Tier ${staking.tier}` : 'Active User'}
-              description={staking ? 'Total $GHOST tokens staked in the protocol.' : 'Active status on the GhostSpeak network.'}
+              description={
+                staking
+                  ? 'Total $GHOST tokens staked in the protocol.'
+                  : 'Active status on the GhostSpeak network.'
+              }
             />
           </div>
 
@@ -493,9 +497,14 @@ export default function DashboardPage() {
                           minute: '2-digit',
                         }),
                         timestamp: '', // subtitle handles it better for this layout
-                        type: activity.type === 'VERIFICATION' ? 'premium' :
-                          activity.status === 'completed' ? 'success' :
-                            activity.status === 'pending' ? 'warning' : 'error',
+                        type:
+                          activity.type === 'VERIFICATION'
+                            ? 'premium'
+                            : activity.status === 'completed'
+                              ? 'success'
+                              : activity.status === 'pending'
+                                ? 'warning'
+                                : 'error',
                         details: activity.transactionSignature ? (
                           <a
                             href={getTransactionExplorerUrl(activity.transactionSignature)}
@@ -555,9 +564,13 @@ export default function DashboardPage() {
                   <Bot className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white tracking-tight">My Registered Agents</h2>
+                  <h2 className="text-xl font-bold text-white tracking-tight">
+                    My Registered Agents
+                  </h2>
                   {userAgents?.agents && (
-                    <p className="text-xs text-white/40 mt-0.5">{userAgents.agents.length} agents discovered</p>
+                    <p className="text-xs text-white/40 mt-0.5">
+                      {userAgents.agents.length} agents discovered
+                    </p>
                   )}
                 </div>
               </div>
@@ -567,8 +580,10 @@ export default function DashboardPage() {
                   <button
                     onClick={() => setViewType('grid')}
                     className={cn(
-                      "p-1.5 rounded-md transition-all",
-                      viewType === 'grid' ? "bg-white/10 text-white" : "text-white/40 hover:text-white/60"
+                      'p-1.5 rounded-md transition-all',
+                      viewType === 'grid'
+                        ? 'bg-white/10 text-white'
+                        : 'text-white/40 hover:text-white/60'
                     )}
                     aria-label="Grid view"
                   >
@@ -577,8 +592,10 @@ export default function DashboardPage() {
                   <button
                     onClick={() => setViewType('list')}
                     className={cn(
-                      "p-1.5 rounded-md transition-all",
-                      viewType === 'list' ? "bg-white/10 text-white" : "text-white/40 hover:text-white/60"
+                      'p-1.5 rounded-md transition-all',
+                      viewType === 'list'
+                        ? 'bg-white/10 text-white'
+                        : 'text-white/40 hover:text-white/60'
                     )}
                     aria-label="List view"
                   >
@@ -599,10 +616,13 @@ export default function DashboardPage() {
             {userAgents === undefined ? (
               <GhostLoader variant="list" count={3} />
             ) : userAgents && userAgents.agents.length > 0 ? (
-              <div className={cn(
-                "gap-4",
-                viewType === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-col"
-              )}
+              <div
+                className={cn(
+                  'gap-4',
+                  viewType === 'grid'
+                    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                    : 'flex flex-col'
+                )}
               >
                 <AnimatePresence mode="popLayout" initial={false}>
                   {userAgents.agents.map((agent: DashboardAgentItem) => (
@@ -617,14 +637,17 @@ export default function DashboardPage() {
                       <Link
                         href={`/agents/${agent.address}`}
                         className={cn(
-                          "group h-full relative block bg-white/[0.02] border border-white/5 rounded-xl hover:bg-white/5 hover:border-white/20 transition-all duration-300",
-                          viewType === 'grid' ? "p-5" : "p-4 flex items-center justify-between gap-4"
+                          'group h-full relative block bg-white/[0.02] border border-white/5 rounded-xl hover:bg-white/5 hover:border-white/20 transition-all duration-300',
+                          viewType === 'grid'
+                            ? 'p-5'
+                            : 'p-4 flex items-center justify-between gap-4'
                         )}
                       >
-                        <div className={cn(
-                          "flex gap-4",
-                          viewType === 'grid' ? "flex-col" : "items-center flex-1"
-                        )}
+                        <div
+                          className={cn(
+                            'flex gap-4',
+                            viewType === 'grid' ? 'flex-col' : 'items-center flex-1'
+                          )}
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-primary/10 group-hover:border-primary/20 transition-all">
@@ -640,19 +663,29 @@ export default function DashboardPage() {
                             </div>
                           </div>
 
-                          <div className={cn(
-                            "flex items-center gap-3",
-                            viewType === 'grid' ? "justify-between" : "ml-auto"
-                          )}
+                          <div
+                            className={cn(
+                              'flex items-center gap-3',
+                              viewType === 'grid' ? 'justify-between' : 'ml-auto'
+                            )}
                           >
                             <div className="flex flex-col gap-0.5">
-                              <span className="text-[9px] uppercase font-bold text-white/20 tracking-widest">Ghost Score</span>
-                              <span className="text-sm font-bold text-primary font-mono">{formatNumber(agent.ghostScore)}</span>
+                              <span className="text-[9px] uppercase font-bold text-white/20 tracking-widest">
+                                Ghost Score
+                              </span>
+                              <span className="text-sm font-bold text-primary font-mono">
+                                {formatNumber(agent.ghostScore)}
+                              </span>
                             </div>
                             <StatusBadge
                               label={agent.verificationStatus}
-                              variant={agent.verificationStatus === 'verified' ? 'premium' :
-                                agent.verificationStatus === 'claimed' ? 'info' : 'neutral'}
+                              variant={
+                                agent.verificationStatus === 'verified'
+                                  ? 'premium'
+                                  : agent.verificationStatus === 'claimed'
+                                    ? 'info'
+                                    : 'neutral'
+                              }
                             />
                           </div>
                         </div>
@@ -661,8 +694,11 @@ export default function DashboardPage() {
                           <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
                             <div className="flex -space-x-2">
                               {/* Decorative visual for reputation peers if available */}
-                              {[1, 2, 3].map(i => (
-                                <div key={i} className="w-5 h-5 rounded-full border border-[#111111] bg-white/5 flex items-center justify-center">
+                              {[1, 2, 3].map((i) => (
+                                <div
+                                  key={i}
+                                  className="w-5 h-5 rounded-full border border-[#111111] bg-white/5 flex items-center justify-center"
+                                >
                                   <User className="w-2.5 h-2.5 text-white/20" />
                                 </div>
                               ))}
@@ -684,7 +720,8 @@ export default function DashboardPage() {
                 </div>
                 <h3 className="text-lg font-bold text-white mb-2">No agents registered</h3>
                 <p className="text-sm text-white/40 max-w-sm mb-8">
-                  Register your AI agent to start building its on-chain reputation and verified identity.
+                  Register your AI agent to start building its on-chain reputation and verified
+                  identity.
                 </p>
                 <Link
                   href="/agents/register"
@@ -721,19 +758,21 @@ export default function DashboardPage() {
             <div className="flex gap-2 mt-2">
               <button
                 onClick={() => setActiveScoreType('ecto')}
-                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${activeScoreType === 'ecto'
-                  ? 'bg-primary/20 border border-primary/40 text-primary'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
-                  }`}
+                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeScoreType === 'ecto'
+                    ? 'bg-primary/20 border border-primary/40 text-primary'
+                    : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
+                }`}
               >
                 Ecto (Developer)
               </button>
               <button
                 onClick={() => setActiveScoreType('ghosthunter')}
-                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${activeScoreType === 'ghosthunter'
-                  ? 'bg-blue-500/20 border border-blue-500/40 text-blue-400'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
-                  }`}
+                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeScoreType === 'ghosthunter'
+                    ? 'bg-blue-500/20 border border-blue-500/40 text-blue-400'
+                    : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
+                }`}
               >
                 Ghosthunter
               </button>
@@ -743,14 +782,16 @@ export default function DashboardPage() {
           <div className="space-y-4 mt-4">
             {/* Current Score */}
             <div
-              className={`p-4 rounded-lg text-center ${activeScoreType === 'ecto'
-                ? 'bg-primary/10 border border-primary/20'
-                : 'bg-blue-500/10 border border-blue-500/20'
-                }`}
+              className={`p-4 rounded-lg text-center ${
+                activeScoreType === 'ecto'
+                  ? 'bg-primary/10 border border-primary/20'
+                  : 'bg-blue-500/10 border border-blue-500/20'
+              }`}
             >
               <p
-                className={`text-5xl font-light mb-1 ${activeScoreType === 'ecto' ? 'text-primary' : 'text-blue-400'
-                  }`}
+                className={`text-5xl font-light mb-1 ${
+                  activeScoreType === 'ecto' ? 'text-primary' : 'text-blue-400'
+                }`}
               >
                 {activeScoreType === 'ecto'
                   ? formatNumber(reputation?.ecto?.score || 0)
@@ -763,10 +804,11 @@ export default function DashboardPage() {
                     : reputation?.ghosthunter?.tier || 'ROOKIE'}
                 </p>
                 <div
-                  className={`px-2 py-0.5 rounded text-xs ${activeScoreType === 'ecto'
-                    ? 'bg-primary/20 text-primary'
-                    : 'bg-blue-500/20 text-blue-400'
-                    }`}
+                  className={`px-2 py-0.5 rounded text-xs ${
+                    activeScoreType === 'ecto'
+                      ? 'bg-primary/20 text-primary'
+                      : 'bg-blue-500/20 text-blue-400'
+                  }`}
                 >
                   {activeScoreType === 'ecto' ? 'Developer' : 'Hunter'}
                 </div>

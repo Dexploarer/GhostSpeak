@@ -61,7 +61,11 @@ export default function ApiKeysPage() {
   }
 
   const handleRevoke = async (keyId: Id<'apiKeys'>) => {
-    if (!walletAddress || !confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) return
+    if (
+      !walletAddress ||
+      !confirm('Are you sure you want to revoke this API key? This action cannot be undone.')
+    )
+      return
 
     try {
       await revokeKey({
@@ -100,9 +104,7 @@ export default function ApiKeysPage() {
           <Card>
             <CardHeader>
               <CardTitle>Create New Key</CardTitle>
-              <CardDescription>
-                Generate a new API key for your applications.
-              </CardDescription>
+              <CardDescription>Generate a new API key for your applications.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex gap-4 max-w-md">
@@ -112,7 +114,11 @@ export default function ApiKeysPage() {
                   onChange={(e) => setNewKeyName(e.target.value)}
                 />
                 <Button onClick={handleCreate} disabled={isCreating || !newKeyName.trim()}>
-                  {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                  {isCreating ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="mr-2 h-4 w-4" />
+                  )}
                   Create
                 </Button>
               </div>
@@ -135,7 +141,11 @@ export default function ApiKeysPage() {
                         className="h-8 w-8"
                         onClick={() => copyToClipboard(createdKey.key)}
                       >
-                        {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                        {copied ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                   </AlertDescription>
@@ -148,9 +158,7 @@ export default function ApiKeysPage() {
           <Card>
             <CardHeader>
               <CardTitle>Active Keys</CardTitle>
-              <CardDescription>
-                Your active API keys and their status.
-              </CardDescription>
+              <CardDescription>Your active API keys and their status.</CardDescription>
             </CardHeader>
             <CardContent>
               {!keys ? (

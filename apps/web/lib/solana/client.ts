@@ -11,12 +11,14 @@ import { createSolanaClient } from 'gill'
 import type { SolanaClient } from 'gill'
 
 // Singleton client for client-side usage
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _clientSideClient: SolanaClient<any> | null = null
 
 /**
  * Get or create the singleton Solana client for browser use
  * Uses NEXT_PUBLIC_SOLANA_RPC_URL from environment
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getSolanaClient(): SolanaClient<any> {
   if (!_clientSideClient) {
     const url = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
@@ -32,6 +34,7 @@ export function getSolanaClient(): SolanaClient<any> {
  *
  * @param rpcUrl - Optional custom RPC URL (falls back to env)
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createServerSolanaClient(rpcUrl?: string): SolanaClient<any> {
   const url =
     rpcUrl ||

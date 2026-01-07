@@ -7,7 +7,7 @@
  * 3. Updating Convex status to 'claimed'
  */
 
-import type { Action, IAgentRuntime, Memory, State } from '@elizaos/core'
+import type { Action, IAgentRuntime, Memory, State, HandlerCallback } from '@elizaos/core'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 
@@ -18,7 +18,7 @@ export const claimAgentAction: Action = {
   // Force recompile
 
   // Validate: trigger on claim-related queries
-  validate: async (runtime: IAgentRuntime, message: Memory, state?: State) => {
+  validate: async (runtime: IAgentRuntime, message: Memory, _state?: State) => {
     const text = (message.content.text || '').toLowerCase()
 
     // Match claim intent with potential agent address
@@ -41,9 +41,9 @@ export const claimAgentAction: Action = {
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
-    state?: State,
-    options?: any,
-    callback?: any
+    _state?: State,
+    _options?: unknown,
+    callback?: HandlerCallback
   ) => {
     try {
       const text = message.content.text || ''
@@ -125,8 +125,7 @@ export const claimAgentAction: Action = {
       console.log(`⛓️  Registering Ghost on-chain: ${ghostAddress}`)
 
       // Import SDK for on-chain registration
-      const { GhostSpeakClient, createKeyPairSignerFromBytes, address } =
-        await import('@ghostspeak/sdk')
+      const { GhostSpeakClient, createKeyPairSignerFromBytes } = await import('@ghostspeak/sdk')
       const bs58 = await import('bs58')
 
       // Get admin keypair from environment (server-side signing for Phase 1)

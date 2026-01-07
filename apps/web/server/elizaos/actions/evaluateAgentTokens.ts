@@ -5,7 +5,7 @@
  * using Jupiter Ultra API (Tokens V2 + Shield + Holdings)
  */
 
-import type { Action, IAgentRuntime, Memory, State } from '@elizaos/core'
+import type { Action, IAgentRuntime, Memory, State, HandlerCallback } from '@elizaos/core'
 import { JupiterUltraClient, analyzeTokenRisk, TokenInfo } from '@/lib/jupiter-ultra'
 
 export const evaluateAgentTokensAction: Action = {
@@ -43,8 +43,8 @@ export const evaluateAgentTokensAction: Action = {
     runtime: IAgentRuntime,
     message: Memory,
     state?: State,
-    options?: Record<string, unknown>,
-    callback?: (response: any) => Promise<any[]>
+    _options?: unknown,
+    callback?: HandlerCallback
   ) => {
     try {
       const text = message.content.text || ''
@@ -90,7 +90,7 @@ export const evaluateAgentTokensAction: Action = {
 
       // 4. Analyze Risks
       let totalValue = holdings.uiAmount // Start with SOL
-      let riskyTokenCount = 0
+      // let riskyTokenCount = 0 // Unused
       let verifiedTokenCount = 0
       let exploitScore = 0 // 0 = Good, 100 = BAD
 
@@ -99,7 +99,14 @@ export const evaluateAgentTokensAction: Action = {
         const account = holdings.tokens[mint][0]
         const warnings = shieldData.warnings[mint] || []
 
-        let risk = { riskScore: 50, flags: { red: [], yellow: [], green: [] } as any }
+        let risk = {
+          riskScore: 50,
+          flags: { red: [], yellow: [], green: [] } as {
+            red: string[]
+            yellow: string[]
+            green: string[]
+          },
+        }
 
         if (token) {
           risk = analyzeTokenRisk(token, warnings)
@@ -120,7 +127,7 @@ export const evaluateAgentTokensAction: Action = {
         const safetyScore = risk.riskScore
         const dangerScore = 100 - safetyScore
 
-        if (dangerScore > 60) riskyTokenCount++
+        // if (dangerScore > 60) riskyTokenCount++
         exploitScore += dangerScore
 
         return {

@@ -100,9 +100,9 @@ async function getCaisperAddress(): Promise<string | null> {
  */
 async function handleRequest(
   req: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ): Promise<NextResponse> {
-  const pathSegments = params.path || []
+  const { path: pathSegments = [] } = await params
   const service = pathSegments[0] || 'default'
 
   console.log(`[x402Route] Request for service: ${service}`)

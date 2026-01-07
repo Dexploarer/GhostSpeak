@@ -4,7 +4,7 @@
  * Web-app-specific action to query Convex for discovered/claimable agents
  */
 
-import type { Action, IAgentRuntime, Memory, State } from '@elizaos/core'
+import type { Action, IAgentRuntime, Memory, State, HandlerCallback } from '@elizaos/core'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 
@@ -13,7 +13,7 @@ export const discoverAgentsAction: Action = {
   description: 'Search for discovered agents that are available to claim on GhostSpeak',
 
   // Validate: trigger on queries about agents, discovery, claiming, etc.
-  validate: async (runtime: IAgentRuntime, message: Memory, state?: State) => {
+  validate: async (runtime: IAgentRuntime, message: Memory, _state?: State) => {
     const text = (message.content.text || '').toLowerCase()
 
     // Match discovery queries (NOT claim actions - those are handled by CLAIM_AGENT)
@@ -49,9 +49,9 @@ export const discoverAgentsAction: Action = {
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
-    state?: State,
-    options?: any,
-    callback?: any
+    _state?: State,
+    _options?: unknown,
+    callback?: HandlerCallback
   ) => {
     try {
       // Get Convex client from database adapter
@@ -78,17 +78,24 @@ export const discoverAgentsAction: Action = {
       const responseText = `Hold my ectoplasm, pulling up the Ghost Registry... 🔍\n\n**${agents.length} Unclaimed Agent${agents.length > 1 ? 's' : ''} Detected**\n\nClick "Claim Now" next to any agent to get started! 👻`
 
       // Format agents for UI table
-      const formattedAgents = agents.map((agent: any) => ({
-        ghostAddress: agent.ghostAddress,
-        shortAddress: `${agent.ghostAddress.slice(0, 4)}...${agent.ghostAddress.slice(-4)}`,
-        discoveredDate: agent.firstSeenTimestamp
-          ? new Date(agent.firstSeenTimestamp).toLocaleDateString()
-          : 'Unknown',
-        discoverySource: agent.discoverySource || 'blockchain',
-        status: agent.status || 'discovered',
-        // Claim prompt for button
-        claimPrompt: `I want to claim agent ${agent.ghostAddress}`,
-      }))
+      const formattedAgents = agents.map(
+        (agent: {
+          ghostAddress: string
+          firstSeenTimestamp?: number
+          discoverySource?: string
+          status?: string
+        }) => ({
+          ghostAddress: agent.ghostAddress,
+          shortAddress: `${agent.ghostAddress.slice(0, 4)}...${agent.ghostAddress.slice(-4)}`,
+          discoveredDate: agent.firstSeenTimestamp
+            ? new Date(agent.firstSeenTimestamp).toLocaleDateString()
+            : 'Unknown',
+          discoverySource: agent.discoverySource || 'blockchain',
+          status: agent.status || 'discovered',
+          // Claim prompt for button
+          claimPrompt: `I want to claim agent ${agent.ghostAddress}`,
+        })
+      )
 
       const response = {
         text: responseText,

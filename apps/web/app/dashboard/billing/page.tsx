@@ -3,8 +3,8 @@
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { useState, useEffect } from 'react'
-import { useWallet } from '@solana/wallet-adapter-react'
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
+import { useWallet } from '@/lib/wallet/WalletStandardProvider'
+import { ConnectWalletButton } from '@/components/auth/ConnectWalletButton'
 import {
   Card,
   CardContent,
@@ -101,7 +101,7 @@ export default function BillingPage() {
       {!walletAddress ? (
         <div className="flex flex-col items-center justify-center p-12 border rounded-lg bg-muted/20">
           <p className="mb-4 text-lg">Connect your wallet to view billing information</p>
-          <WalletMultiButton />
+          <ConnectWalletButton />
         </div>
       ) : (
         <div className="grid gap-8">

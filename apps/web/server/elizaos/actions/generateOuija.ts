@@ -1,7 +1,7 @@
 import { Action, IAgentRuntime, Memory, State, HandlerCallback } from '@elizaos/core'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
-import { Id } from '@/convex/_generated/dataModel'
+// Id import removed
 
 export const generateOuijaAction: Action = {
   name: 'GENERATE_OUIJA_REPORT',
@@ -29,7 +29,7 @@ export const generateOuijaAction: Action = {
     runtime: IAgentRuntime,
     message: Memory,
     state?: State,
-    options?: { [key: string]: unknown },
+    _options?: unknown,
     callback?: HandlerCallback
   ) => {
     try {

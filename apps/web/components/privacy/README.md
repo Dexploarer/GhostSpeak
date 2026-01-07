@@ -307,4 +307,4 @@ Recommended test cases:
 - Tailwind CSS
 - shadcn/ui components
 - lucide-react icons
-- @solana/wallet-adapter-react
+- @wallet-standard/react

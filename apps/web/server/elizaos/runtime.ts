@@ -29,7 +29,7 @@ import { generateOuijaAction } from './actions/generateOuija'
 import { getUserPortfolioAction } from './actions/getUserPortfolio'
 
 // Wide Event Logging
-import { createRequestEvent, emitWideEvent, WideEvent } from '@/lib/logging/wide-event'
+import { createRequestEvent, emitWideEvent } from '@/lib/logging/wide-event'
 
 // Convex database adapter for ElizaOS
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -481,7 +481,7 @@ export async function processAgentMessage(params: {
 }): Promise<{
   text: string
   action?: string
-  metadata?: any
+  metadata?: Record<string, unknown>
 }> {
   const startTime = Date.now()
   const { correlationId } = params
@@ -531,7 +531,7 @@ export async function processAgentMessage(params: {
     // Track response
     let responseText = ''
     let triggeredAction: string | undefined
-    let actionMetadata: any = {}
+    let actionMetadata: Record<string, unknown> = {}
     let actionCount = 0
     const actionErrors: string[] = []
 
@@ -605,7 +605,9 @@ export async function processAgentMessage(params: {
       // Perform RAG search for relevant context
       let ragContext = ''
       try {
-        const searchResults = await (runtime as any).adapter.searchMemories({
+        const searchResults = await (
+          runtime as unknown as { adapter: ConvexDatabaseAdapter }
+        ).adapter.searchMemories({
           roomId: roomId,
           query: params.message,
           count: 5,
@@ -615,7 +617,9 @@ export async function processAgentMessage(params: {
         if (searchResults && searchResults.length > 0) {
           ragContext =
             '\n\n**Relevant Context from GhostSpeak Documentation:**\n' +
-            searchResults.map((res: any) => `- ${res.content.text}`).join('\n')
+            searchResults
+              .map((res: { content: { text: string } }) => `- ${res.content.text}`)
+              .join('\n')
           console.log(`📚 Found ${searchResults.length} RAG results for prompt enrichment`)
         }
       } catch (searchError) {

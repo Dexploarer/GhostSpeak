@@ -45,7 +45,7 @@ export const ghostScoreAction: Action = {
     runtime: IAgentRuntime,
     message: Memory,
     state?: State,
-    options?: Record<string, unknown>,
+    _options?: unknown,
     callback?: HandlerCallback
   ) => {
     try {

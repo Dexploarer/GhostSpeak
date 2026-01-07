@@ -24,8 +24,8 @@ export interface ConvexOperationContext {
 /**
  * Hook to enrich wide events with Convex query performance
  */
-export function useConvexQueryEnrichment<T>(
-  query: ReturnType<typeof useQuery>,
+export function useConvexQueryEnrichment(
+  query: unknown,
   functionName: string,
   args?: Record<string, unknown>
 ) {
@@ -123,7 +123,6 @@ export function withWideEventMutation<T extends any[], R>(
 
     try {
       const result = await mutationFn(...args)
-      const duration = Date.now() - startTime
 
       // Enrich the current wide event with mutation context
       if (typeof window !== 'undefined' && window.__wideEvent) {
@@ -200,7 +199,6 @@ export function withWideEventAction<T extends any[], R>(
 
     try {
       const result = await actionFn(...args)
-      const duration = Date.now() - startTime
 
       // Enrich the current wide event with action context
       if (typeof window !== 'undefined' && window.__wideEvent) {

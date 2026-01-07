@@ -84,15 +84,15 @@ export function useWideEventUserEnrichment() {
     if (typeof window !== 'undefined' && window.__wideEvent && userData) {
       enrichWideEvent(window.__wideEvent, {
         user: {
-          subscription_tier: (userData as any).subscriptionTier,
-          account_age_days: (userData as any).accountAgeDays,
-          lifetime_value_cents: (userData as any).lifetimeValueCents,
+          subscription_tier: (userData as { subscriptionTier?: string }).subscriptionTier,
+          account_age_days: (userData as { accountAgeDays?: number }).accountAgeDays,
+          lifetime_value_cents: (userData as { lifetimeValueCents?: number }).lifetimeValueCents,
         },
       })
     }
   }, [userData])
 
-  return (userData as any)?.user
+  return (userData as { user?: unknown })?.user
 }
 
 /**
@@ -159,8 +159,8 @@ export function useWideEventAgentEnrichment(agentAddress?: string) {
       logger.enrichWithBusiness(window.__wideEvent, {
         agent: {
           address: agentAddress,
-          name: (agentData as any).name,
-          status: (agentData as any).status,
+          name: (agentData as { name?: string }).name,
+          status: (agentData as { status?: string }).status,
           tier: reputationData?.tier,
           reputation_score: reputationData?.score,
         },
@@ -224,14 +224,16 @@ export function useWideEventFrontendMetrics() {
           if (entry.entryType === 'first-input') {
             enrichWideEvent(wideEvent, {
               performance: {
-                first_input_delay_ms: (entry as any).processingStart - entry.startTime,
+                first_input_delay_ms:
+                  ((entry as PerformanceEntry & { processingStart?: number }).processingStart ||
+                    entry.startTime) - entry.startTime,
               },
             })
           }
           if (entry.entryType === 'layout-shift') {
             enrichWideEvent(wideEvent, {
               performance: {
-                cumulative_layout_shift: (entry as any).value,
+                cumulative_layout_shift: (entry as PerformanceEntry & { value?: number }).value,
               },
             })
           }
@@ -346,7 +348,7 @@ export function enrichWideEvent(
       metadata: context.metadata,
       // Handle frontend context which is nested in business enricher for some reason in the logger
       ...(context.frontend ? { metadata: { ...context.metadata, ...context.frontend } } : {}),
-    } as any)
+    })
   }
 }
 

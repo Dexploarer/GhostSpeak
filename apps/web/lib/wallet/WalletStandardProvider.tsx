@@ -117,19 +117,6 @@ export function WalletStandardProvider({
     return () => unsubscribe()
   }, [])
 
-  // Auto-connect on mount
-  useEffect(() => {
-    if (!autoConnect) return
-
-    const lastConnectedWallet = localStorage.getItem('walletName')
-    if (lastConnectedWallet && availableWallets.length > 0) {
-      const wallet = availableWallets.find((w) => w.name === lastConnectedWallet)
-      if (wallet) {
-        connect(lastConnectedWallet).catch(console.error)
-      }
-    }
-  }, [autoConnect, availableWallets])
-
   // Connect to wallet
   const connect = useCallback(
     async (walletName?: string) => {
@@ -175,6 +162,19 @@ export function WalletStandardProvider({
     },
     [availableWallets]
   )
+
+  // Auto-connect on mount
+  useEffect(() => {
+    if (!autoConnect) return
+
+    const lastConnectedWallet = localStorage.getItem('walletName')
+    if (lastConnectedWallet && availableWallets.length > 0) {
+      const wallet = availableWallets.find((w) => w.name === lastConnectedWallet)
+      if (wallet) {
+        connect(lastConnectedWallet).catch(console.error)
+      }
+    }
+  }, [autoConnect, availableWallets, connect])
 
   // Disconnect wallet
   const disconnect = useCallback(async () => {

@@ -40,10 +40,11 @@ export async function verifyTransaction(
 
   try {
     // 1. Fetch transaction
-    // Using 'unknown' as intermediate cast to avoid branded type issues, 
+    // Using 'unknown' as intermediate cast to avoid branded type issues,
     // then casting to our defined interface
+
     const response = (await client.rpc
-      .getTransaction(signature as unknown as any, {
+      .getTransaction(signature as any, {
         encoding: 'jsonParsed',
         maxSupportedTransactionVersion: 0,
         commitment: 'confirmed',
@@ -71,8 +72,8 @@ export async function verifyTransaction(
 
     if (expectedToken === 'SOL') {
       // Check SOL balance change for treasury
-      const accountKeys = response.transaction.message.accountKeys.map((k: any) =>
-        typeof k === 'string' ? k : k.pubkey
+      const accountKeys = response.transaction.message.accountKeys.map(
+        (k: string | { pubkey: string }) => (typeof k === 'string' ? k : k.pubkey)
       )
       const treasuryIndex = accountKeys.findIndex((k: string) => k === treasury)
 
@@ -94,10 +95,10 @@ export async function verifyTransaction(
       // Check Token Balance Change
       // Look at meta.postTokenBalances and meta.preTokenBalances
       const preBalanceEntry = response.meta?.preTokenBalances?.find(
-        (b: any) => b.owner === treasury && b.mint === mint
+        (b: { owner: string; mint: string }) => b.owner === treasury && b.mint === mint
       )
       const postBalanceEntry = response.meta?.postTokenBalances?.find(
-        (b: any) => b.owner === treasury && b.mint === mint
+        (b: { owner: string; mint: string }) => b.owner === treasury && b.mint === mint
       )
 
       const preAmount = preBalanceEntry?.uiTokenAmount?.uiAmount || 0

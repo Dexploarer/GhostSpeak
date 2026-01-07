@@ -4,7 +4,7 @@
  * Comprehensive trust assessment combining multiple data sources
  */
 
-import type { Action, IAgentRuntime, Memory, State } from '@elizaos/core'
+import type { Action, IAgentRuntime, Memory, State, HandlerCallback } from '@elizaos/core'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { JupiterUltraClient, analyzeTokenRisk } from '@/lib/jupiter-ultra'
@@ -44,8 +44,8 @@ export const trustAssessmentAction: Action = {
     runtime: IAgentRuntime,
     message: Memory,
     state?: State,
-    options?: any,
-    callback?: any
+    _options?: unknown,
+    callback?: HandlerCallback
   ) => {
     try {
       const text = message.content.text || ''

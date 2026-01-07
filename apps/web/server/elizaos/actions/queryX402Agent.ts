@@ -4,7 +4,7 @@
  * Action to query x402 agent endpoints and return structured responses
  */
 
-import type { Action, IAgentRuntime, Memory, State } from '@elizaos/core'
+import type { Action, IAgentRuntime, Memory, State, HandlerCallback } from '@elizaos/core'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 
@@ -14,7 +14,7 @@ export const queryX402AgentAction: Action = {
     'Query an x402 agent endpoint to get structured data responses. Supports all query types including GET and POST requests.',
 
   // Validate: trigger on queries about x402 agents, querying endpoints, etc.
-  validate: async (runtime: IAgentRuntime, message: Memory, state?: State) => {
+  validate: async (runtime: IAgentRuntime, message: Memory, _state?: State) => {
     const text = (message.content.text || '').toLowerCase()
 
     // Match x402 query triggers
@@ -51,9 +51,9 @@ export const queryX402AgentAction: Action = {
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
-    state?: State,
-    options?: any,
-    callback?: any
+    _state?: State,
+    _options?: unknown,
+    callback?: HandlerCallback
   ) => {
     try {
       const text = (message.content.text || '').toLowerCase()
@@ -131,7 +131,7 @@ export const queryX402AgentAction: Action = {
         if (jsonMatch) {
           try {
             queryBody = JSON.parse(jsonMatch[0])
-          } catch (e) {
+          } catch {
             // If not valid JSON, create a simple query object
             queryBody = { query: text }
           }
@@ -214,8 +214,8 @@ export const queryX402AgentAction: Action = {
             isStructured = true
           }
         }
-      } catch (fetchError: any) {
-        responseError = fetchError.message || 'Unknown fetch error'
+      } catch (fetchError: unknown) {
+        responseError = fetchError instanceof Error ? fetchError.message : 'Unknown fetch error'
         responseData = {
           error: responseError,
           endpoint: endpointToQuery,

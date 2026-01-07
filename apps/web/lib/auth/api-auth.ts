@@ -1,6 +1,6 @@
 export async function withApiAuth(
   req: Request,
-  cost: number = 1
+  _cost: number = 1
 ): Promise<{ success: boolean; error?: string; userId?: string; tier?: string }> {
   // TODO: Implement API key validation and credit deduction
   // 1. Extract API key from header

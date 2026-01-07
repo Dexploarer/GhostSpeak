@@ -1,29 +1,63 @@
 /**
  * API Key Management API
  *
- * GET /api/v1/api-keys - List keys
- * POST /api/v1/api-keys - Create key
- * DELETE /api/v1/api-keys - Revoke key
+ * Secure endpoints for managing API keys.
+ * Requires SIWS (Sign In With Solana) signatures for all operations.
+ *
+ * GET /api/v1/api-keys 
+ *  - Headers: x-wallet-address, x-signature, x-timestamp
+ *  - Message: "view-keys-{timestamp}"
+ *
+ * POST /api/v1/api-keys
+ *  - Body: { walletAddress, name, signature, timestamp }
+ *  - Message: "create-key-{timestamp}-{name}"
+ *
+ * DELETE /api/v1/api-keys
+ *  - URL Params: ?wallet=...&id=...
+ *  - Headers: x-signature, x-timestamp
+ *  - Message: "revoke-key-{keyId}-{timestamp}"
  */
 
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { NextRequest } from 'next/server'
 import { Id } from '@/convex/_generated/dataModel'
+import { verifyWalletSignature } from '@/lib/auth/solana'
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+const TIMESTAMP_TOLERANCE_MS = 5 * 60 * 1000 // 5 minutes
+
+function validateTimestamp(timestamp: string | number): boolean {
+    const now = Date.now()
+    const reqTime = typeof timestamp === 'string' ? parseInt(timestamp) : timestamp
+    if (isNaN(reqTime) || Math.abs(now - reqTime) > TIMESTAMP_TOLERANCE_MS) {
+        return false
+    }
+    return true
+}
 
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url)
         const walletAddress =
             searchParams.get('wallet') || request.headers.get('x-wallet-address')
+        const signature = request.headers.get('x-signature')
+        const timestamp = request.headers.get('x-timestamp')
 
-        if (!walletAddress) {
+        if (!walletAddress || !signature || !timestamp) {
             return Response.json(
-                { error: 'Missing wallet address' },
-                { status: 400 }
+                { error: 'Missing security headers: x-wallet-address, x-signature, x-timestamp' },
+                { status: 401 }
             )
+        }
+
+        if (!validateTimestamp(timestamp)) {
+            return Response.json({ error: 'Request expired (check device time)' }, { status: 401 })
+        }
+
+        const message = `view-keys-${timestamp}`
+        if (!verifyWalletSignature(message, signature, walletAddress)) {
+            return Response.json({ error: 'Invalid signature' }, { status: 401 })
         }
 
         const keys = await convex.query(api.lib.api_keys.listApiKeys, {
@@ -42,18 +76,25 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
-        const { walletAddress, name } = body
+        const { walletAddress, name, signature, timestamp } = body
 
-        if (!walletAddress) {
+        if (!walletAddress || !name || !signature || !timestamp) {
             return Response.json(
-                { error: 'Missing wallet address' },
+                { error: 'Missing field: walletAddress, name, signature, timestamp' },
                 { status: 400 }
             )
         }
 
-        // TODO: Verify signature to prove ownership of wallet
-        // const { signature, message } = body
-        // if (!verifySignature(walletAddress, signature, message)) ...
+        if (!validateTimestamp(timestamp)) {
+            return Response.json({ error: 'Request expired' }, { status: 401 })
+        }
+
+        // Message format: create-key-{timestamp}-{name}
+        const message = `create-key-${timestamp}-${name}`
+
+        if (!verifyWalletSignature(message, signature, walletAddress)) {
+            return Response.json({ error: 'Invalid signature' }, { status: 401 })
+        }
 
         const result = await convex.mutation(api.lib.api_keys.createApiKey, {
             walletAddress,
@@ -75,15 +116,26 @@ export async function DELETE(request: NextRequest) {
         const walletAddress =
             searchParams.get('wallet') || request.headers.get('x-wallet-address')
         const keyId = searchParams.get('id')
+        const signature = request.headers.get('x-signature')
+        const timestamp = request.headers.get('x-timestamp')
 
-        if (!walletAddress || !keyId) {
+        if (!walletAddress || !keyId || !signature || !timestamp) {
             return Response.json(
-                { error: 'Missing wallet address or key ID' },
+                { error: 'Missing parameters/headers: wallet, id, signature, timestamp' },
                 { status: 400 }
             )
         }
 
-        // TODO: Verify signature
+        if (!validateTimestamp(timestamp)) {
+            return Response.json({ error: 'Request expired' }, { status: 401 })
+        }
+
+        // Message format: revoke-key-{keyId}-{timestamp}
+        const message = `revoke-key-${keyId}-${timestamp}`
+
+        if (!verifyWalletSignature(message, signature, walletAddress)) {
+            return Response.json({ error: 'Invalid signature' }, { status: 401 })
+        }
 
         await convex.mutation(api.lib.api_keys.revokeApiKey, {
             walletAddress,
@@ -105,7 +157,7 @@ export async function OPTIONS() {
         headers: {
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, x-wallet-address',
+            'Access-Control-Allow-Headers': 'Content-Type, x-wallet-address, x-signature, x-timestamp',
         },
     })
 }

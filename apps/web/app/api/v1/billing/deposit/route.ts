@@ -18,6 +18,7 @@ import {
     calculateCredits,
     type SubscriptionTier,
 } from '@/convex/lib/treasury'
+import { verifyTransaction } from '@/lib/solana/transaction'
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
@@ -64,10 +65,19 @@ export async function POST(request: NextRequest) {
 
         const tier: SubscriptionTier = (balance?.tier as SubscriptionTier) || 'free'
 
-        // TODO: Verify transaction on-chain
-        // For now, we trust the client and verify the signature format
-        if (!body.transactionSignature.match(/^[A-Za-z0-9]{86,88}$/)) {
-            return Response.json({ error: 'Invalid transaction signature format' }, { status: 400 })
+        // Verify transaction on-chain to ensure funds were received
+        const verification = await verifyTransaction(
+            body.transactionSignature,
+            body.paymentAmount,
+            body.paymentToken,
+            body.walletAddress
+        )
+
+        if (!verification.valid) {
+            return Response.json(
+                { error: verification.error || 'Transaction verification failed' },
+                { status: 400 }
+            )
         }
 
         // Get USD value of payment

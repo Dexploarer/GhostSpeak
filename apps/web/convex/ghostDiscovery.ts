@@ -23,6 +23,9 @@ export const recordDiscoveredAgent = internalMutation({
     blockTime: v.number(),
     metadataFileId: v.optional(v.id('_storage')),
     ipfsCid: v.optional(v.string()),
+    // x402 Payment Data (for historical feed)
+    paymentAmount: v.optional(v.string()),
+    paymentSignature: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Check if agent already exists
@@ -33,38 +36,70 @@ export const recordDiscoveredAgent = internalMutation({
 
     if (existing) {
       // Agent already discovered, just return existing record
-      return existing._id
+      if (args.paymentSignature && args.paymentAmount) {
+        // Proceed to record payment even if agent exists
+      } else {
+        return existing._id
+      }
     }
 
-    // Insert new discovered agent
-    const agentId = await ctx.db.insert('discoveredAgents', {
-      ghostAddress: args.ghostAddress,
-      firstTxSignature: args.firstTxSignature,
-      firstSeenTimestamp: args.firstSeenTimestamp,
-      discoverySource: args.discoverySource,
-      facilitatorAddress: args.facilitatorAddress,
-      slot: args.slot,
-      blockTime: args.blockTime,
-      status: 'discovered',
-      metadataFileId: args.metadataFileId,
-      ipfsCid: args.ipfsCid,
-      ipfsUri: args.ipfsCid ? `ipfs://${args.ipfsCid}` : undefined,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    })
+    let agentId = existing?._id
 
-    // Log discovery event
-    await ctx.db.insert('discoveryEvents', {
-      eventType: 'agent_discovered',
-      ghostAddress: args.ghostAddress,
-      data: {
-        signature: args.firstTxSignature,
+    if (!existing) {
+      // Insert new discovered agent
+      agentId = await ctx.db.insert('discoveredAgents', {
+        ghostAddress: args.ghostAddress,
+        firstTxSignature: args.firstTxSignature,
+        firstSeenTimestamp: args.firstSeenTimestamp,
+        discoverySource: args.discoverySource,
+        facilitatorAddress: args.facilitatorAddress,
         slot: args.slot,
         blockTime: args.blockTime,
-        facilitator: args.facilitatorAddress,
-      },
-      timestamp: Date.now(),
-    })
+        status: 'discovered',
+        metadataFileId: args.metadataFileId,
+        ipfsCid: args.ipfsCid,
+        ipfsUri: args.ipfsCid ? `ipfs://${args.ipfsCid}` : undefined,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+
+      // Log discovery event
+      await ctx.db.insert('discoveryEvents', {
+        eventType: 'agent_discovered',
+        ghostAddress: args.ghostAddress,
+        data: {
+          signature: args.firstTxSignature,
+          slot: args.slot,
+          blockTime: args.blockTime,
+          facilitator: args.facilitatorAddress,
+        },
+        timestamp: Date.now(),
+      })
+    }
+
+    // Record Historical Interaction (x402 Payment)
+    if (args.paymentSignature && args.paymentAmount) {
+      // Check deduplication
+      const existingTx = await ctx.db
+        .query('historicalInteractions')
+        .withIndex('by_signature', q => q.eq('transactionSignature', args.paymentSignature!))
+        .first()
+
+      if (!existingTx) {
+        await ctx.db.insert('historicalInteractions', {
+          userWalletAddress: args.ghostAddress, // Payer
+          agentWalletAddress: args.facilitatorAddress || 'unknown_facilitator', // Payee/Facilitator
+          transactionSignature: args.paymentSignature,
+          amount: args.paymentAmount,
+          facilitatorAddress: args.facilitatorAddress || 'unknown_facilitator',
+          blockTime: Math.floor(args.blockTime),
+          discoveredAt: Date.now(),
+          discoverySource: 'x402_indexer',
+          agentKnown: true,
+          agentId // Optional link if the payer is the agent
+        })
+      }
+    }
 
     return agentId
   },

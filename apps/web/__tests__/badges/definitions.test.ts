@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
+import type { LucideIcon } from 'lucide-react'
 import {
   BADGE_DEFINITIONS,
   type BadgeDefinition,
@@ -266,7 +267,7 @@ describe('BadgeDefinition interface compliance', () => {
       description: 'A test badge for validation',
       howToGet: 'Complete the test',
       meaning: 'This is a test',
-      icon: () => null,
+      icon: (() => null) as unknown as LucideIcon,
       rarity: 'COMMON',
       type: 'ACHIEVEMENT',
     }

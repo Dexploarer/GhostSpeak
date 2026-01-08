@@ -71,7 +71,7 @@ export function useWideEvent() {
  */
 export function useWideEventUserEnrichment() {
   const { publicKey } = useWallet()
-  const logger = getWideEventLogger()
+  // const logger = getWideEventLogger()
 
   // Get user data from Convex
   const userData = useQuery(
@@ -84,15 +84,15 @@ export function useWideEventUserEnrichment() {
     if (typeof window !== 'undefined' && window.__wideEvent && userData) {
       enrichWideEvent(window.__wideEvent, {
         user: {
-          subscription_tier: (userData as { subscriptionTier?: string }).subscriptionTier,
-          account_age_days: (userData as { accountAgeDays?: number }).accountAgeDays,
-          lifetime_value_cents: (userData as { lifetimeValueCents?: number }).lifetimeValueCents,
+          subscription_tier: (userData as { subscriptionTier?: string })?.subscriptionTier,
+          account_age_days: (userData as { accountAgeDays?: number })?.accountAgeDays,
+          lifetime_value_cents: (userData as { lifetimeValueCents?: number })?.lifetimeValueCents,
         },
       })
     }
   }, [userData])
 
-  return (userData as { user?: unknown })?.user
+  return (userData as { user?: { name?: string; email?: string } })?.user
 }
 
 /**
@@ -243,7 +243,7 @@ export function useWideEventFrontendMetrics() {
       observer.observe({
         entryTypes: ['largest-contentful-paint', 'first-input', 'layout-shift'],
         buffered: true,
-      } as any)
+      } as PerformanceObserverInit)
 
       return () => observer.disconnect()
     }
@@ -276,7 +276,7 @@ export function useWideEventUserInteraction(interactionType: string, elementId?:
   const wideEvent = useWideEvent()
 
   const trackInteraction = useCallback(
-    (details?: any) => {
+    (details?: Record<string, unknown>) => {
       if (wideEvent) {
         enrichWideEvent(wideEvent, {
           frontend: {
@@ -343,7 +343,7 @@ export function enrichWideEvent(
   if (context.business || context.frontend || context.performance || context.metadata) {
     logger.enrichWithBusiness(event, {
       ...context.business,
-      feature_flags: (context.business as any)?.feature_flags,
+      feature_flags: context.business?.feature_flags,
       performance: context.performance,
       metadata: context.metadata,
       // Handle frontend context which is nested in business enricher for some reason in the logger

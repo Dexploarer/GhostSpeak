@@ -1,5 +1,3 @@
-import { Action } from '@elizaos/core'
-
 /**
  * Jupiter Ultra API Client
  *

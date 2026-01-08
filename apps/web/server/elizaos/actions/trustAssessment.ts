@@ -7,7 +7,7 @@
 import type { Action, IAgentRuntime, Memory, State, HandlerCallback } from '@elizaos/core'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
-import { JupiterUltraClient, analyzeTokenRisk } from '@/lib/jupiter-ultra'
+import { JupiterUltraClient, analyzeTokenRisk, type TokenInfo } from '@/lib/jupiter-ultra'
 
 export const trustAssessmentAction: Action = {
   name: 'TRUST_ASSESSMENT',
@@ -95,7 +95,7 @@ export const trustAssessmentAction: Action = {
             mints.forEach((mint) => {
               const token = tokenMap.get(mint)
               const warnings = shieldData.warnings[mint] || []
-              const risk = analyzeTokenRisk(token || ({} as any), warnings) // Safe cast for partial
+              const risk = analyzeTokenRisk(token || ({} as Partial<TokenInfo>), warnings)
               if (token?.isVerified) verifiedCount++
               const danger = 100 - risk.riskScore
               if (danger > 60) riskyCount++

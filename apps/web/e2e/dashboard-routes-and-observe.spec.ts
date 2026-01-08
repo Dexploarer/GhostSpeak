@@ -71,7 +71,9 @@ async function ensureApiKeySlotAvailable({
   convexUrl: string
 }): Promise<void> {
   const convex = new ConvexHttpClient(convexUrl)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const keys = await convex.query(api.apiKeys.listMyApiKeys, { userId: userId as any })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activeKeys = (keys ?? []).filter((k: any) => k?.isActive)
 
   // createApiKey enforces max 10 active keys. If the local Convex DB is reused across runs,
@@ -80,6 +82,7 @@ async function ensureApiKeySlotAvailable({
 
   const toRevoke = activeKeys.slice(9) // keep 9 active, revoke the rest
   for (const k of toRevoke) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await convex.mutation(api.apiKeys.revokeApiKey, { userId: userId as any, apiKeyId: k.id })
   }
 }
@@ -121,6 +124,7 @@ async function installMockWalletStandard(
         // ignore
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const features: Record<string, any> = {
         'standard:connect': {
           version: '1.0.0',
@@ -143,7 +147,9 @@ async function installMockWalletStandard(
         },
         'standard:disconnect': {
           version: '1.0.0',
-          disconnect: async () => {},
+          disconnect: async () => {
+            /* empty */
+          },
         },
         'solana:signTransaction': {
           version: '1.0.0',
@@ -179,12 +185,15 @@ async function installMockWalletStandard(
 
       // Store for early access
       if (typeof window !== 'undefined') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ;(window as any).__E2E_MOCK_WALLET__ = {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           register: (register: (...wallets: any[]) => unknown) => register(wallet),
           wallet,
         }
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const callback = ({ register }: { register: (...wallets: any[]) => unknown }) =>
         register(wallet)
 
@@ -213,6 +222,7 @@ async function installMockWalletStandard(
       registerMethods.forEach((method) => method())
 
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         window.addEventListener('wallet-standard:app-ready', (event: any) => {
           if (event?.detail) callback(event.detail)
         })
@@ -225,10 +235,12 @@ async function installMockWalletStandard(
 
   // Additional injection after page load
   await page.evaluate(
-    ({ walletAddress, includeVerifiedSession }) => {
+    ({ walletAddress, includeVerifiedSession: _includeVerifiedSession }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((window as any).__E2E_MOCK_WALLET__) return
 
       const walletName = 'E2E Test Wallet'
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const features: Record<string, any> = {
         'standard:connect': {
           version: '1.0.0',
@@ -243,7 +255,12 @@ async function installMockWalletStandard(
             ],
           }),
         },
-        'standard:disconnect': { version: '1.0.0', disconnect: async () => {} },
+        'standard:disconnect': {
+          version: '1.0.0',
+          disconnect: async () => {
+            /* empty */
+          },
+        },
         'solana:signTransaction': {
           version: '1.0.0',
           signTransaction: async ({ transaction }: { transaction: Uint8Array }) => ({
@@ -265,7 +282,9 @@ async function installMockWalletStandard(
         accounts: [],
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(window as any).__E2E_MOCK_WALLET__ = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         register: (register: (...wallets: any[]) => unknown) => register(wallet),
         wallet,
       }

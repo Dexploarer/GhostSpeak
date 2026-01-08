@@ -10,14 +10,12 @@
 
 import { v } from 'convex/values'
 import { mutation, query, internalMutation, internalAction } from '../_generated/server'
-import { internal } from '../_generated/api'
+
 import {
   TREASURY_WALLET,
   TOKENS,
   TIER_CONFIG,
-  calculateCredits,
   getMonthlyFreeCredits,
-  getRateLimit,
   JUPITER_API,
   type SubscriptionTier,
 } from './treasury'

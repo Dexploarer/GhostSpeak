@@ -44,6 +44,7 @@ export async function verifyTransaction(
     // then casting to our defined interface
 
     const response = (await client.rpc
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .getTransaction(signature as any, {
         encoding: 'jsonParsed',
         maxSupportedTransactionVersion: 0,

@@ -47,4 +47,14 @@ crons.cron(
   {}
 )
 
+// ─── USER REPUTATION SYSTEM ─────────────────────────────────────────────────────
+
+// Update all User Scores (Ecto/Ghosthunter) daily at 3am UTC
+crons.cron(
+  'update user scores',
+  '0 3 * * *', // Every day at 03:00 UTC
+  internal.users.updateAllUserScores,
+  {}
+)
+
 export default crons

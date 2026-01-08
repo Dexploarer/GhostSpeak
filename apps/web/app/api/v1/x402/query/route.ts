@@ -1,5 +1,5 @@
 /**
- * X402 Agent Query API
+ * X402 Agent Query API - x402 Protected + Rate Limited
  *
  * POST /api/v1/x402/query - Query an x402 agent endpoint
  */
@@ -7,10 +7,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
+import { requireX402Payment } from '@/lib/x402-middleware'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
 export async function POST(req: NextRequest) {
+  // Rate limit check
+  const rateLimited = checkRateLimit(req)
+  if (rateLimited) return rateLimited
+
+  // Require x402 payment
+  const paymentRequired = requireX402Payment(req, { priceUsdc: 0.002 })
+  if (paymentRequired) return paymentRequired
+
   try {
     const body = await req.json()
     const { endpoint, agentAddress, method = 'GET', body: queryBody } = body
@@ -159,12 +169,12 @@ export async function POST(req: NextRequest) {
       isStructured,
       agent: agentData
         ? {
-            address: agentData.ghostAddress,
-            name: agentData.name,
-            x402Enabled: agentData.x402Enabled,
-            x402PricePerCall: agentData.x402PricePerCall,
-            x402AcceptedTokens: agentData.x402AcceptedTokens,
-          }
+          address: agentData.ghostAddress,
+          name: agentData.name,
+          x402Enabled: agentData.x402Enabled,
+          x402PricePerCall: agentData.x402PricePerCall,
+          x402AcceptedTokens: agentData.x402AcceptedTokens,
+        }
         : null,
       timestamp: new Date().toISOString(),
     })

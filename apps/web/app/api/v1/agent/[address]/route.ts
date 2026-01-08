@@ -1,5 +1,5 @@
 /**
- * Agent Details API
+ * Agent Details API - Public (FREE)
  *
  * GET /api/v1/agent/:address - Get comprehensive agent information
  */
@@ -8,6 +8,7 @@ import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { NextRequest } from 'next/server'
 import { completeWideEvent } from '@/lib/logging/wide-event'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
@@ -15,6 +16,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ address: string }> }
 ) {
+  // Rate limit check
+  const rateLimited = checkRateLimit(request)
+  if (rateLimited) return rateLimited
+
   try {
     const { address: agentAddress } = await params
 

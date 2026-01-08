@@ -13,12 +13,7 @@ import { ConnectWalletButton } from '@/components/auth/ConnectWalletButton'
 const marketingNavItems = [
   { href: '/observatory', label: 'Observatory', icon: Eye },
   { href: 'https://docs.ghostspeak.io', label: 'Docs', icon: FileText, external: true },
-  {
-    href: 'https://dexscreener.com/solana/e44xj7jyjxyermlqqwrpu4nekcphawfjf3ppn2uokgdb',
-    label: '$GHOST',
-    icon: Coins,
-    external: true,
-  },
+  { href: 'https://docs.ghostspeak.io', label: 'Docs', icon: FileText, external: true },
 ]
 
 export const Navigation: React.FC = () => {
@@ -41,19 +36,22 @@ export const Navigation: React.FC = () => {
   // Check if we're on dashboard or other authenticated pages
   const isDashboardPage =
     pathname?.startsWith('/dashboard') ||
-    pathname?.startsWith('/caisper') ||
     pathname?.startsWith('/settings') ||
     // Only treat known authenticated agent routes as dashboard context.
     // Most /agents/* pages (e.g. /agents/[address]) are public/marketing context.
     pathname === '/agents/register'
   const isMarketingPage = !isDashboardPage
 
+  // Hide main navigation on Caisper chat page (it has its own UI)
+  if (pathname?.startsWith('/caisper')) {
+    return null
+  }
+
   // Show dashboard-specific items if on a dashboard page
   const dashboardNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: User, external: false },
     { href: '/dashboard/billing', label: 'Billing', icon: Coins, external: false },
     { href: '/dashboard/api-keys', label: 'API Keys', icon: Key, external: false },
-    { href: '/caisper', label: 'Chat', icon: MessageSquare, external: false },
   ]
 
   const navItems = isDashboardPage ? dashboardNavItems : marketingNavItems
@@ -88,11 +86,11 @@ export const Navigation: React.FC = () => {
           isScrolled
             ? 'glass-panel px-6 py-3 border border-white/20 dark:border-white/10 shadow-2xl shadow-lime-500/10 w-fit'
             : cn(
-                'border-b py-4 px-6 md:px-8',
-                isMarketingPage
-                  ? 'bg-transparent border-transparent'
-                  : 'glass border-gray-200 dark:border-gray-800'
-              )
+              'border-b py-4 px-6 md:px-8',
+              isMarketingPage
+                ? 'bg-transparent border-transparent'
+                : 'glass border-gray-200 dark:border-gray-800'
+            )
         )}
         style={{
           transition: 'none',

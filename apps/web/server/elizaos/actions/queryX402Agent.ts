@@ -158,7 +158,7 @@ export const queryX402AgentAction: Action = {
 
       const startTime = Date.now()
       let responseStatus = 0
-      let responseData: any = null
+      let responseData: unknown = null
       let responseError = null
       let isStructured = false
 
@@ -234,16 +234,19 @@ export const queryX402AgentAction: Action = {
 
       if (responseStatus === 402) {
         responseText += `✅ **Endpoint is working!** This endpoint requires x402 payment.\n\n`
-        if (responseData.payment) {
+        const data = responseData as {
+          payment?: { address?: string; amount?: string; token?: string }
+        }
+        if (data.payment) {
           responseText += `**Payment Info:**\n`
-          if (responseData.payment.address) {
-            responseText += `- Address: \`${responseData.payment.address}\`\n`
+          if (data.payment.address) {
+            responseText += `- Address: \`${data.payment.address}\`\n`
           }
-          if (responseData.payment.amount) {
-            responseText += `- Amount: ${responseData.payment.amount}\n`
+          if (data.payment.amount) {
+            responseText += `- Amount: ${data.payment.amount}\n`
           }
-          if (responseData.payment.token) {
-            responseText += `- Token: \`${responseData.payment.token}\`\n`
+          if (data.payment.token) {
+            responseText += `- Token: \`${data.payment.token}\`\n`
           }
         }
       } else if (responseStatus >= 200 && responseStatus < 300) {
@@ -273,7 +276,7 @@ export const queryX402AgentAction: Action = {
           method: queryMethod,
           status: responseStatus,
           responseTime: responseTimeMs,
-          data: responseData,
+          data: responseData as Record<string, unknown>,
           isStructured,
           agent: agentData
             ? {
@@ -295,7 +298,7 @@ export const queryX402AgentAction: Action = {
           method: queryMethod,
           status: responseStatus,
           responseTime: responseTimeMs,
-          data: responseData,
+          data: responseData as Record<string, unknown>,
           isStructured,
         },
       }

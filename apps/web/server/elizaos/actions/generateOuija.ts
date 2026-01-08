@@ -58,9 +58,22 @@ export const generateOuijaAction: Action = {
 
       console.log(`👻 Summoning report for: ${agentAddress}`)
 
-      const report: any = await convex.action(api.reports.generateOuijaReport, {
+      // Define expected report shape
+      interface OuijaReport {
+        agentAddress: string
+        summary: {
+          spiritShort: string
+          spiritLong: string
+          reliability: string
+        }
+        reputation: unknown
+        reports: unknown[]
+        transactions: unknown[]
+      }
+
+      const report = (await convex.action(api.reports.generateOuijaReport, {
         agentAddress,
-      })
+      })) as OuijaReport | null
 
       if (!report) {
         if (callback) {

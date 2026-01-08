@@ -7,6 +7,11 @@
  * - User must be authenticated via Solana wallet signature (signInWithSolana)
  * - Session token validates wallet ownership
  * - Wallet address from session is trusted (cryptographically verified during login)
+ *
+ * MESSAGE LIMITS (based on $GHOST holdings):
+ * - Free: 3 messages/day
+ * - $10+ in $GHOST: 100 messages/day
+ * - $100+ in $GHOST: Unlimited
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -23,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   // Propagate correlation ID to wide event
   if ((req as any).wideEvent) {
-    ;(req as any).wideEvent.correlation_id = correlationId
+    ; (req as any).wideEvent.correlation_id = correlationId
   }
 
   try {
@@ -53,10 +58,59 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid session token format' }, { status: 401 })
     }
 
-    // TODO Phase 2: Validate session hasn't expired, implement proper JWT
-    // For now, sessionToken presence confirms user went through signInWithSolana flow
+    // ═══════════════════════════════════════════════════════════════════════════
+    // MESSAGE QUOTA CHECK
+    // Free: 3/day, $10+ GHOST: 100/day, $100+ GHOST: Unlimited
+    // Admin whitelist: Unlimited (bypass all limits)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    // Check if user is on admin whitelist
+    const adminWhitelist = (process.env.ADMIN_WHITELIST || '').split(',').map(w => w.trim())
+    const isAdmin = adminWhitelist.includes(walletAddress)
+
+    if (isAdmin) {
+      console.log(`👑 Admin bypass: ${walletAddress.slice(0, 8)}...`)
+    } else {
+      try {
+        // Check and update tier (refreshes balance if cache expired)
+        await convex.action(api.checkGhostBalance.checkAndUpdateTier, { walletAddress })
+
+        // Check quota
+        const quota = await convex.query(api.messageQuota.checkMessageQuota, { walletAddress })
+
+        if (!quota.canSend) {
+          console.log(`🚫 Message quota exceeded for ${walletAddress}: ${quota.currentCount}/${quota.limit}`)
+          return NextResponse.json(
+            {
+              error: 'Daily message limit reached',
+              limitReached: true,
+              message: quota.reason,
+              quota: {
+                tier: quota.tier,
+                limit: quota.limit,
+                used: quota.currentCount,
+                remaining: 0,
+              },
+              upgrade: {
+                holder: { threshold: '$10 in $GHOST', limit: 100 },
+                whale: { threshold: '$100 in $GHOST', limit: 'Unlimited' },
+                tokenMint: 'DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump',
+                buyLink: 'https://jup.ag/swap/SOL-DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump',
+              },
+            },
+            { status: 429 }
+          )
+        }
+
+        console.log(`✅ Quota check passed: ${quota.currentCount}/${quota.limit} (${quota.tier})`)
+      } catch (quotaError) {
+        // If quota check fails, allow message (fail open for now)
+        console.warn('⚠️ Quota check failed, allowing message:', quotaError)
+      }
+    }
 
     console.log(`📨 Received message from ${walletAddress}: ${message}`)
+
 
     // Try to store user message in Convex (optional)
     try {
@@ -115,6 +169,13 @@ export async function POST(req: NextRequest) {
           ? new Date((req as any).wideEvent.timestamp).getTime()
           : Date.now(),
     })
+
+    // Increment message count after successful response
+    try {
+      await convex.mutation(api.messageQuota.incrementMessageCount, { walletAddress })
+    } catch (quotaError) {
+      console.warn('Failed to increment message count:', quotaError)
+    }
 
     return NextResponse.json({
       // AI SDK expects messages array or a single message

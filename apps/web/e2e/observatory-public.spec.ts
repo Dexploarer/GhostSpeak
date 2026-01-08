@@ -200,11 +200,12 @@ test.describe('Public /observatory terminal UI', () => {
       const rowText = await firstX402Row.textContent()
 
       // Check for various redaction formats
-      const hasRedaction =
-        /payer:\s*\[?redacted?\]?/i.test(rowText || '') ||
-        /payer:\s*[*]+\s*/i.test(rowText || '') ||
-        /[*]{4,}\s*\.\.\.\s*[*]{4,}/i.test(rowText || '') ||
-        /\[[*]{4,}\]/i.test(rowText || '')
+      // Check for various redaction formats
+      // const hasRedaction =
+      //   /payer:\s*\[?redacted?\]?/i.test(rowText || '') ||
+      //   /payer:\s*[*]+\s*/i.test(rowText || '') ||
+      //   /[*]{4,}\s*\.\.\.\s*[*]{4,}/i.test(rowText || '') ||
+      //   /\[[*]{4,}\]/i.test(rowText || '')
 
       await expect(
         firstX402Row,

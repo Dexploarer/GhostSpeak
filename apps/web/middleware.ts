@@ -119,8 +119,8 @@ export async function middleware(request: NextRequest) {
   // Add correlation ID to wide event
   wideEvent.correlation_id = correlationId
 
-    // Attach the event to the request for use in route handlers
-    ; (request as NextRequest).wideEvent = wideEvent
+  // Attach the event to the request for use in route handlers
+  ;(request as NextRequest).wideEvent = wideEvent
 
   // Add trace and correlation IDs to response headers for distributed tracing
   const response = NextResponse.next()

@@ -92,6 +92,15 @@ export default defineSchema({
     walletHistoryScore: v.optional(v.number()), // 0-1000 initial score seed
     walletHistoryAnalyzedAt: v.optional(v.number()), // When we analyzed their wallet
     //
+    // ─── CHAT MESSAGE QUOTAS ─────────────────────────────────────────────────────
+    // Daily message limits based on $GHOST holdings
+    // Free: 3/day, $10+ GHOST: 100/day, $100+ GHOST: Unlimited
+    dailyMessageCount: v.optional(v.number()), // Messages sent today
+    lastMessageDate: v.optional(v.string()), // ISO date (YYYY-MM-DD) for daily reset
+    messageTier: v.optional(v.string()), // 'free' | 'holder' | 'whale'
+    lastGhostBalanceCheck: v.optional(v.number()), // When we last checked their $GHOST balance
+    cachedGhostBalanceUsd: v.optional(v.number()), // Cached USD value of $GHOST holdings
+    //
     // Timestamps
     createdAt: v.number(),
     lastActiveAt: v.number(),
@@ -1206,6 +1215,7 @@ export default defineSchema({
   })
     .index('by_address', ['ghostAddress'])
     .index('by_status', ['status'])
+    .index('by_claimed_by', ['claimedBy']) // Index for faster developer stats lookup
     .index('by_discovery_source', ['discoverySource'])
     .index('by_facilitator', ['facilitatorAddress'])
     .index('by_first_seen', ['firstSeenTimestamp']),
@@ -1469,4 +1479,34 @@ export default defineSchema({
     .index('by_type', ['signalType'])
     .index('by_severity', ['severity'])
     .index('by_unresolved', ['resolvedAt']),
+
+  //
+  // ─── GOVERNANCE: VOTING ────────────────────────────────────────────────────
+  // Track votes on x402 service quality from participating agents/users
+  //
+  governanceVotes: defineTable({
+    voterAddress: v.string(), // Address of the voter (Agent or User)
+    targetAgentAddress: v.string(), // Address of the agent being voted on
+    score: v.number(), // 1-5 or similar scale
+    comment: v.optional(v.string()),
+    votingPower: v.number(), // Voting power at time of vote (based on x402 usage)
+    timestamp: v.number(),
+  })
+    .index('by_voter', ['voterAddress'])
+    .index('by_target', ['targetAgentAddress'])
+    .index('by_target_timestamp', ['targetAgentAddress', 'timestamp']),
+
+  //
+  // ─── OBSERVATORY: PUBLIC LOGS ──────────────────────────────────────────────
+  // Public log of all observation tests run by Caisper
+  //
+  observationLogs: defineTable({
+    agentAddress: v.string(), // Agent being observed
+    testType: v.string(), // 'capability', 'uptime', 'behavior'
+    status: v.string(), // 'success', 'failure'
+    details: v.any(), // JSON details of the test execution
+    timestamp: v.number(),
+  })
+    .index('by_agent', ['agentAddress'])
+    .index('by_timestamp', ['timestamp']),
 })

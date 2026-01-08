@@ -7,7 +7,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useWallet } from '@/lib/wallet/WalletStandardProvider'
 import { isVerifiedSessionForWallet } from '@/lib/auth/verifiedSession'
 import {
-  Eye,
   Loader2,
   MessageSquare,
   Terminal,

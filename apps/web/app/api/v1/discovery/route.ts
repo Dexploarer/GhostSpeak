@@ -1,5 +1,5 @@
 /**
- * Discovery API - Public Endpoints
+ * Discovery API - Public Endpoints (FREE)
  *
  * GET /api/v1/discovery - List discovered agents
  * GET /api/v1/discovery/stats - Get discovery statistics
@@ -9,10 +9,15 @@
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { NextRequest } from 'next/server'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
 export async function GET(request: NextRequest) {
+  // Rate limit check
+  const rateLimited = checkRateLimit(request)
+  if (rateLimited) return rateLimited
+
   try {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') || 'discovered'

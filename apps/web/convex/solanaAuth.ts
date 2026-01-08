@@ -69,8 +69,11 @@ export const signInWithSolana = mutation({
         })
       }
 
-      // Create session token (simplified - in production use proper JWT)
-      const sessionToken = `session_${userId}_${Date.now()}`
+      // Create cryptographically secure session token
+      // Note: In production, use proper JWT with signing
+      const randomBytes = new Uint8Array(32)
+      crypto.getRandomValues(randomBytes)
+      const sessionToken = `session_${Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('')}`
 
       return {
         success: true,

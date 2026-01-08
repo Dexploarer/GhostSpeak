@@ -5,7 +5,7 @@
  * including database query performance, mutation results, and error handling.
  */
 
-import { useQuery, useMutation, useAction } from 'convex/react'
+import { useMutation, useAction } from 'convex/react'
 import { useEffect } from 'react'
 import { getWideEventLogger, WideEvent } from './wide-event'
 
@@ -112,7 +112,7 @@ export function useConvexActionEnrichment(
 /**
  * Higher-order function to wrap Convex mutations with wide event enrichment
  */
-export function withWideEventMutation<T extends any[], R>(
+export function withWideEventMutation<T extends unknown[], R>(
   mutationFn: (...args: T) => Promise<R>,
   functionName: string,
   eventEnricher?: (args: T, result: R) => Partial<WideEvent>
@@ -150,6 +150,7 @@ export function withWideEventMutation<T extends any[], R>(
           Object.assign(enrichment, eventEnricher(args, result))
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         logger.enrichWithBusiness(window.__wideEvent, enrichment as any)
       }
 
@@ -188,7 +189,7 @@ export function withWideEventMutation<T extends any[], R>(
 /**
  * Higher-order function to wrap Convex actions with wide event enrichment
  */
-export function withWideEventAction<T extends any[], R>(
+export function withWideEventAction<T extends unknown[], R>(
   actionFn: (...args: T) => Promise<R>,
   functionName: string,
   eventEnricher?: (args: T, result: R) => Partial<WideEvent>
@@ -226,6 +227,7 @@ export function withWideEventAction<T extends any[], R>(
           Object.assign(enrichment, eventEnricher(args, result))
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         logger.enrichWithBusiness(window.__wideEvent, enrichment as any)
       }
 

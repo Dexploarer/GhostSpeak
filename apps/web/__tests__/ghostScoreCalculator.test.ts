@@ -23,12 +23,12 @@ import {
 describe('calculateTimeDecayFactor', () => {
   beforeEach(() => {
     // Freeze time at a specific timestamp for consistent tests
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2024-01-15T00:00:00Z'))
+    const mockDate = new Date('2024-01-15T00:00:00Z')
+    vi.spyOn(Date, 'now').mockReturnValue(mockDate.getTime())
   })
 
   afterEach(() => {
-    vi.useRealTimers()
+    vi.restoreAllMocks()
   })
 
   it('should return 1.0 for data updated now', () => {

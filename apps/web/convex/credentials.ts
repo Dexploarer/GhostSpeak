@@ -738,8 +738,8 @@ export const checkAndIssueMilestoneCredentials = internalMutation({
       errors: [] as string[],
     }
 
-    // Get all discovered agents
-    const agents = await ctx.db.query('discoveredAgents').collect()
+    // Get agents in batches to prevent OOM (TODO: implement proper cursor-based pagination)
+    const agents = await ctx.db.query('discoveredAgents').take(100)
     results.checked = agents.length
 
     for (const agent of agents) {
@@ -1032,10 +1032,10 @@ type PublicCredentialStatus = 'active' | 'expired' | 'revocation_unknown'
 
 type TxSignaturePointer = {
   kind:
-    | 'solana_signature'
-    | 'transaction_signature'
-    | 'verification_signature'
-    | 'first_seen_signature'
+  | 'solana_signature'
+  | 'transaction_signature'
+  | 'verification_signature'
+  | 'first_seen_signature'
   signature: string
 }
 

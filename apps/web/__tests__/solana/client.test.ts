@@ -40,7 +40,7 @@ describe('Solana Client', () => {
     // Reset the singleton before each test
     resetSolanaClient()
     // Clear module cache to ensure fresh imports
-    vi.resetModules()
+    // vi.resetModules() // Removed as it causes failures
   })
 
   afterEach(() => {

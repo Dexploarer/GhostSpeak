@@ -25,6 +25,7 @@ import { ChatMarkdown } from '@/components/chat/ChatMarkdown'
 import { CredentialCard } from '@/components/chat/CredentialCard'
 import { X402ResultCard } from '@/components/chat/X402ResultCard'
 import { ScoreHistoryCard } from '@/components/chat/ScoreHistoryCard'
+import { ChatSidebarLeft } from '@/components/chat/ChatSidebarLeft'
 
 // Wide Event Logging
 import {
@@ -301,6 +302,43 @@ export default function CaisperPage() {
 
       const data = await response.json()
 
+      // Check for message limit reached (429 status)
+      if (!response.ok) {
+        if (data.limitReached) {
+          // Show limit reached dialogue with upgrade options
+          const limitMessage: Message = {
+            role: 'agent',
+            content: `⚠️ **Daily Message Limit Reached**
+
+You've used all ${data.quota?.limit || 3} messages for today.
+
+**Current Tier:** ${data.quota?.tier === 'free' ? '🆓 Free' : data.quota?.tier === 'holder' ? '💎 Holder' : '🐋 Whale'}
+
+---
+
+**Upgrade Options:**
+
+| Tier | Requirement | Messages/Day |
+|------|-------------|--------------|
+| 💎 Holder | Hold $10+ in $GHOST | 100 |
+| 🐋 Whale | Hold $100+ in $GHOST | Unlimited |
+
+**[Buy $GHOST on Jupiter →](${data.upgrade?.buyLink || 'https://jup.ag'})**
+
+Your limit resets at midnight UTC. Come back tomorrow for more! 👻`,
+            timestamp: Date.now(),
+            metadata: {
+              type: 'limit_reached',
+              quota: data.quota,
+              upgrade: data.upgrade,
+            },
+          }
+          setLocalMessages((prev) => [...prev, limitMessage])
+          return
+        }
+        throw new Error(data.error || 'Failed to get response from agent')
+      }
+
       const agentMessage: Message = {
         role: 'agent',
         content: data.response,
@@ -352,83 +390,31 @@ export default function CaisperPage() {
     }, 500)
   }
 
+
   return (
     <div
-      className="flex h-full w-full overflow-hidden"
-      style={{ height: '100%', position: 'relative' }}
+      className="flex h-full w-full overflow-hidden bg-[#0a0a0a] relative"
+      style={{ height: '100%' }}
     >
+      {/* Background Mesh (Optional, if we want global background) */}
+      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-black to-black" />
+      </div>
+
       {/* Left Sidebar - Actions */}
-      <div className="w-64 border-r border-white/10 flex flex-col bg-[rgb(29,29,29)] overflow-hidden">
-        {/* Header */}
-        <div className="p-4 border-b border-white/10 shrink-0">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors mb-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back</span>
-          </Link>
-          <button
-            onClick={handleNewSession}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-black rounded-lg hover:bg-white/90 transition-all text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Chat</span>
-          </button>
-        </div>
-
-        {/* Info */}
-        <div className="flex-1 overflow-y-auto p-4 min-h-0" data-lenis-prevent>
-          <div className="space-y-4">
-            {/* User's Ghost Score */}
-            {publicKey && (
-              <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-                <h3 className="text-xs font-medium text-white/60 uppercase tracking-wider mb-2">
-                  Your Ghost Score
-                </h3>
-                {userScore ? (
-                  <>
-                    <div className="flex items-baseline gap-2 mb-2">
-                      <span className="text-2xl font-bold text-white">
-                        {userScore.score.toLocaleString()}
-                      </span>
-                      <span className="text-xs text-white/50">/ 10,000</span>
-                    </div>
-                    <div className="text-xs text-lime-400 font-medium mb-3">{userScore.tier}</div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleSend(`What's my ghost score?`)}
-                        className="flex-1 px-2 py-1.5 rounded bg-white/5 border border-white/10 text-xs text-white/70 hover:text-white hover:bg-white/10 transition-all"
-                      >
-                        Details
-                      </button>
-                      <button
-                        onClick={() => handleSend(`What credentials do I have?`)}
-                        className="flex-1 px-2 py-1.5 rounded bg-white/5 border border-white/10 text-xs text-white/70 hover:text-white hover:bg-white/10 transition-all"
-                      >
-                        My VCs
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-sm text-white/40">Loading...</div>
-                )}
-              </div>
-            )}
-
-            <div>
-              <h3 className="text-sm font-medium text-white mb-2">Chat Status</h3>
-              <div className="text-xs text-white/60 space-y-1">
-                <div>Messages: {localMessages.length}</div>
-                <div>Status: {isLoading ? 'Typing...' : 'Ready'}</div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="z-10 h-full">
+        <ChatSidebarLeft
+          publicKey={publicKey ? publicKey.toString() : null}
+          userScore={userScore}
+          localMessagesCount={localMessages.length}
+          isLoading={isLoading}
+          onNewChat={handleNewSession}
+          onAction={handleSend}
+        />
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden" style={{ height: '100%' }}>
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden z-10 relative" style={{ height: '100%' }}>
         {/* Messages Container - Properly isolated scroll area */}
         <div
           ref={messagesContainerRef}
@@ -557,17 +543,17 @@ export default function CaisperPage() {
                     {/* Render credential card (issued or list) */}
                     {(msg.metadata?.type === 'credential-issued' ||
                       msg.metadata?.type === 'credentials') && (
-                      <CredentialCard
-                        mode={msg.metadata.type === 'credential-issued' ? 'issued' : 'list'}
-                        credentialId={msg.metadata.credentialId as string}
-                        did={msg.metadata.did as string}
-                        agentAddress={msg.metadata.agentAddress as string}
-                        credentials={msg.metadata.credentials as any}
-                        validCount={msg.metadata.validCount as number}
-                        totalCount={msg.metadata.totalCount as number}
-                        onActionClick={handleSend}
-                      />
-                    )}
+                        <CredentialCard
+                          mode={msg.metadata.type === 'credential-issued' ? 'issued' : 'list'}
+                          credentialId={msg.metadata.credentialId as string}
+                          did={msg.metadata.did as string}
+                          agentAddress={msg.metadata.agentAddress as string}
+                          credentials={msg.metadata.credentials as any}
+                          validCount={msg.metadata.validCount as number}
+                          totalCount={msg.metadata.totalCount as number}
+                          onActionClick={handleSend}
+                        />
+                      )}
 
                     {/* Render x402 query result */}
                     {msg.metadata?.type === 'x402-query-result' && (
@@ -674,7 +660,7 @@ export default function CaisperPage() {
       </div>
 
       {/* Right Sidebar - Agent Tools Panel */}
-      <div className="w-80 border-l border-white/10 p-6 bg-[rgb(29,29,29)] hidden xl:block overflow-hidden">
+      <div className="w-80 hidden xl:block overflow-hidden z-10">
         <AgentToolsPanel
           agentName="Caisper AI"
           agentDescription="AI-powered credential verification and reputation analysis on Solana. Your blockchain trust detective."

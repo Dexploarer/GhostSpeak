@@ -16,7 +16,7 @@
  */
 
 import { v } from 'convex/values'
-import { query, internalMutation, internalQuery } from './_generated/server'
+import { query, internalMutation, internalQuery, type QueryCtx } from './_generated/server'
 import type { Doc } from './_generated/dataModel'
 import { getNetworkMetadata, type NetworkMetadata } from './lib/networkMetadata'
 
@@ -288,12 +288,12 @@ export function calculateGhostScore(sources: Record<string, SourceScore>): {
  * Based on payment success rate, response time, and consistency
  */
 export async function calculatePaymentActivity(
-  ctx: any,
+  ctx: QueryCtx,
   agentAddress: string
 ): Promise<SourceScore> {
   const payments = await ctx.db
     .query('x402SyncEvents')
-    .withIndex('by_merchant', (q: any) => q.eq('merchantAddress', agentAddress))
+    .withIndex('by_merchant', (q) => q.eq('merchantAddress', agentAddress))
     .order('desc')
     .take(100)
 
@@ -309,27 +309,23 @@ export async function calculatePaymentActivity(
   }
 
   // Calculate success rate
-  const successCount = payments.filter((p: any) => p.event === 'payment_received').length
+  const successCount = payments.filter((p) => p.success).length
   const successRate = successCount / payments.length
 
-  // Response time analysis (if available)
-  const avgResponseTime =
-    payments
-      .filter((p: any) => p.responseTimeMs)
-      .reduce((sum: number, p: any) => sum + (p.responseTimeMs || 0), 0) / payments.length
+  // Response time analysis (Not available in on-chain events yet)
+  // TODO: Add response time tracking to x402SyncEvents if needed
+  const avgResponseTime = 0
 
   // Base score from success rate
   let rawScore = successRate * 10000
 
-  // Response time bonus
-  if (avgResponseTime < 500) rawScore += 500
-  else if (avgResponseTime < 2000) rawScore += 250
+  // Response time bonus (Skipped)
 
   // Consistency bonus (consecutive successes)
   let consecutiveSuccesses = 0
   let maxConsecutive = 0
   for (const payment of payments) {
-    if (payment.event === 'payment_received') {
+    if (payment.success) {
       consecutiveSuccesses++
       maxConsecutive = Math.max(maxConsecutive, consecutiveSuccesses)
     } else {
@@ -364,13 +360,13 @@ export async function calculatePaymentActivity(
  * Based on GHOST token stake amount and duration
  */
 export async function calculateStakingCommitment(
-  ctx: any,
+  ctx: QueryCtx,
   agentAddress: string
 ): Promise<SourceScore> {
   const stakes = await ctx.db
     .query('stakingAccounts')
-    .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
-    .filter((q: any) => q.eq(q.field('isActive'), true))
+    .withIndex('by_agent', (q) => q.eq('agentAddress', agentAddress))
+    .filter((q) => q.eq(q.field('isActive'), true))
     .collect()
 
   if (stakes.length === 0) {
@@ -428,7 +424,7 @@ export async function calculateStakingCommitment(
  * Queries all 10 credential tables for comprehensive scoring
  */
 export async function calculateCredentialVerifications(
-  ctx: any,
+  ctx: QueryCtx,
   agentAddress: string
 ): Promise<SourceScore> {
   const now = Date.now()
@@ -449,44 +445,44 @@ export async function calculateCredentialVerifications(
   ] = await Promise.all([
     ctx.db
       .query('agentIdentityCredentials')
-      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .withIndex('by_agent', (q) => q.eq('agentAddress', agentAddress))
       .collect(),
     ctx.db
       .query('payaiCredentialsIssued')
-      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .withIndex('by_agent', (q) => q.eq('agentAddress', agentAddress))
       .collect(),
     ctx.db
       .query('paymentMilestoneCredentials')
-      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .withIndex('by_agent', (q) => q.eq('agentAddress', agentAddress))
       .collect(),
     ctx.db
       .query('stakingCredentials')
-      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .withIndex('by_agent', (q) => q.eq('agentAddress', agentAddress))
       .collect(),
     ctx.db
       .query('verifiedHireCredentials')
-      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .withIndex('by_agent', (q) => q.eq('agentAddress', agentAddress))
       .collect(),
     // New credential queries
     ctx.db
       .query('capabilityVerificationCredentials')
-      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .withIndex('by_agent', (q) => q.eq('agentAddress', agentAddress))
       .collect(),
     ctx.db
       .query('uptimeAttestationCredentials')
-      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .withIndex('by_agent', (q) => q.eq('agentAddress', agentAddress))
       .collect(),
     ctx.db
       .query('apiQualityGradeCredentials')
-      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .withIndex('by_agent', (q) => q.eq('agentAddress', agentAddress))
       .collect(),
     ctx.db
       .query('teeAttestationCredentials')
-      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .withIndex('by_agent', (q) => q.eq('agentAddress', agentAddress))
       .collect(),
     ctx.db
       .query('modelProvenanceCredentials')
-      .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+      .withIndex('by_agent', (q) => q.eq('agentAddress', agentAddress))
       .collect(),
   ])
 
@@ -585,10 +581,13 @@ export async function calculateCredentialVerifications(
  * User Reviews Score
  * Based on verified hire reviews with payment proof
  */
-export async function calculateUserReviews(ctx: any, agentAddress: string): Promise<SourceScore> {
+export async function calculateUserReviews(
+  ctx: QueryCtx,
+  agentAddress: string
+): Promise<SourceScore> {
   const reviews = await ctx.db
     .query('reviews')
-    .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
+    .withIndex('by_agent', (q) => q.eq('agentAddress', agentAddress))
     .collect()
 
   if (reviews.length === 0) {
@@ -631,7 +630,7 @@ export async function calculateUserReviews(ctx: any, agentAddress: string): Prom
  * Based on transaction history, account age, and diversity
  */
 export async function calculateOnChainActivity(
-  ctx: any,
+  ctx: QueryCtx,
   agentAddress: string
 ): Promise<SourceScore> {
   // This would query blockchain data via actions
@@ -651,7 +650,7 @@ export async function calculateOnChainActivity(
  * Based on DAO voting and proposal activity
  */
 export async function calculateGovernanceParticipation(
-  ctx: any,
+  ctx: QueryCtx,
   agentAddress: string
 ): Promise<SourceScore> {
   // Placeholder - would query governance data
@@ -671,12 +670,12 @@ export async function calculateGovernanceParticipation(
  * Falls back to legacy apiUsage data if no observation tests exist
  */
 export async function calculateAPIQualityMetrics(
-  ctx: any,
+  ctx: QueryCtx,
   agentAddress: string
 ): Promise<SourceScore> {
   // First, try to get observation test data (Caisper's endpoint tests)
   const observationTests = await ctx.db
-    .query('endpointTests')
+    .query('endpointTests') // NOTE: This table is not in the viewed schema snippet, might also have type issues if not defined
     .withIndex('by_agent', (q: any) => q.eq('agentAddress', agentAddress))
     .order('desc')
     .take(100)
@@ -765,9 +764,26 @@ export async function calculateAPIQualityMetrics(
   }
 
   // Fallback: use legacy apiUsage data if no observation tests
+  // First resolve the user ID from the agent address
+  const user = await ctx.db
+    .query('users')
+    .withIndex('by_wallet_address', (q) => q.eq('walletAddress', agentAddress))
+    .first()
+
+  if (!user) {
+    return {
+      rawScore: 0,
+      weight: SOURCE_WEIGHTS.apiQualityMetrics,
+      confidence: 0,
+      dataPoints: 0,
+      timeDecayFactor: 1,
+      lastUpdated: Date.now(),
+    }
+  }
+
   const apiUsage = await ctx.db
     .query('apiUsage')
-    .withIndex('by_user_timestamp', (q: any) => q.eq('userId', agentAddress))
+    .withIndex('by_user_timestamp', (q) => q.eq('userId', user._id))
     .order('desc')
     .take(100)
 

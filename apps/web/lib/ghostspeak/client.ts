@@ -11,7 +11,7 @@
 
 import { address, type Address } from '@solana/addresses'
 import type { TransactionSigner } from '@solana/kit'
-import { createSolanaRpc } from '@solana/rpc'
+import { createSolanaRpc, type Rpc, type SolanaRpcApi } from '@solana/rpc'
 
 // Import from browser-safe SDK entry point
 import {
@@ -22,7 +22,6 @@ import {
   MultisigModule,
   CredentialsModule,
   StakingModule,
-  SASAttestationHelper,
   GHOSTSPEAK_PROGRAM_ID,
 } from '@ghostspeak/sdk/browser'
 
@@ -31,7 +30,7 @@ interface GhostSpeakConfig {
   programId: Address
   rpcEndpoint: string
   cluster: 'mainnet-beta' | 'testnet' | 'devnet'
-  rpc: any
+  rpc: Rpc<SolanaRpcApi>
 }
 
 // Network configurations

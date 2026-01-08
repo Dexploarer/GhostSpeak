@@ -76,6 +76,7 @@ async function installMockWalletStandard(
         // ignore
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const features: Record<string, any> = {
         'standard:connect': {
           version: '1.0.0',
@@ -98,7 +99,9 @@ async function installMockWalletStandard(
         },
         'standard:disconnect': {
           version: '1.0.0',
-          disconnect: async () => {},
+          disconnect: async () => {
+            /* empty */
+          },
         },
         'solana:signTransaction': {
           version: '1.0.0',
@@ -131,12 +134,15 @@ async function installMockWalletStandard(
 
       // Store for early access by wallet provider
       if (typeof window !== 'undefined') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ;(window as any).__E2E_MOCK_WALLET__ = {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           register: (register: (...wallets: any[]) => unknown) => register(wallet),
           wallet,
         }
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const callback = ({ register }: { register: (...wallets: any[]) => unknown }) =>
         register(wallet)
 
@@ -165,6 +171,7 @@ async function installMockWalletStandard(
       registerMethods.forEach((method) => method())
 
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         window.addEventListener('wallet-standard:app-ready', (event: any) => {
           if (event?.detail) callback(event.detail)
         })
@@ -178,9 +185,11 @@ async function installMockWalletStandard(
   // Additional injection after page load
   await page.evaluate(
     ({ walletAddress }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((window as any).__E2E_MOCK_WALLET__) return
 
       const walletName = 'E2E Test Wallet'
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const features: Record<string, any> = {
         'standard:connect': {
           version: '1.0.0',
@@ -199,7 +208,12 @@ async function installMockWalletStandard(
             ],
           }),
         },
-        'standard:disconnect': { version: '1.0.0', disconnect: async () => {} },
+        'standard:disconnect': {
+          version: '1.0.0',
+          disconnect: async () => {
+            /* empty */
+          },
+        },
         'solana:signTransaction': {
           version: '1.0.0',
           signTransaction: async ({ transaction }: { transaction: Uint8Array }) => ({
@@ -227,7 +241,9 @@ async function installMockWalletStandard(
         accounts: [],
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(window as any).__E2E_MOCK_WALLET__ = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         register: (register: (...wallets: any[]) => unknown) => register(wallet),
         wallet,
       }

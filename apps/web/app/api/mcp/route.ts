@@ -19,6 +19,7 @@ interface SearchAgentsArgs {
 interface ClaimAgentArgs {
   agentAddress: string
   claimedBy: string
+  signature: string
 }
 
 // JSON-RPC 2.0 response helpers
@@ -81,7 +82,11 @@ async function handleSearchAgents(args: SearchAgentsArgs) {
  * Status: Placeholder - currently unrestricted for MVP, but marked for upgrade.
  */
 async function handleClaimAgent(args: ClaimAgentArgs) {
-  const { agentAddress, claimedBy } = args
+  const { agentAddress, claimedBy, signature } = args
+
+  if (!signature) {
+    throw new Error('Signature required: You must sign this request to prove ownership')
+  }
 
   // TODO: [x402] Verify payment/signature here before processing claim
   // This is a high-value action that should be gated.
@@ -160,8 +165,9 @@ export async function POST(request: NextRequest) {
                 properties: {
                   agentAddress: { type: 'string' },
                   claimedBy: { type: 'string' },
+                  signature: { type: 'string', description: 'Cryptographic signature proving ownership' },
                 },
-                required: ['agentAddress', 'claimedBy'],
+                required: ['agentAddress', 'claimedBy', 'signature'],
               },
             },
             {

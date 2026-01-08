@@ -29,9 +29,9 @@ interface ReportData {
 interface OuijaBoardProps {
   agentAddress?: string
   summary?: any
-  reputation?: any
-  reports?: any[]
-  transactions?: any[]
+  reputation?: unknown
+  reports?: unknown[]
+  transactions?: unknown[]
 }
 
 export default function OuijaBoard({
@@ -49,7 +49,7 @@ export default function OuijaBoard({
       : null
   )
   const [spellingMessage, setSpellingMessage] = useState<string | null>(null)
-  const [currentLetter, setCurrentLetter] = useState<string | null>(null)
+  // const [currentLetter, setCurrentLetter] = useState<string | null>(null)
 
   const generateOuijaReport = useAction(api.reports.generateOuijaReport)
   const boardRef = useRef<HTMLDivElement>(null)
@@ -111,7 +111,7 @@ export default function OuijaBoard({
     if (index !== -1) {
       // Semi-circle arc logic
       const angleStep = Math.PI / (alphabet.length - 1) // Spread over 180 degrees
-      const angle = Math.PI - index * angleStep // Start from left (180deg / PI radians)
+      // const angle = Math.PI - index * angleStep // Start from left (180deg / PI radians)
       // Adjust angle to be roughly centered arc (e.g. from 160deg to 20deg)
       const spreadLimit = 2.5 // rad
       const startParams = (Math.PI - spreadLimit) / 2
@@ -244,7 +244,7 @@ function Planchette({
   getCoordinates,
   onComplete,
 }: {
-  boardRef: any
+  boardRef: React.RefObject<HTMLDivElement | null>
   targetMessage: string | null
   getCoordinates: (c: string) => { x: number; y: number }
   onComplete: () => void

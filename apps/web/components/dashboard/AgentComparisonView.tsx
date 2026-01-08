@@ -42,8 +42,9 @@ export function AgentComparisonView({
   )
 
   const handleAddAgent = () => {
-    if (newAddress && !agents.includes(newAddress) && agents.length < 5) {
-      setAgents([...agents, newAddress])
+    const trimmedAddress = newAddress.trim()
+    if (trimmedAddress && !agents.includes(trimmedAddress) && agents.length < 5) {
+      setAgents([...agents, trimmedAddress])
       setNewAddress('')
     }
   }

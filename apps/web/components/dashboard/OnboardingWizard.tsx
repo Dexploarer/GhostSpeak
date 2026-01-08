@@ -33,13 +33,12 @@ function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
       {Array.from({ length: totalSteps }).map((_, index) => (
         <div
           key={index}
-          className={`h-1.5 rounded-full transition-all duration-300 ${
-            index < currentStep
-              ? 'w-8 bg-primary'
-              : index === currentStep
-                ? 'w-8 bg-primary/60'
-                : 'w-4 bg-white/20'
-          }`}
+          className={`h-1.5 rounded-full transition-all duration-300 ${index < currentStep
+            ? 'w-8 bg-primary'
+            : index === currentStep
+              ? 'w-8 bg-primary/60'
+              : 'w-4 bg-white/20'
+            }`}
         />
       ))}
     </div>
@@ -54,6 +53,9 @@ export function OnboardingWizard({ ghostScore, hasActivity }: OnboardingWizardPr
 
   // Check if onboarding should be shown
   useEffect(() => {
+    // SSR guard: localStorage is only available in browser
+    if (typeof window === 'undefined') return
+
     const hasCompletedOnboarding = localStorage.getItem(ONBOARDING_STORAGE_KEY)
 
     // Show onboarding if: ghostScore is 0, no activity, and hasn't completed before
@@ -65,7 +67,9 @@ export function OnboardingWizard({ ghostScore, hasActivity }: OnboardingWizardPr
   const handleSkip = () => {
     setIsExiting(true)
     setTimeout(() => {
-      localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true')
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true')
+      }
       setIsVisible(false)
     }, 300)
   }
@@ -83,7 +87,9 @@ export function OnboardingWizard({ ghostScore, hasActivity }: OnboardingWizardPr
   }
 
   const handleComplete = (action: 'verify' | 'chat') => {
-    localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true')
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true')
+    }
     setIsExiting(true)
     setTimeout(() => {
       setIsVisible(false)

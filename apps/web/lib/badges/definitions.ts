@@ -1,4 +1,14 @@
-import { Shield, Award, Zap, Activity, CheckCircle, Database, Cpu, Globe } from 'lucide-react'
+import {
+  Shield,
+  Award,
+  Zap,
+  Activity,
+  CheckCircle,
+  Database,
+  Cpu,
+  Globe,
+  type LucideIcon,
+} from 'lucide-react'
 
 export interface BadgeDefinition {
   id: string
@@ -6,7 +16,7 @@ export interface BadgeDefinition {
   description: string
   howToGet: string
   meaning: string
-  icon: any
+  icon: LucideIcon
   rarity: 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY'
   type: 'ACHIEVEMENT' | 'CREDENTIAL'
 }

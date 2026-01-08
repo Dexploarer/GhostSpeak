@@ -13,36 +13,22 @@
 
 import { v } from 'convex/values'
 import { query, mutation } from './_generated/server'
+import {
+  calculateEctoScore,
+  getEctoScoreTier,
+  calculateGhosthunterScore,
+  getGhosthunterScoreTier,
+  getGhostScoreTier,
+  ECTO_TIERS,
+  GHOSTHUNTER_TIERS,
+  GHOST_TIERS,
+} from './lib/scoring'
 
 // ─── TIER DEFINITIONS ─────────────────────────────────────────────────────────
 
-// Ecto Score Tiers (for Agent Developers)
-const ECTO_TIERS = {
-  LEGEND: { min: 9000, name: 'LEGEND' },
-  MASTER: { min: 7500, name: 'MASTER' },
-  ARTISAN: { min: 5000, name: 'ARTISAN' },
-  APPRENTICE: { min: 2500, name: 'APPRENTICE' },
-  NOVICE: { min: 0, name: 'NOVICE' },
-} as const
+// ─── TIER DEFINITIONS ─────────────────────────────────────────────────────────
 
-// Ghosthunter Score Tiers (for Customers who hunt for good agents)
-const GHOSTHUNTER_TIERS = {
-  LEGENDARY: { min: 9000, name: 'LEGENDARY' },
-  ELITE: { min: 7500, name: 'ELITE' },
-  VETERAN: { min: 5000, name: 'VETERAN' },
-  TRACKER: { min: 2500, name: 'TRACKER' },
-  ROOKIE: { min: 0, name: 'ROOKIE' },
-} as const
-
-// Ghost Score Tiers (for AI Agents - kept for reference)
-const GHOST_TIERS = {
-  DIAMOND: { min: 9500, name: 'DIAMOND' },
-  PLATINUM: { min: 9000, name: 'PLATINUM' },
-  GOLD: { min: 7500, name: 'GOLD' },
-  SILVER: { min: 5000, name: 'SILVER' },
-  BRONZE: { min: 2000, name: 'BRONZE' },
-  NEWCOMER: { min: 0, name: 'NEWCOMER' },
-} as const
+// Tiers are now imported from ./lib/scoring
 
 /**
  * Get user dashboard data
@@ -71,7 +57,7 @@ export const getUserDashboard = query({
     // Check if user is an Agent Developer (has registered/claimed agents)
     const claimedAgents = await ctx.db
       .query('discoveredAgents')
-      .filter((q: any) => q.eq(q.field('claimedBy'), args.walletAddress))
+      .withIndex('by_claimed_by', (q: any) => q.eq('claimedBy', args.walletAddress))
       .collect()
     const isAgentDeveloper = claimedAgents.length > 0
 
@@ -90,9 +76,8 @@ export const getUserDashboard = query({
     const isCustomer = totalVerifications.length > 0 || completedPayments.length > 0
 
     // Get verification count for this month
-    const startOfMonth = new Date()
-    startOfMonth.setDate(1)
-    startOfMonth.setHours(0, 0, 0, 0)
+    // Get verification count for this month (UTC)
+    const startOfMonth = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1))
     const monthStart = startOfMonth.getTime()
 
     const verificationsThisMonth = await ctx.db
@@ -128,51 +113,63 @@ export const getUserDashboard = query({
     // ─── CALCULATE ECTO SCORE (Agent Developers) ───────────────────────────────
     let ectoScore = 0
     let ectoTier = 'NOVICE'
+
     if (isAgentDeveloper) {
-      // Get performance data for developer's agents
-      let totalAgentGhostScore = 0
-      let totalAgentJobs = 0
+      if (user.ectoScore !== undefined && user.ectoTier) {
+        ectoScore = user.ectoScore
+        ectoTier = user.ectoTier
+      } else {
+        // Get performance data for developer's agents
+        let totalAgentGhostScore = 0
+        let totalAgentJobs = 0
 
-      for (const agent of claimedAgents) {
-        const reputationData = await ctx.db
-          .query('agentReputationCache')
-          .withIndex('by_address', (q: any) => q.eq('agentAddress', agent.ghostAddress))
-          .first()
+        for (const agent of claimedAgents) {
+          const reputationData = await ctx.db
+            .query('agentReputationCache')
+            .withIndex('by_address', (q: any) => q.eq('agentAddress', agent.ghostAddress))
+            .first()
 
-        if (reputationData) {
-          totalAgentGhostScore += reputationData.ghostScore
-          totalAgentJobs += reputationData.totalJobs
+          if (reputationData) {
+            totalAgentGhostScore += reputationData.ghostScore
+            totalAgentJobs += reputationData.totalJobs
+          }
         }
-      }
 
-      ectoScore = calculateEctoScore({
-        agentsRegistered: claimedAgents.length,
-        totalAgentGhostScore,
-        totalAgentJobs,
-        accountAge: now - user.createdAt,
-        votesCast: observationVotes.length,
-      })
-      ectoTier = getEctoScoreTier(ectoScore)
+        ectoScore = calculateEctoScore({
+          agentsRegistered: claimedAgents.length,
+          totalAgentGhostScore,
+          totalAgentJobs,
+          accountAge: now - user.createdAt,
+          votesCast: observationVotes.length,
+        })
+        ectoTier = getEctoScoreTier(ectoScore)
+      }
     }
 
     // ─── CALCULATE GHOSTHUNTER SCORE (Customers) ─────────────────────────────────
     let ghosthunterScore = 0
     let ghosthunterTier = 'ROOKIE'
-    if (isCustomer) {
-      // Get reviews written by user
-      const userReviews = await ctx.db
-        .query('reviews')
-        .withIndex('by_user', (q: any) => q.eq('userId', user._id))
-        .collect()
 
-      ghosthunterScore = calculateGhosthunterScore({
-        totalVerifications: totalVerifications.length,
-        totalPayments: completedPayments.length,
-        reviewsWritten: userReviews.length,
-        accountAge: now - user.createdAt,
-        boost: user.ghosthunterScore || 0,
-      })
-      ghosthunterTier = getGhosthunterScoreTier(ghosthunterScore)
+    if (isCustomer) {
+      if (user.ghosthunterScore !== undefined && user.ghosthunterTier) {
+        ghosthunterScore = user.ghosthunterScore
+        ghosthunterTier = user.ghosthunterTier
+      } else {
+        // Get reviews written by user
+        const userReviews = await ctx.db
+          .query('reviews')
+          .withIndex('by_user', (q: any) => q.eq('userId', user._id))
+          .collect()
+
+        ghosthunterScore = calculateGhosthunterScore({
+          totalVerifications: totalVerifications.length,
+          totalPayments: completedPayments.length,
+          reviewsWritten: userReviews.length,
+          accountAge: now - user.createdAt,
+          boost: user.ghosthunterScore || 0,
+        })
+        ghosthunterTier = getGhosthunterScoreTier(ghosthunterScore)
+      }
     }
 
     // Get staking data
@@ -221,17 +218,17 @@ export const getUserDashboard = query({
         // Ecto Score - for Agent Developers
         ecto: isAgentDeveloper
           ? {
-              score: ectoScore,
-              tier: ectoTier,
-              agentsRegistered: claimedAgents.length,
-            }
+            score: ectoScore,
+            tier: ectoTier,
+            agentsRegistered: claimedAgents.length,
+          }
           : null,
         // Ghosthunter Score - for Customers
         ghosthunter: isCustomer
           ? {
-              score: ghosthunterScore,
-              tier: ghosthunterTier,
-            }
+            score: ghosthunterScore,
+            tier: ghosthunterTier,
+          }
           : null,
       },
       stats: {
@@ -244,13 +241,13 @@ export const getUserDashboard = query({
       },
       staking: stakingAccount
         ? {
-            amountStaked: stakingAccount.amountStaked,
-            tier: stakingAccount.tier,
-            reputationBoostBps: stakingAccount.reputationBoostBps,
-            unlockAt: stakingAccount.unlockAt,
-            hasVerifiedBadge: stakingAccount.hasVerifiedBadge,
-            hasPremiumBenefits: stakingAccount.hasPremiumBenefits,
-          }
+          amountStaked: stakingAccount.amountStaked,
+          tier: stakingAccount.tier,
+          reputationBoostBps: stakingAccount.reputationBoostBps,
+          unlockAt: stakingAccount.unlockAt,
+          hasVerifiedBadge: stakingAccount.hasVerifiedBadge,
+          hasPremiumBenefits: stakingAccount.hasPremiumBenefits,
+        }
         : null,
       recentActivity,
       gamification: {
@@ -286,7 +283,7 @@ async function getRecentActivity(ctx: any, userId: string) {
       description: `Verified agent ${verification.agentAddress.slice(0, 8)}...`,
       timestamp: verification.timestamp,
       status: verification.tier,
-      transactionSignature: verification.transactionSignature,
+      transactionSignature: verification.paymentSignature,
     })
   }
 
@@ -313,123 +310,9 @@ async function getRecentActivity(ctx: any, userId: string) {
 
 // ─── SCORE CALCULATION FUNCTIONS ───────────────────────────────────────────────
 
-/**
- * Calculate Ecto Score for Agent Developers (0-10,000 scale)
- * Measures: agents registered, agent performance, developer tenure
- */
-function calculateEctoScore({
-  agentsRegistered,
-  totalAgentGhostScore,
-  totalAgentJobs,
-  accountAge,
-  votesCast,
-}: {
-  agentsRegistered: number
-  totalAgentGhostScore: number // Sum of Ghost Scores across all their agents
-  totalAgentJobs: number // Total jobs completed by all their agents
-  accountAge: number
-  votesCast: number // Number of observation votes cast
-}): number {
-  const ageInDays = accountAge / (1000 * 60 * 60 * 24)
-  let score = 0
+// ─── SCORE CALCULATION FUNCTIONS ───────────────────────────────────────────────
 
-  // Agent creation points (up to 2000 points)
-  // More agents = more experienced developer
-  score += Math.min(agentsRegistered * 500, 2000)
-
-  // Agent quality points (up to 4000 points)
-  // Average Ghost Score of their agents (normalized)
-  if (agentsRegistered > 0) {
-    const avgAgentScore = totalAgentGhostScore / agentsRegistered
-    score += Math.min((avgAgentScore / 10000) * 4000, 4000)
-  }
-
-  // Agent productivity points (up to 2500 points)
-  // Total jobs completed by their agents
-  score += Math.min(totalAgentJobs * 25, 2500)
-
-  // Developer tenure points (up to 1500 points)
-  score += Math.min(ageInDays * 10, 1500)
-
-  // Observation voting points (up to 1000 points)
-  // 5 points per vote
-  score += Math.min(votesCast * 5, 1000)
-
-  return Math.min(Math.round(score), 10000)
-}
-
-/**
- * Get Ecto Score tier for Agent Developers
- */
-function getEctoScoreTier(score: number): string {
-  if (score >= ECTO_TIERS.LEGEND.min) return ECTO_TIERS.LEGEND.name
-  if (score >= ECTO_TIERS.MASTER.min) return ECTO_TIERS.MASTER.name
-  if (score >= ECTO_TIERS.ARTISAN.min) return ECTO_TIERS.ARTISAN.name
-  if (score >= ECTO_TIERS.APPRENTICE.min) return ECTO_TIERS.APPRENTICE.name
-  return ECTO_TIERS.NOVICE.name
-}
-
-/**
- * Calculate Ghosthunter Score for Customers AND Agents (0-10,000 scale)
- * Measures: verifications performed, reviews written, accuracy of evaluations
- * Both humans and AI agents can earn Ghosthunter scores by evaluating other agents
- */
-function calculateGhosthunterScore({
-  totalVerifications,
-  totalPayments,
-  reviewsWritten,
-  accountAge,
-  boost = 0,
-}: {
-  totalVerifications: number
-  totalPayments: number
-  reviewsWritten: number
-  accountAge: number
-  boost?: number
-}): number {
-  const ageInDays = accountAge / (1000 * 60 * 60 * 24)
-  let score = boost
-
-  // Verification points (up to 3500 points)
-  // Each verification shows you're actively hunting/evaluating agents
-  score += Math.min(totalVerifications * 150, 3500)
-
-  // Transaction points (up to 2500 points)
-  // Completed payments show you've actually used agents
-  score += Math.min(totalPayments * 100, 2500)
-
-  // Review contribution points (up to 2500 points)
-  // Writing reviews helps the community
-  score += Math.min(reviewsWritten * 200, 2500)
-
-  // Tenure bonus (up to 1500 points)
-  score += Math.min(ageInDays * 10, 1500)
-
-  return Math.min(Math.round(score), 10000)
-}
-
-/**
- * Get Ghosthunter Score tier for Customers/Agents
- */
-function getGhosthunterScoreTier(score: number): string {
-  if (score >= GHOSTHUNTER_TIERS.LEGENDARY.min) return GHOSTHUNTER_TIERS.LEGENDARY.name
-  if (score >= GHOSTHUNTER_TIERS.ELITE.min) return GHOSTHUNTER_TIERS.ELITE.name
-  if (score >= GHOSTHUNTER_TIERS.VETERAN.min) return GHOSTHUNTER_TIERS.VETERAN.name
-  if (score >= GHOSTHUNTER_TIERS.TRACKER.min) return GHOSTHUNTER_TIERS.TRACKER.name
-  return GHOSTHUNTER_TIERS.ROOKIE.name
-}
-
-/**
- * Get Ghost Score tier for AI Agents (kept for agent reputation lookups)
- */
-function getGhostScoreTier(score: number): string {
-  if (score >= GHOST_TIERS.DIAMOND.min) return GHOST_TIERS.DIAMOND.name
-  if (score >= GHOST_TIERS.PLATINUM.min) return GHOST_TIERS.PLATINUM.name
-  if (score >= GHOST_TIERS.GOLD.min) return GHOST_TIERS.GOLD.name
-  if (score >= GHOST_TIERS.SILVER.min) return GHOST_TIERS.SILVER.name
-  if (score >= GHOST_TIERS.BRONZE.min) return GHOST_TIERS.BRONZE.name
-  return GHOST_TIERS.NEWCOMER.name
-}
+// Scoring functions are now imported from ./lib/scoring
 
 /**
  * Calculate activity streak from user data
@@ -442,7 +325,8 @@ function calculateStreak(
     return { days: 0, isActive: false }
   }
 
-  const today = new Date().toISOString().split('T')[0]
+  const todayUTC = new Date()
+  const today = `${todayUTC.getUTCFullYear()}-${String(todayUTC.getUTCMonth() + 1).padStart(2, '0')}-${String(todayUTC.getUTCDate()).padStart(2, '0')}`
   const lastDate = new Date(lastActivityDate)
   const todayDate = new Date(today)
   const diffTime = todayDate.getTime() - lastDate.getTime()
@@ -664,7 +548,7 @@ export const updateActivityStreak = mutation({
       return null
     }
 
-    const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD format (UTC)
     const lastActivityDate = user.lastActivityDate
 
     // If already active today, no update needed

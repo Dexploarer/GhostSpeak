@@ -54,10 +54,30 @@ export async function GET() {
         },
 
         agent: {
-          path: '/api/v1/agent/:address',
-          method: 'GET',
-          description: 'Get comprehensive agent details',
-          example: `${baseUrl}/api/v1/agent/5eLbn3wj3iScc2fVH8hyNGRBttDTY5rZpeGk1rcjLek2`,
+          details: {
+            path: '/api/v1/agent/:address',
+            method: 'GET',
+            description: 'Get comprehensive agent details (x402: $0.0005)',
+            example: `${baseUrl}/api/v1/agent/5eLbn3wj3iScc2fVH8hyNGRBttDTY5rZpeGk1rcjLek2`,
+          },
+          register: {
+            path: '/api/v1/agent/register',
+            method: 'POST',
+            description: 'Register a new agent (x402: $0.01)',
+            body: { agentAddress: 'string', name: 'string?', description: 'string?', x402Endpoints: 'array?' },
+          },
+          claim: {
+            path: '/api/v1/agent/claim',
+            method: 'POST',
+            description: 'Claim ownership of an agent (x402: $0.05)',
+            body: { agentAddress: 'string', claimedBy: 'string' },
+          },
+          validate: {
+            path: '/api/v1/agent/validate',
+            method: 'POST',
+            description: 'Validate agent credentials and status (x402: $0.001)',
+            body: { agentAddress: 'string' },
+          },
         },
 
         treasury: {

@@ -7,6 +7,7 @@
 import type { Action, IAgentRuntime, Memory, State, HandlerCallback } from '@elizaos/core'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
+import type { UserDashboardData } from '../types'
 
 export const getUserPortfolioAction: Action = {
   name: 'GET_USER_PORTFOLIO',
@@ -47,7 +48,7 @@ export const getUserPortfolioAction: Action = {
     callback?: HandlerCallback
   ) => {
     try {
-      const walletAddress = (message.content as any).walletAddress
+      const walletAddress = (message.content as { walletAddress?: string }).walletAddress
 
       if (!walletAddress) {
         const response = {
@@ -60,9 +61,9 @@ export const getUserPortfolioAction: Action = {
       const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
       // Query user dashboard data from Convex
-      const dashboardData = await convex.query(api.dashboard.getUserDashboard, {
+      const dashboardData = (await convex.query(api.dashboard.getUserDashboard, {
         walletAddress,
-      })
+      })) as UserDashboardData | null
 
       if (!dashboardData) {
         const response = {
@@ -144,7 +145,7 @@ export const getUserPortfolioAction: Action = {
 
       return {
         success: true,
-        data: dashboardData,
+        data: dashboardData as unknown as Record<string, unknown>,
       }
     } catch (error) {
       console.error('Error fetching user portfolio:', error)

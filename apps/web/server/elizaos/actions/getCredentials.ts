@@ -7,19 +7,34 @@
 import type { Action, IAgentRuntime, Memory, State, HandlerCallback } from '@elizaos/core'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
+import type { Credential } from '../types'
 
 export const getCredentialsAction: Action = {
   name: 'VERIFY_CREDENTIAL',
   description: 'Check W3C Verifiable Credentials for an AI agent',
 
-  // Validate: trigger on credential queries ONLY when an agent address is present
-  // This prevents triggering on general questions like "What makes a credential valid?"
+  // Validate: trigger on credential queries
+  // 1. When an agent address is present in the text
+  // 2. When user asks about "my credentials" (uses their connected wallet)
   validate: async (_runtime: IAgentRuntime, message: Memory, _state?: State) => {
     const text = (message.content.text || '').toLowerCase()
 
-    // Must have a Solana address to trigger this action
+    // Check if user is asking about their own credentials
+    const selfQuery =
+      text.includes('my credential') ||
+      text.includes('my vc') ||
+      text.includes('do i have') ||
+      text.includes('what credentials do i') ||
+      text.includes("what vc's do i") ||
+      text.includes('my verifiable')
+
+    // Check if there's a Solana address in the message
     const hasAddress = /[A-HJ-NP-Za-km-z1-9]{32,44}/.test(message.content.text || '')
-    if (!hasAddress) return false
+
+    // Must have either an address OR be a self-query with a connected wallet
+    const walletAddress = (message.content as { walletAddress?: string }).walletAddress
+    if (!hasAddress && !selfQuery) return false
+    if (selfQuery && !walletAddress) return false
 
     const triggers = [
       'credential',
@@ -40,7 +55,7 @@ export const getCredentialsAction: Action = {
       return false
     }
 
-    return triggers.some((trigger) => text.includes(trigger))
+    return selfQuery || triggers.some((trigger) => text.includes(trigger))
   },
 
   handler: async (
@@ -54,9 +69,10 @@ export const getCredentialsAction: Action = {
       const text = message.content.text || ''
       const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
-      // Extract agent address from message
+      // Extract agent address from message OR use connected wallet for self-queries
       const addressMatch = text.match(/([A-HJ-NP-Za-km-z1-9]{32,44})/)
-      const agentAddress = addressMatch ? addressMatch[1] : null
+      const walletAddress = (message.content as { walletAddress?: string }).walletAddress
+      const agentAddress = addressMatch ? addressMatch[1] : walletAddress
 
       if (!agentAddress) {
         const response = {
@@ -66,22 +82,27 @@ export const getCredentialsAction: Action = {
         return { success: false, error: 'No agent address provided' }
       }
 
+      // Check if this is a self-query
+      const isSelfQuery = agentAddress === walletAddress
+
       // Query credentials from Convex (using public query)
-      const credentials = await convex.query(api.credentials.getAgentCredentialsPublic, {
+      const credentials = (await convex.query(api.credentials.getAgentCredentialsPublic, {
         agentAddress,
-      })
+      })) as Credential[]
 
       if (!credentials || credentials.length === 0) {
-        const response = {
-          text: `No credentials found for \`${agentAddress.slice(0, 8)}...${agentAddress.slice(-4)}\`. 👻\n\nThis agent hasn't been issued any W3C Verifiable Credentials yet.\n\nWant me to issue an Identity Credential for them?`,
-        }
+        const noCredsText = isSelfQuery
+          ? `You don't have any W3C Verifiable Credentials yet, bestie. 👻\n\nYour wallet: \`${agentAddress.slice(0, 8)}...${agentAddress.slice(-4)}\`\n\nWant me to issue an Identity Credential for you?`
+          : `No credentials found for \`${agentAddress.slice(0, 8)}...${agentAddress.slice(-4)}\`. 👻\n\nThis agent hasn't been issued any W3C Verifiable Credentials yet.\n\nWant me to issue an Identity Credential for them?`
+        const response = { text: noCredsText }
         if (callback) await callback(response)
         return { success: true, data: { agentAddress, credentials: [] } }
       }
 
       // Format credential list
-      let responseText = `Let me check the credential vault... 🔏\n\n`
-      responseText += `**Agent:** \`${agentAddress.slice(0, 8)}...${agentAddress.slice(-4)}\`\n\n`
+      let responseText = isSelfQuery
+        ? `Checking YOUR credential vault... 🔏\n\n**Your Wallet:** \`${agentAddress.slice(0, 8)}...${agentAddress.slice(-4)}\`\n\n`
+        : `Let me check the credential vault... 🔏\n\n**Agent:** \`${agentAddress.slice(0, 8)}...${agentAddress.slice(-4)}\`\n\n`
       responseText += `**${credentials.length} Credential(s) Found:**\n\n`
 
       const typeEmoji: Record<string, string> = {
@@ -111,7 +132,7 @@ export const getCredentialsAction: Action = {
       }
 
       // Add assessment
-      const validCount = credentials.filter((c: any) => c.isValid).length
+      const validCount = credentials.filter((c: Credential) => c.isValid).length
       responseText += `**My Take:** `
       if (validCount === credentials.length) {
         responseText += `All credentials check out! This agent is fully verified. I'd vouch for them. 👻✅`

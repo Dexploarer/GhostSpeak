@@ -39,7 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-/server/elizaos/Caisper.json
+# Caisper.json is now tracked - needed for Vercel build
 KEYPAIRS.md
 sas-keypairs.json
 .eliza

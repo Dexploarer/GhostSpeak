@@ -87,6 +87,7 @@
     "@solana/rpc-subscriptions": "5.1.0",
     "@solana/signers": "5.1.0",
     "@solana/wallet-standard-features": "^1.3.0",
+    "@solana/web3.js": "^1.98.4",
     "@tanstack/react-query": "^5.71.10",
     "@tanstack/react-query-devtools": "^5.71.10",
     "@tanstack/react-query-next-experimental": "^5.83.0",

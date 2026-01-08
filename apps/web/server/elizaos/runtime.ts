@@ -63,7 +63,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     console.log('📦 Convex database adapter initialized')
   }
 
-  async close(): Promise<void> {}
+  async close(): Promise<void> { }
 
   // Memories are stored in Convex agentMessages table
   async getMemories(params: any): Promise<any[]> {
@@ -119,8 +119,8 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     // Return a UUID as required by the interface
     return crypto.randomUUID() as `${string}-${string}-${string}-${string}-${string}`
   }
-  async removeMemory(memoryId: string, tableName?: string): Promise<void> {}
-  async removeAllMemories(roomId: string, tableName?: string): Promise<void> {}
+  async removeMemory(memoryId: string, tableName?: string): Promise<void> { }
+  async removeAllMemories(roomId: string, tableName?: string): Promise<void> { }
   async countMemories(roomId: string, unique?: boolean, tableName?: string): Promise<number> {
     return 0
   }
@@ -129,10 +129,10 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async getGoals(params: any): Promise<any[]> {
     return []
   }
-  async updateGoal(goal: any): Promise<void> {}
-  async createGoal(goal: any): Promise<void> {}
-  async removeGoal(goalId: string): Promise<void> {}
-  async removeAllGoals(roomId: string): Promise<void> {}
+  async updateGoal(goal: any): Promise<void> { }
+  async createGoal(goal: any): Promise<void> { }
+  async removeGoal(goalId: string): Promise<void> { }
+  async removeAllGoals(roomId: string): Promise<void> { }
 
   async getRoom(roomId: string): Promise<any | null> {
     return { id: roomId }
@@ -140,7 +140,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async createRoom(roomId?: string): Promise<string> {
     return roomId || `room-${Date.now()}`
   }
-  async removeRoom(roomId: string): Promise<void> {}
+  async removeRoom(roomId: string): Promise<void> { }
 
   async getRoomsForParticipant(userId: string): Promise<any[]> {
     return []
@@ -167,7 +167,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     roomId: string,
     userId: string,
     state: 'FOLLOWED' | 'MUTED' | null
-  ): Promise<void> {}
+  ): Promise<void> { }
   async getParticipantsForRoom(roomId: string): Promise<any[]> {
     return []
   }
@@ -181,7 +181,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async createRelationship(params: any): Promise<boolean> {
     return true
   }
-  async updateRelationship(relationship: any): Promise<void> {}
+  async updateRelationship(relationship: any): Promise<void> { }
 
   async getCache<T>(key: string): Promise<T | undefined> {
     return undefined
@@ -250,9 +250,9 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async updateMemory(memory: any): Promise<boolean> {
     return true
   }
-  async deleteMemory(memoryId: any): Promise<void> {}
-  async deleteManyMemories(memoryIds: any[]): Promise<void> {}
-  async deleteAllMemories(roomId: string, tableName: string): Promise<void> {}
+  async deleteMemory(memoryId: any): Promise<void> { }
+  async deleteManyMemories(memoryIds: any[]): Promise<void> { }
+  async deleteAllMemories(roomId: string, tableName: string): Promise<void> { }
 
   async getEntitiesByIds(entityIds: any[]): Promise<any[] | null> {
     // Return entity objects for elizaOS v1.7.0
@@ -272,7 +272,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async createEntities(entities: any[]): Promise<boolean> {
     return true
   }
-  async updateEntity(entity: any): Promise<void> {}
+  async updateEntity(entity: any): Promise<void> { }
 
   async getComponent(
     entityId: any,
@@ -288,8 +288,8 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async createComponent(component: any): Promise<boolean> {
     return true
   }
-  async updateComponent(component: any): Promise<void> {}
-  async deleteComponent(componentId: any): Promise<void> {}
+  async updateComponent(component: any): Promise<void> { }
+  async deleteComponent(componentId: any): Promise<void> { }
 
   async getAgent(agentId: any): Promise<any | null> {
     // Return a proper Agent object for elizaOS v1.7.0
@@ -324,11 +324,11 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     // GhostSpeak uses Gateway-Ghost with 3072 dimensions (openai/text-embedding-3-large)
   }
 
-  async log(params: any): Promise<void> {}
+  async log(params: any): Promise<void> { }
   async getLogs(params: any): Promise<any[]> {
     return []
   }
-  async deleteLog(logId: any): Promise<void> {}
+  async deleteLog(logId: any): Promise<void> { }
 
   async createWorld(world: any): Promise<any> {
     return world.id || `world-${Date.now()}`
@@ -336,20 +336,20 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async getWorld(id: any): Promise<any | null> {
     return { id }
   }
-  async removeWorld(id: any): Promise<void> {}
+  async removeWorld(id: any): Promise<void> { }
   async getAllWorlds(): Promise<any[]> {
     return []
   }
-  async updateWorld(world: any): Promise<void> {}
+  async updateWorld(world: any): Promise<void> { }
   async getRoomsByIds(roomIds: any[]): Promise<any[] | null> {
     return roomIds.map((id) => ({ id }))
   }
   async createRooms(rooms: any[]): Promise<any[]> {
     return rooms.map((r) => r.id || `room-${Date.now()}`)
   }
-  async deleteRoom(roomId: any): Promise<void> {}
-  async deleteRoomsByWorldId(worldId: any): Promise<void> {}
-  async updateRoom(room: any): Promise<void> {}
+  async deleteRoom(roomId: any): Promise<void> { }
+  async deleteRoomsByWorldId(worldId: any): Promise<void> { }
+  async updateRoom(room: any): Promise<void> { }
   async getRoomsByWorld(worldId: any): Promise<any[]> {
     return []
   }
@@ -379,12 +379,12 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async getTask(taskId: any): Promise<any | null> {
     return null
   }
-  async updateTask(taskId: any, task: any): Promise<void> {}
-  async deleteTask(taskId: any): Promise<void> {}
+  async updateTask(taskId: any, task: any): Promise<void> { }
+  async deleteTask(taskId: any): Promise<void> { }
   async getTasksByName(name: string): Promise<any[]> {
     return []
   }
-  async deleteTasks(params: any): Promise<void> {}
+  async deleteTasks(params: any): Promise<void> { }
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 /* eslint-enable @typescript-eslint/no-unused-vars */

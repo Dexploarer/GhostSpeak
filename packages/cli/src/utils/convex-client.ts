@@ -1,9 +1,11 @@
 /**
  * Convex client for querying indexed agent data
+ *
+ * Note: This module uses generic Convex API calls to avoid build-time dependencies
+ * on generated Convex types from the web app.
  */
 
 import { ConvexHttpClient } from 'convex/browser'
-import { api } from '../../../web/convex/_generated/api.js'
 
 let convexClient: ConvexHttpClient | null = null
 
@@ -35,7 +37,8 @@ export async function queryDiscoveredAgents(params?: {
 }) {
   const client = getConvexClient()
 
-  return await client.query(api.ghostDiscovery.listDiscoveredAgents, {
+  // Use generic query - API endpoint name as string
+  return await (client as any).query('ghostDiscovery:listDiscoveredAgents', {
     status: params?.status,
     limit: params?.limit || 100,
   })
@@ -46,7 +49,7 @@ export async function queryDiscoveredAgents(params?: {
  */
 export async function getDiscoveryStats() {
   const client = getConvexClient()
-  return await client.query(api.ghostDiscovery.getDiscoveryStats)
+  return await (client as any).query('ghostDiscovery:getDiscoveryStats')
 }
 
 /**
@@ -54,7 +57,7 @@ export async function getDiscoveryStats() {
  */
 export async function getDiscoveredAgent(ghostAddress: string) {
   const client = getConvexClient()
-  return await client.query(api.ghostDiscovery.getDiscoveredAgent, {
+  return await (client as any).query('ghostDiscovery:getDiscoveredAgent', {
     ghostAddress,
   })
 }
@@ -64,7 +67,7 @@ export async function getDiscoveredAgent(ghostAddress: string) {
  */
 export async function getExternalIdMappings(ghostAddress: string) {
   const client = getConvexClient()
-  return await client.query(api.ghostDiscovery.getExternalIdMappings, {
+  return await (client as any).query('ghostDiscovery:getExternalIdMappings', {
     ghostAddress,
   })
 }
@@ -74,7 +77,7 @@ export async function getExternalIdMappings(ghostAddress: string) {
  */
 export async function resolveExternalId(platform: string, externalId: string) {
   const client = getConvexClient()
-  return await client.query(api.ghostDiscovery.resolveExternalId, {
+  return await (client as any).query('ghostDiscovery:resolveExternalId', {
     platform,
     externalId,
   })
@@ -89,7 +92,7 @@ export async function markGhostClaimed(
   claimTxSignature?: string
 ) {
   const client = getConvexClient()
-  return await client.mutation(api.ghostDiscovery.claimAgent, {
+  return await (client as any).mutation('ghostDiscovery:claimAgent', {
     ghostAddress,
     claimedBy,
     claimTxSignature,
@@ -101,7 +104,7 @@ export async function markGhostClaimed(
  */
 export async function getGhostScore(agentAddress: string) {
   const client = getConvexClient()
-  return await client.query(api.ghostScoreCalculator.calculateAgentScore, {
+  return await (client as any).query('ghostScoreCalculator:calculateAgentScore', {
     agentAddress,
   })
 }

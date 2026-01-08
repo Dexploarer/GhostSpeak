@@ -22,52 +22,45 @@ async function build() {
     // Clean previous build
     await cleanBuild('dist');
 
-    // Run JavaScript build and TypeScript declarations in parallel
+    // Run JavaScript build first, then TypeScript declarations
     console.log('Starting build tasks...');
 
-    const [buildResult, tscResult] = await Promise.all([
-      // Task 1: Build with Bun
-      (async () => {
-        console.log('📦 Bundling with Bun...');
-        const result = await Bun.build({
-          entrypoints: ['./src/index.ts'],
-          outdir: './dist',
-          target: 'node',
-          format: 'esm',
-          sourcemap: true,
-          minify: false,
-          external: ['dotenv', 'node:*', '@elizaos/core', '@elizaos/cli', 'zod'],
-          naming: {
-            entry: '[dir]/[name].[ext]',
-          },
-        });
+    // Task 1: Build with Bun
+    console.log('📦 Bundling with Bun...');
+    const buildResult = await Bun.build({
+      entrypoints: ['./src/index.ts'],
+      outdir: './dist',
+      target: 'node',
+      format: 'esm',
+      sourcemap: true,
+      minify: false,
+      external: ['dotenv', 'node:*', '@elizaos/core', '@elizaos/cli', 'zod'],
+      naming: {
+        entry: '[dir]/[name].[ext]',
+      },
+    });
 
-        if (!result.success) {
-          console.error('✗ Build failed:', result.logs);
-          return { success: false, outputs: [] };
-        }
+    if (!buildResult.success) {
+      console.error('✗ Build failed:', buildResult.logs);
+      return false;
+    }
 
-        const totalSize = result.outputs.reduce((sum, output) => sum + output.size, 0);
-        const sizeMB = (totalSize / 1024 / 1024).toFixed(2);
-        console.log(`✓ Built ${result.outputs.length} file(s) - ${sizeMB}MB`);
+    const totalSize = buildResult.outputs.reduce((sum, output) => sum + output.size, 0);
+    const sizeMB = (totalSize / 1024 / 1024).toFixed(2);
+    console.log(`✓ Built ${buildResult.outputs.length} file(s) - ${sizeMB}MB`);
 
-        return result;
-      })(),
-
-      // Task 2: Generate TypeScript declarations
-      (async () => {
-        console.log('📝 Generating TypeScript declarations...');
-        try {
-          await $`tsc --emitDeclarationOnly --incremental --project ./tsconfig.build.json`.quiet();
-          console.log('✓ TypeScript declarations generated');
-          return { success: true };
-        } catch (error) {
-          console.warn('⚠ Failed to generate TypeScript declarations');
-          console.warn('  This is usually due to test files or type errors.');
-          return { success: false };
-        }
-      })(),
-    ]);
+    // Task 2: Generate TypeScript declarations (after Bun build completes)
+    console.log('📝 Generating TypeScript declarations...');
+    let tscResult;
+    try {
+      await $`tsc --project ./tsconfig.build.json`.quiet();
+      console.log('✓ TypeScript declarations generated');
+      tscResult = { success: true };
+    } catch (error) {
+      console.warn('⚠ Failed to generate TypeScript declarations');
+      console.warn('  This is usually due to test files or type errors.');
+      tscResult = { success: false };
+    }
 
     if (!buildResult.success) {
       return false;

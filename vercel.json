@@ -1,13 +1,5 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "bun install",
-  "framework": null,
-  "buildCommand": "cd packages/plugin-ghostspeak && bun run build && cd ../../apps/web && bun run build",
+  "buildCommand": "cd apps/web && next build",
   "outputDirectory": "apps/web/.next",
-  "build": {
-    "env": {
-      "NEXT_TELEMETRY_DISABLED": "1",
-      "ENABLE_SENTRY_BUILD": "false"
-    }
-  }
+  "installCommand": "bun install"
 }

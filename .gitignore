@@ -39,7 +39,7 @@ test-ledger/*.bin*
 test-ledger/*.tar*
 
 # === Build artifacts (explicit for submodules, contract source remains public) ===
-packages/*/dist/
+# packages/*/dist/ - Allow plugin dist to be committed for Vercel builds
 packages/*/build/
 packages/*/node_modules/
 packages/*/tsconfig.tsbuildinfo

@@ -1,6 +1,6 @@
 {
   "framework": "nextjs",
-  "buildCommand": "bunx turbo run build --filter=web",
+  "buildCommand": "bun --cwd packages/plugin-ghostspeak run build && bunx turbo run build --filter=web",
   "outputDirectory": "apps/web/.next",
   "installCommand": "bun install"
 }

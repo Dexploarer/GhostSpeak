@@ -111,7 +111,9 @@ export const Navigation: React.FC = () => {
                 <span
                   className={cn(
                     'font-bold text-lg tracking-tight transition-colors',
-                    isMarketingPage && !isScrolled ? 'text-white' : 'text-gray-900 dark:text-white'
+                    isMarketingPage && !isScrolled
+                      ? 'text-gray-900 dark:text-white'
+                      : 'text-gray-900 dark:text-white'
                   )}
                 >
                   Ghost<span className="text-lime-500">Speak</span>

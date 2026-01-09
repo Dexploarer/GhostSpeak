@@ -65,6 +65,9 @@ const nextConfig: NextConfig = {
   // Configure output file tracing for monorepo (includes files from parent dirs)
   outputFileTracingRoot: require('path').join(__dirname, '../../'),
 
+  // Transpile workspace packages (required for monorepo)
+  transpilePackages: ['@ghostspeak/plugin-elizaos', '@ghostspeak/sdk'],
+
   // Configure asset prefix for GitHub Pages
   // assetPrefix: process.env.NODE_ENV === 'production' ? '/ghostspeak/' : '',
 

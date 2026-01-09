@@ -118,14 +118,6 @@ export default function LandingPage() {
 
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8 text-xs sm:text-sm text-muted-foreground font-mono">
             <a
-              href="https://docs.ghostspeak.io"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-primary transition-colors"
-            >
-              DOCS
-            </a>
-            <a
               href="https://github.com/ghostspeak/ghostspeak"
               target="_blank"
               rel="noopener noreferrer"

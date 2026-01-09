@@ -13,7 +13,6 @@ import { ConnectWalletButton } from '@/components/auth/ConnectWalletButton'
 const marketingNavItems = [
   { href: '/observatory', label: 'Observatory', icon: Eye },
   { href: 'https://docs.ghostspeak.io', label: 'Docs', icon: FileText, external: true },
-  { href: 'https://docs.ghostspeak.io', label: 'Docs', icon: FileText, external: true },
 ]
 
 export const Navigation: React.FC = () => {

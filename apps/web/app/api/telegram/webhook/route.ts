@@ -283,10 +283,11 @@ async function handleCallbackQuery(callbackQuery: any) {
     }
   } catch (error) {
     console.error('Error handling callback query:', error)
-    await bot.telegram.answerCbQuery(callbackQuery.id, {
-      text: 'Error processing request',
-      show_alert: true,
-    })
+    await bot.telegram.answerCbQuery(
+      callbackQuery.id,
+      'Error processing request',
+      { show_alert: true }
+    )
   }
 }
 

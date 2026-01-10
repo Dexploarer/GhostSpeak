@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   if (rateLimited) return rateLimited
 
   // Require x402 payment (now async with on-chain verification)
-  const paymentRequired = await requireX402Payment(req, { priceUsdc: 0.002 }, convex)
+  const paymentRequired = await requireX402Payment(req, { priceUsdc: 0.002 }, getConvexClient())
   if (paymentRequired) return paymentRequired
 
   try {

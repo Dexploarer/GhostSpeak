@@ -39,6 +39,7 @@
     "test:x402-merchant": "bun run scripts/test-x402-merchant.ts",
     "generate:keypairs": "bun run scripts/generate-keypairs.ts",
     "check:usdc-balance": "bun run scripts/check-usdc-balance.ts",
+    "telegram:setup": "bun run scripts/setup-telegram-bot.ts",
     "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
@@ -123,6 +124,7 @@
     "sonner": "^1.5.0",
     "svix": "^1.84.1",
     "tailwind-merge": "^3.3.1",
+    "telegraf": "^4.16.3",
     "three": "^0.182.0",
     "tweetnacl": "^1.0.3",
     "zod": "^3.23.8",

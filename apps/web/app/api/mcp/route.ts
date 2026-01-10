@@ -9,7 +9,18 @@ import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { NextRequest } from 'next/server'
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+// Lazy initialization to avoid build-time errors
+let convexClient: ConvexHttpClient | null = null
+
+function getConvexClient(): ConvexHttpClient {
+  if (!convexClient) {
+    if (!process.env.NEXT_PUBLIC_CONVEX_URL) {
+      throw new Error('NEXT_PUBLIC_CONVEX_URL environment variable is not set')
+    }
+    convexClient = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL)
+  }
+  return convexClient
+}
 
 interface SearchAgentsArgs {
   status?: string
@@ -41,6 +52,7 @@ async function handleSearchAgents(args: SearchAgentsArgs) {
 
   // Enforce free tier limits
   const safeLimit = Math.min(limit, 20)
+  const convex = getConvexClient()
 
   const [agents, stats] = await Promise.all([
     convex.query(api.ghostDiscovery.listDiscoveredAgents, { status, limit: safeLimit }),
@@ -83,6 +95,7 @@ async function handleSearchAgents(args: SearchAgentsArgs) {
  */
 async function handleClaimAgent(args: ClaimAgentArgs) {
   const { agentAddress, claimedBy, signature } = args
+  const convex = getConvexClient()
 
   if (!signature) {
     throw new Error('Signature required: You must sign this request to prove ownership')
@@ -126,6 +139,7 @@ async function handleClaimAgent(args: ClaimAgentArgs) {
 }
 
 async function handleGetStats() {
+  const convex = getConvexClient()
   const stats = await convex.query(api.ghostDiscovery.getDiscoveryStats, {})
   return { stats, timestamp: Date.now() }
 }
@@ -222,6 +236,7 @@ export async function POST(request: NextRequest) {
 
       case 'resources/read':
         if (params.uri === 'discovery://stats') {
+          const convex = getConvexClient()
           const stats = await convex.query(api.ghostDiscovery.getDiscoveryStats, {})
           result = {
             contents: [

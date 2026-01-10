@@ -170,7 +170,10 @@ export async function POST(req: NextRequest) {
           `• Whale tier: $100 in $GHOST = Unlimited\n\n` +
           `Get $GHOST: https://jup.ag/swap/SOL-DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump\n\n` +
           `💡 Future: Link your Solana wallet to auto-upgrade your tier!`,
-          { parse_mode: 'Markdown', disable_web_page_preview: true }
+          {
+            parse_mode: 'Markdown',
+            link_preview_options: { is_disabled: true }
+          }
         )
 
         return NextResponse.json({ ok: true })
@@ -336,7 +339,10 @@ async function handleCommand(
         `"What credentials can you issue?" - Learn about VCs\n\n` +
         `*Need more messages?*\n` +
         `Get $GHOST tokens: https://jup.ag/swap/SOL-GHOST`,
-        { parse_mode: 'Markdown', disable_web_page_preview: true }
+        {
+          parse_mode: 'Markdown',
+          link_preview_options: { is_disabled: true }
+        }
       )
       break
 

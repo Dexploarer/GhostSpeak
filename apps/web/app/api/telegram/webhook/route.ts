@@ -150,38 +150,44 @@ export async function POST(req: NextRequest) {
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // MESSAGE QUOTA CHECK (same as web chat)
+    // MESSAGE QUOTA CHECK (DMs only - groups are unlimited)
     // ═══════════════════════════════════════════════════════════════════════════
     const session = telegramUserToSession(message.from.id)
     const { walletAddress } = session
+    const inGroup = isGroupChat(chatType)
 
-    try {
-      // Check quota (Telegram users treated as free tier unless upgraded)
-      const quota = await convex.query(api.messageQuota.checkMessageQuota, { walletAddress })
+    // Only check quota for DMs, not for groups
+    if (!inGroup) {
+      try {
+        // Check quota (Telegram users treated as free tier unless upgraded)
+        const quota = await convex.query(api.messageQuota.checkMessageQuota, { walletAddress })
 
-      if (!quota.canSend) {
-        console.log(`🚫 Quota exceeded for ${userId}: ${quota.currentCount}/${quota.limit}`)
+        if (!quota.canSend) {
+          console.log(`🚫 Quota exceeded for ${userId}: ${quota.currentCount}/${quota.limit}`)
 
-        await bot.telegram.sendMessage(
-          message.chat.id,
-          `⚠️ Daily message limit reached (${quota.currentCount}/${quota.limit})!\n\n` +
-          `To unlock more messages:\n` +
-          `• Holder tier: $10 in $GHOST = 100 messages/day\n` +
-          `• Whale tier: $100 in $GHOST = Unlimited\n\n` +
-          `Get $GHOST: https://jup.ag/swap/SOL-DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump\n\n` +
-          `💡 Future: Link your Solana wallet to auto-upgrade your tier!`,
-          {
-            parse_mode: 'Markdown',
-            link_preview_options: { is_disabled: true }
-          }
-        )
+          await bot.telegram.sendMessage(
+            message.chat.id,
+            `⚠️ Daily message limit reached (${quota.currentCount}/${quota.limit})!\n\n` +
+            `To unlock more messages:\n` +
+            `• Holder tier: $10 in $GHOST = 100 messages/day\n` +
+            `• Whale tier: $100 in $GHOST = Unlimited\n\n` +
+            `Get $GHOST: https://jup.ag/swap/SOL-DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump\n\n` +
+            `💡 Future: Link your Solana wallet to auto-upgrade your tier!`,
+            {
+              parse_mode: 'Markdown',
+              link_preview_options: { is_disabled: true }
+            }
+          )
 
-        return NextResponse.json({ ok: true })
+          return NextResponse.json({ ok: true })
+        }
+
+        console.log(`✅ Quota check passed: ${quota.currentCount}/${quota.limit} (${quota.tier})`)
+      } catch (quotaError) {
+        console.warn('⚠️ Quota check failed, allowing message:', quotaError)
       }
-
-      console.log(`✅ Quota check passed: ${quota.currentCount}/${quota.limit} (${quota.tier})`)
-    } catch (quotaError) {
-      console.warn('⚠️ Quota check failed, allowing message:', quotaError)
+    } else {
+      console.log('⏭️ Skipping quota check for group chat (groups have unlimited messages)')
     }
 
     // Store user message in Convex
@@ -195,10 +201,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Process message with Caisper agent
+    // If in a group, prepend context to help agent understand it's in a group chat
+    let contextualMessage = messageText
+    if (inGroup) {
+      const groupTitle = 'title' in message.chat ? message.chat.title : 'Telegram Group'
+      const memberName = userInfo.firstName || userInfo.username || 'User'
+      contextualMessage = `[Group: ${groupTitle}] ${memberName}: ${messageText}`
+      console.log(`📢 Adding group context: ${contextualMessage.substring(0, 100)}...`)
+    }
+
     const agentResponse = await processAgentMessage({
       userId,
-      message: messageText,
-      roomId: `telegram-${message.from.id}`,
+      message: contextualMessage,
+      roomId: inGroup ? `telegram-group-${chatId}` : `telegram-dm-${message.from.id}`,
     })
 
     console.log(`🤖 Caisper response: ${agentResponse.text.substring(0, 100)}...`)
@@ -232,11 +247,15 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Increment message count
-    try {
-      await convex.mutation(api.messageQuota.incrementMessageCount, { walletAddress })
-    } catch (error) {
-      console.warn('Failed to increment message count:', error)
+    // Increment message count (only for DMs, not groups)
+    if (!inGroup) {
+      try {
+        await convex.mutation(api.messageQuota.incrementMessageCount, { walletAddress })
+      } catch (error) {
+        console.warn('Failed to increment message count:', error)
+      }
+    } else {
+      console.log('⏭️ Skipping message count increment for group chat')
     }
 
     const duration = Date.now() - startTime

@@ -13,13 +13,13 @@ GhostSpeak's trust layer rests on three foundational pillars:
 
 <CardGroup cols={3}>
   <Card title="1. Verifiable Credentials" icon="certificate">
-    W3C-compliant credentials that prove agent identity and capabilities
+    10 types of W3C-compliant VCs with automated issuance
   </Card>
-  <Card title="2. Ghost Score (0-1000)" icon="chart-line">
-    On-chain credit rating calculated from transaction history
+  <Card title="2. Ghost Score (0-10000)" icon="chart-line">
+    Multi-source reputation from 8 data sources with Bayesian confidence
   </Card>
-  <Card title="3. x402 Marketplace" icon="shop">
-    Escrow-backed marketplace with automatic reputation tracking
+  <Card title="3. Observatory System" icon="microscope">
+    Automated agent testing with live capability verification
   </Card>
 </CardGroup>
 
@@ -32,27 +32,161 @@ These three pillars work together to enable **trusted, autonomous AI commerce**.
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                     Application Layer                            │
-│  Ghost Score Dashboard • B2B API • Agent Registry • VC Issuance │
+│  Ghost Score Dashboard • Observatory • Agent Registry • B2B API │
 ├─────────────────────────────────────────────────────────────────┤
 │                   TypeScript SDK Layer                           │
-│  CredentialModule • ReputationModule • AgentModule • X402Module │
+│  12 Modules: Credentials • Reputation • DID • Escrow • Staking  │
 ├─────────────────────────────────────────────────────────────────┤
-│              Smart Contract Layer (Rust/Anchor)                  │
-│  Agent Registry • Reputation • Credentials • Escrow • Governance│
+│              Convex Backend Layer (Off-Chain)                    │
+│  Real-time Database (50+ tables) • Cron Jobs • x402 Indexing    │
+│  Observatory Tests • Automated Credential Issuance • Discovery  │
+├─────────────────────────────────────────────────────────────────┤
+│                Solana Blockchain Layer (On-Chain)                │
+│  Agent Registry • GHOST Staking • Settlement Layer              │
+│  High Performance • Low Cost • <400ms Finality                  │
 ├─────────────────────────────────────────────────────────────────┤
 │                  Integration Layer                               │
-│  x402 Webhooks • Crossmint VCs • Metaplex Compression • Privacy│
-├─────────────────────────────────────────────────────────────────┤
-│                   Solana Blockchain                              │
-│   High Performance • Low Cost • Decentralized • <400ms Finality│
+│  x402 Protocol • IPFS (Pinata) • Discovery System • Privacy     │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+**Key Architectural Decision:** GhostSpeak uses a **hybrid architecture** with Convex for off-chain data and Solana for on-chain settlements. This provides real-time performance while maintaining blockchain security.
 
 Let's explore each layer:
 
 ---
 
-## Layer 1: Solana Blockchain
+## Layer 1: Convex Backend (Off-Chain)
+
+**Why Convex?**
+
+GhostSpeak moved to a hybrid architecture in November 2025, using Convex for real-time off-chain data and Solana for on-chain settlements.
+
+<CardGroup cols={2}>
+  <Card title="Real-Time Database" icon="database">
+    Instant queries with reactive subscriptions
+  </Card>
+  <Card title="Automated Cron Jobs" icon="clock">
+    Hourly Observatory tests, daily credential checks
+  </Card>
+  <Card title="Serverless Functions" icon="bolt">
+    No infrastructure management, scales automatically
+  </Card>
+  <Card title="TypeScript Native" icon="code">
+    End-to-end type safety with Zod validation
+  </Card>
+</CardGroup>
+
+### Convex Architecture
+
+**Database Schema** (`convex/schema.ts` - 1513 lines, 50+ tables):
+
+<Tabs>
+  <Tab title="Agent Data">
+    - `discoveredAgents` - Agent registry with DIDs
+    - `agentEndpoints` - x402 endpoint URLs
+    - `externalIdMappings` - Twitter, Discord, etc.
+    - `discoveryIndexerState` - Indexer cursor tracking
+  </Tab>
+  <Tab title="Credentials (10 Tables)">
+    - `agentIdentityCredentials` - DID credentials
+    - `reputationTierCredentials` - Bronze/Silver/Gold/Platinum
+    - `paymentMilestoneCredentials` - 10/100/1000 payments
+    - `verifiedStakingCredentials` - GHOST staking proof
+    - `verifiedHireCredentials` - Work completion proof
+    - `capabilityVerificationCredentials` - Observatory verified
+    - `uptimeAttestationCredentials` - 95%+ uptime
+    - `apiQualityGradeCredentials` - A/B/C/D/F grade
+    - `teeAttestationCredentials` - TEE environment proof
+    - `modelProvenanceCredentials` - LLM model declaration
+  </Tab>
+  <Tab title="Observatory System">
+    - `observedEndpoints` - Registered agent endpoints
+    - `endpointTests` - Individual test results
+    - `dailyObservationReports` - Daily summaries
+    - `fraudDetectionSignals` - Anomaly detection
+  </Tab>
+  <Tab title="Reputation System">
+    - `ghostScores` - Agent Ghost Score (0-10000)
+    - `ectoScores` - Developer reputation
+    - `ghosthunterScores` - Customer reputation
+    - `ghostScoreHistory` - Historical score snapshots
+  </Tab>
+  <Tab title="Revenue & Billing">
+    - `dailyRevenue` - Daily protocol revenue
+    - `apySnapshots` - Historical APY tracking
+    - `userRewards` - Staker reward distribution
+    - `apiKeys` - B2B API authentication
+    - `usageTracking` - API usage metering
+  </Tab>
+  <Tab title="x402 Integration">
+    - `x402SyncEvents` - Indexed payment transactions
+    - `x402IndexerState` - Indexer cursor
+    - `x402WorkOrders` - Job tracking
+  </Tab>
+</Tabs>
+
+### Automated Cron Jobs
+
+**Schedule** (`convex/crons.ts`):
+
+| Frequency | Task | Purpose |
+|-----------|------|---------|
+| **Every 5 min** | `pollX402Transactions` | Index new x402 payments |
+| **Hourly** | `runHourlyObservatoryTests` | Test agent endpoints |
+| **Daily 00:00 UTC** | `compileDailyReports` | Issue API Quality Grade credentials |
+| **Daily 01:00 UTC** | `checkCredentialMilestones` | Issue Reputation/Payment credentials |
+
+**Example: Automated Credential Issuance**
+
+```typescript
+// convex/observation.ts:820-827
+// After running Observatory tests, automatically issue credential
+if (args.verifiedCapabilities.length > 0 && args.testsRun >= 5) {
+  const res = await ctx.runMutation(
+    internal.credentials.issueCapabilityVerificationCredential,
+    {
+      agentAddress: args.agentAddress,
+      capabilities: args.verifiedCapabilities,
+      testsRun: args.testsRun,
+      testsPassed: args.testsSucceeded,
+    }
+  )
+}
+```
+
+### Discovery System
+
+**`.well-known/x402.json` Protocol**:
+
+Agents publish their x402 endpoints in a standard JSON file:
+
+```json
+{
+  "version": "1.0",
+  "agentId": "did:sol:mainnet:4Hc7...mK2p",
+  "endpoints": [
+    {
+      "capability": "text_generation",
+      "url": "https://agent.example.com/v1/generate",
+      "pricing": { "currency": "USDC", "amount": 100000 }
+    }
+  ],
+  "ghostAddress": "4Hc7...mK2p",
+  "externalIds": {
+    "twitter": "@myagent",
+    "discord": "agent#1234"
+  }
+}
+```
+
+GhostSpeak indexes these endpoints and runs automated tests via Observatory.
+
+**Learn More**: [Discovery System Documentation](/concepts/discovery/overview)
+
+---
+
+## Layer 2: Solana Blockchain (On-Chain)
 
 **Why Solana?**
 

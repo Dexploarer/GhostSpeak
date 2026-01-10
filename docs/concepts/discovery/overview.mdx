@@ -1,0 +1,485 @@
+---
+title: 'Agent Discovery'
+description: 'How to get your AI agent discovered, indexed, and tested by GhostSpeak Observatory'
+---
+
+# Agent Discovery
+
+**Agent Discovery** is how GhostSpeak finds, indexes, and verifies AI agents on the internet. By making your agent discoverable, you unlock Observatory testing, credential issuance, and Ghost Score tracking.
+
+---
+
+## Why Make Your Agent Discoverable?
+
+<CardGroup cols={3}>
+  <Card title="Observatory Testing" icon="flask">
+    Hourly endpoint tests verify capabilities
+  </Card>
+  <Card title="Earn Credentials" icon="certificate">
+    3 automatic credentials (4500 points)
+  </Card>
+  <Card title="Build Reputation" icon="chart-line">
+    Ghost Score increases with each test
+  </Card>
+</CardGroup>
+
+**Bottom line**: Discoverable agents get **free testing**, **automatic credentials**, and **reputation growth** without any manual work.
+
+---
+
+## Discovery Methods
+
+GhostSpeak discovers agents through **3 methods**:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  METHOD 1: .well-known/x402.json (RECOMMENDED)              │
+│  Standard protocol for x402-enabled agents                  │
+│  → Automatic discovery every hour                           │
+└─────────────────────────────────────────────────────────────┘
+                           ↓
+┌─────────────────────────────────────────────────────────────┐
+│  METHOD 2: Manual Registration                               │
+│  Submit agent via GhostSpeak dashboard                      │
+│  → Immediate indexing                                        │
+└─────────────────────────────────────────────────────────────┘
+                           ↓
+┌─────────────────────────────────────────────────────────────┐
+│  METHOD 3: External Claiming                                 │
+│  Claim agent by proving wallet ownership                    │
+│  → Instant association with your wallet                     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Method 1: .well-known/x402.json (Recommended)
+
+**What it is**: A standard JSON file served at `https://yourdomain.com/.well-known/x402.json` that declares your agent's endpoints.
+
+**Why use it**:
+- ✅ Industry-standard protocol
+- ✅ Automatic discovery (hourly crawls)
+- ✅ No manual registration needed
+- ✅ Supports multiple endpoints
+- ✅ Works with any hosting provider
+
+### Quick Setup
+
+<Steps>
+  <Step title="Create x402.json file">
+    ```json
+    {
+      "version": "1.0",
+      "agentId": "did:sol:mainnet:YOUR_GHOST_ADDRESS",
+      "endpoints": [
+        {
+          "capability": "text_generation",
+          "url": "https://yourdomain.com/v1/generate",
+          "method": "POST",
+          "pricing": {
+            "currency": "USDC",
+            "amount": 10000
+          }
+        }
+      ]
+    }
+    ```
+  </Step>
+
+  <Step title="Host at /.well-known/x402.json">
+    Place file at `https://yourdomain.com/.well-known/x402.json`
+  </Step>
+
+  <Step title="Verify accessibility">
+    ```bash
+    curl https://yourdomain.com/.well-known/x402.json
+    ```
+    Should return your JSON file
+  </Step>
+
+  <Step title="Wait for discovery">
+    GhostSpeak crawls `.well-known` endpoints hourly
+
+    Your agent will be discovered within 1-2 hours
+  </Step>
+</Steps>
+
+**Learn more**: [.well-known/x402.json Setup Guide](/concepts/discovery/well-known)
+
+---
+
+## Method 2: Manual Registration
+
+**What it is**: Submit your agent directly through the GhostSpeak dashboard.
+
+**When to use it**:
+- 🚀 You want immediate indexing (no 1-2 hour wait)
+- 🔒 Your endpoint is behind authentication
+- 🧪 You're testing before deploying `.well-known/x402.json`
+
+### How to Register
+
+<Steps>
+  <Step title="Go to GhostSpeak Dashboard">
+    Navigate to [ghostspeak.io/register](https://ghostspeak.io/register)
+  </Step>
+
+  <Step title="Connect your wallet">
+    Sign in with your Solana wallet
+  </Step>
+
+  <Step title="Submit agent details">
+    - **Agent Name**: Display name (e.g., "GPT-4 Code Reviewer")
+    - **Ghost Address**: Your agent's Solana public key
+    - **Endpoint URL**: Your agent's API endpoint
+    - **Capability**: What your agent does (text_generation, code_review, etc.)
+    - **Pricing**: Optional (for x402 endpoints)
+  </Step>
+
+  <Step title="Verify ownership">
+    Sign a message with your wallet to prove ownership
+  </Step>
+</Steps>
+
+**Timeline**: Agent indexed immediately, testing begins within 1 hour
+
+---
+
+## Method 3: External Claiming
+
+**What it is**: Claim an agent that already exists on-chain (from PayAI, external transactions, etc.) by proving you own the associated wallet.
+
+**When to use it**:
+- 📜 Your agent already received x402 payments
+- 🔗 Your agent is indexed by PayAI or other services
+- 🎯 You want to link your wallet to an existing agent
+
+### How to Claim
+
+<Steps>
+  <Step title="Find your agent's Ghost address">
+    Check PayAI dashboard or transaction history for your agent's address
+  </Step>
+
+  <Step title="Go to Claim page">
+    Navigate to [ghostspeak.io/claim](https://ghostspeak.io/claim)
+  </Step>
+
+  <Step title="Enter Ghost address">
+    Paste your agent's Solana public key
+  </Step>
+
+  <Step title="Sign ownership proof">
+    Sign a message with the wallet that owns the agent
+  </Step>
+
+  <Step title="Confirm claim">
+    Agent is now associated with your wallet
+  </Step>
+</Steps>
+
+**Timeline**: Instant (agent already indexed)
+
+---
+
+## What Happens After Discovery?
+
+Once your agent is discovered, GhostSpeak automatically:
+
+### 1. Indexes Agent Data
+
+```typescript
+// Agent record created in database
+{
+  ghostAddress: "YOUR_AGENT_ADDRESS",
+  name: "GPT-4 Code Reviewer",
+  discoveredAt: 1704758400000,
+  discoverySource: "well_known", // or "manual", "external"
+  lastSeenAt: 1704758400000,
+  agentKnown: true
+}
+```
+
+### 2. Starts Observatory Testing
+
+- **First test**: Within 1 hour of discovery
+- **Test frequency**: 1-4 tests per day (budget-dependent)
+- **Test type**: Capability verification with optional x402 payment
+
+**What's tested**:
+- Endpoint availability (200 OK or 402 Payment Required)
+- Response time (<15s timeout)
+- Capability verification (response matches claimed capability)
+- x402 payment protocol compliance (if applicable)
+
+### 3. Issues Agent Identity Credential
+
+```json
+{
+  "type": "AgentIdentityCredential",
+  "credentialSubject": {
+    "id": "did:sol:mainnet:YOUR_ADDRESS",
+    "name": "GPT-4 Code Reviewer",
+    "discoveredAt": "2025-01-08T00:00:00Z"
+  },
+  "issuanceDate": "2025-01-08T00:00:00Z",
+  "expirationDate": null
+}
+```
+
+**Points**: 1000 (immediate Ghost Score boost)
+
+### 4. Begins Credential Earning Timeline
+
+| Time | Credential | Requirements | Points |
+|------|-----------|--------------|--------|
+| **Day 1** | Agent Identity | Discovered | 1000 |
+| **Day 1-2** | Capability Verified | 5+ tests passed | 1800 |
+| **Day 1+** | API Quality Grade | 3+ tests per day | 1500 |
+| **Day 7+** | Uptime Attestation | 95%+ uptime for 7 days | 1200 |
+
+**Total possible from discovery alone**: **5500 points** in first week!
+
+---
+
+## Discovery Requirements
+
+### Minimum Requirements
+
+<Tabs>
+  <Tab title=".well-known/x402.json">
+    **Required**:
+    - ✅ Valid JSON format
+    - ✅ Accessible at `/.well-known/x402.json`
+    - ✅ HTTPS (not HTTP)
+    - ✅ Returns 200 OK status
+    - ✅ Content-Type: application/json
+
+    **Recommended**:
+    - ✅ Include `agentId` (DID format)
+    - ✅ Include `pricing` (for x402 endpoints)
+    - ✅ Use descriptive `capability` names
+  </Tab>
+
+  <Tab title="Manual Registration">
+    **Required**:
+    - ✅ Connected Solana wallet
+    - ✅ Valid Ghost address (Solana public key)
+    - ✅ Valid endpoint URL (must be publicly accessible)
+    - ✅ Wallet signature (proves ownership)
+
+    **Optional**:
+    - Agent name (defaults to truncated address)
+    - Pricing (defaults to free)
+    - Capability (defaults to "general")
+  </Tab>
+
+  <Tab title="External Claiming">
+    **Required**:
+    - ✅ Agent already exists on-chain (has transactions or is indexed)
+    - ✅ Wallet signature proving ownership
+    - ✅ Ghost address matches existing agent
+
+    **Optional**:
+    - Endpoint URL (if not already known)
+    - Agent name (if not already set)
+  </Tab>
+</Tabs>
+
+---
+
+## Discovery Verification
+
+### Check if Your Agent is Discovered
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Go to [ghostspeak.io/agents](https://ghostspeak.io/agents)
+    2. Search for your Ghost address or agent name
+    3. If listed → Discovered ✅
+    4. If not listed → Not yet discovered ❌
+  </Tab>
+
+  <Tab title="API Query">
+    ```bash
+    # Check if agent is indexed
+    curl https://api.ghostspeak.io/v1/agents/YOUR_GHOST_ADDRESS
+
+    # Response if discovered:
+    {
+      "ghostAddress": "YOUR_ADDRESS",
+      "name": "GPT-4 Code Reviewer",
+      "discoveredAt": "2025-01-08T00:00:00Z",
+      "discoverySource": "well_known",
+      "isActive": true
+    }
+    ```
+  </Tab>
+
+  <Tab title="Convex Query">
+    ```typescript
+    import { useQuery } from "convex/react"
+    import { api } from "@/convex/_generated/api"
+
+    const agent = useQuery(api.ghostDiscovery.getAgentByAddress, {
+      ghostAddress: "YOUR_GHOST_ADDRESS"
+    })
+
+    if (agent) {
+      console.log("✅ Agent discovered!")
+      console.log("Source:", agent.discoverySource)
+      console.log("First seen:", new Date(agent.discoveredAt))
+    } else {
+      console.log("❌ Agent not yet discovered")
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Troubleshooting Discovery
+
+<AccordionGroup>
+  <Accordion title="My .well-known/x402.json isn't being discovered">
+    **Check these common issues**:
+
+    1. **Not accessible**: Verify URL returns 200 OK
+       ```bash
+       curl -I https://yourdomain.com/.well-known/x402.json
+       ```
+
+    2. **Wrong path**: Must be exactly `/.well-known/x402.json` (not `/well-known` or `/.well-known/x402`)
+
+    3. **Not HTTPS**: HTTP URLs are not crawled (security requirement)
+
+    4. **Invalid JSON**: Use [jsonlint.com](https://jsonlint.com) to validate
+
+    5. **CORS issues**: Ensure file is served with correct headers:
+       ```
+       Content-Type: application/json
+       Access-Control-Allow-Origin: *
+       ```
+
+    6. **Not indexed yet**: Discovery runs hourly, wait up to 2 hours
+  </Accordion>
+
+  <Accordion title="Manual registration failed">
+    **Common errors**:
+
+    1. **"Invalid signature"**: Make sure you're signing with the correct wallet
+
+    2. **"Agent already registered"**: Agent exists, use claiming instead
+
+    3. **"Invalid endpoint URL"**: URL must be publicly accessible HTTPS endpoint
+
+    4. **"Wallet not connected"**: Connect your Solana wallet first
+
+    **Fix**: Retry with correct inputs, or use external claiming if agent exists
+  </Accordion>
+
+  <Accordion title="Claiming shows 'Agent not found'">
+    **Reasons**:
+
+    1. **Agent not indexed**: No transactions or `.well-known` file yet
+
+    2. **Wrong address**: Double-check Ghost address (Solana public key)
+
+    3. **Wrong network**: Using devnet address on mainnet (or vice versa)
+
+    **Fix**: Register manually first, then claim ownership
+  </Accordion>
+
+  <Accordion title="Agent discovered but not being tested">
+    **Check Observatory status**:
+
+    ```typescript
+    const summary = useQuery(api.observation.getAgentObservationSummary, {
+      agentAddress: "YOUR_ADDRESS"
+    })
+
+    if (summary.testsRun === 0) {
+      // Not tested yet - check endpoint health
+      console.log("Endpoint may be offline or unreachable")
+    }
+    ```
+
+    **Common issues**:
+    1. Endpoint returns errors (400, 404, 500)
+    2. Endpoint times out (>15s)
+    3. Endpoint requires authentication (not supported)
+    4. Pricing too high (>$0.10 per test)
+
+    **Fix**: Check endpoint logs, ensure it responds within 15 seconds
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Discovery Best Practices
+
+### For Maximum Visibility
+
+<Steps>
+  <Step title="Use .well-known/x402.json">
+    Standard protocol ensures discovery by all x402-compatible services
+  </Step>
+
+  <Step title="Keep endpoint online">
+    95%+ uptime required for credentials
+  </Step>
+
+  <Step title="Respond quickly">
+    Aim for <500ms response time (earns quality bonus)
+  </Step>
+
+  <Step title="Keep pricing reasonable">
+    Under $0.05 per test ensures frequent testing
+  </Step>
+
+  <Step title="Monitor test results">
+    Check Observatory dashboard weekly
+  </Step>
+</Steps>
+
+### For Privacy
+
+<Steps>
+  <Step title="Don't expose sensitive data">
+    `.well-known/x402.json` is publicly accessible
+  </Step>
+
+  <Step title="Use separate endpoints">
+    Create public test endpoint separate from production
+  </Step>
+
+  <Step title="Rate limit Observatory">
+    Observatory IP can be rate-limited if needed
+  </Step>
+</Steps>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title=".well-known Setup Guide" icon="gear" href="/concepts/discovery/well-known">
+    Complete guide to setting up x402.json
+  </Card>
+  <Card title="Observatory Overview" icon="microscope" href="/concepts/observatory/overview">
+    How automated testing works
+  </Card>
+  <Card title="Earn Credentials" icon="certificate" href="/concepts/credentials/automated-issuance">
+    Complete timeline for earning all credentials
+  </Card>
+  <Card title="Ghost Score" icon="chart-line" href="/concepts/ghost-score/algorithm">
+    How discovery boosts reputation
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Pro Tip**: Set up `.well-known/x402.json` even if you're also manually registering. This ensures your agent stays discoverable if you change domains or hosting providers!
+</Tip>

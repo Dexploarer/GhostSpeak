@@ -248,10 +248,10 @@ export default function DashboardPage() {
   if (!hasVerifiedSession) {
     return (
       <TooltipProvider>
-        <div className="min-h-screen bg-[#0a0a0a]">
+        <div className="min-h-screen bg-background">
           <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <header className="flex items-center justify-between mb-6">
-              <h1 id="dashboard-heading" className="text-2xl font-light text-white">
+              <h1 id="dashboard-heading" className="text-2xl font-light text-foreground">
                 Dashboard
               </h1>
               <div
@@ -266,8 +266,8 @@ export default function DashboardPage() {
             </header>
 
             <div className="space-y-4">
-              <VerificationContractCard className="p-6 bg-[#111111] border border-white/10 rounded-xl" />
-              <p className="text-xs text-white/40 leading-relaxed">
+              <VerificationContractCard className="p-6 bg-card border border-border rounded-xl" />
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 To continue, approve the "Sign to authenticate" request in your wallet. The
                 dashboard only unlocks after your SIWS session is verified.
               </p>
@@ -288,17 +288,17 @@ export default function DashboardPage() {
   // Handle no user data
   if (!dashboardData) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="p-8 max-w-md text-center bg-[#111111] border border-white/10 rounded-xl">
-          <Activity className="w-12 h-12 mx-auto mb-4 text-white/40" />
-          <p className="text-lg font-medium text-white mb-2">Unable to load dashboard</p>
-          <p className="text-sm text-white/60 mb-6">
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="p-8 max-w-md text-center bg-card border border-border rounded-xl">
+          <Activity className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+          <p className="text-lg font-medium text-foreground mb-2">Unable to load dashboard</p>
+          <p className="text-sm text-muted-foreground mb-6">
             Please try refreshing the page or contact support.
           </p>
           <button
             type="button"
             onClick={() => router.push('/')}
-            className="min-h-[44px] px-6 py-2.5 bg-white/10 border border-white/20 rounded-lg text-white text-sm hover:bg-white/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]"
+            className="min-h-[44px] px-6 py-2.5 bg-muted border border-border rounded-lg text-foreground text-sm hover:bg-muted/80 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             Return Home
           </button>

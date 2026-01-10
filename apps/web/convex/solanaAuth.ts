@@ -6,8 +6,10 @@
 
 import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
+import type { Id } from './_generated/dataModel'
 import nacl from 'tweetnacl'
 import bs58 from 'bs58'
+import { internal } from './_generated/api'
 
 /**
  * Sign in with Solana wallet
@@ -22,6 +24,14 @@ export const signInWithSolana = mutation({
     email: v.optional(v.string()),
     name: v.optional(v.string()),
   },
+  returns: v.object({
+    success: v.boolean(),
+    userId: v.string(),
+    sessionToken: v.string(),
+    expiresAt: v.number(),
+    walletAddress: v.string(),
+    isNewUser: v.boolean(),
+  }),
   handler: async (ctx, args) => {
     try {
       // Decode public key and signature from base58
@@ -42,7 +52,7 @@ export const signInWithSolana = mutation({
         .withIndex('by_wallet_address', (q) => q.eq('walletAddress', args.publicKey))
         .first()
 
-      let userId: string
+      let userId: Id<'users'>
       let isNewUser = false
 
       const now = Date.now()
@@ -69,16 +79,17 @@ export const signInWithSolana = mutation({
         })
       }
 
-      // Create cryptographically secure session token
-      // Note: In production, use proper JWT with signing
-      const randomBytes = new Uint8Array(32)
-      crypto.getRandomValues(randomBytes)
-      const sessionToken = `session_${Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('')}`
+      // Create JWT session with expiration
+      const sessionResult = await ctx.runMutation(internal.sessions.createSession, {
+        userId,
+        walletAddress: args.publicKey,
+      }) as { sessionId: Id<'sessions'>; sessionToken: string; expiresAt: number }
 
       return {
         success: true,
         userId,
-        sessionToken,
+        sessionToken: sessionResult.sessionToken,
+        expiresAt: sessionResult.expiresAt,
         walletAddress: args.publicKey,
         isNewUser,
       }
@@ -87,6 +98,41 @@ export const signInWithSolana = mutation({
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       throw new Error(`Authentication failed: ${errorMessage}`)
     }
+  },
+})
+
+/**
+ * Ensure user exists (create if new, update lastActive if existing)
+ * Lightweight version without signature verification for wallet connection
+ */
+export const ensureUserExists = mutation({
+  args: {
+    walletAddress: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query('users')
+      .withIndex('by_wallet_address', (q) => q.eq('walletAddress', args.walletAddress))
+      .first()
+
+    const now = Date.now()
+
+    if (existing) {
+      // Update last active
+      await ctx.db.patch(existing._id, {
+        lastActiveAt: now,
+      })
+      return { userId: existing._id, isNew: false }
+    }
+
+    // Create new user
+    const userId = await ctx.db.insert('users', {
+      walletAddress: args.walletAddress,
+      createdAt: now,
+      lastActiveAt: now,
+    })
+
+    return { userId, isNew: true }
   },
 })
 

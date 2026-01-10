@@ -9,6 +9,25 @@ import { v } from 'convex/values'
 
 export default defineSchema({
   //
+  // ─── SESSIONS ──────────────────────────────────────────────────────────────
+  // JWT-based session management for authentication
+  //
+  sessions: defineTable({
+    userId: v.id('users'),
+    walletAddress: v.string(),
+    sessionToken: v.string(), // JWT token
+    expiresAt: v.number(), // Unix timestamp
+    createdAt: v.number(),
+    lastAccessedAt: v.number(),
+    isActive: v.boolean(),
+  })
+    .index('by_user', ['userId'])
+    .index('by_wallet', ['walletAddress'])
+    .index('by_token', ['sessionToken'])
+    .index('by_active', ['isActive'])
+    .index('by_expires', ['expiresAt']),
+
+  //
   // ─── USERS ─────────────────────────────────────────────────────────────────
   //
   users: defineTable({
@@ -1198,6 +1217,7 @@ export default defineSchema({
     // Agent Details
     name: v.optional(v.string()), // Display name
     description: v.optional(v.string()), // Short description
+    domainUrl: v.optional(v.string()), // Agent's domain for endpoint discovery (e.g., "api.agent.com")
 
     // Services
     x402ServiceEndpoint: v.optional(v.string()), // URL for x402 service if discovered

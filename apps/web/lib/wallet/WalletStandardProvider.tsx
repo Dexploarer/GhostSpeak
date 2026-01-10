@@ -17,6 +17,8 @@ import {
 import { address, type Address } from '@solana/addresses'
 import { createSolanaRpc, type Rpc, type SolanaRpcApi } from '@solana/rpc'
 import { getSolanaNetwork, type SolanaNetwork } from '@/lib/solana/explorer'
+import { useConvex } from 'convex/react'
+import { api } from '@/convex/_generated/api'
 
 // Wallet Standard Context Types
 interface WalletStandardContextValue {
@@ -66,6 +68,9 @@ export function WalletStandardProvider({
   endpoint,
   autoConnect = true,
 }: WalletStandardProviderProps) {
+  // Convex client for user creation
+  const convex = useConvex()
+
   // State
   const [wallet, setWallet] = useState<Wallet | null>(null)
   const [account, setAccount] = useState<WalletAccount | null>(null)
@@ -150,6 +155,20 @@ export function WalletStandardProvider({
 
           // Save to localStorage for auto-connect
           localStorage.setItem('walletName', targetWallet.name)
+
+          // Create/update user in Convex database
+          // Uses agent:storeUserMessage which auto-creates users (convex/agent.ts:60-83)
+          try {
+            const walletAddress = result.accounts[0].address
+            await convex.mutation(api.agent.storeUserMessage, {
+              walletAddress,
+              message: 'Wallet connected to GhostSpeak',
+            })
+            console.log(`[WalletProvider] User initialized for wallet: ${walletAddress}`)
+          } catch (error) {
+            console.warn('[WalletProvider] Failed to initialize user:', error)
+            // Non-blocking - user can still use the app
+          }
         } else {
           throw new Error('No accounts returned from wallet')
         }

@@ -2,12 +2,11 @@
  * x402 Payment Required Middleware
  *
  * Returns 402 Payment Required if no valid payment is included in the request.
- * For now, checks for X-Payment-Signature header as proof of payment.
- *
- * Future: Integrate with actual payment verification via PayAI/Solana
+ * Verifies payment signatures on-chain using Solana RPC.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyPaymentTransaction, isTransactionUsed } from './solana/payment-verification'
 
 export interface X402PaymentInfo {
     recipientAddress: string
@@ -86,17 +85,18 @@ export function createPaymentRequiredResponse(
  * Usage:
  * ```ts
  * export async function GET(req: NextRequest) {
- *   const paymentCheck = requireX402Payment(req, { priceUsdc: 0.001 })
+ *   const paymentCheck = await requireX402Payment(req, { priceUsdc: 0.001 })
  *   if (paymentCheck) return paymentCheck // Returns 402 if no payment
  *
  *   // ... rest of handler
  * }
  * ```
  */
-export function requireX402Payment(
+export async function requireX402Payment(
     req: NextRequest,
-    options: Partial<X402PaymentInfo> & { priceUsdc: number }
-): NextResponse | null {
+    options: Partial<X402PaymentInfo> & { priceUsdc: number },
+    convexClient?: any // Optional Convex client for replay protection
+): Promise<NextResponse | null> {
     const paymentSignature = getPaymentFromRequest(req)
 
     if (!paymentSignature) {
@@ -107,9 +107,48 @@ export function requireX402Payment(
         })
     }
 
-    // TODO: Actually verify the payment on-chain
-    // For now, any signature is accepted (development mode)
-    console.log(`x402: Payment signature provided: ${paymentSignature.slice(0, 20)}...`)
+    // Check for replay attacks if Convex client is provided
+    if (convexClient) {
+        const isUsed = await isTransactionUsed(paymentSignature, convexClient)
+        if (isUsed) {
+            return NextResponse.json(
+                {
+                    error: 'Payment Already Used',
+                    message: 'This transaction signature has already been used for a previous request.',
+                },
+                { status: 402 }
+            )
+        }
+    }
+
+    // Verify payment on-chain
+    const recipientAddress = options.recipientAddress || process.env.CAISPER_WALLET_ADDRESS || ''
+    const verificationResult = await verifyPaymentTransaction(
+        paymentSignature,
+        recipientAddress,
+        options.priceUsdc
+    )
+
+    if (!verificationResult.valid) {
+        return NextResponse.json(
+            {
+                error: 'Invalid Payment',
+                message: verificationResult.error || 'Payment verification failed',
+                payment: {
+                    recipient: recipientAddress,
+                    amount: options.priceUsdc.toString(),
+                    currency: 'USDC',
+                },
+            },
+            { status: 402 }
+        )
+    }
+
+    console.log(`x402: Payment verified successfully:`, {
+        signature: paymentSignature.slice(0, 20),
+        amount: verificationResult.details?.amount,
+        payer: verificationResult.details?.payer,
+    })
 
     return null // Payment valid, continue to handler
 }

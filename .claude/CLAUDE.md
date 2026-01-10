@@ -1,218 +1,454 @@
----
-description: Use Bun instead of Node.js, npm, pnpm, or vite.
-globs: "*.ts, *.tsx, *.html, *.css, *.js, *.jsx, package.json"
-alwaysApply: false
----
+# CLAUDE.md
 
-Default to using Bun instead of Node.js.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-- Use `bun <file>` instead of `node <file>` or `ts-node <file>`
-- Use `bun test` instead of `jest` or `vitest`
-- Use `bun build <file.html|file.ts|file.css>` instead of `webpack` or `esbuild`
-- Use `bun install` instead of `npm install` or `yarn install` or `pnpm install`
-- Use `bun run <script>` instead of `npm run <script>` or `yarn run <script>` or `pnpm run <script>`
-- Use `bunx <package> <command>` instead of `npx <package> <command>`
-- Bun automatically loads .env, so don't use dotenv.
+## Project Overview
 
-## APIs
+**GhostSpeak** is a trust layer for AI agent commerce built on Solana. It provides:
+- **Verifiable Credentials (W3C VCs)** - On-chain credentials bridged to EVM chains via Crossmint
+- **Ghost Score (0-1000)** - Credit rating system for AI agents based on transaction history
+- **Identity Registry** - Compressed NFT-based agent identities (5000x cost reduction)
+- **PayAI Integration** - Ingests reputation data from PayAI payment protocol
 
-- `Bun.serve()` supports WebSockets, HTTPS, and routes. Don't use `express`.
-- `bun:sqlite` for SQLite. Don't use `better-sqlite3`.
-- `Bun.redis` for Redis. Don't use `ioredis`.
-- `Bun.sql` for Postgres. Don't use `pg` or `postgres.js`.
-- `WebSocket` is built-in. Don't use `ws`.
-- Prefer `Bun.file` over `node:fs`'s readFile/writeFile
-- Bun.$`ls` instead of execa.
+**Tech Stack**: Solana (Anchor/Rust), TypeScript, Bun, Next.js 15, React 19, Convex, TailwindCSS 4
 
-## Testing
+## Architecture
 
-Use `bun test` to run tests.
+### Monorepo Structure
 
-```ts#index.test.ts
-import { test, expect } from "bun:test";
-
-test("hello world", () => {
-  expect(1).toBe(1);
-});
+```
+apps/
+  web/                      # Next.js 15 + Convex backend + React 19
+packages/
+  sdk-typescript/           # @ghostspeak/sdk - Core TypeScript SDK
+  cli/                      # @ghostspeak/cli - Terminal UI (Ink + Commander)
+  api/                      # @ghostspeak/api - REST API (Bun.serve)
+  plugin-ghostspeak/        # @ghostspeak/plugin-elizaos - ElizaOS plugin
+programs/                   # Anchor smart contracts (Rust)
+  src/
+    instructions/           # Program instructions
+    state/                  # Account structures
+    security/               # Security utilities
 ```
 
-## Frontend
+### Dependency Flow
 
-Use HTML imports with `Bun.serve()`. Don't use `vite`. HTML imports fully support React, CSS, Tailwind.
-
-Server:
-
-```ts#index.ts
-import index from "./index.html"
-
-Bun.serve({
-  routes: {
-    "/": index,
-    "/api/users/:id": {
-      GET: (req) => {
-        return new Response(JSON.stringify({ id: req.params.id }));
-      },
-    },
-  },
-  // optional websocket support
-  websocket: {
-    open: (ws) => {
-      ws.send("Hello, world!");
-    },
-    message: (ws, message) => {
-      ws.send(message);
-    },
-    close: (ws) => {
-      // handle close
-    }
-  },
-  development: {
-    hmr: true,
-    console: true,
-  }
-})
+```
+web → sdk + plugin-ghostspeak
+cli → sdk
+api → sdk
+plugin-ghostspeak → sdk
 ```
 
-HTML files can import .tsx, .jsx or .js files directly and Bun's bundler will transpile & bundle automatically. `<link>` tags can point to stylesheets and Bun's CSS bundler will bundle.
+**Critical**: All packages use `workspace:*` for internal dependencies.
 
-```html#index.html
-<html>
-  <body>
-    <h1>Hello, world!</h1>
-    <script type="module" src="./frontend.tsx"></script>
-  </body>
-</html>
+### Key Modules (SDK)
+
+Located in `packages/sdk-typescript/src/modules/`:
+- `AgentModule` - Agent registration & management
+- `CredentialModule` - W3C Verifiable Credentials + Crossmint bridging
+- `ReputationModule` - Ghost Score calculation (0-1000)
+- `DidModule` - W3C Decentralized Identifiers
+- `PrivacyModule` - Metrics visibility control
+- `X402TransactionIndexer` - Payment stream indexing
+
+## Build & Development Commands
+
+### Common Commands
+
+```bash
+# Install dependencies
+bun install
+
+# Development (starts web + Convex in parallel)
+bun run dev                      # Web app on port 3333 + Convex
+bun run dev:web                  # Web only
+bun run dev:cli                  # CLI watch mode
+bun run dev:sdk                  # SDK watch mode
+
+# Build
+bun run build                    # Build all + deploy Convex prod
+bun run build:web                # Next.js build
+bun run build:packages           # All packages (excludes web)
+bun run build:sdk                # SDK only
+bun run build:cli                # CLI only
+bun run build:anchor             # Rust smart contracts
+
+# Test
+bun test                         # All tests
+bun run test:unit                # Unit tests
+bun run test:integration         # Integration tests
+bun run test:e2e                 # Playwright E2E tests
+bun run test:watch               # Watch mode
+bun run test:coverage            # Coverage report
+
+# Individual package tests
+bun run test:web
+bun run test:sdk
+bun run test:cli
+
+# Quality Assurance
+bun run lint                     # Lint all packages
+bun run lint:fix                 # Auto-fix lint issues
+bun run type-check               # TypeScript type checking
+bun run format                   # Format code
+bun run format:check             # Check formatting
+
+# Smart Contracts (Anchor)
+anchor build                     # Build Rust programs
+anchor test                      # Run Anchor tests
+bun run deploy:anchor:devnet     # Deploy to devnet
+bun run idl:upgrade              # Update IDL on-chain
+
+# Convex
+bun run convex:dev               # Convex dev mode
+bun run convex:deploy            # Deploy to production
+bun run convex:logs              # View prod logs
+
+# Solana Setup
+bun run setup:devnet             # Configure devnet + airdrop SOL
+bun run setup:testnet            # Configure testnet + airdrop SOL
 ```
 
-With the following `frontend.tsx`:
+### Running a Single Test
 
-```tsx#frontend.tsx
-import React from "react";
-import { createRoot } from "react-dom/client";
+```bash
+# SDK test
+cd packages/sdk-typescript
+bun test tests/unit/reputation.test.ts
 
-// import .css files directly and it works
-import './index.css';
+# Web test
+cd apps/web
+bun test -- test-name
 
-const root = createRoot(document.body);
+# E2E test
+cd apps/web
+bun run test:e2e -- tests/e2e/wallet-auth.spec.ts
 
-export default function Frontend() {
-  return <h1>Hello, world!</h1>;
-}
-
-root.render(<Frontend />);
+# Rust test (specific test)
+cd programs
+cargo test test_agent_registration -- --nocapture
 ```
 
-Then, run index.ts
+## Critical Architecture Patterns
 
-```sh
-bun --hot ./index.ts
-```
+### Solana Web3.js v5 Migration (December 2025)
 
-For more information, read the Bun API docs in `node_modules/bun-types/docs/**.mdx`.
+**NEVER use legacy packages** - ESLint will block them:
+- ❌ `@solana/web3.js` (deprecated monolithic package)
+- ❌ `@solana/spl-token` (legacy SPL client)
 
-## Solana Packages
+**Always use modern v5 packages**:
+- ✅ `@solana/rpc` - RPC connections
+- ✅ `@solana/addresses` - Address handling
+- ✅ `@solana/signers` - Transaction signing
+- ✅ `@solana/kit` - All-in-one package
+- ✅ `@solana-program/token` - SPL tokens (v2+)
+- ✅ `@solana-program/token-2022` - Token-2022 extensions
 
-**IMPORTANT: Legacy @solana/web3.js and @solana/spl-token are BANNED in this codebase**
+**Migration patterns**:
 
-As of December 2025, this project has migrated to Solana Web3.js v5 (modular architecture).
-
-### DO NOT USE (Deprecated):
-- ❌ `@solana/web3.js` - Legacy monolithic package (maintenance mode, use @solana/rpc instead)
-- ❌ `@solana/spl-token` - Legacy SPL token client (v1.x only, use @solana-program/token instead)
-
-### USE INSTEAD (Modern v5):
-- ✅ `@solana/rpc` - For RPC connections and calls
-- ✅ `@solana/addresses` - For address handling
-- ✅ `@solana/signers` - For transaction signing
-- ✅ `@solana/kit` - All-in-one modern Solana package
-- ✅ `@solana-program/token` - For standard SPL tokens (v2+ compatible)
-- ✅ `@solana-program/token-2022` - For Token-2022 extensions (optional)
-- ✅ `@solana-program/system` - For system program instructions
-
-### Migration Patterns:
-
-**Connection → RPC:**
 ```typescript
-// ❌ OLD (deprecated)
-import { Connection } from '@solana/web3.js'
+// ❌ WRONG (legacy)
+import { Connection, PublicKey, Keypair } from '@solana/web3.js'
 const connection = new Connection(url)
-const blockhash = await connection.getLatestBlockhash()
+const pubkey = new PublicKey(addr)
 
-// ✅ NEW (modern v5)
+// ✅ CORRECT (modern v5)
 import { createSolanaRpc } from '@solana/rpc'
-const rpc = createSolanaRpc(url)
-const blockhash = await rpc.getLatestBlockhash().send()
-```
-
-**PublicKey → Address:**
-```typescript
-// ❌ OLD (deprecated)
-import { PublicKey } from '@solana/web3.js'
-const pubkey = new PublicKey(addressString)
-const bytes = pubkey.toBytes()
-
-// ✅ NEW (modern v5)
 import { address } from '@solana/addresses'
-import bs58 from 'bs58'
-const addr = address(addressString)
-const bytes = bs58.decode(addr) // When you need bytes
-```
-
-**Keypair → Signer:**
-```typescript
-// ❌ OLD (deprecated)
-import { Keypair } from '@solana/web3.js'
-const keypair = Keypair.generate()
-
-// ✅ NEW (modern v5)
 import { generateKeyPairSigner } from '@solana/signers'
+
+const rpc = createSolanaRpc(url)
+const addr = address(addressString)
 const signer = await generateKeyPairSigner()
 ```
 
-### Token Operations
+See existing `.claude/CLAUDE.md` for full migration patterns.
 
-For SPL token operations, use `@solana-program/token` with modern patterns:
+### Bun-First Development
+
+**Default to Bun** for all operations:
+- `bun <file>` instead of `node <file>`
+- `bun test` instead of `jest` or `vitest`
+- `bun install` instead of `npm install`
+- `bunx <package>` instead of `npx <package>`
+
+**Bun APIs**:
+- `Bun.serve()` for servers (web API uses this, not Express)
+- `Bun.file` for file operations
+- `bun:sqlite` for SQLite
+- Automatically loads `.env` (no `dotenv` needed)
+
+### Turbo Monorepo
+
+Build system uses Turbo (`turbo.json`):
+- Parallel task execution
+- Smart caching
+- Task dependencies: `"dependsOn": ["^build"]` means "build dependencies first"
+
+**Persistent tasks** (dev servers): `"cache": false, "persistent": true`
+**Build tasks**: Cached with inputs/outputs defined
+
+### Convex Backend
+
+Web app uses Convex for backend (`apps/web/convex/`):
+
+**Key functions**:
+- `ghostDiscovery.ts` - Agent discovery system
+- `ghostScoreCalculator.ts` - Reputation calculation
+- `x402Indexer.ts` - Payment stream indexing
+- `solanaAuth.ts` - Wallet authentication
+- `crons.ts` - Scheduled tasks
+
+**Deployments**:
+- Dev: `dev:lovely-cobra-639`
+- Prod: `prod:enduring-porpoise-79`
+
+Use `CONVEX_DEPLOYMENT` env var to target specific deployment.
+
+### Smart Contract Details
+
+**Program**: `ghostspeak-marketplace` (Rust/Anchor)
+**Devnet Program ID**: `4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB`
+**Anchor Version**: 0.32.1
+**Solana CLI**: 2.3.13
+
+**Program structure** (`programs/src/`):
+- `instructions/` - All program instructions (agent.rs, reputation.rs, credential.rs, etc.)
+- `state/` - Account structures
+- `security/` - Rate limiting, validation, circuit breaker
+- `lib.rs` - Program entry point
+
+**Testing**:
+- Unit tests: `programs/tests/unit/` (uses Mollusk SVM for fast testing)
+- Integration tests: `programs/tests/integration/`
+- Property tests: `programs/tests/property/`
+
+### SDK Architecture
+
+**Entry points** (`packages/sdk-typescript/`):
+- `dist/index.js` - Main export (all modules)
+- `dist/browser.js` - Browser-safe subset
+- `dist/credentials.js` - Credentials module only
+- `dist/types.js` - Type definitions
+- `dist/errors.js` - Error classes
+- `dist/crypto.js` - ElGamal encryption utilities
+
+**Module pattern**: All modules extend `BaseModule` and are instantiated by `GhostSpeakClient`:
 
 ```typescript
-// ✅ CORRECT (modern v5)
-import { getAccount, getAssociatedTokenAddressSync } from '@solana-program/token'
-import { createSolanaRpc } from '@solana/rpc'
-import { address } from '@solana/addresses'
+import { GhostSpeakClient } from '@ghostspeak/sdk'
 
-const rpc = createSolanaRpc(url)
-const mintAddress = address('BV4uhhMJ84zjwRomS15JMH5wdXVrMP8o9E1URS4xtYoh')
-const ataAddress = getAssociatedTokenAddressSync({ mint: mintAddress, owner: ownerAddress })
+const client = new GhostSpeakClient({ cluster: 'devnet' })
+
+// Access modules
+await client.agents.register(...)
+await client.credentials.issueAgentIdentityCredential(...)
+await client.reputation.getReputationData(...)
 ```
 
-**Note**: Some legacy files may still use dynamic imports of `@solana/web3.js` during the migration period. These should be updated to use the modern API.
+### CLI Architecture
 
-### ESLint Enforcement
+**Binary names**: `ghostspeak` or `ghost` (alias)
+**Framework**: Commander.js + Ink (React for terminals) + Clack (prompts)
+**Build**: TSUp with shebang for executable
 
-The ESLint config blocks legacy package imports:
+**Command categories** (`packages/cli/src/commands/`):
+- Setup: `quickstart`, `wallet`, `config`, `faucet`
+- Core: `agent`, `ghost-claim`, `reputation`, `staking`, `credentials`
+- UI: `dashboard`, `reputation-ui`, `staking-ui`
+- Dev: `sdk`, `diagnose`, `governance`
 
-```javascript
-'no-restricted-imports': ['error', {
-  paths: [
-    {
-      name: '@solana/web3.js',
-      message: 'Use @solana/rpc, @solana/addresses, @solana/signers, or @solana/kit instead'
-    },
-    {
-      name: '@solana/spl-token',
-      message: 'Use @solana-program/token or @solana-program/token-2022 instead'
-    }
-  ]
-}]
+### Web App Architecture
+
+**Framework**: Next.js 15 (App Router) + React 19 + TailwindCSS 4
+**Port**: 3333 (dev mode)
+**Backend**: Convex (serverless functions + real-time)
+
+**Pages** (`apps/web/app/`):
+- `/` - Landing page
+- `/dashboard` - User analytics & control center
+- `/caisper` - ElizaOS agent chat (Caisper character)
+- `/api/*` - Backend API routes
+
+**State management**:
+- React Query (TanStack Query) for server state
+- Zustand for client state
+- Convex for real-time subscriptions
+
+**3D effects**: Three.js + React Three Fiber (R3F)
+**Animations**: Framer Motion + GSAP
+
+### Environment Variables
+
+**Required for development**:
+
+```bash
+# Root .env (for Anchor)
+ANCHOR_PROVIDER_URL=https://api.devnet.solana.com
+ANCHOR_WALLET=/path/to/wallet.json
+
+# apps/web/.env.local
+NEXT_PUBLIC_CONVEX_URL=https://lovely-cobra-639.convex.cloud
+CONVEX_DEPLOYMENT=dev:lovely-cobra-639
+NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
+NEXT_PUBLIC_GHOSTSPEAK_PROGRAM_ID=4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB
+
+# Optional (Crossmint for credential bridging)
+CROSSMINT_SECRET_KEY=sk_...
+CROSSMINT_REPUTATION_TEMPLATE_ID=...
 ```
 
-### Benefits of v5 Migration:
-- ✅ Tree-shakable (smaller bundle sizes)
-- ✅ Zero dependencies
-- ✅ Better TypeScript support (branded types)
-- ✅ Modern async/await patterns
-- ✅ Version consistency across all @solana/* packages
+**Convex deployments**:
+- Set `CONVEX_DEPLOYMENT=dev:lovely-cobra-639` for dev
+- Set `CONVEX_DEPLOYMENT=prod:enduring-porpoise-79` for production
 
-### Documentation:
-- Migration completed: December 30, 2025
-- See `SOLANA_MIGRATION_COMPLETION.md` for full migration details
-- All @solana/* packages synchronized at v5.1.0
+## Common Development Tasks
+
+### Adding a new SDK module
+
+1. Create module in `packages/sdk-typescript/src/modules/YourModule.ts`
+2. Extend `BaseModule` class
+3. Add module to `GhostSpeakClient` in `src/core/client.ts`
+4. Export from `src/modules/index.ts`
+5. Add tests in `tests/unit/your-module.test.ts`
+6. Build: `bun run build`
+
+### Adding a new CLI command
+
+1. Create command in `packages/cli/src/commands/your-command.ts`
+2. Register in `src/index.ts` (Commander program)
+3. Add Ink UI component if interactive
+4. Test: `./dist/index.js your-command --help`
+
+### Adding a new Anchor instruction
+
+1. Add instruction in `programs/src/instructions/your_instruction.rs`
+2. Export from `programs/src/instructions/mod.rs`
+3. Add to program in `programs/src/lib.rs`
+4. Build: `anchor build`
+5. Generate TypeScript bindings: `cd packages/sdk-typescript && bun run generate`
+6. Add SDK method in appropriate module
+
+### Updating smart contract
+
+1. Edit Rust code in `programs/src/`
+2. Build: `anchor build`
+3. Regenerate TypeScript: `cd packages/sdk-typescript && bun run generate`
+4. Update SDK module methods if needed
+5. Test locally: `anchor test`
+6. Deploy to devnet: `bun run deploy:anchor:devnet`
+7. Update IDL: `bun run idl:upgrade`
+
+### Adding a Convex function
+
+1. Create function in `apps/web/convex/yourFunction.ts`
+2. Use Convex patterns (queries, mutations, actions)
+3. Test in Convex dashboard: `bunx convex dev`
+4. Import in frontend: `const data = useQuery(api.yourFunction.get)`
+5. Deploy: `bun run convex:deploy`
+
+## Important Notes
+
+### Package Publishing
+
+Packages are published to npm:
+- `@ghostspeak/sdk` - v2.0.10
+- `@ghostspeak/cli` - v2.0.0-beta.22
+- `@ghostspeak/plugin-elizaos` - Latest
+
+**Before publishing**:
+1. Build: `bun run build`
+2. Test: `bun test`
+3. Update version in `package.json`
+4. Publish: `npm publish`
+
+### Git Workflow
+
+- **Main branch**: `main` (production-ready)
+- Create feature branches: `feature/your-feature`
+- Test before committing: `bun test && bun run lint`
+- Use conventional commits: `feat(sdk): add new module`
+
+### Performance Considerations
+
+- **Turbo caching**: Second builds are fast (~90% cache hit rate)
+- **Parallel dev**: `bun run dev` runs web + Convex simultaneously
+- **SDK watch mode**: CLI auto-reloads when SDK changes (via tsup watch)
+- **Solana v5**: Tree-shakeable, smaller bundles vs legacy v1.x
+
+### Security
+
+- Smart contracts use rate limiting, reentrancy protection, circuit breakers
+- Wallet operations use `@solana/signers` (secure key handling)
+- Environment variables never committed (`.gitignore` includes `.env*`)
+- Crossmint for EVM bridging (handles cross-chain security)
+
+### Known Limitations
+
+- Legacy Solana packages may exist in transitive dependencies (Crossmint, wallet adapters)
+- Only YOUR code should use modern v5 packages
+- Convex functions run in serverless environment (no file system access)
+- Bun compatibility: Some packages still require Node.js (documented in package.json engines)
+
+## Troubleshooting
+
+**"Module not found: @ghostspeak/sdk"**
+→ Build SDK first: `cd packages/sdk-typescript && bun run build`
+
+**"anchor: command not found"**
+→ Install Anchor: `cargo install --git https://github.com/coral-xyz/anchor avm --force && avm install 0.32.1`
+
+**Web app: "Invalid Convex URL"**
+→ Check `apps/web/.env.local` has `NEXT_PUBLIC_CONVEX_URL` set
+→ Run `bunx convex dev` to get URL
+
+**CLI: "Command not found"**
+→ Build CLI: `cd packages/cli && bun run build`
+→ Run from repo: `./packages/cli/dist/index.js`
+→ Or install globally: `bun add -g @ghostspeak/cli`
+
+**Turbo cache issues**
+→ Clear cache: `rm -rf .turbo`
+→ Clean all: `bun run clean:all`
+
+**Legacy Solana warnings**
+→ Check if YOUR code uses legacy imports (not transitive deps)
+→ ESLint will error on direct imports of `@solana/web3.js` or `@solana/spl-token`
+
+## Resources
+
+- **Documentation**: See `docs/` directory (Mintlify)
+- **Architecture**: `ARCHITECTURE.md` at root
+- **Developer Guide**: `.claude/DEVELOPER_GUIDE.md`
+- **Deployment**: `.claude/DEVNET_DEPLOYMENT.md` (coming soon based on git status)
+- **Convex Audit**: `CONVEX_AUDIT_REPORT.md` and `CONVEX_FIX_COMPLETE.md`
+- **Program ID**: Devnet `4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB`
+
+## Quick Start for New Contributors
+
+```bash
+# 1. Clone and install
+git clone https://github.com/Ghostspeak/GhostSpeak.git
+cd GhostSpeak
+bun install
+
+# 2. Build everything
+bun run build:packages
+
+# 3. Start development
+bun run dev  # Web app + Convex on localhost:3333
+
+# 4. Make changes to SDK
+cd packages/sdk-typescript
+bun run dev  # Watch mode
+
+# 5. Test changes
+bun test
+
+# 6. Lint and format
+bun run lint:fix
+```
+
+That's it! You're ready to contribute to GhostSpeak. 👻

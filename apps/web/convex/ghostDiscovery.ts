@@ -632,3 +632,63 @@ export const adminTransferAgent = mutation({
     return { success: true, previousOwner: agent.claimedBy, newOwner: args.newOwner }
   },
 })
+
+/**
+ * Register agent domain URL and trigger endpoint discovery
+ * Allows agents to register their domain for x402 endpoint discovery
+ */
+export const registerAgentDomain = mutation({
+  args: {
+    ghostAddress: v.string(),
+    domainUrl: v.string(),
+    callerWallet: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const agent = await ctx.db
+      .query('discoveredAgents')
+      .withIndex('by_address', (q) => q.eq('ghostAddress', args.ghostAddress))
+      .first()
+
+    if (!agent) {
+      throw new Error(`Agent ${args.ghostAddress} not found in discovery database`)
+    }
+
+    // If agent is claimed, verify ownership (optional callerWallet check)
+    if (agent.status === 'claimed' && args.callerWallet) {
+      if (agent.claimedBy !== args.callerWallet) {
+        throw new Error(
+          `Only the agent owner can register a domain. Owner: ${agent.claimedBy}`
+        )
+      }
+    }
+
+    // Validate domain format (no protocol, no trailing slash)
+    const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-_.]*[a-zA-Z0-9]$/
+    if (!domainRegex.test(args.domainUrl)) {
+      throw new Error(
+        'Invalid domain format. Use format: api.example.com (no http:// or trailing /)'
+      )
+    }
+
+    // Update agent with domain
+    await ctx.db.patch(agent._id, {
+      domainUrl: args.domainUrl,
+      updatedAt: Date.now(),
+    })
+
+    // Log domain registration event
+    await ctx.db.insert('discoveryEvents', {
+      eventType: 'domain_registered',
+      ghostAddress: args.ghostAddress,
+      timestamp: Date.now(),
+    })
+
+    return {
+      success: true,
+      agentId: agent._id,
+      ghostAddress: args.ghostAddress,
+      domainUrl: args.domainUrl,
+      message: 'Domain registered successfully. Endpoint discovery will be triggered.',
+    }
+  },
+})

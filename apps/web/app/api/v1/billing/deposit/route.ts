@@ -19,6 +19,7 @@ import {
   type SubscriptionTier,
 } from '@/convex/lib/treasury'
 import { verifyTransaction } from '@/lib/solana/transaction'
+import { convertToUSD } from '@/lib/price-oracle'
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
@@ -85,18 +86,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get USD value of payment
-    // For SOL and GHOST, use approximate prices (in production, fetch from Jupiter)
-    let usdValue: number
-    if (body.paymentToken === 'USDC') {
-      usdValue = body.paymentAmount
-    } else if (body.paymentToken === 'SOL') {
-      // Approximate SOL price - in production, fetch from Jupiter API directly
-      usdValue = body.paymentAmount * 150
-    } else {
-      // GHOST - approximate price
-      usdValue = body.paymentAmount * 0.00001
-    }
+    // Get USD value of payment using real-time price oracle
+    // Falls back to CoinGecko if Jupiter fails, then to hardcoded prices
+    const usdValue = await convertToUSD(body.paymentAmount, body.paymentToken)
 
     // Calculate credits with GHOST bonus
     const credits = calculateCredits(usdValue, tier, body.paymentToken)

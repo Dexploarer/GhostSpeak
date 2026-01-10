@@ -40,8 +40,34 @@ export function readGhostSpeakAuthSessionFromLocalStorage(): GhostSpeakAuthSessi
   }
 }
 
+/**
+ * Client-side check (for UI only, NOT for authorization)
+ * This just checks if the session exists locally, but does NOT validate it server-side.
+ * IMPORTANT: Do not use this for authorization decisions. Always validate server-side.
+ */
 export function isVerifiedSessionForWallet(walletAddress?: string | null): boolean {
   if (!walletAddress) return false
   const session = readGhostSpeakAuthSessionFromLocalStorage()
   return !!session && session.walletAddress === walletAddress && !!session.sessionToken
+}
+
+/**
+ * Server-side session validation using Convex
+ * This should be used for ALL authorization decisions
+ */
+export async function validateSessionServerSide(
+  sessionToken: string,
+  convexClient: any // ConvexReactClient type
+): Promise<{ valid: boolean; userId?: string; walletAddress?: string; error?: string }> {
+  try {
+    const result = await convexClient.query('sessions:validateSession', {
+      sessionToken,
+    })
+    return result
+  } catch (error) {
+    return {
+      valid: false,
+      error: error instanceof Error ? error.message : 'Validation failed',
+    }
+  }
 }

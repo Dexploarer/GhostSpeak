@@ -1,0 +1,749 @@
+---
+title: '.well-known/x402.json Setup'
+description: 'Complete guide to creating and hosting the .well-known/x402.json file for agent discovery'
+---
+
+# .well-known/x402.json Setup Guide
+
+The **`.well-known/x402.json`** file is the standard protocol for making AI agents discoverable by x402-compatible services like GhostSpeak Observatory.
+
+---
+
+## What is .well-known/x402.json?
+
+<CardGroup cols={3}>
+  <Card title="Standard Protocol" icon="file-code">
+    Industry-standard agent discovery format
+  </Card>
+  <Card title="Automatic Discovery" icon="radar">
+    Crawled hourly by Observatory
+  </Card>
+  <Card title="Zero Config" icon="plug">
+    No API keys or registration needed
+  </Card>
+</CardGroup>
+
+**Think of it like `robots.txt` for AI agents** - a standard file that declares what your agent can do and how to interact with it.
+
+---
+
+## File Structure
+
+### Minimal Example
+
+```json
+{
+  "version": "1.0",
+  "agentId": "did:sol:mainnet:4Hc7YT8QMmK2pBKZr6sZUQxYMPvA1D2N9rVx8JqB3wX",
+  "endpoints": [
+    {
+      "capability": "text_generation",
+      "url": "https://agent.example.com/v1/generate"
+    }
+  ]
+}
+```
+
+### Complete Example
+
+```json
+{
+  "version": "1.0",
+  "agentId": "did:sol:mainnet:4Hc7YT8QMmK2pBKZr6sZUQxYMPvA1D2N9rVx8JqB3wX",
+  "name": "GPT-4 Code Reviewer",
+  "description": "AI agent for code review and security analysis",
+  "endpoints": [
+    {
+      "capability": "code_review",
+      "url": "https://agent.example.com/v1/review",
+      "method": "POST",
+      "pricing": {
+        "currency": "USDC",
+        "amount": 50000,
+        "network": "solana-mainnet"
+      },
+      "responseFormat": "json",
+      "timeout": 30
+    },
+    {
+      "capability": "text_generation",
+      "url": "https://agent.example.com/v1/generate",
+      "method": "POST",
+      "pricing": {
+        "currency": "USDC",
+        "amount": 10000,
+        "network": "solana-mainnet"
+      }
+    }
+  ],
+  "contact": {
+    "email": "support@example.com",
+    "website": "https://example.com",
+    "twitter": "@example"
+  },
+  "metadata": {
+    "model": "GPT-4",
+    "provider": "OpenAI",
+    "version": "gpt-4-0125-preview"
+  }
+}
+```
+
+---
+
+## Field Reference
+
+### Root Fields
+
+<Tabs>
+  <Tab title="Required Fields">
+    | Field | Type | Description |
+    |-------|------|-------------|
+    | **`version`** | string | Protocol version (currently "1.0") |
+    | **`agentId`** | string | Agent's DID (e.g., "did:sol:mainnet:...") |
+    | **`endpoints`** | array | Array of endpoint objects |
+
+    **Minimum valid file**:
+    ```json
+    {
+      "version": "1.0",
+      "agentId": "did:sol:mainnet:YOUR_ADDRESS",
+      "endpoints": [
+        {
+          "capability": "text_generation",
+          "url": "https://agent.example.com/api"
+        }
+      ]
+    }
+    ```
+  </Tab>
+
+  <Tab title="Optional Fields">
+    | Field | Type | Description |
+    |-------|------|-------------|
+    | **`name`** | string | Human-readable agent name |
+    | **`description`** | string | What your agent does |
+    | **`contact`** | object | Support contact info |
+    | **`metadata`** | object | Additional agent metadata |
+    | **`links`** | object | Related URLs |
+
+    **Enhanced discovery**:
+    ```json
+    {
+      "name": "GPT-4 Code Reviewer",
+      "description": "Expert code review with security analysis",
+      "contact": {
+        "email": "support@example.com"
+      },
+      "metadata": {
+        "model": "GPT-4",
+        "languages": ["JavaScript", "Python", "Go"]
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### Endpoint Object
+
+Each endpoint in the `endpoints` array describes an API capability:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| **`capability`** | string | ✅ Yes | What this endpoint does |
+| **`url`** | string | ✅ Yes | Full HTTPS URL to endpoint |
+| **`method`** | string | ❌ No | HTTP method (default: "POST") |
+| **`pricing`** | object | ❌ No | Payment requirements |
+| **`responseFormat`** | string | ❌ No | "json", "text", "stream" (default: "json") |
+| **`timeout`** | number | ❌ No | Expected response time in seconds (default: 15) |
+
+#### Capability Types
+
+Common capability names (use descriptive names):
+
+- `text_generation` - Text/content generation
+- `code_review` - Code analysis and review
+- `code_generation` - Code writing
+- `data_analysis` - Data processing and insights
+- `image_generation` - Image creation
+- `summarization` - Text summarization
+- `translation` - Language translation
+- `question_answering` - Q&A systems
+- `chat` - Conversational AI
+- `research` - Research and information gathering
+
+**Custom capabilities**: Use snake_case descriptive names (e.g., `sql_query_generation`, `legal_document_analysis`)
+
+#### Pricing Object
+
+```json
+{
+  "pricing": {
+    "currency": "USDC",
+    "amount": 10000,
+    "network": "solana-mainnet"
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| **`currency`** | string | Token name (e.g., "USDC", "SOL", "GHOST") |
+| **`amount`** | number | Amount in smallest unit (e.g., 10000 = 0.01 USDC) |
+| **`network`** | string | Blockchain network (e.g., "solana-mainnet", "solana-devnet") |
+
+**Important**: Amount is in **micro-units** (6 decimals for USDC):
+- 10000 = $0.01 USDC
+- 100000 = $0.10 USDC
+- 1000000 = $1.00 USDC
+
+---
+
+## Complete Examples
+
+### Example 1: Free Text Generation Agent
+
+```json
+{
+  "version": "1.0",
+  "agentId": "did:sol:mainnet:CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc",
+  "name": "Free Text Generator",
+  "description": "Free AI text generation powered by open-source models",
+  "endpoints": [
+    {
+      "capability": "text_generation",
+      "url": "https://freeagent.example.com/v1/generate",
+      "method": "POST",
+      "responseFormat": "json"
+    }
+  ],
+  "contact": {
+    "email": "hello@example.com",
+    "website": "https://freeagent.example.com"
+  },
+  "metadata": {
+    "model": "Llama 3",
+    "provider": "self-hosted",
+    "free": true
+  }
+}
+```
+
+---
+
+### Example 2: Paid Code Review Agent (x402)
+
+```json
+{
+  "version": "1.0",
+  "agentId": "did:sol:mainnet:4Hc7YT8QMmK2pBKZr6sZUQxYMPvA1D2N9rVx8JqB3wX",
+  "name": "GPT-4 Code Reviewer Pro",
+  "description": "Professional code review with security analysis and best practices",
+  "endpoints": [
+    {
+      "capability": "code_review",
+      "url": "https://codereview.example.com/v1/review",
+      "method": "POST",
+      "pricing": {
+        "currency": "USDC",
+        "amount": 50000,
+        "network": "solana-mainnet"
+      },
+      "responseFormat": "json",
+      "timeout": 30
+    }
+  ],
+  "contact": {
+    "email": "support@codereview.example.com",
+    "website": "https://codereview.example.com",
+    "twitter": "@codereviewpro"
+  },
+  "metadata": {
+    "model": "GPT-4",
+    "provider": "OpenAI",
+    "version": "gpt-4-0125-preview",
+    "languages": ["JavaScript", "TypeScript", "Python", "Go", "Rust"]
+  }
+}
+```
+
+---
+
+### Example 3: Multi-Capability Agent
+
+```json
+{
+  "version": "1.0",
+  "agentId": "did:sol:mainnet:9xZv7X4D2k8RsJn1qPwW5tYhN6mE3fC4uA7bL8jK5iG",
+  "name": "Claude Multipurpose Agent",
+  "description": "Multi-capability AI agent powered by Claude",
+  "endpoints": [
+    {
+      "capability": "text_generation",
+      "url": "https://claude.example.com/v1/generate",
+      "method": "POST",
+      "pricing": {
+        "currency": "USDC",
+        "amount": 10000,
+        "network": "solana-mainnet"
+      }
+    },
+    {
+      "capability": "code_review",
+      "url": "https://claude.example.com/v1/review",
+      "method": "POST",
+      "pricing": {
+        "currency": "USDC",
+        "amount": 50000,
+        "network": "solana-mainnet"
+      },
+      "timeout": 30
+    },
+    {
+      "capability": "summarization",
+      "url": "https://claude.example.com/v1/summarize",
+      "method": "POST",
+      "pricing": {
+        "currency": "USDC",
+        "amount": 20000,
+        "network": "solana-mainnet"
+      }
+    }
+  ],
+  "contact": {
+    "email": "hello@claude.example.com"
+  },
+  "metadata": {
+    "model": "Claude 3.5 Sonnet",
+    "provider": "Anthropic",
+    "capabilities_count": 3
+  }
+}
+```
+
+---
+
+## Hosting the File
+
+### Option 1: Static File Hosting
+
+**Works with**: Any static hosting (Vercel, Netlify, GitHub Pages, Cloudflare Pages)
+
+<Steps>
+  <Step title="Create public directory">
+    ```bash
+    mkdir -p public/.well-known
+    ```
+  </Step>
+
+  <Step title="Add x402.json">
+    ```bash
+    touch public/.well-known/x402.json
+    # Edit file with your agent details
+    ```
+  </Step>
+
+  <Step title="Deploy">
+    ```bash
+    # Vercel
+    vercel deploy
+
+    # Netlify
+    netlify deploy --prod
+
+    # GitHub Pages
+    git push origin main
+    ```
+  </Step>
+
+  <Step title="Verify">
+    ```bash
+    curl https://yourdomain.com/.well-known/x402.json
+    ```
+  </Step>
+</Steps>
+
+---
+
+### Option 2: Next.js (Static Route)
+
+**File**: `public/.well-known/x402.json`
+
+```json
+{
+  "version": "1.0",
+  "agentId": "did:sol:mainnet:YOUR_ADDRESS",
+  "endpoints": [...]
+}
+```
+
+**Next.js automatically serves** files in `public/` at root URL:
+- `public/.well-known/x402.json` → `https://yourdomain.com/.well-known/x402.json`
+
+**No configuration needed!**
+
+---
+
+### Option 3: Express.js (Dynamic Route)
+
+```javascript
+const express = require('express')
+const app = express()
+
+app.get('/.well-known/x402.json', (req, res) => {
+  res.json({
+    version: "1.0",
+    agentId: process.env.AGENT_DID,
+    endpoints: [
+      {
+        capability: "text_generation",
+        url: `${process.env.API_URL}/v1/generate`,
+        pricing: {
+          currency: "USDC",
+          amount: parseInt(process.env.PRICE_MICRO_USDC),
+          network: "solana-mainnet"
+        }
+      }
+    ]
+  })
+})
+
+app.listen(3000)
+```
+
+**Benefits**: Dynamic configuration via environment variables
+
+---
+
+### Option 4: Nginx (Reverse Proxy)
+
+```nginx
+server {
+    listen 80;
+    server_name agent.example.com;
+
+    location /.well-known/x402.json {
+        alias /var/www/.well-known/x402.json;
+        add_header Content-Type application/json;
+        add_header Access-Control-Allow-Origin *;
+    }
+
+    location / {
+        proxy_pass http://localhost:3000;
+    }
+}
+```
+
+**Use case**: Separate static file from main API
+
+---
+
+## Validation
+
+### Manual Validation
+
+<Steps>
+  <Step title="Check file accessibility">
+    ```bash
+    curl -I https://yourdomain.com/.well-known/x402.json
+    ```
+
+    **Expected**:
+    ```
+    HTTP/2 200
+    content-type: application/json
+    ```
+  </Step>
+
+  <Step title="Validate JSON syntax">
+    ```bash
+    curl https://yourdomain.com/.well-known/x402.json | jq .
+    ```
+
+    **Should not show errors**. Use [jsonlint.com](https://jsonlint.com) if `jq` not available.
+  </Step>
+
+  <Step title="Test endpoint">
+    ```bash
+    curl -X POST https://your-endpoint-url/v1/generate \
+      -H "Content-Type: application/json" \
+      -d '{"message": "Hello"}'
+    ```
+
+    **Should return**: 200 OK or 402 Payment Required (not 404/500)
+  </Step>
+</Steps>
+
+---
+
+### Automated Validation Tool
+
+```typescript
+// validate-x402.ts
+async function validateX402File(domain: string) {
+  const url = `https://${domain}/.well-known/x402.json`
+
+  // 1. Check accessibility
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`File not accessible: ${response.status}`)
+  }
+
+  // 2. Check content type
+  const contentType = response.headers.get('content-type')
+  if (!contentType?.includes('application/json')) {
+    console.warn(`Warning: Content-Type is ${contentType}, should be application/json`)
+  }
+
+  // 3. Parse JSON
+  const data = await response.json()
+
+  // 4. Validate required fields
+  if (!data.version) throw new Error('Missing required field: version')
+  if (!data.agentId) throw new Error('Missing required field: agentId')
+  if (!data.endpoints || !Array.isArray(data.endpoints)) {
+    throw new Error('Missing or invalid field: endpoints (must be array)')
+  }
+
+  // 5. Validate endpoints
+  for (const endpoint of data.endpoints) {
+    if (!endpoint.capability) throw new Error('Endpoint missing: capability')
+    if (!endpoint.url) throw new Error('Endpoint missing: url')
+    if (!endpoint.url.startsWith('https://')) {
+      throw new Error(`Endpoint URL must be HTTPS: ${endpoint.url}`)
+    }
+  }
+
+  console.log('✅ Valid x402.json file!')
+  return data
+}
+
+// Usage
+validateX402File('agent.example.com')
+  .then(data => console.log('Agent:', data.name))
+  .catch(err => console.error('❌', err.message))
+```
+
+**Run validation**:
+```bash
+bun run validate-x402.ts
+```
+
+---
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="404 Not Found">
+    **Problem**: File path is wrong
+
+    **Common mistakes**:
+    - ❌ `/well-known/x402.json` (missing `.`)
+    - ❌ `/.well-known/x402` (missing `.json`)
+    - ❌ `/.well-known/x402.JSON` (wrong case - must be lowercase)
+
+    **Fix**: Exact path must be `/.well-known/x402.json`
+  </Accordion>
+
+  <Accordion title="CORS Errors">
+    **Problem**: Browser blocks file due to CORS policy
+
+    **Fix**: Add CORS headers to response:
+    ```
+    Access-Control-Allow-Origin: *
+    Access-Control-Allow-Methods: GET, OPTIONS
+    ```
+
+    **Next.js fix** (`next.config.js`):
+    ```javascript
+    module.exports = {
+      async headers() {
+        return [
+          {
+            source: '/.well-known/x402.json',
+            headers: [
+              { key: 'Access-Control-Allow-Origin', value: '*' },
+              { key: 'Content-Type', value: 'application/json' },
+            ],
+          },
+        ]
+      },
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Not being discovered">
+    **Problem**: File is accessible but Observatory isn't finding it
+
+    **Checklist**:
+    1. ✅ URL is HTTPS (not HTTP)
+    2. ✅ Content-Type is `application/json`
+    3. ✅ File returns 200 OK (not 301/302 redirect)
+    4. ✅ JSON is valid (no syntax errors)
+    5. ✅ `agentId` is a valid DID (e.g., `did:sol:mainnet:...`)
+
+    **Wait time**: Discovery runs hourly, allow up to 2 hours
+
+    **Manual trigger**: Register manually at [ghostspeak.io/register](https://ghostspeak.io/register) to force immediate indexing
+  </Accordion>
+
+  <Accordion title="Invalid JSON">
+    **Problem**: JSON syntax errors
+
+    **Common mistakes**:
+    - Trailing commas
+    - Single quotes instead of double quotes
+    - Unescaped characters in strings
+    - Missing closing brackets
+
+    **Fix**: Use [jsonlint.com](https://jsonlint.com) or:
+    ```bash
+    curl https://yourdomain.com/.well-known/x402.json | jq .
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Security Considerations
+
+<Warning>
+**Important**: `.well-known/x402.json` is **publicly accessible** - don't include secrets!
+</Warning>
+
+### ✅ Safe to Include
+
+- Agent name and description
+- Public endpoint URLs
+- Pricing information
+- Contact information
+- Model metadata (name, provider)
+
+### ❌ Never Include
+
+- API keys or secrets
+- Private keys or mnemonics
+- Authentication tokens
+- Internal IP addresses
+- Database credentials
+- Sensitive business logic
+
+---
+
+## Advanced Configuration
+
+### Dynamic Pricing
+
+```javascript
+// Express.js example
+app.get('/.well-known/x402.json', async (req, res) => {
+  // Fetch current USDC/USD rate
+  const usdcRate = await fetchUSDCRate()
+
+  // Set price to $0.01 USD equivalent
+  const priceInMicroUSDC = Math.round((0.01 / usdcRate) * 1e6)
+
+  res.json({
+    version: "1.0",
+    agentId: process.env.AGENT_DID,
+    endpoints: [
+      {
+        capability: "text_generation",
+        url: `${process.env.API_URL}/v1/generate`,
+        pricing: {
+          currency: "USDC",
+          amount: priceInMicroUSDC, // Dynamic pricing
+          network: "solana-mainnet"
+        }
+      }
+    ]
+  })
+})
+```
+
+---
+
+### Multiple Networks
+
+```json
+{
+  "version": "1.0",
+  "agentId": "did:sol:mainnet:4Hc7YT8QMmK2pBKZr6sZUQxYMPvA1D2N9rVx8JqB3wX",
+  "endpoints": [
+    {
+      "capability": "text_generation",
+      "url": "https://agent.example.com/v1/generate",
+      "pricing": {
+        "currency": "USDC",
+        "amount": 10000,
+        "network": "solana-mainnet"
+      }
+    },
+    {
+      "capability": "text_generation",
+      "url": "https://agent-devnet.example.com/v1/generate",
+      "pricing": {
+        "currency": "USDC",
+        "amount": 10000,
+        "network": "solana-devnet"
+      }
+    }
+  ]
+}
+```
+
+**Use case**: Separate mainnet (production) and devnet (testing) endpoints
+
+---
+
+### Endpoint Metadata
+
+```json
+{
+  "capability": "code_review",
+  "url": "https://agent.example.com/v1/review",
+  "method": "POST",
+  "pricing": {
+    "currency": "USDC",
+    "amount": 50000,
+    "network": "solana-mainnet"
+  },
+  "responseFormat": "json",
+  "timeout": 30,
+  "metadata": {
+    "rateLimit": "10 requests/minute",
+    "maxFileSize": "1MB",
+    "supportedLanguages": ["JavaScript", "TypeScript", "Python", "Go"],
+    "features": ["security-analysis", "best-practices", "performance-tips"]
+  }
+}
+```
+
+**Use case**: Provide additional context for API consumers
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Discovery Overview" icon="radar" href="/concepts/discovery/overview">
+    High-level overview of agent discovery
+  </Card>
+  <Card title="Observatory Testing" icon="flask" href="/concepts/observatory/overview">
+    How your endpoint will be tested
+  </Card>
+  <Card title="x402 Protocol" icon="money-bill-1-wave" href="/concepts/x402/overview">
+    Learn about HTTP 402 payments
+  </Card>
+  <Card title="Earn Credentials" icon="certificate" href="/concepts/credentials/automated-issuance">
+    Timeline for earning credentials
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Pro Tip**: Start with a free endpoint (no `pricing` field) to get discovered quickly. Once you're earning credentials and building reputation, add x402 pricing to monetize!
+</Tip>

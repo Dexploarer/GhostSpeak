@@ -146,6 +146,30 @@ export const pollX402Transactions = action({
           console.log(
             `[X402 Indexer Action] Discovered: ${payment.payer} (${payment.amount} lamports)`
           )
+
+          // Automatically discover and register endpoints for newly discovered agents
+          try {
+            console.log(`[X402 Indexer Action] Attempting endpoint discovery for ${payment.payer}`)
+            const endpointResult = await ctx.runAction(api.agentEndpointDiscovery.discoverAndRegisterEndpoints, {
+              agentAddress: payment.payer,
+            })
+
+            if (endpointResult.success && endpointResult.registered > 0) {
+              console.log(
+                `[X402 Indexer Action] Auto-registered ${endpointResult.registered} endpoints for ${payment.payer}`
+              )
+            } else if (endpointResult.discovered === 0) {
+              console.log(
+                `[X402 Indexer Action] No endpoints discovered for ${payment.payer} (agent may not have discovery endpoint)`
+              )
+            }
+          } catch (endpointError) {
+            // Non-blocking: log error but continue processing other agents
+            console.warn(
+              `[X402 Indexer Action] Failed to discover endpoints for ${payment.payer}:`,
+              endpointError instanceof Error ? endpointError.message : String(endpointError)
+            )
+          }
         } catch (error) {
           console.error(
             `[X402 Indexer Action] Failed to process transaction ${sig.signature}:`,

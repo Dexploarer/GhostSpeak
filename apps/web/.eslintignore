@@ -1,0 +1,9 @@
+# ESLint ignore file
+node_modules/
+.next/
+out/
+dist/
+build/
+.turbo/
+convex/_generated/
+.well-known/

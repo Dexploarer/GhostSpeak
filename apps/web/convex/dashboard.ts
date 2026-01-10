@@ -12,7 +12,7 @@
  */
 
 import { v } from 'convex/values'
-import { query, mutation } from './_generated/server'
+import { query, mutation, internalMutation } from './_generated/server'
 import {
   calculateEctoScore,
   getEctoScoreTier,
@@ -436,6 +436,8 @@ function calculateAchievements(data: {
 /**
  * Get user's percentile ranking based on Ghosthunter Score
  * (Customer/Hunter percentile ranking)
+ *
+ * OPTIMIZED VERSION: Uses pre-computed scores from users table instead of N+1 queries
  */
 export const getUserPercentile = query({
   args: {
@@ -452,72 +454,32 @@ export const getUserPercentile = query({
       return null
     }
 
-    const now = Date.now()
+    // Use pre-computed ghosthunterScore from users table
+    const userScore = user.ghosthunterScore || 0
 
-    // Calculate user's Ghosthunter Score
-    const totalVerifications = await ctx.db
-      .query('verifications')
-      .withIndex('by_user', (q: any) => q.eq('userId', user._id))
+    // Get all users with their pre-computed scores using the index
+    // This is MUCH faster than querying all users and their related data
+    const allUsersWithScores = await ctx.db
+      .query('users')
+      .withIndex('by_ghosthunter_score')
       .collect()
 
-    const totalPayments = await ctx.db
-      .query('payments')
-      .withIndex('by_user', (q: any) => q.eq('userId', user._id))
-      .collect()
+    // Filter out users with no score (not customers)
+    const customersOnly = allUsersWithScores.filter((u) => (u.ghosthunterScore || 0) > 0)
 
-    const userReviews = await ctx.db
-      .query('reviews')
-      .withIndex('by_user', (q: any) => q.eq('userId', user._id))
-      .collect()
-
-    const completedPayments = totalPayments.filter((p) => p.status === 'completed')
-
-    const userScore = calculateGhosthunterScore({
-      totalVerifications: totalVerifications.length,
-      totalPayments: completedPayments.length,
-      reviewsWritten: userReviews.length,
-      accountAge: now - user.createdAt,
-      boost: user.ghosthunterScore || 0,
-    })
-
-    // Get all users and calculate their Ghosthunter scores
-    const allUsers = await ctx.db.query('users').collect()
-
-    // Calculate scores for all users
-    const userScores: number[] = []
-
-    for (const u of allUsers) {
-      const uVerifications = await ctx.db
-        .query('verifications')
-        .withIndex('by_user', (q: any) => q.eq('userId', u._id))
-        .collect()
-
-      const uPayments = await ctx.db
-        .query('payments')
-        .withIndex('by_user', (q: any) => q.eq('userId', u._id))
-        .collect()
-
-      const uReviews = await ctx.db
-        .query('reviews')
-        .withIndex('by_user', (q: any) => q.eq('userId', u._id))
-        .collect()
-
-      const uCompletedPayments = uPayments.filter((p) => p.status === 'completed')
-
-      const score = calculateGhosthunterScore({
-        totalVerifications: uVerifications.length,
-        totalPayments: uCompletedPayments.length,
-        reviewsWritten: uReviews.length,
-        accountAge: now - u.createdAt,
-        boost: u.ghosthunterScore || 0,
-      })
-
-      userScores.push(score)
+    if (customersOnly.length === 0) {
+      // No other customers yet
+      return {
+        percentile: 100,
+        topPercentage: 1,
+        totalUsers: 1,
+        userScore,
+      }
     }
 
-    // Calculate percentile
-    const usersBelow = userScores.filter((score) => score < userScore).length
-    const percentile = Math.round((usersBelow / allUsers.length) * 100)
+    // Calculate percentile using pre-computed scores
+    const usersBelow = customersOnly.filter((u) => (u.ghosthunterScore || 0) < userScore).length
+    const percentile = Math.round((usersBelow / customersOnly.length) * 100)
 
     // Return top X% (inverted - if you're at 90th percentile, you're top 10%)
     const topPercentage = 100 - percentile
@@ -525,8 +487,70 @@ export const getUserPercentile = query({
     return {
       percentile,
       topPercentage: Math.max(1, topPercentage), // At least top 100%
-      totalUsers: allUsers.length,
+      totalUsers: customersOnly.length,
       userScore,
+    }
+  },
+})
+
+/**
+ * Recompute Ghosthunter scores for all users (should be run by a cron job)
+ * This keeps the pre-computed scores in sync with actual activity
+ */
+export const recomputeGhosthunterScores = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now()
+    const allUsers = await ctx.db.query('users').collect()
+
+    let updatedCount = 0
+
+    for (const user of allUsers) {
+      // Get user's activity data
+      const totalVerifications = await ctx.db
+        .query('verifications')
+        .withIndex('by_user', (q: any) => q.eq('userId', user._id))
+        .collect()
+
+      const totalPayments = await ctx.db
+        .query('payments')
+        .withIndex('by_user', (q: any) => q.eq('userId', user._id))
+        .collect()
+
+      const userReviews = await ctx.db
+        .query('reviews')
+        .withIndex('by_user', (q: any) => q.eq('userId', user._id))
+        .collect()
+
+      const completedPayments = totalPayments.filter((p) => p.status === 'completed')
+
+      // Calculate new score
+      const newScore = calculateGhosthunterScore({
+        totalVerifications: totalVerifications.length,
+        totalPayments: completedPayments.length,
+        reviewsWritten: userReviews.length,
+        accountAge: now - user.createdAt,
+        boost: 0, // Don't use old score as boost when recomputing
+      })
+
+      const newTier = getGhosthunterScoreTier(newScore)
+
+      // Only update if score changed
+      if (user.ghosthunterScore !== newScore || user.ghosthunterTier !== newTier) {
+        await ctx.db.patch(user._id, {
+          ghosthunterScore: newScore,
+          ghosthunterTier: newTier,
+          ghosthunterScoreLastUpdated: now,
+          isCustomer: totalVerifications.length > 0 || completedPayments.length > 0,
+        })
+        updatedCount++
+      }
+    }
+
+    return {
+      success: true,
+      updatedCount,
+      totalUsers: allUsers.length,
     }
   },
 })

@@ -9,6 +9,7 @@
  */
 
 import type * as agent from "../agent.js";
+import type * as agentEndpointDiscovery from "../agentEndpointDiscovery.js";
 import type * as agents from "../agents.js";
 import type * as analytics from "../analytics.js";
 import type * as apiKeyHelpers from "../apiKeyHelpers.js";
@@ -27,6 +28,7 @@ import type * as lib_api_keys from "../lib/api_keys.js";
 import type * as lib_caisper from "../lib/caisper.js";
 import type * as lib_caisperX402 from "../lib/caisperX402.js";
 import type * as lib_credits from "../lib/credits.js";
+import type * as lib_endpointDiscovery from "../lib/endpointDiscovery.js";
 import type * as lib_networkMetadata from "../lib/networkMetadata.js";
 import type * as lib_scoring from "../lib/scoring.js";
 import type * as lib_treasury from "../lib/treasury.js";
@@ -41,6 +43,7 @@ import type * as rag_sync from "../rag_sync.js";
 import type * as reports from "../reports.js";
 import type * as scripts_seedAgentDirectory from "../scripts/seedAgentDirectory.js";
 import type * as scripts_seedDashboardData from "../scripts/seedDashboardData.js";
+import type * as sessions from "../sessions.js";
 import type * as solanaAuth from "../solanaAuth.js";
 import type * as users from "../users.js";
 import type * as workflow_sync from "../workflow_sync.js";
@@ -54,6 +57,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   agent: typeof agent;
+  agentEndpointDiscovery: typeof agentEndpointDiscovery;
   agents: typeof agents;
   analytics: typeof analytics;
   apiKeyHelpers: typeof apiKeyHelpers;
@@ -72,6 +76,7 @@ declare const fullApi: ApiFromModules<{
   "lib/caisper": typeof lib_caisper;
   "lib/caisperX402": typeof lib_caisperX402;
   "lib/credits": typeof lib_credits;
+  "lib/endpointDiscovery": typeof lib_endpointDiscovery;
   "lib/networkMetadata": typeof lib_networkMetadata;
   "lib/scoring": typeof lib_scoring;
   "lib/treasury": typeof lib_treasury;
@@ -86,6 +91,7 @@ declare const fullApi: ApiFromModules<{
   reports: typeof reports;
   "scripts/seedAgentDirectory": typeof scripts_seedAgentDirectory;
   "scripts/seedDashboardData": typeof scripts_seedDashboardData;
+  sessions: typeof sessions;
   solanaAuth: typeof solanaAuth;
   users: typeof users;
   workflow_sync: typeof workflow_sync;

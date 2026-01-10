@@ -6,7 +6,7 @@
  */
 
 import { v } from 'convex/values'
-import { query, internalMutation } from './_generated/server'
+import { query, mutation, internalMutation } from './_generated/server'
 import { internal } from './_generated/api'
 import {
   calculateEctoScore,
@@ -14,6 +14,47 @@ import {
   getEctoScoreTier,
   getGhosthunterScoreTier,
 } from './lib/scoring'
+
+/**
+ * Ensure user exists - create if not found, update lastActive if exists
+ * Call this from the frontend when a wallet connects
+ */
+export const ensureUser = mutation({
+  args: {
+    walletAddress: v.string(),
+    email: v.optional(v.string()),
+    name: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query('users')
+      .withIndex('by_wallet_address', (q) => q.eq('walletAddress', args.walletAddress))
+      .first()
+
+    const now = Date.now()
+
+    if (existing) {
+      // Update last active time and optional metadata
+      await ctx.db.patch(existing._id, {
+        lastActiveAt: now,
+        ...(args.email && { email: args.email }),
+        ...(args.name && { name: args.name }),
+      })
+      return { userId: existing._id, isNew: false }
+    }
+
+    // Create new user
+    const userId = await ctx.db.insert('users', {
+      walletAddress: args.walletAddress,
+      email: args.email,
+      name: args.name,
+      createdAt: now,
+      lastActiveAt: now,
+    })
+
+    return { userId, isNew: true }
+  },
+})
 
 /**
  * Get basic user profile

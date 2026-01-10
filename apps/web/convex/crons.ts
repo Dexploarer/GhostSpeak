@@ -57,4 +57,24 @@ crons.cron(
   {}
 )
 
+// ─── SESSION MANAGEMENT ─────────────────────────────────────────────────────────
+
+// Cleanup expired sessions daily at 3:30am UTC (after user score updates)
+crons.cron(
+  'cleanup expired sessions',
+  '30 3 * * *', // Every day at 03:30 UTC
+  internal.sessions.cleanupExpiredSessions,
+  {}
+)
+
+// ─── DASHBOARD PERFORMANCE ─────────────────────────────────────────────────────
+
+// Recompute Ghosthunter scores hourly for dashboard queries
+crons.interval(
+  'recompute ghosthunter scores',
+  { hours: 1 },
+  internal.dashboard.recomputeGhosthunterScores,
+  {}
+)
+
 export default crons

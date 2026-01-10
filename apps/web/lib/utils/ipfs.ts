@@ -5,11 +5,13 @@
  * Uses web3.storage or similar IPFS pinning service.
  */
 
-// IPFS Gateway URLs for reading
+// IPFS Gateway URLs for reading (prioritize custom Pinata gateway)
 const IPFS_GATEWAYS = [
+  process.env.NEXT_PUBLIC_PINATA_GATEWAY
+    ? `${process.env.NEXT_PUBLIC_PINATA_GATEWAY.replace(/\/ipfs\/?$/, '')}/ipfs/`
+    : 'https://gateway.pinata.cloud/ipfs/',
   'https://ipfs.io/ipfs/',
   'https://cloudflare-ipfs.com/ipfs/',
-  'https://gateway.pinata.cloud/ipfs/',
 ]
 
 /**

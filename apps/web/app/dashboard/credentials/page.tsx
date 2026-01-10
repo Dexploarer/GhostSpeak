@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { PublicKey } from '@solana/web3.js'
+import { address } from '@solana/addresses'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { StatusBadge } from '@/components/ui/enhanced/StatusBadge'
@@ -67,7 +67,9 @@ function normalizeSolanaAddress(input: string): { ok: true; address: string } | 
   const trimmed = input.trim()
   if (!trimmed) return { ok: false }
   try {
-    return { ok: true, address: new PublicKey(trimmed).toBase58() }
+    // Use Solana v5 address function which validates and returns base58 string
+    const addr = address(trimmed)
+    return { ok: true, address: addr }
   } catch {
     return { ok: false }
   }

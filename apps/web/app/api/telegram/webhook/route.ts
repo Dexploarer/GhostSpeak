@@ -24,8 +24,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Telegraf } from 'telegraf'
 import { Update } from 'telegraf/types'
 import { processAgentMessage } from '@/server/elizaos/runtime'
-import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
+import { getConvexClient } from '@/lib/convex-client'
 import {
   extractMessageText,
   extractUserId,
@@ -45,7 +45,6 @@ import {
 } from '@/lib/telegram/groupChatLogic'
 
 // Initialize Convex client
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
 // Initialize Telegraf bot
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN || '')
@@ -160,7 +159,7 @@ export async function POST(req: NextRequest) {
     if (!inGroup) {
       try {
         // Check quota (Telegram users treated as free tier unless upgraded)
-        const quota = await convex.query(api.messageQuota.checkMessageQuota, { walletAddress })
+        const quota = await getConvexClient().query(api.messageQuota.checkMessageQuota, { walletAddress })
 
         if (!quota.canSend) {
           console.log(`🚫 Quota exceeded for ${userId}: ${quota.currentCount}/${quota.limit}`)
@@ -192,7 +191,7 @@ export async function POST(req: NextRequest) {
 
     // Store user message in Convex
     try {
-      await convex.mutation(api.agent.storeUserMessage, {
+      await getConvexClient().mutation(api.agent.storeUserMessage, {
         walletAddress,
         message: messageText,
       })
@@ -224,7 +223,7 @@ export async function POST(req: NextRequest) {
 
     // Store agent response in Convex
     try {
-      await convex.mutation(api.agent.storeAgentResponse, {
+      await getConvexClient().mutation(api.agent.storeAgentResponse, {
         walletAddress,
         response: agentResponse.text,
         actionTriggered: agentResponse.action,
@@ -254,7 +253,7 @@ export async function POST(req: NextRequest) {
     // Increment message count (only for DMs, not groups)
     if (!inGroup) {
       try {
-        await convex.mutation(api.messageQuota.incrementMessageCount, { walletAddress })
+        await getConvexClient().mutation(api.messageQuota.incrementMessageCount, { walletAddress })
       } catch (error) {
         console.warn('Failed to increment message count:', error)
       }
@@ -375,7 +374,7 @@ async function handleCommand(
     case 'quota':
       try {
         const session = telegramUserToSession(parseInt(userId.replace('telegram_', '')))
-        const quota = await convex.query(api.messageQuota.checkMessageQuota, {
+        const quota = await getConvexClient().query(api.messageQuota.checkMessageQuota, {
           walletAddress: session.walletAddress,
         })
 

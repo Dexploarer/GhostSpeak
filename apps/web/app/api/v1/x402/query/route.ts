@@ -5,12 +5,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { requireX402Payment } from '@/lib/x402-middleware'
 import { checkRateLimit } from '@/lib/rate-limit'
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+import { getConvexClient } from '@/lib/convex-client'
 
 export async function POST(req: NextRequest) {
   // Rate limit check
@@ -38,12 +36,12 @@ export async function POST(req: NextRequest) {
     // If agent address provided, fetch agent data and endpoint
     if (agentAddress) {
       try {
-        agentData = await convex.query(api.ghostDiscovery.getDiscoveredAgent, {
+        agentData = await getConvexClient().query(api.ghostDiscovery.getDiscoveredAgent, {
           ghostAddress: agentAddress,
         })
 
         // Check for observed endpoints
-        const endpoints = await convex.query(api.observation.listEndpoints, {
+        const endpoints = await getConvexClient().query(api.observation.listEndpoints, {
           agentAddress: agentAddress,
           activeOnly: true,
           limit: 1,

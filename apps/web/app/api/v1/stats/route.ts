@@ -4,15 +4,13 @@
  * GET /api/v1/stats - Get comprehensive platform statistics
  */
 
-import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+import { getConvexClient } from '@/lib/convex-client'
 
 export async function GET() {
   try {
     // Fetch all stats in parallel
-    const discoveryStats = await convex.query(api.ghostDiscovery.getDiscoveryStats, {})
+    const discoveryStats = await getConvexClient().query(api.ghostDiscovery.getDiscoveryStats, {})
 
     return Response.json(
       {

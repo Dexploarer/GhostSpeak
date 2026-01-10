@@ -4,11 +4,9 @@
  * GET /api/v1/billing/balance - Get user's credit balance and tier info
  */
 
-import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { NextRequest } from 'next/server'
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+import { getConvexClient } from '@/lib/convex-client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,7 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get credit balance from Convex
-    const balance = await convex.query(api.lib.credits.getBalance, { walletAddress })
+    const balance = await getConvexClient().query(api.lib.credits.getBalance, { walletAddress })
 
     if (!balance) {
       return Response.json(
@@ -45,7 +43,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get pricing info
-    const pricing = await convex.query(api.lib.credits.getPricing, { walletAddress })
+    const pricing = await getConvexClient().query(api.lib.credits.getPricing, { walletAddress })
 
     return Response.json(
       {

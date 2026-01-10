@@ -6,12 +6,10 @@
  * GET /api/v1/discovery/:address - Get specific agent details
  */
 
-import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { NextRequest } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+import { getConvexClient } from '@/lib/convex-client'
 
 export async function GET(request: NextRequest) {
   // Rate limit check
@@ -31,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     // If address is provided, get specific agent
     if (address) {
-      const agent = await convex.query(api.ghostDiscovery.getDiscoveredAgent, {
+      const agent = await getConvexClient().query(api.ghostDiscovery.getDiscoveredAgent, {
         ghostAddress: address,
       })
 
@@ -69,8 +67,8 @@ export async function GET(request: NextRequest) {
 
     // List agents with filters
     const [agents, stats] = await Promise.all([
-      convex.query(api.ghostDiscovery.listDiscoveredAgents, { status, limit }),
-      convex.query(api.ghostDiscovery.getDiscoveryStats, {}),
+      getConvexClient().query(api.ghostDiscovery.listDiscoveredAgents, { status, limit }),
+      getConvexClient().query(api.ghostDiscovery.getDiscoveryStats, {}),
     ])
 
     return Response.json(

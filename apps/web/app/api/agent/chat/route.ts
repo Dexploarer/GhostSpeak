@@ -16,12 +16,11 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { processAgentMessage } from '@/server/elizaos/runtime'
-import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { completeWideEvent } from '@/lib/logging/hooks'
+import { getConvexClient } from '@/lib/convex-client'
 
 // Initialize Convex client
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
 export async function POST(req: NextRequest) {
   const correlationId = req.headers.get('x-correlation-id') || `corr_${Date.now()}`
@@ -73,10 +72,10 @@ export async function POST(req: NextRequest) {
     } else {
       try {
         // Check and update tier (refreshes balance if cache expired)
-        await convex.action(api.checkGhostBalance.checkAndUpdateTier, { walletAddress })
+        await getConvexClient().action(api.checkGhostBalance.checkAndUpdateTier, { walletAddress })
 
         // Check quota
-        const quota = await convex.query(api.messageQuota.checkMessageQuota, { walletAddress })
+        const quota = await getConvexClient().query(api.messageQuota.checkMessageQuota, { walletAddress })
 
         if (!quota.canSend) {
           console.log(`🚫 Message quota exceeded for ${walletAddress}: ${quota.currentCount}/${quota.limit}`)
@@ -111,11 +110,10 @@ export async function POST(req: NextRequest) {
 
     console.log(`📨 Received message from ${walletAddress}: ${message}`)
 
-
     // Try to store user message in Convex (optional)
     try {
       if (process.env.NEXT_PUBLIC_CONVEX_URL) {
-        await convex.mutation(api.agent.storeUserMessage, {
+        await getConvexClient().mutation(api.agent.storeUserMessage, {
           walletAddress,
           message,
         })
@@ -138,7 +136,7 @@ export async function POST(req: NextRequest) {
     // Try to store agent response in Convex (optional)
     try {
       if (process.env.NEXT_PUBLIC_CONVEX_URL) {
-        await convex.mutation(api.agent.storeAgentResponse, {
+        await getConvexClient().mutation(api.agent.storeAgentResponse, {
           walletAddress,
           response: agentResponse.text,
           actionTriggered: agentResponse.action,
@@ -172,7 +170,7 @@ export async function POST(req: NextRequest) {
 
     // Increment message count after successful response
     try {
-      await convex.mutation(api.messageQuota.incrementMessageCount, { walletAddress })
+      await getConvexClient().mutation(api.messageQuota.incrementMessageCount, { walletAddress })
     } catch (quotaError) {
       console.warn('Failed to increment message count:', quotaError)
     }

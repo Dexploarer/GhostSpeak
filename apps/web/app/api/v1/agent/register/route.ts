@@ -5,12 +5,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { requireX402Payment } from '@/lib/x402-middleware'
 import { checkRateLimit, getRateLimitHeaders } from '@/lib/rate-limit'
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+import { getConvexClient } from '@/lib/convex-client'
 
 export async function POST(req: NextRequest) {
     // Rate limit check
@@ -42,7 +40,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Check if agent already exists
-        const existingAgent = await convex.query(api.ghostDiscovery.getDiscoveredAgent, {
+        const existingAgent = await getConvexClient().query(api.ghostDiscovery.getDiscoveredAgent, {
             ghostAddress: agentAddress,
         })
 
@@ -54,7 +52,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Register agent
-        const result = await convex.mutation(api.ghostDiscovery.bulkImportDiscoveredAgents, {
+        const result = await getConvexClient().mutation(api.ghostDiscovery.bulkImportDiscoveredAgents, {
             agents: [{
                 ghostAddress: agentAddress,
                 firstTxSignature: `api_registration_${Date.now()}`,
@@ -70,7 +68,7 @@ export async function POST(req: NextRequest) {
                 // TODO: Require signed message proving ownership of agentAddress
                 // For now, mark as self-update but log warning
                 console.warn(`[Agent Register] Metadata update without signature verification for ${agentAddress}`)
-                await convex.mutation(api.ghostDiscovery.updateAgentMetadata, {
+                await getConvexClient().mutation(api.ghostDiscovery.updateAgentMetadata, {
                     ghostAddress: agentAddress,
                     callerWallet: agentAddress, // NOTE: This allows self-registration
                     name,
@@ -95,7 +93,7 @@ export async function POST(req: NextRequest) {
                         continue // Skip invalid URLs instead of crashing
                     }
 
-                    await convex.mutation(api.observation.addEndpoint, {
+                    await getConvexClient().mutation(api.observation.addEndpoint, {
                         agentAddress,
                         baseUrl,
                         endpoint: ep.endpoint,

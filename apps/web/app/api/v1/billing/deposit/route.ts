@@ -8,7 +8,6 @@
  * GHOST token holders get bonus credits based on their tier.
  */
 
-import { ConvexHttpClient } from 'convex/browser'
 import { api, internal } from '@/convex/_generated/api'
 import { NextRequest } from 'next/server'
 import {
@@ -20,8 +19,7 @@ import {
 } from '@/convex/lib/treasury'
 import { verifyTransaction } from '@/lib/solana/transaction'
 import { convertToUSD } from '@/lib/price-oracle'
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+import { getConvexClient } from '@/lib/convex-client'
 
 interface DepositRequest {
   walletAddress: string
@@ -65,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user's tier for pricing
-    const balance = await convex.query(api.lib.credits.getBalance, {
+    const balance = await getConvexClient().query(api.lib.credits.getBalance, {
       walletAddress: body.walletAddress,
     })
 
@@ -94,7 +92,7 @@ export async function POST(request: NextRequest) {
     const credits = calculateCredits(usdValue, tier, body.paymentToken)
 
     // Add credits to user's balance using public mutation
-    const result = await convex.mutation(api.lib.credits.addCreditsPublic, {
+    const result = await getConvexClient().mutation(api.lib.credits.addCreditsPublic, {
       walletAddress: body.walletAddress,
       credits,
       paymentToken: body.paymentToken,

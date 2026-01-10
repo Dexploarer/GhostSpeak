@@ -4,9 +4,9 @@
  * GET /api/v1/health - Service health and status
  */
 
-import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { completeWideEvent } from '@/lib/logging/wide-event'
+import { getConvexClient } from '@/lib/convex-client'
 
 export async function GET(request: Request) {
   const startTime = Date.now()
@@ -21,9 +21,8 @@ export async function GET(request: Request) {
     try {
       // Test Convex connection (optional - don't fail if it doesn't work)
       if (process.env.NEXT_PUBLIC_CONVEX_URL) {
-        const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL)
-        const convexStart = Date.now()
-        await convex.query(api.ghostDiscovery.getDiscoveryStats, {})
+                const convexStart = Date.now()
+        await getConvexClient().query(api.ghostDiscovery.getDiscoveryStats, {})
         convexLatency = Date.now() - convexStart
         convexStatus = 'up'
       } else {

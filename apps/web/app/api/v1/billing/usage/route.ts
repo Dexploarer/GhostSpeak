@@ -4,11 +4,9 @@
  * GET /api/v1/billing/usage - Get user's API usage history and credit consumption
  */
 
-import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { NextRequest } from 'next/server'
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+import { getConvexClient } from '@/lib/convex-client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,7 +31,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get usage data from Convex
-    const usage = await convex.query(api.lib.credits.getUsageHistory, {
+    const usage = await getConvexClient().query(api.lib.credits.getUsageHistory, {
       walletAddress,
       days,
     })

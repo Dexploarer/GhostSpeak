@@ -5,12 +5,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { requireX402Payment } from '@/lib/x402-middleware'
 import { checkRateLimit } from '@/lib/rate-limit'
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+import { getConvexClient } from '@/lib/convex-client'
 
 export async function POST(req: NextRequest) {
     // Rate limit check
@@ -42,7 +40,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Check if agent exists
-        const agent = await convex.query(api.ghostDiscovery.getDiscoveredAgent, {
+        const agent = await getConvexClient().query(api.ghostDiscovery.getDiscoveredAgent, {
             ghostAddress: agentAddress,
         })
 
@@ -65,7 +63,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Claim agent
-        const result = await convex.mutation(api.ghostDiscovery.claimAgent, {
+        const result = await getConvexClient().mutation(api.ghostDiscovery.claimAgent, {
             ghostAddress: agentAddress,
             claimedBy,
             claimTxSignature: claimTxSignature || `api_claim_${Date.now()}`,

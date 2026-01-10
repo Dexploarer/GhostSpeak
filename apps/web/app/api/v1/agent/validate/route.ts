@@ -5,11 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { checkRateLimit } from '@/lib/rate-limit'
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+import { getConvexClient } from '@/lib/convex-client'
 
 export async function POST(req: NextRequest) {
     // Rate limit check
@@ -38,10 +36,10 @@ export async function POST(req: NextRequest) {
 
         // Fetch comprehensive agent data
         const [agent, credentials, scoreData, endpoints] = await Promise.all([
-            convex.query(api.ghostDiscovery.getDiscoveredAgent, { ghostAddress: agentAddress }),
-            convex.query(api.credentials.getAgentCredentialsPublic, { agentAddress }),
-            convex.query(api.ghostScoreCalculator.calculateAgentScore, { agentAddress }),
-            convex.query(api.observation.listEndpoints, { agentAddress }),
+            getConvexClient().query(api.ghostDiscovery.getDiscoveredAgent, { ghostAddress: agentAddress }),
+            getConvexClient().query(api.credentials.getAgentCredentialsPublic, { agentAddress }),
+            getConvexClient().query(api.ghostScoreCalculator.calculateAgentScore, { agentAddress }),
+            getConvexClient().query(api.observation.listEndpoints, { agentAddress }),
         ])
 
         if (!agent) {

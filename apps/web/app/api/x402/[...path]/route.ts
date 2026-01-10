@@ -18,11 +18,10 @@ import {
   createSettlementResponse,
   createErrorResponse,
 } from '@/convex/lib/x402Merchant'
-import { ConvexHttpClient } from 'convex/browser'
 import { api, internal } from '@/convex/_generated/api'
+import { getConvexClient } from '@/lib/convex-client'
 
 // Initialize Convex client
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
 // Default price for x402 services (in USDC)
 const DEFAULT_PRICE_USDC = 0.01 // 1 cent
@@ -60,7 +59,7 @@ const SERVICES: Record<
       }
       // Fetch ghost score from Convex
       try {
-        const score = await convex.query(api.ghostScoreCalculator.calculateAgentScore, {
+        const score = await getConvexClient().query(api.ghostScoreCalculator.calculateAgentScore, {
           agentAddress,
         })
         return { agentAddress, score }
@@ -87,7 +86,7 @@ const SERVICES: Record<
 // Get Caisper's wallet address for receiving payments
 async function getCaisperAddress(): Promise<string | null> {
   try {
-    const publicKey = await convex.query(api.lib.caisper.getCaisperPublicKey)
+    const publicKey = await getConvexClient().query(api.lib.caisper.getCaisperPublicKey)
     return publicKey
   } catch (error) {
     console.error('[x402Route] Failed to get Caisper address:', error)

@@ -4,13 +4,11 @@
  * GET /api/v1/agent/:address - Get comprehensive agent information
  */
 
-import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { NextRequest } from 'next/server'
 import { completeWideEvent } from '@/lib/logging/wide-event'
 import { checkRateLimit } from '@/lib/rate-limit'
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+import { getConvexClient } from '@/lib/convex-client'
 
 export async function GET(
   request: NextRequest,
@@ -43,8 +41,8 @@ export async function GET(
       return Response.json({ error: 'Invalid Solana address format' }, { status: 400 })
     }
 
-    // Use the Convex client initialized at module level
-    const client = convex
+    // Get Convex client (lazy initialization)
+    const client = getConvexClient()
 
     let discoveredAgent: {
       ghostAddress: string

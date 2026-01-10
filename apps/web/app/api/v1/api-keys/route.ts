@@ -18,13 +18,12 @@
  *  - Message: "revoke-key-{keyId}-{timestamp}"
  */
 
-import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 import { NextRequest } from 'next/server'
 import { Id } from '@/convex/_generated/dataModel'
 import { verifyWalletSignature } from '@/lib/auth/solana'
+import { getConvexClient } from '@/lib/convex-client'
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 const TIMESTAMP_TOLERANCE_MS = 5 * 60 * 1000 // 5 minutes
 
 function validateTimestamp(timestamp: string | number): boolean {
@@ -59,7 +58,7 @@ export async function GET(request: NextRequest) {
       return Response.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
-    const keys = await convex.query(api.lib.api_keys.listApiKeys, {
+    const keys = await getConvexClient().query(api.lib.api_keys.listApiKeys, {
       walletAddress,
     })
 
@@ -95,7 +94,7 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
-    const result = await convex.mutation(api.lib.api_keys.createApiKey, {
+    const result = await getConvexClient().mutation(api.lib.api_keys.createApiKey, {
       walletAddress,
       name,
     })
@@ -135,7 +134,7 @@ export async function DELETE(request: NextRequest) {
       return Response.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
-    await convex.mutation(api.lib.api_keys.revokeApiKey, {
+    await getConvexClient().mutation(api.lib.api_keys.revokeApiKey, {
       walletAddress,
       keyId: keyId as Id<'apiKeys'>,
     })

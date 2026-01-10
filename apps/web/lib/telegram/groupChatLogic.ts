@@ -95,11 +95,9 @@ export function containsKeywords(text: string): boolean {
  * Determine if bot should respond in a group chat
  *
  * Response logic (in order of priority):
- * 1. Always respond to direct mentions (@caisper)
+ * 1. Always respond to direct mentions (@caisper_bot)
  * 2. Always respond to replies to bot's messages
- * 3. Respond to messages with trigger keywords (configurable)
- * 4. Respect group-specific mute settings
- * 5. Rate limit responses (avoid spam)
+ * 3. Otherwise, stay silent (mention-only mode to prevent spam)
  */
 export async function shouldRespondInGroup(params: {
   message: Message
@@ -134,27 +132,8 @@ export async function shouldRespondInGroup(params: {
     }
   }
 
-  // 3. Check if group is muted
-  const isMuted = await isGroupMuted(chatId)
-  if (isMuted) {
-    console.log('🔇 Group is muted, not responding')
-    return {
-      shouldRespond: false,
-      reason: 'muted',
-    }
-  }
-
-  // 4. Check for trigger keywords
-  if (containsKeywords(messageText)) {
-    console.log('🔑 Keywords detected, responding')
-    return {
-      shouldRespond: true,
-      reason: 'keywords',
-      skipQuotaCheck: false,
-    }
-  }
-
-  // 5. Default: don't respond (avoid spam)
+  // 3. Default: Only respond to mentions and replies (don't respond to keywords)
+  // This prevents the bot from spamming groups
   console.log('🤐 No trigger conditions met, staying silent')
   return {
     shouldRespond: false,

@@ -27,7 +27,7 @@ export function WalletAuthProvider({ children }: WalletAuthProviderProps) {
   const endpoint = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
 
   return (
-    <WalletStandardProvider endpoint={endpoint} autoConnect={true}>
+    <WalletStandardProvider endpoint={endpoint} autoConnect={false}>
       {children}
     </WalletStandardProvider>
   )

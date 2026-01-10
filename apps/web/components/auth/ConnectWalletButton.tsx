@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, memo } from 'react'
 import { useWallet } from '@/lib/wallet/WalletStandardProvider'
 import { WalletModal, useWalletModal } from '@/lib/wallet/WalletModal'
 import { Wallet, ChevronDown, LogOut, Copy, Check } from 'lucide-react'
@@ -16,8 +16,12 @@ interface ConnectWalletButtonProps {
   variant?: 'default' | 'ghost' | 'gradient'
 }
 
-export function ConnectWalletButton({ className, variant = 'gradient' }: ConnectWalletButtonProps) {
+const ConnectWalletButtonComponent = ({ className, variant = 'gradient' }: ConnectWalletButtonProps) => {
+  console.log('🚀 [ConnectWalletButton] Component MOUNTED')
+
   const { publicKey, disconnect, connecting, signMessage, connected } = useWallet()
+  console.log('🔍 [ConnectWalletButton] Wallet state:', { publicKey, connected, connecting })
+
   const { visible, setVisible } = useWalletModal()
   const router = useRouter()
   const [showDropdown, setShowDropdown] = useState(false)
@@ -29,6 +33,8 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
     walletAddress: string
   } | null>(null)
   const [copied, setCopied] = useState(false)
+
+  console.log('🔍 [ConnectWalletButton] Auth state:', { isAuthenticated, isAuthenticating })
 
   const signInWithSolana = useMutation(api.solanaAuth.signInWithSolana)
   const analyzeWalletHistory = useAction(api.onboarding.analyzeWalletHistory)
@@ -58,7 +64,8 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
 
   // Load existing session on mount and restore authentication state
   useEffect(() => {
-    if (publicKey && typeof window !== 'undefined') {
+    console.log('🔄 [useEffect:SessionRestore] Running...', { publicKey, isAuthenticated })
+    if (publicKey && typeof window !== 'undefined' && !isAuthenticated) {
       const stored = localStorage.getItem('ghostspeak_auth')
       if (stored) {
         try {
@@ -68,8 +75,11 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
             setIsAuthenticated(true)
             setSessionData(authData)
             syncAuthCookies(authData)
-            console.log('✅ Restored session from localStorage')
+            console.log('✅ Restored session from localStorage for', publicKey)
             return
+          } else {
+            console.log('⚠️ Stored session does not match current wallet, clearing...')
+            localStorage.removeItem('ghostspeak_auth')
           }
         } catch (e) {
           console.error('Failed to restore session:', e)
@@ -77,10 +87,17 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
         }
       }
     }
-  }, [publicKey])
+  }, [publicKey, isAuthenticated])
 
   // Trigger authentication ONLY when wallet connects AND no session exists
   useEffect(() => {
+    console.log('🔄 [useEffect:Authenticate] Running...', {
+      publicKey,
+      connected,
+      signMessage: !!signMessage,
+      isAuthenticated,
+      isAuthenticating,
+    })
     const authenticate = async () => {
       // Only authenticate if wallet connected, can sign, NOT authenticated, and NOT already authenticating
       if (publicKey && connected && signMessage && !isAuthenticated && !isAuthenticating) {
@@ -165,21 +182,16 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
     }
 
     authenticate()
-  }, [
-    publicKey,
-    connected,
-    signMessage,
-    isAuthenticated,
-    isAuthenticating,
-    signInWithSolana,
-    analyzeWalletHistory,
-    disconnect,
-    router,
-  ])
+    // Only depend on primitive values and stable refs to avoid infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [publicKey, connected, isAuthenticated, isAuthenticating])
 
   // Reset auth state when wallet disconnects
   useEffect(() => {
-    if (!publicKey || !connected) {
+    console.log('🔄 [useEffect:Disconnect] Running...', { isAuthenticated, publicKey, connected })
+    // Only reset if we were previously authenticated and now wallet is gone
+    if (isAuthenticated && (!publicKey || !connected)) {
+      console.log('🔌 Wallet disconnected, clearing authentication')
       setIsAuthenticated(false)
       setSessionData(null)
       // Clear stored session when wallet disconnects
@@ -188,7 +200,7 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
         syncAuthCookies(null)
       }
     }
-  }, [publicKey, connected])
+  }, [publicKey, connected, isAuthenticated])
 
   const handleClick = () => {
     if (publicKey && connected) {
@@ -321,3 +333,6 @@ export function ConnectWalletButton({ className, variant = 'gradient' }: Connect
     </>
   )
 }
+
+// Memoize component to prevent unnecessary re-renders when parent (Navigation) re-mounts
+export const ConnectWalletButton = memo(ConnectWalletButtonComponent)

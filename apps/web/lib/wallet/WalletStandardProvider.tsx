@@ -17,8 +17,6 @@ import {
 import { address, type Address } from '@solana/addresses'
 import { createSolanaRpc, type Rpc, type SolanaRpcApi } from '@solana/rpc'
 import { getSolanaNetwork, type SolanaNetwork } from '@/lib/solana/explorer'
-import { useConvex } from 'convex/react'
-import { api } from '@/convex/_generated/api'
 
 // Wallet Standard Context Types
 interface WalletStandardContextValue {
@@ -68,9 +66,6 @@ export function WalletStandardProvider({
   endpoint,
   autoConnect = true,
 }: WalletStandardProviderProps) {
-  // Convex client for user creation
-  const convex = useConvex()
-
   // State
   const [wallet, setWallet] = useState<Wallet | null>(null)
   const [account, setAccount] = useState<WalletAccount | null>(null)
@@ -113,13 +108,23 @@ export function WalletStandardProvider({
     setAvailableWallets(solanaWallets)
 
     // Listen for new wallets
-    const unsubscribe = walletsApi.on('register', () => {
+    const unsubscribeRegister = walletsApi.on('register', () => {
       const wallets = walletsApi.get()
       const solanaWallets = wallets.filter(isSolanaWallet)
       setAvailableWallets(solanaWallets)
     })
 
-    return () => unsubscribe()
+    // Listen for wallet removals/unregister events
+    const unsubscribeUnregister = walletsApi.on('unregister', () => {
+      const wallets = walletsApi.get()
+      const solanaWallets = wallets.filter(isSolanaWallet)
+      setAvailableWallets(solanaWallets)
+    })
+
+    return () => {
+      unsubscribeRegister()
+      unsubscribeUnregister()
+    }
   }, [])
 
   // Connect to wallet
@@ -156,19 +161,9 @@ export function WalletStandardProvider({
           // Save to localStorage for auto-connect
           localStorage.setItem('walletName', targetWallet.name)
 
-          // Create/update user in Convex database
-          // Uses agent:storeUserMessage which auto-creates users (convex/agent.ts:60-83)
-          try {
-            const walletAddress = result.accounts[0].address
-            await convex.mutation(api.agent.storeUserMessage, {
-              walletAddress,
-              message: 'Wallet connected to GhostSpeak',
-            })
-            console.log(`[WalletProvider] User initialized for wallet: ${walletAddress}`)
-          } catch (error) {
-            console.warn('[WalletProvider] Failed to initialize user:', error)
-            // Non-blocking - user can still use the app
-          }
+          // NOTE: User creation/authentication is handled by ConnectWalletButton component
+          // via SIWS (Sign-In With Solana) flow - do not duplicate here
+          console.log(`[WalletProvider] Wallet connected: ${result.accounts[0].address}`)
         } else {
           throw new Error('No accounts returned from wallet')
         }
@@ -185,15 +180,23 @@ export function WalletStandardProvider({
   // Auto-connect on mount
   useEffect(() => {
     if (!autoConnect) return
+    if (connected || connecting) return // Skip if already connected/connecting
 
     const lastConnectedWallet = localStorage.getItem('walletName')
-    if (lastConnectedWallet && availableWallets.length > 0) {
+    if (lastConnectedWallet && availableWallets.length > 0 && !connected) {
       const wallet = availableWallets.find((w) => w.name === lastConnectedWallet)
       if (wallet) {
-        connect(lastConnectedWallet).catch(console.error)
+        console.log(`[WalletProvider] Auto-connecting to ${lastConnectedWallet}...`)
+        connect(lastConnectedWallet).catch((error) => {
+          console.error('[WalletProvider] Auto-connect failed:', error)
+          // Clear saved wallet if auto-connect fails
+          localStorage.removeItem('walletName')
+        })
       }
     }
-  }, [autoConnect, availableWallets, connect])
+    // Only depend on primitives and stable refs to avoid infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoConnect, availableWallets.length, connected, connecting])
 
   // Disconnect wallet
   const disconnect = useCallback(async () => {

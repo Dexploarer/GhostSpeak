@@ -5,6 +5,9 @@ import { api } from '@/convex/_generated/api'
 import { useState } from 'react'
 import { useWallet } from '@/lib/wallet/WalletStandardProvider'
 import { ConnectWalletButton } from '@/components/auth/ConnectWalletButton'
+
+// Disable static generation to prevent build-time Convex query errors
+export const dynamic = 'force-dynamic'
 import {
   Card,
   CardContent,

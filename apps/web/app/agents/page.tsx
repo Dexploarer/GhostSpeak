@@ -7,6 +7,9 @@ import { Footer } from '@/components/layout/Footer'
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
+// Disable static generation to prevent build-time Convex query errors
+export const dynamic = 'force-dynamic'
+
 export default function AgentsDirectoryPage() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')

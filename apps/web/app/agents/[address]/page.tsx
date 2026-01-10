@@ -3,6 +3,9 @@
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
+
+// Disable static generation to prevent build-time Convex query errors
+export const dynamic = 'force-dynamic'
 import {
   ArrowLeft,
   Bot,

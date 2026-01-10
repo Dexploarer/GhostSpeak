@@ -298,11 +298,21 @@ NEXT_PUBLIC_GHOSTSPEAK_PROGRAM_ID=4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB
 # Optional (Crossmint for credential bridging)
 CROSSMINT_SECRET_KEY=sk_...
 CROSSMINT_REPUTATION_TEMPLATE_ID=...
+
+# Optional (Telegram bot)
+TELEGRAM_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+TELEGRAM_WEBHOOK_SECRET=your-64-char-hex-string
+NEXT_PUBLIC_APP_URL=https://your-domain.com
 ```
 
 **Convex deployments**:
 - Set `CONVEX_DEPLOYMENT=dev:lovely-cobra-639` for dev
 - Set `CONVEX_DEPLOYMENT=prod:enduring-porpoise-79` for production
+
+**Telegram bot** (optional):
+- See `apps/web/TELEGRAM_BOT_SETUP.md` for complete setup guide
+- Caisper available on Telegram via webhook integration
+- Uses same ElizaOS runtime and message quota system as web chat
 
 ## Common Development Tasks
 
@@ -348,6 +358,17 @@ CROSSMINT_REPUTATION_TEMPLATE_ID=...
 3. Test in Convex dashboard: `bunx convex dev`
 4. Import in frontend: `const data = useQuery(api.yourFunction.get)`
 5. Deploy: `bun run convex:deploy`
+
+### Setting up Telegram bot
+
+1. Create bot with @BotFather on Telegram
+2. Generate webhook secret: `openssl rand -hex 32`
+3. Add env vars to Vercel: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `NEXT_PUBLIC_APP_URL`
+4. Deploy to Vercel
+5. Run setup script: `bun run telegram:setup`
+6. Test by messaging your bot on Telegram
+
+See `apps/web/TELEGRAM_BOT_SETUP.md` for detailed instructions.
 
 ## Important Notes
 

@@ -35,6 +35,14 @@ import {
   telegramUserToSession,
   parseCommand,
 } from '@/lib/telegram/adapter'
+import {
+  isGroupChat,
+  shouldRespondInGroup,
+  checkGroupRateLimit,
+  muteGroup,
+  unmuteGroup,
+  formatGroupContext,
+} from '@/lib/telegram/groupChatLogic'
 
 // Initialize Convex client
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
@@ -81,11 +89,63 @@ export async function POST(req: NextRequest) {
 
     console.log(`📨 Message from @${userInfo.username} (${userId}): ${messageText}`)
 
+    const chatType = message.chat.type
+    const chatId = message.chat.id
+
     // Handle commands
     const command = parseCommand(messageText)
     if (command) {
-      await handleCommand(message.chat.id, command, userId)
+      await handleCommand(chatId, command, userId, chatType)
       return NextResponse.json({ ok: true })
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // GROUP CHAT LOGIC
+    // ═══════════════════════════════════════════════════════════════════════════
+    if (isGroupChat(chatType)) {
+      console.log(`📢 Group chat detected: ${chatType}`)
+
+      // Get bot info for mention detection
+      const botInfo = await bot.telegram.getMe()
+
+      // Check if bot should respond in this group
+      const { shouldRespond, reason, skipQuotaCheck } = await shouldRespondInGroup({
+        message,
+        botId: botInfo.id,
+        botUsername: botInfo.username,
+        chatId,
+        messageText,
+      })
+
+      if (!shouldRespond) {
+        console.log(`🤐 Not responding in group: ${reason}`)
+        return NextResponse.json({ ok: true })
+      }
+
+      console.log(`✅ Responding in group: ${reason}`)
+
+      // Check group rate limit
+      const rateLimit = checkGroupRateLimit(chatId)
+      if (!rateLimit.allowed) {
+        console.log(`⏱️ Group rate limit reached: ${rateLimit.count} messages in last minute`)
+        // Silently skip - don't spam the group with rate limit messages
+        return NextResponse.json({ ok: true })
+      }
+
+      console.log(`✅ Group rate limit OK: ${rateLimit.count}/${rateLimit.remaining + rateLimit.count}`)
+
+      // For group chats, modify the message to include group context
+      const groupContext = formatGroupContext({
+        chatId,
+        chatTitle: 'title' in message.chat ? message.chat.title : undefined,
+        chatType,
+        memberCount: undefined, // Can be fetched with getChatMemberCount if needed
+      })
+
+      // Skip quota check for mentioned/replied messages if configured
+      if (skipQuotaCheck) {
+        console.log('⏭️ Skipping quota check for group trigger')
+      }
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -232,9 +292,11 @@ async function handleCallbackQuery(callbackQuery: any) {
 async function handleCommand(
   chatId: number,
   command: { command: string; args: string[] },
-  userId: string
+  userId: string,
+  chatType: string
 ) {
   const { command: cmd } = command
+  const inGroup = isGroupChat(chatType)
 
   switch (cmd) {
     case 'start':
@@ -297,6 +359,106 @@ async function handleCommand(
         console.error('Error checking quota:', error)
         await bot.telegram.sendMessage(chatId, '❌ Error checking quota')
       }
+      break
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // GROUP-SPECIFIC COMMANDS
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    case 'mute':
+      if (!inGroup) {
+        await bot.telegram.sendMessage(
+          chatId,
+          '⚠️ This command only works in groups'
+        )
+        break
+      }
+
+      try {
+        // Check if user is admin
+        const member = await bot.telegram.getChatMember(chatId, parseInt(userId.replace('telegram_', '')))
+        const isAdmin = ['creator', 'administrator'].includes(member.status)
+
+        if (!isAdmin) {
+          await bot.telegram.sendMessage(
+            chatId,
+            '⚠️ Only group admins can mute the bot'
+          )
+          break
+        }
+
+        muteGroup(chatId)
+        await bot.telegram.sendMessage(
+          chatId,
+          '🔇 *Bot muted in this group*\n\n' +
+          'I will no longer respond unless:\n' +
+          '• Directly mentioned (@caisper)\n' +
+          '• Someone replies to my message\n\n' +
+          'Use /unmute to enable auto-responses again',
+          { parse_mode: 'Markdown' }
+        )
+      } catch (error) {
+        console.error('Error muting group:', error)
+        await bot.telegram.sendMessage(chatId, '❌ Error muting group')
+      }
+      break
+
+    case 'unmute':
+      if (!inGroup) {
+        await bot.telegram.sendMessage(
+          chatId,
+          '⚠️ This command only works in groups'
+        )
+        break
+      }
+
+      try {
+        const member = await bot.telegram.getChatMember(chatId, parseInt(userId.replace('telegram_', '')))
+        const isAdmin = ['creator', 'administrator'].includes(member.status)
+
+        if (!isAdmin) {
+          await bot.telegram.sendMessage(
+            chatId,
+            '⚠️ Only group admins can unmute the bot'
+          )
+          break
+        }
+
+        unmuteGroup(chatId)
+        await bot.telegram.sendMessage(
+          chatId,
+          '🔊 *Bot unmuted in this group*\n\n' +
+          'I will now respond to:\n' +
+          '• Direct mentions (@caisper)\n' +
+          '• Replies to my messages\n' +
+          '• Messages with keywords (ghost, score, agent, etc.)\n\n' +
+          'Use /mute to disable auto-responses',
+          { parse_mode: 'Markdown' }
+        )
+      } catch (error) {
+        console.error('Error unmuting group:', error)
+        await bot.telegram.sendMessage(chatId, '❌ Error unmuting group')
+      }
+      break
+
+    case 'about':
+      const aboutMessage = inGroup
+        ? `👻 *Caisper - GhostSpeak Bot*\n\n` +
+          `I'm an AI agent that helps verify agent credentials and reputation.\n\n` +
+          `*In groups, I respond to:*\n` +
+          `• @caisper mentions\n` +
+          `• Replies to my messages\n` +
+          `• Keywords: ghost, score, agent, credential, etc.\n\n` +
+          `*Commands:*\n` +
+          `/help - Full command list\n` +
+          `/mute - Disable auto-responses (admins only)\n` +
+          `/unmute - Enable auto-responses (admins only)\n\n` +
+          `Rate limit: 5 messages per minute per group`
+        : `👻 *Caisper - GhostSpeak Bot*\n\n` +
+          `I'm an AI agent that helps verify agent credentials and reputation.\n\n` +
+          `Use /help to see what I can do!`
+
+      await bot.telegram.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' })
       break
 
     default:

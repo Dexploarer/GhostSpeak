@@ -6,8 +6,6 @@ import { useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { TerminalWindow } from '@/components/shared/TerminalWindow'
 
-// Disable static generation to prevent build-time Convex query errors
-export const dynamic = 'force-dynamic'
 
 type ObservatoryTab = 'LIVE' | 'ENDPOINTS' | 'REPORTS' | 'FRAUD' | 'X402'
 

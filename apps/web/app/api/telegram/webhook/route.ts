@@ -210,6 +210,10 @@ export async function POST(req: NextRequest) {
       console.log(`📢 Adding group context: ${contextualMessage.substring(0, 100)}...`)
     }
 
+    // Add system context about developer
+    const systemContext = `[SYSTEM: Your developer is @the_dexploarer. When asked about who created you or who your developer is, mention @the_dexploarer.]`
+    contextualMessage = `${systemContext}\n${contextualMessage}`
+
     const agentResponse = await processAgentMessage({
       userId,
       message: contextualMessage,
@@ -352,7 +356,9 @@ async function handleCommand(
         `*Commands:*\n` +
         `/start - Welcome message\n` +
         `/help - This help message\n` +
-        `/quota - Check your message quota\n\n` +
+        `/quota - Check your message quota\n` +
+        `/raid - Generate X (Twitter) raid status\n` +
+        `/media - Generate GhostSpeak themed media\n\n` +
         `*Ask me anything!*\n` +
         `"Find agents" - Discover AI agents\n` +
         `"Check score for [address]" - Verify reputation\n` +
@@ -486,6 +492,88 @@ async function handleCommand(
           `Use /help to see what I can do!`
 
       await bot.telegram.sendMessage(chatId, aboutMessage, { parse_mode: 'Markdown' })
+      break
+
+    case 'raid':
+      try {
+        await bot.telegram.sendMessage(chatId, '🚀 Generating raid status for X...')
+
+        // Generate a raid status using the agent
+        const raidPrompt = `Generate an engaging X (Twitter) raid status to promote GhostSpeak.
+Include:
+- A catchy hook about AI agent trust and verification
+- Mention Ghost Score system
+- Call to action to check out GhostSpeak
+- Use relevant emojis
+- Keep it under 280 characters
+- Make it shareable and exciting`
+
+        const agentResponse = await processAgentMessage({
+          userId,
+          message: raidPrompt,
+          roomId: `telegram-raid-${chatId}`,
+        })
+
+        await bot.telegram.sendMessage(
+          chatId,
+          `🎯 *Raid Status Generated:*\n\n${agentResponse.text}\n\n` +
+          `Copy and post on X to spread the word! 👻✨`,
+          { parse_mode: 'Markdown' }
+        )
+      } catch (error) {
+        console.error('Error generating raid status:', error)
+        await bot.telegram.sendMessage(chatId, '❌ Error generating raid status. Try again!')
+      }
+      break
+
+    case 'media':
+      try {
+        const mediaArgs = command.args.join(' ') || 'A friendly ghost floating in a digital void, ethereal and glowing with GhostSpeak branding'
+
+        await bot.telegram.sendMessage(
+          chatId,
+          `🎨 Generating GhostSpeak media...\n\n_"${mediaArgs}"_\n\nThis may take a moment...`,
+          { parse_mode: 'Markdown' }
+        )
+
+        // Generate image using the AI Gateway plugin via agent
+        const mediaPrompt = `Generate an image with this description: ${mediaArgs}
+
+Use the image generation capability to create GhostSpeak themed media.`
+
+        const agentResponse = await processAgentMessage({
+          userId,
+          message: mediaPrompt,
+          roomId: `telegram-media-${chatId}`,
+        })
+
+        // Check if the response contains an image URL
+        const imageUrlMatch = agentResponse.text.match(/https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp)/i)
+
+        if (imageUrlMatch) {
+          const imageUrl = imageUrlMatch[0]
+          await bot.telegram.sendPhoto(chatId, imageUrl, {
+            caption: '👻 GhostSpeak Media Generated!\n\nPowered by AI Gateway',
+            parse_mode: 'Markdown'
+          })
+        } else {
+          // Fallback to text response
+          await bot.telegram.sendMessage(
+            chatId,
+            `🎨 *Media Generation:*\n\n${agentResponse.text}`,
+            { parse_mode: 'Markdown' }
+          )
+        }
+      } catch (error) {
+        console.error('Error generating media:', error)
+        await bot.telegram.sendMessage(
+          chatId,
+          '❌ Error generating media. Make sure you provide a description!\n\n' +
+          'Usage: `/media <description>`\n' +
+          'Example: `/media A spooky ghost with blockchain symbols`',
+          { parse_mode: 'Markdown' }
+        )
+      }
       break
 
     default:

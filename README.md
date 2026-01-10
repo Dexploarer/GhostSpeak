@@ -3,7 +3,7 @@
 <div align="center">
   <img src="docs/assets/ghostspeak-logo.png" alt="GhostSpeak Logo" width="200" />
 
-  **Trust Layer for AI Agent Commerce - Built on PayAI**
+  **Trust Layer for AI Agent Commerce - x402 Protocol Compatible**
 
   [![Version](https://img.shields.io/badge/version-v2.0.0-blue.svg)](https://github.com/ghostspeak/ghostspeak)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -20,35 +20,36 @@
 
 ## Overview
 
-**GhostSpeak** is the trust layer built on top of PayAI. We provide Verifiable Credentials, reputation tracking (Ghost Score), and identity infrastructure for AI agent commerce.
+**GhostSpeak** is a decentralized trust layer for AI agent commerce. We provide Verifiable Credentials, multi-source reputation tracking (Ghost Score), and identity infrastructure for autonomous agents.
 
 **Think of us as:**
 - **FICO for AI Agents** - Credit scoring for autonomous commerce
 - **The Ghost in the Machine** - Invisible trust layer powering every transaction
 - **Verifiable Reputation** - On-chain credentials that prove agent trustworthiness
 
-### Built ON PayAI, Not Competing
+### x402 Protocol Compatible
 
-**PayAI** handles payment facilitation between AI agents. **GhostSpeak** ingests reputation data FROM PayAI and calculates trust scores (Ghost Score) + issues verifiable credentials.
+**GhostSpeak** uses the x402 HTTP payment protocol to index transactions and build reputation. We aggregate data from multiple sources including x402 payments, user reviews, endpoint reliability, and cross-platform reputation systems.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                    PayAI Ecosystem                            │
+│                  AI Agent Commerce Ecosystem                  │
 │                                                                │
-│  ┌─────────────┐      Payment      ┌─────────────┐          │
-│  │  Agent A    │ ──────────────────→ │  Agent B    │          │
-│  └─────────────┘                     └─────────────┘          │
-│         │                                    │                 │
-│         │          Reputation Data           │                 │
-│         └────────────────┬───────────────────┘                 │
-│                          ↓                                     │
-│                 ┌─────────────────┐                           │
-│                 │   GhostSpeak    │                           │
-│                 │  (Trust Layer)  │                           │
-│                 └─────────────────┘                           │
-│                          │                                     │
-│                          ↓                                     │
-│        Ghost Score + Verifiable Credentials                   │
+│  ┌─────────────┐   x402 Payment   ┌─────────────┐           │
+│  │  Agent A    │ ──────────────────→ │  Agent B    │           │
+│  └─────────────┘                     └─────────────┘           │
+│         │                                    │                  │
+│         │      Transaction + Reputation Data │                  │
+│         └────────────────┬───────────────────┘                  │
+│                          ↓                                      │
+│                 ┌─────────────────┐                            │
+│                 │   GhostSpeak    │                            │
+│                 │  (Trust Layer)  │                            │
+│                 └─────────────────┘                            │
+│                          │                                      │
+│                          ↓                                      │
+│     Ghost Score (0-1000) + W3C Verifiable Credentials         │
+│     Multi-Source: x402, Reviews, ElizaOS, Crossmint, etc.     │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -174,26 +175,32 @@ const credential = await client.credentials.issueAgentIdentityCredential({
 console.log('Credential ID:', credential.solanaCredential.credentialId);
 ```
 
-#### Step 3: Record PayAI Payment (Webhook)
+#### Step 3: Record x402 Payment for Reputation
 
 ```typescript
-import { PayAIWebhookHandler } from '@ghostspeak/sdk';
+// Option 1: Direct reputation update
+const paymentData = {
+  amount: 1000000, // 1 USDC (6 decimals)
+  success: true,
+  responseTimeMs: 250,
+  txSignature: 'your-solana-tx-signature',
+};
 
-const webhookHandler = new PayAIWebhookHandler({
-  ghostspeakClient: client,
-  apiSecret: process.env.PAYAI_WEBHOOK_SECRET,
+await client.reputation.recordPayAIPayment(
+  agentAddress,
+  paymentData
+);
+
+// Option 2: Use x402 Transaction Indexer (automatic blockchain polling)
+import { X402TransactionIndexer } from '@ghostspeak/sdk';
+
+const indexer = new X402TransactionIndexer({
+  rpcUrl: 'https://api.devnet.solana.com',
+  startSlot: 'latest', // Or specific slot number
 });
 
-// In your webhook endpoint
-app.post('/api/payai/webhook', async (req, res) => {
-  const result = await webhookHandler.handleWebhook(req.body);
-
-  if (result.reputationUpdated) {
-    console.log('New Ghost Score:', result.newScore);
-  }
-
-  res.json({ success: true });
-});
+// Polls blockchain for x402 payments and auto-updates reputation
+await indexer.pollTransactions();
 ```
 
 #### Step 4: Check Ghost Score
@@ -207,32 +214,41 @@ console.log('Total Payments:', reputation.totalJobs);
 console.log('Success Rate:', reputation.successRate);
 ```
 
-## PayAI Integration
+## Multi-Source Reputation Aggregation
 
-GhostSpeak consumes reputation data FROM PayAI to build trust scores:
+GhostSpeak builds trust scores from 8+ data sources using weighted multi-source aggregation:
 
 ```typescript
-import { PayAIClient, PayAIAgentSync } from '@ghostspeak/sdk';
+import { MultiSourceAggregator, PayAIAdapter } from '@ghostspeak/sdk';
 
-const payaiClient = new PayAIClient({
-  apiKey: process.env.PAYAI_API_KEY,
+// 1. Create reputation adapters for different sources
+const payaiAdapter = new PayAIAdapter({
+  apiKey: process.env.PAYAI_API_KEY, // If using PayAI as one source
+  rpcUrl: 'https://api.devnet.solana.com',
 });
 
-const agentSync = new PayAIAgentSync({
-  ghostspeakClient,
-  payaiClient,
+// 2. Initialize multi-source aggregator
+const aggregator = new MultiSourceAggregator({
+  ghostspeakClient: client,
+  adapters: [
+    payaiAdapter,
+    // Add other adapters (GitHub, custom webhooks, etc.)
+  ],
 });
 
-// Sync reputation from PayAI
-await agentSync.syncAgentReputation(agentAddress);
+// 3. Fetch and aggregate reputation from all sources
+const reputation = await aggregator.aggregateReputation(agentAddress);
 
-// Auto-issue credentials at milestones
-await agentSync.checkAndIssueMilestoneCredentials(agentAddress);
-// Automatically issues credentials at:
-// - 10 successful payments
-// - 100 successful payments
-// - 1000 successful payments
+console.log('Overall Ghost Score:', reputation.overallScore);
+console.log('Data Sources:', reputation.sources); // x402, reviews, endorsements, etc.
+console.log('Confidence:', reputation.confidence); // Bayesian confidence score
+
+// 4. Auto-issue credentials at milestones (monitored by Convex cron)
+// Credentials issued automatically at:
+// - 10/100/1000 successful payments
 // - Silver/Gold/Platinum tier achievement
+// - 99%+ uptime attestation
+// - Capability verification passes
 ```
 
 ## Architecture: The 3 Pillars
@@ -259,10 +275,10 @@ await agentSync.checkAndIssueMilestoneCredentials(agentAddress);
 ### Core Modules
 
 - **Agent Registry**: Compressed NFT identities (5000x cheaper)
-- **Reputation System**: Ghost Score calculation from PayAI data
+- **Reputation System**: Multi-source Ghost Score with 8+ data inputs
 - **Credential Issuance**: W3C VCs with Crossmint EVM bridging
-- **PayAI Integration**: Webhook handlers for payment events
-- **Multisig Governance**: Protocol upgrades and configuration
+- **x402 Integration**: Payment indexing and reputation tracking
+- **Governance**: Admin authority (multisig planned for mainnet)
 
 ## Package Ecosystem
 
@@ -276,17 +292,20 @@ await agentSync.checkAndIssueMilestoneCredentials(agentAddress);
 
 ## B2B Use Cases
 
-### 1. PayAI Integration (PRIMARY)
+### 1. Agent Marketplaces & Payment Platforms
 
-**Revenue**: $2.6M ARR from trust scoring
+Integrate Ghost Score for trust verification before high-value transactions:
 
 ```typescript
-// PayAI uses GhostSpeak for agent trust verification
+// AI marketplace uses GhostSpeak for agent trust verification
 const trustScore = await ghostspeak.reputation.getReputationData(agentId);
 
 if (trustScore.overallScore >= 750) {
-  // Allow high-value transactions
-  await payai.processPayment({ amount: 100_000_000n });
+  // Allow high-value transactions for Gold+ tier agents
+  await processPayment({ amount: 100_000_000n });
+} else {
+  // Require escrow or lower limits for unproven agents
+  await requireEscrow(agentId);
 }
 ```
 
@@ -322,6 +341,8 @@ const verified = await crossmintClient.verifyCredential(vc.crossmintId);
 ```
 
 ## Revenue Model (Crypto-Native)
+
+> **⚠️ BETA PHASE:** GhostSpeak is currently on devnet with no paying customers yet. The pricing below represents our planned model for mainnet launch.
 
 **No Subscriptions. No Credit Cards. Pure Crypto.**
 
@@ -403,14 +424,16 @@ Unlike traditional DeFi with fixed APY promises, we share ACTUAL protocol revenu
 
 ### Revenue Projections (Conservative Year 1)
 
-| Revenue Stream | Target | Annual Revenue |
-|----------------|--------|----------------|
-| **B2C Pay-Per-Check** | 100K verifications/month | $1.2M |
-| **B2B Prepaid Plans** | 500+ teams | $3.3M |
-| **B2B Overage Fees** | API usage beyond quota | $240K |
-| **PayAI Integration** | Trust scoring revenue share | $2.6M (future) |
-| **Credential Issuance** | Enterprise VC fees | $600K (future) |
-| **Total Year 1 Baseline** | | **$4.74M** |
+> **NOTE:** These are financial projections for post-mainnet launch, not current revenue. GhostSpeak has no paying customers as of January 2026 (devnet beta phase).
+
+| Revenue Stream | Target | Annual Revenue Projection |
+|----------------|--------|---------------------------|
+| **B2C Pay-Per-Check** | 100K verifications/month | $1.2M (projected) |
+| **B2B Prepaid Plans** | 500+ teams | $3.3M (projected) |
+| **B2B Overage Fees** | API usage beyond quota | $240K (projected) |
+| **x402 Marketplace Integration** | Payment platform adoption | $2.6M (speculative) |
+| **Credential Issuance** | Enterprise VC fees | $600K (speculative) |
+| **Total Year 1 Target** | | **$4.74M (target)** |
 
 **Staker Rewards Pool:** ~$690K/year (14.5% of baseline revenue)
 
@@ -436,27 +459,32 @@ Unlike traditional DeFi with fixed APY promises, we share ACTUAL protocol revenu
 
 See [ROADMAP.md](./ROADMAP.md) for detailed quarterly targets.
 
-**2026 Milestones:**
-- Q1: Ghost Score Beta, PayAI integration live
-- Q2: ElizaOS plugin, 10K agents onboarded
-- Q3: B2B API launch, 50K active agents
-- Q4: Mobile apps, 100K users, $32.9M ARR
+**2026 Milestones (Targets):**
+- Q1: Mainnet launch, Ghost Score Beta, x402 indexing live
+- Q2: ElizaOS plugin adoption, 10K agents onboarded (target)
+- Q3: B2B API launch, 50K active agents (target)
+- Q4: Mobile apps, 100K users, $32.9M ARR (aspirational target)
 
 ## Platform Status
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| **Rust Smart Contracts** | Production Ready | Agent, Reputation, Credentials |
-| **TypeScript SDK** | Production Ready | PayAI integration complete |
+| **Rust Smart Contracts** | Beta (Devnet Only) | Agent, Reputation, Credentials - **Audit Pending** |
+| **TypeScript SDK** | Production Ready | Multi-source reputation, x402 indexing |
 | **CLI Tools** | Production Ready | Full VC/Reputation commands |
 | **Ghost Score Dashboard** | Beta | Web app for B2C users |
-| **B2B API** | Development | Q3 2026 launch |
-| **Documentation** | 90% Complete | Ongoing rewrite for new positioning |
+| **B2B API** | Development | Q3 2026 launch target |
+| **Documentation** | 90% Complete | Ongoing updates for accuracy |
 
-### Deployed Contracts (Devnet)
+### Deployed Contracts (Devnet Only)
 
+> **⚠️ BETA:** These contracts are deployed on Solana devnet for testing only. Not audited. Do not use for production.
+
+- **Network**: Solana Devnet
 - **Program ID**: `GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9`
 - **IDL**: [View on Solscan](https://solscan.io/account/GpvFxus2eecFKcqa2bhxXeRjpstPeCEJNX216TQCcNC9?cluster=devnet)
+- **Audit Status**: Pending (Q1 2026)
+- **Mainnet Deployment**: TBD (post-audit)
 
 ## Documentation
 
@@ -514,8 +542,24 @@ bun test && bun lint
 
 ## Security
 
-- Smart contracts audited (audit report pending)
-- Bug bounty program: security@ghostspeak.io
+> **⚠️ PRE-AUDIT STATUS:** Smart contracts have NOT been audited by a third party yet. Audit scheduled for Q1 2026 before mainnet launch.
+
+**Current Security Status:**
+- ✅ Reentrancy protection implemented
+- ✅ Rate limiting on user operations
+- ✅ Canonical PDA validation (Anchor 2025 standards)
+- ✅ Security tests in `/programs/src/tests/security_tests.rs`
+- ⚠️ **Hardcoded admin key in code** - Will be replaced with multisig before mainnet
+- ⚠️ **Devnet only** - Not recommended for production use until audit complete
+
+**Planned Before Mainnet:**
+- [ ] Third-party security audit (Trail of Bits or OtterSec)
+- [ ] Replace hardcoded admin authority with multisig
+- [ ] Public audit report publication
+- [ ] Bug bounty program launch
+
+**Responsible Disclosure:**
+- Bug bounty program: security@ghostspeak.io (active post-mainnet)
 - See [SECURITY.md](SECURITY.md) for vulnerability reporting
 
 ## License

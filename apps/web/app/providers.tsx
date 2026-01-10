@@ -6,7 +6,16 @@ import { WalletAuthProvider } from '@/components/auth/WalletAuthProvider'
 import { ConvexProvider, ConvexReactClient } from 'convex/react'
 import * as React from 'react'
 
-const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+// Lazy initialization to prevent build-time errors
+function getConvexClient() {
+  if (typeof window === 'undefined') {
+    // During SSR/build, return null - ConvexProvider will handle it
+    return null as unknown as ConvexReactClient
+  }
+  return new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+}
+
+const convex = getConvexClient()
 
 /**
  * Root Providers Component

@@ -4,14 +4,22 @@
 
 Add these environment variables to your Vercel project:
 
-### 1. Telegram Bot Configuration
+### 1. Convex Configuration (Required for Build!)
+
+```bash
+NEXT_PUBLIC_CONVEX_URL=https://enduring-porpoise-79.convex.cloud
+```
+
+**IMPORTANT**: This MUST be set for all environments (Production, Preview, Development) or the build will fail!
+
+### 2. Telegram Bot Configuration
 
 ```bash
 TELEGRAM_BOT_TOKEN=8524784776:AAF3OrTE_NQiDuXv8aclidORBKqfy0IfltM
 TELEGRAM_WEBHOOK_SECRET=feffb71301f6488df8fc0116cbd885f7fa75c5075a880cce09bd91eda2cec11f
 ```
 
-### 2. Application URL (Important!)
+### 3. Application URL (Important!)
 
 ```bash
 NEXT_PUBLIC_APP_URL=https://ghostspeak.vercel.app
@@ -42,6 +50,10 @@ NEXT_PUBLIC_APP_URL=https://ghostspeak.vercel.app
 **Via Vercel CLI:**
 ```bash
 cd /Users/home/projects/GhostSpeak
+
+# CRITICAL: Add Convex URL first (required for build)
+vercel env add NEXT_PUBLIC_CONVEX_URL production
+# Paste: https://enduring-porpoise-79.convex.cloud
 
 vercel env add TELEGRAM_BOT_TOKEN production
 # Paste: 8524784776:AAF3OrTE_NQiDuXv8aclidORBKqfy0IfltM
@@ -156,11 +168,14 @@ curl -s "https://api.telegram.org/bot8524784776:AAF3OrTE_NQiDuXv8aclidORBKqfy0If
 
 ## Environment Variables Summary
 
-| Variable | Value | Purpose |
-|----------|-------|---------|
-| `TELEGRAM_BOT_TOKEN` | `8524784776:AAF3...` | Bot authentication token from @BotFather |
-| `TELEGRAM_WEBHOOK_SECRET` | `feffb71...` | Secret for webhook validation (security) |
-| `NEXT_PUBLIC_APP_URL` | `https://ghostspeak.vercel.app` | Your production URL for webhook registration |
+| Variable | Value | Purpose | Required For |
+|----------|-------|---------|--------------|
+| `NEXT_PUBLIC_CONVEX_URL` | `https://enduring-porpoise-79.convex.cloud` | Convex backend connection | **BUILD + RUNTIME** |
+| `TELEGRAM_BOT_TOKEN` | `8524784776:AAF3...` | Bot authentication token from @BotFather | Runtime |
+| `TELEGRAM_WEBHOOK_SECRET` | `feffb71...` | Secret for webhook validation (security) | Runtime |
+| `NEXT_PUBLIC_APP_URL` | `https://ghostspeak.vercel.app` | Your production URL for webhook registration | Runtime |
+
+**⚠️ CRITICAL**: `NEXT_PUBLIC_CONVEX_URL` must be set in Vercel for the build to succeed!
 
 ---
 

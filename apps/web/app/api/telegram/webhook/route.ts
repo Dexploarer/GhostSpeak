@@ -95,6 +95,7 @@ export async function POST(req: NextRequest) {
     // Handle commands
     const command = parseCommand(messageText)
     if (command) {
+      console.log(`🎮 Handling command: /${command.command}`)
       await handleCommand(chatId, command, userId, chatType)
       return NextResponse.json({ ok: true })
     }

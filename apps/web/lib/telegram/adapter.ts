@@ -136,13 +136,17 @@ export function telegramUserToSession(telegramId: number) {
 /**
  * Parse command from message text
  * Example: "/start" -> { command: "start", args: [] }
+ * Example: "/start@caisper_bot" -> { command: "start", args: [] }
  */
 export function parseCommand(text: string): { command: string; args: string[] } | null {
   if (!text.startsWith('/')) return null
 
   const parts = text.slice(1).split(' ')
+  // Remove @bot_name if present (e.g., "/start@caisper_bot" -> "start")
+  const commandPart = parts[0].split('@')[0]
+
   return {
-    command: parts[0],
+    command: commandPart,
     args: parts.slice(1),
   }
 }

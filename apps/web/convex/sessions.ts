@@ -12,9 +12,9 @@ import { SignJWT, jwtVerify } from 'jose'
 import { mutation, query, internalMutation } from './_generated/server'
 import { v } from 'convex/values'
 
-// JWT secret from environment (must be at least 32 characters)
-const getJwtSecret = () => {
-  const secret = process.env.JWT_SECRET
+// JWT secret from Convex environment (must be at least 32 characters)
+const getJwtSecret = (ctx: any) => {
+  const secret = ctx.env.JWT_SECRET
   if (!secret || secret.length < 32) {
     throw new Error('JWT_SECRET must be set and at least 32 characters long')
   }
@@ -44,7 +44,7 @@ export const createSession = internalMutation({
     }
 
     // Sign JWT with jose
-    const secret = getJwtSecret()
+    const secret = getJwtSecret(ctx)
     const sessionToken = await new SignJWT(payload)
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt(now / 1000) // Convert to seconds
@@ -81,7 +81,7 @@ export const validateSession = query({
   handler: async (ctx, args) => {
     try {
       // Verify JWT signature and expiration
-      const secret = getJwtSecret()
+      const secret = getJwtSecret(ctx)
       const { payload } = await jwtVerify(args.sessionToken, secret)
 
       // Check if session exists in database

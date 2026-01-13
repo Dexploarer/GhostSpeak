@@ -1,0 +1,173 @@
+@import 'tailwindcss';
+
+/* GhostSpeak Brand Colors - Matching main app exactly */
+:root {
+  /* GhostSpeak Brand - Light "Clinical" Theme */
+  --background: #f8fafc; /* Very light slate */
+  --foreground: #020617; /* Deepest slate */
+
+  /* Brand Colors - Electric Lime (#ccff00) */
+  --primary: #a3e635; /* Slightly more legible lime for light theme */
+  --primary-foreground: #000000;
+  --primary-rgb: 163, 230, 53;
+
+  --secondary: #ecfdf5; /* Clean emerald tint */
+  --secondary-foreground: #065f46;
+
+  --card: #ffffff;
+  --card-foreground: #020617;
+
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+
+  --accent: #f7fee7;
+  --accent-foreground: #365314;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #a3e635;
+
+  --radius: 0.75rem;
+
+  /* Telegram theme CSS variables (will be overridden dynamically) */
+  --tg-theme-bg-color: var(--background);
+  --tg-theme-text-color: var(--foreground);
+  --tg-theme-hint-color: var(--muted-foreground);
+  --tg-theme-button-color: var(--primary);
+  --tg-theme-button-text-color: var(--primary-foreground);
+
+  /* Jupiter Plugin Theming - GhostSpeak Brand Colors (Light) */
+  --jupiter-plugin-primary: 163, 230, 53; /* Lime green */
+  --jupiter-plugin-background: 248, 250, 252; /* Light slate */
+  --jupiter-plugin-primary-text: 2, 6, 23; /* Deep slate */
+  --jupiter-plugin-warning: 251, 191, 36; /* Amber */
+  --jupiter-plugin-interactive: 241, 245, 249; /* Muted slate */
+  --jupiter-plugin-module: 255, 255, 255; /* White */
+}
+
+.dark {
+  --background: #0a0a0a; /* Pure dark */
+  --foreground: #f8fafc;
+
+  --primary: #ccff00; /* Electric lime - GhostSpeak brand! */
+  --primary-foreground: #000000;
+  --primary-rgb: 204, 255, 0;
+
+  --secondary: #1a2e00; /* Dark lime tint */
+  --secondary-foreground: #d9f99d;
+
+  --card: #111111;
+  --card-foreground: #f8fafc;
+
+  --muted: #1a1a1a;
+  --muted-foreground: #94a3b8;
+
+  --accent: #111a00;
+  --accent-foreground: #bef264;
+
+  --destructive: #7f1d1d;
+  --destructive-foreground: #fecaca;
+
+  --border: #262626;
+  --input: #262626;
+  --ring: #ccff00;
+
+  /* Telegram theme for dark mode */
+  --tg-theme-bg-color: var(--background);
+  --tg-theme-text-color: var(--foreground);
+  --tg-theme-hint-color: var(--muted-foreground);
+  --tg-theme-button-color: var(--primary);
+  --tg-theme-button-text-color: var(--primary-foreground);
+
+  /* Jupiter Plugin Theming - GhostSpeak Brand Colors (Dark) */
+  --jupiter-plugin-primary: 204, 255, 0; /* Electric lime */
+  --jupiter-plugin-background: 10, 10, 10; /* Pure dark */
+  --jupiter-plugin-primary-text: 248, 250, 252; /* Light slate */
+  --jupiter-plugin-warning: 251, 191, 36; /* Amber */
+  --jupiter-plugin-interactive: 26, 26, 26; /* Dark muted */
+  --jupiter-plugin-module: 17, 17, 17; /* Slightly lighter dark */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-lg: var(--radius);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Remove default margins and ensure full height */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* Smooth scrolling for Telegram WebView */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* Custom scrollbar matching main app */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 10px;
+  opacity: 0.5;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Focus styles */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Glassmorphism effects (matching main app) */
+.glass {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+  background: rgba(10, 10, 10, 0.6);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}

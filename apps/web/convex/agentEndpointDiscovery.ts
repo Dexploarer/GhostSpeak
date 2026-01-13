@@ -55,14 +55,25 @@ export const discoverAndRegisterEndpoints = action({
       let skipped = 0
 
       for (const ep of validEndpoints) {
+        // Normalize method and category to match schema types
+        const method: 'GET' | 'POST' = ep.method.toUpperCase() === 'POST' ? 'POST' : 'GET'
+        const category: 'research' | 'market_data' | 'social' | 'utility' | 'other' = [
+          'research',
+          'market_data',
+          'social',
+          'utility',
+        ].includes(ep.category.toLowerCase())
+          ? (ep.category.toLowerCase() as 'research' | 'market_data' | 'social' | 'utility')
+          : 'other'
+
         const result = await ctx.runMutation(internal.observation.upsertObservedEndpointInternal, {
           agentAddress: ep.agentAddress,
           baseUrl: ep.baseUrl,
           endpoint: ep.endpoint,
-          method: ep.method,
+          method,
           priceUsdc: ep.priceUsdc,
           description: ep.description,
-          category: ep.category,
+          category,
         })
 
         if (result.created) {

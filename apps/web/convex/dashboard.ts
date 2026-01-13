@@ -77,7 +77,9 @@ export const getUserDashboard = query({
 
     // Get verification count for this month
     // Get verification count for this month (UTC)
-    const startOfMonth = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1))
+    const startOfMonth = new Date(
+      Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)
+    )
     const monthStart = startOfMonth.getTime()
 
     const verificationsThisMonth = await ctx.db
@@ -218,17 +220,17 @@ export const getUserDashboard = query({
         // Ecto Score - for Agent Developers
         ecto: isAgentDeveloper
           ? {
-            score: ectoScore,
-            tier: ectoTier,
-            agentsRegistered: claimedAgents.length,
-          }
+              score: ectoScore,
+              tier: ectoTier,
+              agentsRegistered: claimedAgents.length,
+            }
           : null,
         // Ghosthunter Score - for Customers
         ghosthunter: isCustomer
           ? {
-            score: ghosthunterScore,
-            tier: ghosthunterTier,
-          }
+              score: ghosthunterScore,
+              tier: ghosthunterTier,
+            }
           : null,
       },
       stats: {
@@ -241,13 +243,13 @@ export const getUserDashboard = query({
       },
       staking: stakingAccount
         ? {
-          amountStaked: stakingAccount.amountStaked,
-          tier: stakingAccount.tier,
-          reputationBoostBps: stakingAccount.reputationBoostBps,
-          unlockAt: stakingAccount.unlockAt,
-          hasVerifiedBadge: stakingAccount.hasVerifiedBadge,
-          hasPremiumBenefits: stakingAccount.hasPremiumBenefits,
-        }
+            amountStaked: stakingAccount.amountStaked,
+            tier: stakingAccount.tier,
+            reputationBoostBps: stakingAccount.reputationBoostBps,
+            unlockAt: stakingAccount.unlockAt,
+            hasVerifiedBadge: stakingAccount.hasVerifiedBadge,
+            hasPremiumBenefits: stakingAccount.hasPremiumBenefits,
+          }
         : null,
       recentActivity,
       gamification: {

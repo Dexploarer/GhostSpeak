@@ -104,7 +104,13 @@ export const addCreditsPublic = mutation({
   args: {
     walletAddress: v.string(),
     credits: v.number(),
-    paymentToken: v.string(),
+    paymentToken: v.union(
+      v.literal('USDC'),
+      v.literal('SOL'),
+      v.literal('GHOST'),
+      v.literal('usdc'),
+      v.literal('ghost')
+    ),
     paymentAmount: v.number(),
     transactionSignature: v.string(),
   },
@@ -132,20 +138,27 @@ export const addCreditsPublic = mutation({
 
     // Calculate approximate USD value based on token
     const amountUsdc =
-      args.paymentToken === 'USDC'
+      args.paymentToken === 'USDC' || args.paymentToken === 'usdc'
         ? args.paymentAmount
         : args.paymentToken === 'SOL'
           ? args.paymentAmount * 150
           : args.paymentAmount * 0.00001
 
+    // Normalize payment token to schema-compliant lowercase ('usdc' | 'ghost')
+    const normalizedToken: 'usdc' | 'ghost' =
+      args.paymentToken.toLowerCase() === 'ghost' ? 'ghost' : 'usdc'
+
     await ctx.db.insert('userBillingDeposits', {
       userId: user._id,
-      paymentToken: args.paymentToken.toLowerCase(),
+      paymentToken: normalizedToken,
       amountMicroUsdc: Math.floor(amountUsdc * 1_000_000),
       amountUsdc,
       amountMicroGhost:
-        args.paymentToken === 'GHOST' ? Math.floor(args.paymentAmount * 1_000_000) : 0,
-      amountGhost: args.paymentToken === 'GHOST' ? args.paymentAmount : 0,
+        args.paymentToken === 'GHOST' || args.paymentToken === 'ghost'
+          ? Math.floor(args.paymentAmount * 1_000_000)
+          : 0,
+      amountGhost:
+        args.paymentToken === 'GHOST' || args.paymentToken === 'ghost' ? args.paymentAmount : 0,
       transactionSignature: args.transactionSignature,
       timestamp: Date.now(),
     })
@@ -167,7 +180,13 @@ export const addCredits = internalMutation({
   args: {
     walletAddress: v.string(),
     credits: v.number(),
-    paymentToken: v.string(), // 'USDC' | 'SOL' | 'GHOST'
+    paymentToken: v.union(
+      v.literal('USDC'),
+      v.literal('SOL'),
+      v.literal('GHOST'),
+      v.literal('usdc'),
+      v.literal('ghost')
+    ),
     paymentAmount: v.number(), // Amount in token units
     transactionSignature: v.string(),
   },
@@ -192,20 +211,27 @@ export const addCredits = internalMutation({
 
     // Record the deposit using existing schema fields
     const amountUsdc =
-      args.paymentToken === 'USDC'
+      args.paymentToken === 'USDC' || args.paymentToken === 'usdc'
         ? args.paymentAmount
         : args.paymentToken === 'SOL'
           ? args.paymentAmount * 150 // Approximate SOL price
           : args.paymentAmount * 0.00001 // Approximate GHOST price
 
+    // Normalize payment token to schema-compliant lowercase ('usdc' | 'ghost')
+    const normalizedToken2: 'usdc' | 'ghost' =
+      args.paymentToken.toLowerCase() === 'ghost' ? 'ghost' : 'usdc'
+
     await ctx.db.insert('userBillingDeposits', {
       userId: user._id,
-      paymentToken: args.paymentToken.toLowerCase(),
+      paymentToken: normalizedToken2,
       amountMicroUsdc: Math.floor(amountUsdc * 1_000_000),
       amountUsdc,
       amountMicroGhost:
-        args.paymentToken === 'GHOST' ? Math.floor(args.paymentAmount * 1_000_000) : 0,
-      amountGhost: args.paymentToken === 'GHOST' ? args.paymentAmount : 0,
+        args.paymentToken === 'GHOST' || args.paymentToken === 'ghost'
+          ? Math.floor(args.paymentAmount * 1_000_000)
+          : 0,
+      amountGhost:
+        args.paymentToken === 'GHOST' || args.paymentToken === 'ghost' ? args.paymentAmount : 0,
       transactionSignature: args.transactionSignature,
       timestamp: Date.now(),
     })

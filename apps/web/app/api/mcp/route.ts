@@ -7,7 +7,7 @@
 
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
-import { NextRequest } from 'next/server'
+import { withMiddleware, jsonResponse, handleCORS } from '@/lib/api/middleware'
 
 // Lazy initialization to avoid build-time errors
 let convexClient: ConvexHttpClient | null = null
@@ -23,7 +23,7 @@ function getConvexClient(): ConvexHttpClient {
 }
 
 interface SearchAgentsArgs {
-  status?: string
+  status?: 'discovered' | 'claimed' | 'verified'
   limit?: number
 }
 
@@ -43,14 +43,8 @@ function jsonRpcError(id: string | number | null, code: number, message: string)
 }
 
 // MCP tool handlers
-/**
- * ACCESS CONTROL: FREE TIER (Public)
- * Rate Limit: 100 req/hour
- */
 async function handleSearchAgents(args: SearchAgentsArgs) {
   const { status = 'discovered', limit = 20 } = args || {}
-
-  // Enforce free tier limits
   const safeLimit = Math.min(limit, 20)
   const convex = getConvexClient()
 
@@ -88,11 +82,6 @@ async function handleSearchAgents(args: SearchAgentsArgs) {
   }
 }
 
-/**
- * ACCESS CONTROL: PROTECTED (x402 Merchant Route)
- * Requires: Valid Signature or x402 Payment
- * Status: Placeholder - currently unrestricted for MVP, but marked for upgrade.
- */
 async function handleClaimAgent(args: ClaimAgentArgs) {
   const { agentAddress, claimedBy, signature } = args
   const convex = getConvexClient()
@@ -102,14 +91,10 @@ async function handleClaimAgent(args: ClaimAgentArgs) {
   }
 
   // TODO: [x402] Verify payment/signature here before processing claim
-  // This is a high-value action that should be gated.
-
-  // Ownership validation
   if (agentAddress.toLowerCase() !== claimedBy.toLowerCase()) {
     throw new Error('Ownership verification failed: You can only claim agents you own')
   }
 
-  // Check if agent exists
   const agent = await convex.query(api.ghostDiscovery.getDiscoveredAgent, {
     ghostAddress: agentAddress,
   })
@@ -122,7 +107,6 @@ async function handleClaimAgent(args: ClaimAgentArgs) {
     throw new Error('Agent already claimed')
   }
 
-  // Claim the agent
   await convex.mutation(api.ghostDiscovery.claimAgent, {
     ghostAddress: agentAddress,
     claimedBy,
@@ -144,150 +128,122 @@ async function handleGetStats() {
   return { stats, timestamp: Date.now() }
 }
 
-// Main request handler
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { jsonrpc, id, method, params } = body
+export const POST = withMiddleware(async (request) => {
+  const body = await request.json()
+  const { jsonrpc, id, method, params } = body
 
-    if (jsonrpc !== '2.0') {
-      return Response.json(jsonRpcError(id, -32600, 'Invalid Request'), { status: 400 })
-    }
+  if (jsonrpc !== '2.0') {
+    return jsonResponse(jsonRpcError(id, -32600, 'Invalid Request'), { status: 400 })
+  }
 
-    let result: unknown
+  let result: unknown
 
-    switch (method) {
-      case 'tools/list':
-        result = {
-          tools: [
-            {
-              name: 'search_discovered_agents',
-              description: 'Search for agents discovered on-chain',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  status: { type: 'string', enum: ['discovered', 'claimed', 'verified'] },
-                  limit: { type: 'number', minimum: 1, maximum: 100 },
-                },
+  switch (method) {
+    case 'tools/list':
+      result = {
+        tools: [
+          {
+            name: 'search_discovered_agents',
+            description: 'Search for agents discovered on-chain',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                status: { type: 'string', enum: ['discovered', 'claimed', 'verified'] },
+                limit: { type: 'number', minimum: 1, maximum: 100 },
               },
             },
-            {
-              name: 'claim_agent',
-              description: 'Claim ownership of a discovered agent',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  agentAddress: { type: 'string' },
-                  claimedBy: { type: 'string' },
-                  signature: { type: 'string', description: 'Cryptographic signature proving ownership' },
+          },
+          {
+            name: 'claim_agent',
+            description: 'Claim ownership of a discovered agent',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                agentAddress: { type: 'string' },
+                claimedBy: { type: 'string' },
+                signature: {
+                  type: 'string',
+                  description: 'Cryptographic signature proving ownership',
                 },
-                required: ['agentAddress', 'claimedBy', 'signature'],
               },
+              required: ['agentAddress', 'claimedBy', 'signature'],
             },
-            {
-              name: 'get_discovery_stats',
-              description: 'Get discovery statistics',
-              inputSchema: { type: 'object', properties: {} },
-            },
-          ],
-        }
-        break
+          },
+          {
+            name: 'get_discovery_stats',
+            description: 'Get discovery statistics',
+            inputSchema: { type: 'object', properties: {} },
+          },
+        ],
+      }
+      break
 
-      case 'tools/call':
-        const { name, arguments: args } = params
+    case 'tools/call':
+      const { name, arguments: args } = params
 
-        switch (name) {
-          case 'search_discovered_agents':
-            result = {
-              content: [
-                { type: 'text', text: JSON.stringify(await handleSearchAgents(args), null, 2) },
-              ],
-            }
-            break
-          case 'claim_agent':
-            result = {
-              content: [
-                { type: 'text', text: JSON.stringify(await handleClaimAgent(args), null, 2) },
-              ],
-            }
-            break
-          case 'get_discovery_stats':
-            result = {
-              content: [{ type: 'text', text: JSON.stringify(await handleGetStats(), null, 2) }],
-            }
-            break
-          default:
-            return Response.json(jsonRpcError(id, -32601, `Unknown tool: ${name}`), { status: 404 })
-        }
-        break
-
-      case 'resources/list':
-        result = {
-          resources: [
-            {
-              uri: 'discovery://stats',
-              name: 'Discovery Statistics',
-              description: 'Current statistics about agent discovery',
-              mimeType: 'application/json',
-            },
-          ],
-        }
-        break
-
-      case 'resources/read':
-        if (params.uri === 'discovery://stats') {
-          const convex = getConvexClient()
-          const stats = await convex.query(api.ghostDiscovery.getDiscoveryStats, {})
+      switch (name) {
+        case 'search_discovered_agents':
           result = {
-            contents: [
-              {
-                uri: 'discovery://stats',
-                mimeType: 'application/json',
-                text: JSON.stringify(stats, null, 2),
-              },
+            content: [
+              { type: 'text', text: JSON.stringify(await handleSearchAgents(args), null, 2) },
             ],
           }
-        } else {
-          return Response.json(jsonRpcError(id, -32602, 'Unknown resource'), { status: 404 })
+          break
+        case 'claim_agent':
+          result = {
+            content: [{ type: 'text', text: JSON.stringify(await handleClaimAgent(args), null, 2) }],
+          }
+          break
+        case 'get_discovery_stats':
+          result = {
+            content: [{ type: 'text', text: JSON.stringify(await handleGetStats(), null, 2) }],
+          }
+          break
+        default:
+          return jsonResponse(jsonRpcError(id, -32601, `Unknown tool: ${name}`), { status: 404 })
+      }
+      break
+
+    case 'resources/list':
+      result = {
+        resources: [
+          {
+            uri: 'discovery://stats',
+            name: 'Discovery Statistics',
+            description: 'Current statistics about agent discovery',
+            mimeType: 'application/json',
+          },
+        ],
+      }
+      break
+
+    case 'resources/read':
+      if (params.uri === 'discovery://stats') {
+        const convex = getConvexClient()
+        const stats = await convex.query(api.ghostDiscovery.getDiscoveryStats, {})
+        result = {
+          contents: [
+            {
+              uri: 'discovery://stats',
+              mimeType: 'application/json',
+              text: JSON.stringify(stats, null, 2),
+            },
+          ],
         }
-        break
+      } else {
+        return jsonResponse(jsonRpcError(id, -32602, 'Unknown resource'), { status: 404 })
+      }
+      break
 
-      default:
-        return Response.json(jsonRpcError(id, -32601, `Unknown method: ${method}`), { status: 404 })
-    }
-
-    return Response.json(jsonRpcSuccess(id, result), {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-    })
-  } catch (error) {
-    console.error('MCP API error:', error)
-    return Response.json(
-      jsonRpcError(null, -32603, error instanceof Error ? error.message : 'Internal error'),
-      { status: 500 }
-    )
+    default:
+      return jsonResponse(jsonRpcError(id, -32601, `Unknown method: ${method}`), { status: 404 })
   }
-}
 
-// CORS preflight
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  })
-}
+  return jsonResponse(jsonRpcSuccess(id, result))
+})
 
-// Service discovery
-export async function GET() {
-  return Response.json(
+export const GET = withMiddleware(async () => {
+  return jsonResponse(
     {
       name: 'ghostspeak-discovery',
       version: '1.0.0',
@@ -300,11 +256,8 @@ export async function GET() {
       },
       documentation: 'https://ghostspeak.ai/docs/mcp',
     },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    }
+    { cache: true }
   )
-}
+})
+
+export const OPTIONS = handleCORS

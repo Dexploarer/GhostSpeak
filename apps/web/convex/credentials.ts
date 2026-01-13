@@ -508,7 +508,7 @@ export const issueUptimeAttestationCredential = internalMutation({
 // A/B/C/D/F grades from Caisper daily observation reports
 // ─────────────────────────────────────────────────────────────────────────────
 
-function calculateGrade(score: number): string {
+function calculateGrade(score: number): 'A' | 'B' | 'C' | 'D' | 'F' {
   if (score >= 90) return 'A'
   if (score >= 80) return 'B'
   if (score >= 70) return 'C'
@@ -594,7 +594,12 @@ const TEE_VALIDITY_DAYS = 90 // TEE attestations valid for 90 days
 export const issueTEEAttestationCredential = internalMutation({
   args: {
     agentAddress: v.string(),
-    teeType: v.string(), // 'intel_tdx', 'intel_sgx', 'phala', 'eigencloud'
+    teeType: v.union(
+      v.literal('intel_tdx'),
+      v.literal('intel_sgx'),
+      v.literal('phala'),
+      v.literal('eigencloud')
+    ),
     teeProvider: v.string(), // 'phala_cloud', 'eigenai', 'self_hosted'
     attestationReport: v.string(), // DCAP report hash
     enclaveId: v.optional(v.string()),
@@ -1032,10 +1037,10 @@ type PublicCredentialStatus = 'active' | 'expired' | 'revocation_unknown'
 
 type TxSignaturePointer = {
   kind:
-  | 'solana_signature'
-  | 'transaction_signature'
-  | 'verification_signature'
-  | 'first_seen_signature'
+    | 'solana_signature'
+    | 'transaction_signature'
+    | 'verification_signature'
+    | 'first_seen_signature'
   signature: string
 }
 

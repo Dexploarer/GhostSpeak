@@ -32,7 +32,9 @@ export interface TokenPrice {
 /**
  * Get current prices for multiple tokens
  */
-export async function getTokenPrices(tokens: ('SOL' | 'USDC' | 'GHOST')[]): Promise<Record<string, TokenPrice>> {
+export async function getTokenPrices(
+  tokens: ('SOL' | 'USDC' | 'GHOST')[]
+): Promise<Record<string, TokenPrice>> {
   const now = Date.now()
   const result: Record<string, TokenPrice> = {}
   const tokensToFetch: string[] = []
@@ -71,7 +73,9 @@ export async function getTokenPrices(tokens: ('SOL' | 'USDC' | 'GHOST')[]): Prom
 
   // Fallback to CoinGecko
   try {
-    const coingeckoPrices = await fetchCoinGeckoPrices(tokensToFetch as ('SOL' | 'USDC' | 'GHOST')[])
+    const coingeckoPrices = await fetchCoinGeckoPrices(
+      tokensToFetch as ('SOL' | 'USDC' | 'GHOST')[]
+    )
     for (const [token, price] of Object.entries(coingeckoPrices)) {
       result[token] = price
       priceCache.set(token, { price: price.price, timestamp: now })
@@ -92,13 +96,15 @@ export async function getTokenPrices(tokens: ('SOL' | 'USDC' | 'GHOST')[]): Prom
 /**
  * Fetch prices from Jupiter API
  */
-async function fetchJupiterPrices(tokens: ('SOL' | 'USDC' | 'GHOST')[]): Promise<Record<string, TokenPrice>> {
+async function fetchJupiterPrices(
+  tokens: ('SOL' | 'USDC' | 'GHOST')[]
+): Promise<Record<string, TokenPrice>> {
   const mints = tokens.map((t) => TOKEN_MINTS[t])
   const url = `${JUPITER_PRICE_API}?ids=${mints.join(',')}`
 
   const response = await fetch(url, {
     headers: {
-      'Accept': 'application/json',
+      Accept: 'application/json',
     },
     signal: AbortSignal.timeout(5000), // 5 second timeout
   })
@@ -134,7 +140,9 @@ async function fetchJupiterPrices(tokens: ('SOL' | 'USDC' | 'GHOST')[]): Promise
 /**
  * Fetch prices from CoinGecko API (fallback)
  */
-async function fetchCoinGeckoPrices(tokens: ('SOL' | 'USDC' | 'GHOST')[]): Promise<Record<string, TokenPrice>> {
+async function fetchCoinGeckoPrices(
+  tokens: ('SOL' | 'USDC' | 'GHOST')[]
+): Promise<Record<string, TokenPrice>> {
   // Map token symbols to CoinGecko IDs
   const geckoIds: Record<string, string> = {
     SOL: 'solana',
@@ -142,12 +150,15 @@ async function fetchCoinGeckoPrices(tokens: ('SOL' | 'USDC' | 'GHOST')[]): Promi
     GHOST: 'ghost-token', // Adjust if GHOST has a different ID
   }
 
-  const ids = tokens.map((t) => geckoIds[t]).filter(Boolean).join(',')
+  const ids = tokens
+    .map((t) => geckoIds[t])
+    .filter(Boolean)
+    .join(',')
   const url = `${COINGECKO_API}?ids=${ids}&vs_currencies=usd`
 
   const response = await fetch(url, {
     headers: {
-      'Accept': 'application/json',
+      Accept: 'application/json',
     },
     signal: AbortSignal.timeout(5000), // 5 second timeout
   })
@@ -209,7 +220,10 @@ export async function getTokenPrice(token: 'SOL' | 'USDC' | 'GHOST'): Promise<To
 /**
  * Convert token amount to USD value
  */
-export async function convertToUSD(amount: number, token: 'SOL' | 'USDC' | 'GHOST'): Promise<number> {
+export async function convertToUSD(
+  amount: number,
+  token: 'SOL' | 'USDC' | 'GHOST'
+): Promise<number> {
   if (token === 'USDC') {
     return amount // USDC is 1:1 with USD
   }

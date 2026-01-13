@@ -6,7 +6,6 @@ import { useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { TerminalWindow } from '@/components/shared/TerminalWindow'
 
-
 type ObservatoryTab = 'LIVE' | 'ENDPOINTS' | 'REPORTS' | 'FRAUD' | 'X402'
 
 function formatTimeAgo(timestampMs: number): string {

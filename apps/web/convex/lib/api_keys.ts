@@ -46,8 +46,12 @@ export const createApiKey = mutation({
       throw new Error('User not found')
     }
 
-    const tier = (user.subscriptionTier as SubscriptionTier) || 'free'
-    const tierConfig = TIER_CONFIG[tier]
+    const userTier = (user.subscriptionTier as SubscriptionTier) || 'free'
+    const tierConfig = TIER_CONFIG[userTier]
+
+    // Map user subscription tier to API key tier (schema only has startup/growth/enterprise)
+    const apiTier: 'startup' | 'growth' | 'enterprise' =
+      userTier === 'free' || userTier === 'developer' ? 'startup' : userTier
 
     // 2. Generate Key
     // Format: gs_live_[random-32-chars]
@@ -76,7 +80,7 @@ export const createApiKey = mutation({
       userId: user._id,
       hashedKey, // In prod: await hash(rawKey)
       keyPrefix,
-      tier,
+      tier: apiTier,
       rateLimit: tierConfig.rateLimit,
       isActive: true,
       name: args.name || 'Default API Key',
@@ -87,7 +91,7 @@ export const createApiKey = mutation({
       apiKeyId,
       key: rawKey, // Show to user once
       keyPrefix,
-      tier,
+      tier: apiTier,
       rateLimit: tierConfig.rateLimit,
     }
   },

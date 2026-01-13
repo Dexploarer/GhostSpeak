@@ -85,6 +85,7 @@ The MCP endpoint deploys automatically with the Next.js web app.
 ### Steps
 
 1. **Push to GitHub**:
+
    ```bash
    git add packages/web/app/api/mcp/route.ts
    git commit -m "Add MCP HTTP endpoint"
@@ -97,11 +98,13 @@ The MCP endpoint deploys automatically with the Next.js web app.
    - API route available at `https://ghostspeak.ai/api/mcp`
 
 3. **Verify Deployment**:
+
    ```bash
    curl https://ghostspeak.ai/api/mcp | jq .
    ```
 
    Expected response:
+
    ```json
    {
      "name": "ghostspeak-discovery",
@@ -121,11 +124,13 @@ The MCP endpoint deploys automatically with the Next.js web app.
 ## Testing After Deployment
 
 ### 1. Service Discovery
+
 ```bash
 curl https://ghostspeak.ai/api/mcp | jq .
 ```
 
 ### 2. List Tools
+
 ```bash
 curl -X POST https://ghostspeak.ai/api/mcp \
   -H "Content-Type: application/json" \
@@ -133,6 +138,7 @@ curl -X POST https://ghostspeak.ai/api/mcp \
 ```
 
 ### 3. Get Discovery Stats
+
 ```bash
 curl -X POST https://ghostspeak.ai/api/mcp \
   -H "Content-Type: application/json" \
@@ -148,6 +154,7 @@ curl -X POST https://ghostspeak.ai/api/mcp \
 ```
 
 ### 4. Search Discovered Agents
+
 ```bash
 curl -X POST https://ghostspeak.ai/api/mcp \
   -H "Content-Type: application/json" \
@@ -189,12 +196,12 @@ export const ghostspeakPlugin: Plugin = {
           url: 'https://ghostspeak.ai/api/mcp',
           // Optional: Add authentication
           headers: {
-            'Authorization': `Bearer ${process.env.GHOSTSPEAK_API_TOKEN}`
-          }
-        }
-      }
-    }
-  }
+            Authorization: `Bearer ${process.env.GHOSTSPEAK_API_TOKEN}`,
+          },
+        },
+      },
+    },
+  },
 }
 ```
 
@@ -219,27 +226,27 @@ export const searchAgentsAction: Action = {
           method: 'tools/call',
           params: {
             name: 'search_discovered_agents',
-            arguments: { status: 'discovered', limit: 10 }
-          }
-        })
+            arguments: { status: 'discovered', limit: 10 },
+          },
+        }),
       })
 
       const result = await response.json()
       const data = JSON.parse(result.result.content[0].text)
 
       await callback({
-        text: `Found ${data.count} discovered agents. Total in database: ${data.stats.total}`
+        text: `Found ${data.count} discovered agents. Total in database: ${data.stats.total}`,
       })
 
       return { success: true, data }
     } catch (error) {
       await callback({
         text: 'Failed to search agents',
-        error: true
+        error: true,
       })
       return { success: false, error }
     }
-  }
+  },
 }
 ```
 
@@ -264,7 +271,7 @@ export async function POST(request: NextRequest) {
   // Log incoming requests
   console.log('[MCP] Incoming request:', {
     method: body.method,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   })
 
   // ... rest of handler
@@ -278,14 +285,14 @@ export async function POST(request: NextRequest) {
 const toolCallMetrics = {
   search_discovered_agents: 0,
   claim_agent: 0,
-  get_discovery_stats: 0
+  get_discovery_stats: 0,
 }
 
 switch (name) {
   case 'search_discovered_agents':
     toolCallMetrics.search_discovered_agents++
     console.log('[MCP] Tool usage:', toolCallMetrics)
-    // ...
+  // ...
 }
 ```
 
@@ -311,10 +318,7 @@ export async function POST(request: NextRequest) {
   const expectedToken = process.env.MCP_API_TOKEN
 
   if (expectedToken && authHeader !== `Bearer ${expectedToken}`) {
-    return Response.json(
-      jsonRpcError(null, -32001, 'Unauthorized'),
-      { status: 401 }
-    )
+    return Response.json(jsonRpcError(null, -32001, 'Unauthorized'), { status: 401 })
   }
 
   // ... rest of handler
@@ -337,10 +341,7 @@ export async function POST(request: NextRequest) {
   const { success } = await ratelimit.limit(ip)
 
   if (!success) {
-    return Response.json(
-      jsonRpcError(null, -32003, 'Rate limit exceeded'),
-      { status: 429 }
-    )
+    return Response.json(jsonRpcError(null, -32003, 'Rate limit exceeded'), { status: 429 })
   }
 
   // ... rest of handler
@@ -357,15 +358,12 @@ export async function POST(request: NextRequest) {
   const token = await getAuthToken(request)
 
   if (!token) {
-    return Response.json(
-      jsonRpcError(null, -32001, 'Unauthorized'),
-      { status: 401 }
-    )
+    return Response.json(jsonRpcError(null, -32001, 'Unauthorized'), { status: 401 })
   }
 
   // Pass token to Convex queries for authenticated access
   const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!, {
-    auth: token
+    auth: token,
   })
 
   // ... rest of handler
@@ -419,6 +417,7 @@ case 'get_discovery_stats':
 **Cause**: `NEXT_PUBLIC_CONVEX_URL` not set
 
 **Fix**:
+
 ```bash
 # Add to Vercel environment variables
 vercel env add NEXT_PUBLIC_CONVEX_URL
@@ -430,6 +429,7 @@ vercel env add NEXT_PUBLIC_CONVEX_URL
 **Cause**: Browser blocking cross-origin requests
 
 **Fix**: CORS headers already configured in route.ts:
+
 ```typescript
 headers: {
   'Access-Control-Allow-Origin': '*',
@@ -443,6 +443,7 @@ headers: {
 **Cause**: MCP plugin not configured correctly
 
 **Fix**: Verify plugin settings:
+
 ```typescript
 settings: {
   mcp: {
@@ -463,12 +464,14 @@ settings: {
 If deployment issues occur:
 
 1. **Revert API Route**:
+
    ```bash
    git revert <commit-hash>
    git push origin main
    ```
 
 2. **Use Standalone MCP Server** (fallback):
+
    ```bash
    # Run standalone server locally
    cd packages/mcp-server-ghostspeak

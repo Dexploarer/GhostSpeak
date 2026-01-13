@@ -139,7 +139,7 @@ describe('JWT Session Token Creation and Validation', () => {
     const now = Date.now()
     const expiresAt = now + SESSION_EXPIRY_MS
 
-    const expectedSevenDaysLater = now + (7 * 24 * 60 * 60 * 1000)
+    const expectedSevenDaysLater = now + 7 * 24 * 60 * 60 * 1000
 
     // Allow 1 second tolerance for test execution time
     expect(Math.abs(expiresAt - expectedSevenDaysLater)).toBeLessThan(1000)
@@ -200,9 +200,7 @@ describe('JWT Session Token Creation and Validation', () => {
 
     // Decode payload (base64url)
     const payloadPart = parts[1]
-    const decodedPayload = JSON.parse(
-      Buffer.from(payloadPart, 'base64url').toString('utf-8')
-    )
+    const decodedPayload = JSON.parse(Buffer.from(payloadPart, 'base64url').toString('utf-8'))
 
     expect(decodedPayload.userId).toBe(userId)
     expect(decodedPayload.walletAddress).toBe(walletAddress)

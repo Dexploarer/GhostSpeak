@@ -80,10 +80,10 @@ export const signInWithSolana = mutation({
       }
 
       // Create JWT session with expiration
-      const sessionResult = await ctx.runMutation(internal.sessions.createSession, {
+      const sessionResult = (await ctx.runMutation(internal.sessions.createSession, {
         userId,
         walletAddress: args.publicKey,
-      }) as { sessionId: Id<'sessions'>; sessionToken: string; expiresAt: number }
+      })) as { sessionId: Id<'sessions'>; sessionToken: string; expiresAt: number }
 
       return {
         success: true,

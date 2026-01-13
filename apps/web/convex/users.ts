@@ -466,8 +466,8 @@ export const updateAllUserScores = internalMutation({
     if (!users.isDone) {
       await ctx.scheduler.runAfter(0, internal.users.updateAllUserScores, {
         cursor: users.continueCursor,
-        limit
+        limit,
       })
     }
-  }
+  },
 })

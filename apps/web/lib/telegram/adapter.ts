@@ -53,7 +53,10 @@ export function extractUserInfo(ctx: Context) {
  * Format ElizaOS response for Telegram
  * Handles Telegram's 4096 character limit by splitting long messages
  */
-export function formatResponseForTelegram(text: string, metadata?: Record<string, unknown>): {
+export function formatResponseForTelegram(
+  text: string,
+  metadata?: Record<string, unknown>
+): {
   messages: string[]
   replyMarkup?: any
 } {
@@ -88,12 +91,12 @@ export function formatResponseForTelegram(text: string, metadata?: Record<string
   if (metadata?.type === 'agents') {
     // Build agent discovery keyboard
     const agents = (metadata.agents as any[]) || []
-    const keyboard = agents.slice(0, 5).map((agent) => ([
+    const keyboard = agents.slice(0, 5).map((agent) => [
       {
         text: `👻 ${agent.name || agent.address.slice(0, 8)}...`,
         callback_data: `claim_${agent.address}`,
-      }
-    ]))
+      },
+    ])
 
     if (keyboard.length > 0) {
       replyMarkup = {

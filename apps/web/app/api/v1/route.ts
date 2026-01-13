@@ -4,10 +4,12 @@
  * API Documentation and Index
  */
 
-export async function GET() {
+import { withMiddleware, jsonResponse, handleCORS } from '@/lib/api/middleware'
+
+export const GET = withMiddleware(async () => {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ghostspeak.ai'
 
-  return Response.json(
+  return jsonResponse(
     {
       name: 'GhostSpeak API',
       version: '1.0.0',
@@ -64,7 +66,12 @@ export async function GET() {
             path: '/api/v1/agent/register',
             method: 'POST',
             description: 'Register a new agent (x402: $0.01)',
-            body: { agentAddress: 'string', name: 'string?', description: 'string?', x402Endpoints: 'array?' },
+            body: {
+              agentAddress: 'string',
+              name: 'string?',
+              description: 'string?',
+              x402Endpoints: 'array?',
+            },
           },
           claim: {
             path: '/api/v1/agent/claim',
@@ -118,25 +125,9 @@ export async function GET() {
         support: `${baseUrl}/support`,
       },
 
-      timestamp: Date.now(),
     },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
-      },
-    }
+    { cache: true } // Long cache for API documentation
   )
-}
+})
 
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  })
-}
+export const OPTIONS = handleCORS

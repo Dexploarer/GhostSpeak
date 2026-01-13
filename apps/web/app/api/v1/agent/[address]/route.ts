@@ -5,40 +5,17 @@
  */
 
 import { api } from '@/convex/_generated/api'
-import { NextRequest } from 'next/server'
-import { completeWideEvent } from '@/lib/logging/wide-event'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { withMiddleware, jsonResponse, errorResponse, handleCORS } from '@/lib/api/middleware'
 import { getConvexClient } from '@/lib/convex-client'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ address: string }> }
-) {
-  // Rate limit check
-  const rateLimited = checkRateLimit(request)
-  if (rateLimited) return rateLimited
-
-  try {
+export const GET = withMiddleware(
+  async (request, { params }: { params: Promise<{ address: string }> }) => {
     const { address: agentAddress } = await params
 
     // Validate Solana address format
     const solanaAddressRegex = /^[A-HJ-NP-Za-km-z1-9]{32,44}$/
     if (!solanaAddressRegex.test(agentAddress)) {
-      completeWideEvent((request as any).wideEvent, {
-        statusCode: 400,
-        durationMs:
-          Date.now() - (request as any).wideEvent?.timestamp
-            ? new Date((request as any).wideEvent.timestamp).getTime()
-            : Date.now(),
-        error: {
-          type: 'ValidationError',
-          code: 'INVALID_ADDRESS_FORMAT',
-          message: 'Invalid Solana address format',
-          retriable: false,
-        },
-      })
-
-      return Response.json({ error: 'Invalid Solana address format' }, { status: 400 })
+      return errorResponse('Invalid Solana address format', 400)
     }
 
     // Get Convex client (lazy initialization)
@@ -82,43 +59,17 @@ export async function GET(
 
     // If no agent found (or Convex not available), return 404
     if (!discoveredAgent) {
-      completeWideEvent((request as any).wideEvent, {
-        statusCode: 404,
-        durationMs:
-          Date.now() - (request as any).wideEvent?.timestamp
-            ? new Date((request as any).wideEvent.timestamp).getTime()
-            : Date.now(),
-      })
-
-      return Response.json(
-        {
+      return errorResponse(
+        JSON.stringify({
           error: 'Agent not found',
           address: agentAddress,
           note: 'This is expected behavior - the agent does not exist in the database',
-        },
-        { status: 404 }
+        }),
+        404
       )
     }
 
-    // Complete wide event with success
-    completeWideEvent((request as any).wideEvent, {
-      statusCode: 200,
-      durationMs:
-        Date.now() - (request as any).wideEvent?.timestamp
-          ? new Date((request as any).wideEvent.timestamp).getTime()
-          : Date.now(),
-    })
-
-    // Complete wide event logging
-    completeWideEvent((request as any).wideEvent, {
-      statusCode: 200,
-      durationMs:
-        Date.now() - (request as any).wideEvent?.timestamp
-          ? new Date((request as any).wideEvent.timestamp).getTime()
-          : Date.now(),
-    })
-
-    return Response.json(
+    return jsonResponse(
       {
         agent: {
           address: discoveredAgent.ghostAddress,
@@ -153,46 +104,9 @@ export async function GET(
         },
         timestamp: Date.now(),
       },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
-        },
-      }
-    )
-  } catch (error) {
-    console.error('Agent API error:', error)
-
-    // Complete wide event with error
-    completeWideEvent((request as any).wideEvent, {
-      statusCode: 500,
-      durationMs:
-        Date.now() - (request as any).wideEvent?.timestamp
-          ? new Date((request as any).wideEvent.timestamp).getTime()
-          : Date.now(),
-      error: {
-        type: 'AgentAPIError',
-        code: 'AGENT_LOOKUP_FAILED',
-        message: error instanceof Error ? error.message : 'Agent lookup failed',
-        retriable: true,
-      },
-    })
-
-    return Response.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
+      { cache: true } // Cache agent details for 60s
     )
   }
-}
+)
 
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  })
-}
+export const OPTIONS = handleCORS

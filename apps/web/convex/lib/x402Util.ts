@@ -58,7 +58,10 @@ export function parseTransactionForPayment(
         // This implies the facilitator config might be the ATA address for SPL?
         // OR the indexer logic was simplified.
         // Let's stick to the previous indexer logic for compatibility:
-        if (destination === facilitatorAddress || (facilitatorAta && destination === facilitatorAta)) {
+        if (
+          destination === facilitatorAddress ||
+          (facilitatorAta && destination === facilitatorAta)
+        ) {
           isX402Payment = true
           transferIx = ix
           token = 'USDC' // Assumption based on usage, technically could be any token

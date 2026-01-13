@@ -16,7 +16,10 @@ interface ConnectWalletButtonProps {
   variant?: 'default' | 'ghost' | 'gradient'
 }
 
-const ConnectWalletButtonComponent = ({ className, variant = 'gradient' }: ConnectWalletButtonProps) => {
+const ConnectWalletButtonComponent = ({
+  className,
+  variant = 'gradient',
+}: ConnectWalletButtonProps) => {
   console.log('🚀 [ConnectWalletButton] Component MOUNTED')
 
   const { publicKey, disconnect, connecting, signMessage, connected } = useWallet()

@@ -19,6 +19,7 @@
     "dev:sdk": "cd packages/sdk-typescript && bun run dev",
     "build": "turbo build && cd apps/web && bun run deploy:convex:prod",
     "build:web": "cd apps/web && bun run build",
+    "build:miniapp": "cd apps/miniapp && bun run build",
     "build:packages": "turbo build --filter=!web",
     "build:sdk": "cd packages/sdk-typescript && bun run build",
     "build:cli": "cd packages/cli && bun run build",

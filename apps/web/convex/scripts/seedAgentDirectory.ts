@@ -185,7 +185,7 @@ export const seedAgents = mutation({
           ghostAddress: agent.ghostAddress,
           firstTxSignature: `seed_${agent.ghostAddress.slice(0, 8)}_${now}`,
           firstSeenTimestamp: now - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000), // Random date within last 30 days
-          discoverySource: 'seed_data',
+          discoverySource: 'account_scan', // Seed data treated as account scan
           slot: 300000000 + Math.floor(Math.random() * 1000000),
           blockTime: Math.floor(now / 1000) - Math.floor(Math.random() * 30 * 24 * 60 * 60),
           status: 'verified',
@@ -205,14 +205,20 @@ export const seedAgents = mutation({
           .first()
 
         if (!existingEndpoint) {
+          // Normalize method and category to match schema types
+          const method: 'GET' | 'POST' = ep.method.toUpperCase() === 'POST' ? 'POST' : 'GET'
+          const validCategories = ['research', 'market_data', 'social', 'utility', 'other'] as const
+          const category: 'research' | 'market_data' | 'social' | 'utility' | 'other' =
+            validCategories.includes(ep.category as any) ? (ep.category as any) : 'other'
+
           await ctx.db.insert('observedEndpoints', {
             agentAddress: agent.ghostAddress,
             baseUrl: agent.baseUrl,
             endpoint: ep.endpoint,
-            method: ep.method,
+            method,
             priceUsdc: ep.priceUsdc,
             description: ep.description,
-            category: ep.category,
+            category,
             isActive: true,
             addedAt: now,
             // Add some sample test stats
@@ -242,10 +248,11 @@ export const clearSeedData = mutation({
     let deletedAgents = 0
     let deletedEndpoints = 0
 
-    // Delete seeded agents
+    // Delete seeded agents (identified by seed_ prefix in signature)
     const agents = await ctx.db
       .query('discoveredAgents')
-      .filter((q) => q.eq(q.field('discoverySource'), 'seed_data'))
+      .filter((q) => q.gte(q.field('firstTxSignature'), 'seed_'))
+      .filter((q) => q.lt(q.field('firstTxSignature'), 'seed_~'))
       .collect()
 
     for (const agent of agents) {

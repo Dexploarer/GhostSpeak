@@ -74,9 +74,7 @@ export default function AgentsDirectoryPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Agent Directory</h1>
-          <p className="text-white/60">
-            Browse all discovered agents on the GhostSpeak network
-          </p>
+          <p className="text-white/60">Browse all discovered agents on the GhostSpeak network</p>
         </div>
 
         {/* Stats Cards */}

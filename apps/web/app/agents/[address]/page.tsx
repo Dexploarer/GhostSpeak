@@ -33,11 +33,16 @@ export default function AgentDetailsPage() {
   // Fetch agent data from Convex
   const agent = useQuery(api.ghostDiscovery.getDiscoveredAgent, { ghostAddress: address })
   const credentials = useQuery(api.credentials.getAgentCredentialsPublic, { agentAddress: address })
-  const scoreData = useQuery(api.ghostScoreCalculator.calculateAgentScore, { agentAddress: address })
+  const scoreData = useQuery(api.ghostScoreCalculator.calculateAgentScore, {
+    agentAddress: address,
+  })
 
   // Fetch endpoints and observations
   const endpoints = useQuery(api.observation.listEndpoints, { agentAddress: address })
-  const observations = useQuery(api.observation.getTestsForAgent, { agentAddress: address, limit: 20 })
+  const observations = useQuery(api.observation.getTestsForAgent, {
+    agentAddress: address,
+    limit: 20,
+  })
 
   const isLoading =
     agent === undefined ||
@@ -134,15 +139,21 @@ export default function AgentDetailsPage() {
                     <div className="p-4 bg-black/20 rounded-lg">
                       <div className="flex items-center gap-2 mb-1">
                         <Shield className="w-4 h-4 text-white/40" />
-                        <span className="text-xs text-white/40 uppercase tracking-wider">Status</span>
+                        <span className="text-xs text-white/40 uppercase tracking-wider">
+                          Status
+                        </span>
                       </div>
-                      <p className="text-white font-medium capitalize">{agent?.status || 'Unknown'}</p>
+                      <p className="text-white font-medium capitalize">
+                        {agent?.status || 'Unknown'}
+                      </p>
                     </div>
 
                     <div className="p-4 bg-black/20 rounded-lg">
                       <div className="flex items-center gap-2 mb-1">
                         <Trophy className="w-4 h-4 text-primary/60" />
-                        <span className="text-xs text-white/40 uppercase tracking-wider">Ghost Score</span>
+                        <span className="text-xs text-white/40 uppercase tracking-wider">
+                          Ghost Score
+                        </span>
                       </div>
                       {scoreData ? (
                         <p className="text-primary font-medium">
@@ -156,7 +167,9 @@ export default function AgentDetailsPage() {
                     <div className="p-4 bg-black/20 rounded-lg">
                       <div className="flex items-center gap-2 mb-1">
                         <Zap className="w-4 h-4 text-yellow-400/60" />
-                        <span className="text-xs text-white/40 uppercase tracking-wider">Endpoints</span>
+                        <span className="text-xs text-white/40 uppercase tracking-wider">
+                          Endpoints
+                        </span>
                       </div>
                       <p className="text-white font-medium">{endpoints?.length || 0}</p>
                     </div>
@@ -164,7 +177,9 @@ export default function AgentDetailsPage() {
                     <div className="p-4 bg-black/20 rounded-lg">
                       <div className="flex items-center gap-2 mb-1">
                         <Activity className="w-4 h-4 text-cyan-400/60" />
-                        <span className="text-xs text-white/40 uppercase tracking-wider">Observations</span>
+                        <span className="text-xs text-white/40 uppercase tracking-wider">
+                          Observations
+                        </span>
                       </div>
                       <p className="text-white font-medium">{observations?.length || 0}</p>
                     </div>
@@ -261,12 +276,13 @@ export default function AgentDetailsPage() {
                                   {obs.capabilityVerified ? 'Capability Verified' : 'Test Result'}
                                 </span>
                                 <span
-                                  className={`text-xs px-2 py-0.5 rounded ${obs.qualityScore >= 80
+                                  className={`text-xs px-2 py-0.5 rounded ${
+                                    obs.qualityScore >= 80
                                       ? 'bg-green-500/10 text-green-400'
                                       : obs.qualityScore >= 50
                                         ? 'bg-yellow-500/10 text-yellow-400'
                                         : 'bg-red-500/10 text-red-400'
-                                    }`}
+                                  }`}
                                 >
                                   {obs.qualityScore}/100
                                 </span>
@@ -295,7 +311,9 @@ export default function AgentDetailsPage() {
 
                             {obs.issues && obs.issues.length > 0 && (
                               <div className="mb-3">
-                                <p className="text-red-400 text-xs font-medium mb-1">Issues Found:</p>
+                                <p className="text-red-400 text-xs font-medium mb-1">
+                                  Issues Found:
+                                </p>
                                 <ul className="list-disc list-inside text-red-400/70 text-xs">
                                   {obs.issues.map((issue, i) => (
                                     <li key={i}>{issue}</li>
@@ -306,16 +324,19 @@ export default function AgentDetailsPage() {
 
                             {obs.transcript && obs.transcript.length > 0 && (
                               <div className="bg-black/30 rounded p-3 max-h-48 overflow-y-auto">
-                                <p className="text-white/40 text-xs font-medium mb-2">Transcript:</p>
+                                <p className="text-white/40 text-xs font-medium mb-2">
+                                  Transcript:
+                                </p>
                                 {obs.transcript.map((msg, i) => (
                                   <div
                                     key={i}
-                                    className={`text-xs mb-2 ${msg.role === 'user'
+                                    className={`text-xs mb-2 ${
+                                      msg.role === 'user'
                                         ? 'text-cyan-400'
                                         : msg.role === 'agent'
                                           ? 'text-white'
                                           : 'text-white/40'
-                                      }`}
+                                    }`}
                                   >
                                     <span className="font-mono uppercase">[{msg.role}]</span>{' '}
                                     {msg.content.slice(0, 200)}

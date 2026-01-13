@@ -24,9 +24,7 @@ export interface DiscoveredEndpoint {
  * 2. Root endpoint with 402 response parsing
  * 3. Common x402 patterns
  */
-export async function discoverAgentEndpoints(
-  agentAddress: string
-): Promise<DiscoveredEndpoint[]> {
+export async function discoverAgentEndpoints(agentAddress: string): Promise<DiscoveredEndpoint[]> {
   const endpoints: DiscoveredEndpoint[] = []
 
   // Try standard discovery methods

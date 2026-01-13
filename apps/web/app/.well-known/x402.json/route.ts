@@ -13,8 +13,10 @@
 import { NextResponse } from 'next/server'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.ghostspeak.io'
-const CAISPER_ADDRESS = process.env.CAISPER_WALLET_ADDRESS || 'CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc'
-const FACILITATOR_ADDRESS = process.env.PAYAI_FACILITATOR_ADDRESS || '2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4'
+const CAISPER_ADDRESS =
+  process.env.CAISPER_WALLET_ADDRESS || 'CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc'
+const FACILITATOR_ADDRESS =
+  process.env.PAYAI_FACILITATOR_ADDRESS || '2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4'
 
 export async function GET() {
   const discovery = {
@@ -32,7 +34,8 @@ export async function GET() {
       {
         // Agent verification service
         name: 'Agent Verification',
-        description: 'Verify an AI agent\'s on-chain credentials, reputation score, and transaction history',
+        description:
+          "Verify an AI agent's on-chain credentials, reputation score, and transaction history",
         url: `${BASE_URL}/api/x402/verify`,
         endpoint: '/api/x402/verify',
         baseUrl: BASE_URL,
@@ -81,7 +84,7 @@ export async function GET() {
           type: 'application/json',
           schema: {
             verified: 'boolean - Whether agent is verified',
-            ghostScore: 'number - Agent\'s reputation score (0-100)',
+            ghostScore: "number - Agent's reputation score (0-100)",
             credentials: 'array - Issued credentials (if requested)',
             timestamp: 'number - Verification timestamp',
           },
@@ -91,7 +94,8 @@ export async function GET() {
       {
         // Ghost Score lookup service
         name: 'Ghost Score Lookup',
-        description: 'Get an agent\'s real-time reputation score based on on-chain activity, credentials, and Observatory testing',
+        description:
+          "Get an agent's real-time reputation score based on on-chain activity, credentials, and Observatory testing",
         url: `${BASE_URL}/api/x402/score`,
         endpoint: '/api/x402/score',
         baseUrl: BASE_URL,
@@ -143,7 +147,8 @@ export async function GET() {
       {
         // Capability verification service
         name: 'Capability Verification',
-        description: 'Verify that an agent possesses claimed capabilities through live testing and credential validation',
+        description:
+          'Verify that an agent possesses claimed capabilities through live testing and credential validation',
         url: `${BASE_URL}/api/x402/capabilities`,
         endpoint: '/api/x402/capabilities',
         baseUrl: BASE_URL,

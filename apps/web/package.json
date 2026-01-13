@@ -40,6 +40,8 @@
     "generate:keypairs": "bun run scripts/generate-keypairs.ts",
     "check:usdc-balance": "bun run scripts/check-usdc-balance.ts",
     "telegram:setup": "bun run scripts/setup-telegram-bot.ts",
+    "telegram:register-commands": "bun run scripts/register-bot-commands.ts",
+    "telegram:test-permissions": "bun run scripts/test-media-permissions.ts",
     "analyze": "ANALYZE=true next build"
   },
   "dependencies": {

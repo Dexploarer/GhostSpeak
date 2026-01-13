@@ -6,69 +6,50 @@
 
 import { api } from '@/convex/_generated/api'
 import { getConvexClient } from '@/lib/convex-client'
+import { withMiddleware, jsonResponse, handleCORS } from '@/lib/api/middleware'
+import type { PlatformStatsResponse } from '@/lib/types/api'
 
-export async function GET() {
-  try {
-    // Fetch all stats in parallel
-    const discoveryStats = await getConvexClient().query(api.ghostDiscovery.getDiscoveryStats, {})
+export const GET = withMiddleware(async () => {
+  // Fetch all stats in parallel
+  const discoveryStats = await getConvexClient().query(api.ghostDiscovery.getDiscoveryStats, {})
 
-    return Response.json(
-      {
-        platform: {
-          name: 'GhostSpeak',
-          version: '1.0.0',
-          network: process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet',
-          programId: '4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB',
-        },
-
-        discovery: {
-          totalAgents: discoveryStats.total,
-          discovered: discoveryStats.totalDiscovered,
-          claimed: discoveryStats.totalClaimed,
-          verified: discoveryStats.totalVerified,
-        },
-
-        network: {
-          rpcEndpoint: process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-          websocketEndpoint: process.env.NEXT_PUBLIC_SOLANA_WS_URL || 'wss://api.devnet.solana.com',
-        },
-
-        features: {
-          agentDiscovery: true,
-          ghostScore: true,
-          x402Payments: true,
-          staking: true,
-          reputation: true,
-          escrow: true,
-          verifiableCredentials: true,
-        },
-
-        timestamp: Date.now(),
+  return jsonResponse<PlatformStatsResponse>(
+    {
+      platform: {
+        name: 'GhostSpeak',
+        version: '1.0.0',
+        network: process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet',
+        programId: '4wHjA2a5YC4twZb4NQpwZpixo5FgxxzuJUrCG7UnF9pB',
       },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
-        },
-      }
-    )
-  } catch (error) {
-    console.error('Stats API error:', error)
-    return Response.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
 
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      discovery: {
+        totalAgents: discoveryStats.total,
+        discovered: discoveryStats.totalDiscovered,
+        claimed: discoveryStats.totalClaimed,
+        verified: discoveryStats.totalVerified,
+      },
+
+      network: {
+        rpcEndpoint: process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
+        websocketEndpoint:
+          process.env.NEXT_PUBLIC_SOLANA_WS_URL || 'wss://api.devnet.solana.com',
+      },
+
+      features: {
+        agentDiscovery: true,
+        ghostScore: true,
+        x402Payments: true,
+        staking: true,
+        reputation: true,
+        escrow: true,
+        verifiableCredentials: true,
+      },
+
+      timestamp: Date.now(),
     },
-  })
-}
+    { cache: true } // Enable 60s cache
+  )
+})
+
+// CORS preflight handled automatically by middleware
+export const OPTIONS = handleCORS

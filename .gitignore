@@ -9,6 +9,7 @@ keys/
 .env
 .env.local
 .env.*.local
+.env.vercel.*
 !.env.example
 
 # === Test files in root ===

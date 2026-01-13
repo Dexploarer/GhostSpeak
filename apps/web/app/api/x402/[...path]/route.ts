@@ -11,7 +11,7 @@
  * 4. Server verifies payment and returns data + X-PAYMENT-RESPONSE
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { withMiddleware, jsonResponse, errorResponse, handleCORS } from '@/lib/api/middleware'
 import {
   generate402Response,
   parseXPaymentHeader,
@@ -20,8 +20,6 @@ import {
 } from '@/convex/lib/x402Merchant'
 import { api, internal } from '@/convex/_generated/api'
 import { getConvexClient } from '@/lib/convex-client'
-
-// Initialize Convex client
 
 // Default price for x402 services (in USDC)
 const DEFAULT_PRICE_USDC = 0.01 // 1 cent
@@ -38,7 +36,7 @@ const SERVICES: Record<
   verify: {
     priceUsdc: 0.01,
     description: 'Agent verification service',
-    handler: async (req) => {
+    handler: async (req: any) => {
       const body = await req.json().catch(() => ({}))
       return {
         verified: true,
@@ -97,129 +95,136 @@ async function getCaisperAddress(): Promise<string | null> {
 /**
  * Handle all HTTP methods for x402 protected endpoints
  */
-async function handleRequest(
-  req: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
-): Promise<NextResponse> {
-  const { path: pathSegments = [] } = await params
-  const service = pathSegments[0] || 'default'
+const handleRequest = withMiddleware(
+  async (request, { params }: { params: Promise<{ path: string[] }> }) => {
+    const { path: pathSegments = [] } = await params
+    const service = pathSegments[0] || 'default'
 
-  console.log(`[x402Route] Request for service: ${service}`)
+    console.log(`[x402Route] Request for service: ${service}`)
 
-  // Get service configuration
-  const serviceConfig = SERVICES[service]
-  if (!serviceConfig) {
-    return NextResponse.json(
-      {
-        error: 'Unknown service',
-        availableServices: Object.keys(SERVICES),
-      },
-      { status: 404 }
-    )
+    // Get service configuration
+    const serviceConfig = SERVICES[service]
+    if (!serviceConfig) {
+      return errorResponse(
+        JSON.stringify({
+          error: 'Unknown service',
+          availableServices: Object.keys(SERVICES),
+        }),
+        404
+      )
+    }
+
+    // Get Caisper's address for receiving payments
+    const caisperAddress = await getCaisperAddress()
+    if (!caisperAddress) {
+      return errorResponse('Merchant not configured', 500)
+    }
+
+    // Check for X-PAYMENT header
+    const xPaymentHeader = request.headers.get('X-PAYMENT') || request.headers.get('x-payment')
+
+    if (!xPaymentHeader) {
+      // No payment - return 402 with payment requirements
+      console.log('[x402Route] No payment, returning 402')
+
+      const { header, body, accepts } = generate402Response({
+        payTo: caisperAddress,
+        priceUsdc: serviceConfig.priceUsdc,
+        description: serviceConfig.description,
+        facilitatorAddress: process.env.PAYAI_FACILITATOR_ADDRESS,
+      })
+
+      return new Response(
+        JSON.stringify({
+          error: 'Payment Required',
+          message: `This endpoint requires payment of $${serviceConfig.priceUsdc} USDC`,
+          accepts,
+          x402: body,
+        }),
+        {
+          status: 402,
+          headers: {
+            'WWW-Authenticate': header,
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      )
+    }
+
+    // Payment provided - verify it
+    console.log('[x402Route] Payment header received, verifying...')
+
+    const payload = parseXPaymentHeader(xPaymentHeader)
+    if (!payload) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid X-PAYMENT header' }),
+        {
+          status: 400,
+          headers: {
+            'X-PAYMENT-RESPONSE': createErrorResponse('Invalid X-PAYMENT header format'),
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      )
+    }
+
+    // For MVP, we trust that the payment is valid if the header parses correctly
+    // In production, we would:
+    // 1. Decode and verify the transaction
+    // 2. Check it transfers correct amount to caisperAddress
+    // 3. Forward to facilitator for co-signing
+    // 4. Wait for on-chain confirmation
+
+    // TODO: Implement full verification via verifyX402Payment action
+    // For now, simulate successful verification
+    const mockTxSignature = `x402_${Date.now()}_${Math.random().toString(36).slice(2)}`
+    const mockPayer = 'unknown' // Would be extracted from transaction
+
+    console.log('[x402Route] Payment accepted (MVP mode)')
+
+    // Execute the service handler
+    try {
+      const result = await serviceConfig.handler(request)
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          paymentAccepted: true,
+          transactionSignature: mockTxSignature,
+          data: result,
+        }),
+        {
+          status: 200,
+          headers: {
+            'X-PAYMENT-RESPONSE': createSettlementResponse(mockTxSignature, mockPayer),
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      )
+    } catch (error) {
+      console.error('[x402Route] Service handler error:', error)
+      return new Response(
+        JSON.stringify({ error: 'Service execution failed' }),
+        {
+          status: 500,
+          headers: {
+            'X-PAYMENT-RESPONSE': createSettlementResponse(mockTxSignature, mockPayer),
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      )
+    }
   }
-
-  // Get Caisper's address for receiving payments
-  const caisperAddress = await getCaisperAddress()
-  if (!caisperAddress) {
-    return NextResponse.json({ error: 'Merchant not configured' }, { status: 500 })
-  }
-
-  // Check for X-PAYMENT header
-  const xPaymentHeader = req.headers.get('X-PAYMENT') || req.headers.get('x-payment')
-
-  if (!xPaymentHeader) {
-    // No payment - return 402 with payment requirements
-    console.log('[x402Route] No payment, returning 402')
-
-    const { header, body, accepts } = generate402Response({
-      payTo: caisperAddress,
-      priceUsdc: serviceConfig.priceUsdc,
-      description: serviceConfig.description,
-      facilitatorAddress: process.env.PAYAI_FACILITATOR_ADDRESS,
-    })
-
-    return NextResponse.json(
-      {
-        error: 'Payment Required',
-        message: `This endpoint requires payment of $${serviceConfig.priceUsdc} USDC`,
-        accepts,
-        x402: body,
-      },
-      {
-        status: 402,
-        headers: {
-          'WWW-Authenticate': header,
-          'Content-Type': 'application/json',
-        },
-      }
-    )
-  }
-
-  // Payment provided - verify it
-  console.log('[x402Route] Payment header received, verifying...')
-
-  const payload = parseXPaymentHeader(xPaymentHeader)
-  if (!payload) {
-    return NextResponse.json(
-      { error: 'Invalid X-PAYMENT header' },
-      {
-        status: 400,
-        headers: {
-          'X-PAYMENT-RESPONSE': createErrorResponse('Invalid X-PAYMENT header format'),
-        },
-      }
-    )
-  }
-
-  // For MVP, we trust that the payment is valid if the header parses correctly
-  // In production, we would:
-  // 1. Decode and verify the transaction
-  // 2. Check it transfers correct amount to caisperAddress
-  // 3. Forward to facilitator for co-signing
-  // 4. Wait for on-chain confirmation
-
-  // TODO: Implement full verification via verifyX402Payment action
-  // For now, simulate successful verification
-  const mockTxSignature = `x402_${Date.now()}_${Math.random().toString(36).slice(2)}`
-  const mockPayer = 'unknown' // Would be extracted from transaction
-
-  console.log('[x402Route] Payment accepted (MVP mode)')
-
-  // Execute the service handler
-  try {
-    const result = await serviceConfig.handler(req)
-
-    return NextResponse.json(
-      {
-        success: true,
-        paymentAccepted: true,
-        transactionSignature: mockTxSignature,
-        data: result,
-      },
-      {
-        status: 200,
-        headers: {
-          'X-PAYMENT-RESPONSE': createSettlementResponse(mockTxSignature, mockPayer),
-          'Content-Type': 'application/json',
-        },
-      }
-    )
-  } catch (error) {
-    console.error('[x402Route] Service handler error:', error)
-    return NextResponse.json(
-      { error: 'Service execution failed' },
-      {
-        status: 500,
-        headers: {
-          'X-PAYMENT-RESPONSE': createSettlementResponse(mockTxSignature, mockPayer),
-        },
-      }
-    )
-  }
-}
+)
 
 // Export handlers for all HTTP methods
 export const GET = handleRequest
 export const POST = handleRequest
 export const PUT = handleRequest
 export const DELETE = handleRequest
+
+export const OPTIONS = handleCORS

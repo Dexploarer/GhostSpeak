@@ -390,7 +390,6 @@ Your limit resets at midnight UTC. Come back tomorrow for more! 👻`,
     }, 500)
   }
 
-
   return (
     <div
       className="flex h-full w-full overflow-hidden bg-[#0a0a0a] relative"
@@ -414,7 +413,10 @@ Your limit resets at midnight UTC. Come back tomorrow for more! 👻`,
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden z-10 relative" style={{ height: '100%' }}>
+      <div
+        className="flex flex-col flex-1 min-w-0 overflow-hidden z-10 relative"
+        style={{ height: '100%' }}
+      >
         {/* Messages Container - Properly isolated scroll area */}
         <div
           ref={messagesContainerRef}
@@ -543,17 +545,17 @@ Your limit resets at midnight UTC. Come back tomorrow for more! 👻`,
                     {/* Render credential card (issued or list) */}
                     {(msg.metadata?.type === 'credential-issued' ||
                       msg.metadata?.type === 'credentials') && (
-                        <CredentialCard
-                          mode={msg.metadata.type === 'credential-issued' ? 'issued' : 'list'}
-                          credentialId={msg.metadata.credentialId as string}
-                          did={msg.metadata.did as string}
-                          agentAddress={msg.metadata.agentAddress as string}
-                          credentials={msg.metadata.credentials as any}
-                          validCount={msg.metadata.validCount as number}
-                          totalCount={msg.metadata.totalCount as number}
-                          onActionClick={handleSend}
-                        />
-                      )}
+                      <CredentialCard
+                        mode={msg.metadata.type === 'credential-issued' ? 'issued' : 'list'}
+                        credentialId={msg.metadata.credentialId as string}
+                        did={msg.metadata.did as string}
+                        agentAddress={msg.metadata.agentAddress as string}
+                        credentials={msg.metadata.credentials as any}
+                        validCount={msg.metadata.validCount as number}
+                        totalCount={msg.metadata.totalCount as number}
+                        onActionClick={handleSend}
+                      />
+                    )}
 
                     {/* Render x402 query result */}
                     {msg.metadata?.type === 'x402-query-result' && (

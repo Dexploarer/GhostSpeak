@@ -11,6 +11,7 @@ import { ghostspeakPlugin } from '@ghostspeak/plugin-elizaos'
 // import mcpPlugin from '@elizaos/plugin-mcp' // Disabled: Internal agent uses direct actions
 import sqlPlugin from '@elizaos/plugin-sql'
 import CaisperCharacter from './Caisper.json' assert { type: 'json' }
+import { booCharacter } from './characters/boo'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 
@@ -27,6 +28,10 @@ import { evaluateAgentTokensAction } from './actions/evaluateAgentTokens'
 import { scoreHistoryAction } from './actions/scoreHistory'
 import { generateOuijaAction } from './actions/generateOuija'
 import { getUserPortfolioAction } from './actions/getUserPortfolio'
+import { generateImageAction } from './actions/generateImage'
+import { showMyImagesAction } from './actions/showMyImages'
+import { writeCaptionAction } from './actions/writeCaption'
+import { checkQuotaAction } from './actions/checkQuota'
 
 // Wide Event Logging
 import { createRequestEvent, emitWideEvent } from '@/lib/logging/wide-event'
@@ -63,7 +68,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     console.log('📦 Convex database adapter initialized')
   }
 
-  async close(): Promise<void> { }
+  async close(): Promise<void> {}
 
   // Memories are stored in Convex agentMessages table
   async getMemories(params: any): Promise<any[]> {
@@ -119,8 +124,8 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     // Return a UUID as required by the interface
     return crypto.randomUUID() as `${string}-${string}-${string}-${string}-${string}`
   }
-  async removeMemory(memoryId: string, tableName?: string): Promise<void> { }
-  async removeAllMemories(roomId: string, tableName?: string): Promise<void> { }
+  async removeMemory(memoryId: string, tableName?: string): Promise<void> {}
+  async removeAllMemories(roomId: string, tableName?: string): Promise<void> {}
   async countMemories(roomId: string, unique?: boolean, tableName?: string): Promise<number> {
     return 0
   }
@@ -129,10 +134,10 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async getGoals(params: any): Promise<any[]> {
     return []
   }
-  async updateGoal(goal: any): Promise<void> { }
-  async createGoal(goal: any): Promise<void> { }
-  async removeGoal(goalId: string): Promise<void> { }
-  async removeAllGoals(roomId: string): Promise<void> { }
+  async updateGoal(goal: any): Promise<void> {}
+  async createGoal(goal: any): Promise<void> {}
+  async removeGoal(goalId: string): Promise<void> {}
+  async removeAllGoals(roomId: string): Promise<void> {}
 
   async getRoom(roomId: string): Promise<any | null> {
     return { id: roomId }
@@ -140,7 +145,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async createRoom(roomId?: string): Promise<string> {
     return roomId || `room-${Date.now()}`
   }
-  async removeRoom(roomId: string): Promise<void> { }
+  async removeRoom(roomId: string): Promise<void> {}
 
   async getRoomsForParticipant(userId: string): Promise<any[]> {
     return []
@@ -167,7 +172,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     roomId: string,
     userId: string,
     state: 'FOLLOWED' | 'MUTED' | null
-  ): Promise<void> { }
+  ): Promise<void> {}
   async getParticipantsForRoom(roomId: string): Promise<any[]> {
     return []
   }
@@ -181,7 +186,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async createRelationship(params: any): Promise<boolean> {
     return true
   }
-  async updateRelationship(relationship: any): Promise<void> { }
+  async updateRelationship(relationship: any): Promise<void> {}
 
   async getCache<T>(key: string): Promise<T | undefined> {
     return undefined
@@ -250,9 +255,9 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async updateMemory(memory: any): Promise<boolean> {
     return true
   }
-  async deleteMemory(memoryId: any): Promise<void> { }
-  async deleteManyMemories(memoryIds: any[]): Promise<void> { }
-  async deleteAllMemories(roomId: string, tableName: string): Promise<void> { }
+  async deleteMemory(memoryId: any): Promise<void> {}
+  async deleteManyMemories(memoryIds: any[]): Promise<void> {}
+  async deleteAllMemories(roomId: string, tableName: string): Promise<void> {}
 
   async getEntitiesByIds(entityIds: any[]): Promise<any[] | null> {
     // Return entity objects for elizaOS v1.7.0
@@ -272,7 +277,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async createEntities(entities: any[]): Promise<boolean> {
     return true
   }
-  async updateEntity(entity: any): Promise<void> { }
+  async updateEntity(entity: any): Promise<void> {}
 
   async getComponent(
     entityId: any,
@@ -288,8 +293,8 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async createComponent(component: any): Promise<boolean> {
     return true
   }
-  async updateComponent(component: any): Promise<void> { }
-  async deleteComponent(componentId: any): Promise<void> { }
+  async updateComponent(component: any): Promise<void> {}
+  async deleteComponent(componentId: any): Promise<void> {}
 
   async getAgent(agentId: any): Promise<any | null> {
     // Return a proper Agent object for elizaOS v1.7.0
@@ -324,11 +329,11 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
     // GhostSpeak uses Gateway-Ghost with 3072 dimensions (openai/text-embedding-3-large)
   }
 
-  async log(params: any): Promise<void> { }
+  async log(params: any): Promise<void> {}
   async getLogs(params: any): Promise<any[]> {
     return []
   }
-  async deleteLog(logId: any): Promise<void> { }
+  async deleteLog(logId: any): Promise<void> {}
 
   async createWorld(world: any): Promise<any> {
     return world.id || `world-${Date.now()}`
@@ -336,20 +341,20 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async getWorld(id: any): Promise<any | null> {
     return { id }
   }
-  async removeWorld(id: any): Promise<void> { }
+  async removeWorld(id: any): Promise<void> {}
   async getAllWorlds(): Promise<any[]> {
     return []
   }
-  async updateWorld(world: any): Promise<void> { }
+  async updateWorld(world: any): Promise<void> {}
   async getRoomsByIds(roomIds: any[]): Promise<any[] | null> {
     return roomIds.map((id) => ({ id }))
   }
   async createRooms(rooms: any[]): Promise<any[]> {
     return rooms.map((r) => r.id || `room-${Date.now()}`)
   }
-  async deleteRoom(roomId: any): Promise<void> { }
-  async deleteRoomsByWorldId(worldId: any): Promise<void> { }
-  async updateRoom(room: any): Promise<void> { }
+  async deleteRoom(roomId: any): Promise<void> {}
+  async deleteRoomsByWorldId(worldId: any): Promise<void> {}
+  async updateRoom(room: any): Promise<void> {}
   async getRoomsByWorld(worldId: any): Promise<any[]> {
     return []
   }
@@ -379,30 +384,32 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async getTask(taskId: any): Promise<any | null> {
     return null
   }
-  async updateTask(taskId: any, task: any): Promise<void> { }
-  async deleteTask(taskId: any): Promise<void> { }
+  async updateTask(taskId: any, task: any): Promise<void> {}
+  async deleteTask(taskId: any): Promise<void> {}
   async getTasksByName(name: string): Promise<any[]> {
     return []
   }
-  async deleteTasks(params: any): Promise<void> { }
+  async deleteTasks(params: any): Promise<void> {}
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 /* eslint-enable @typescript-eslint/no-unused-vars */
 /* eslint-enable @typescript-eslint/no-empty-function */
 
-// Singleton instance
-let agentRuntime: IAgentRuntime | null = null
+// Runtime instances for each character
+const runtimeInstances = new Map<string, IAgentRuntime>()
 
 /**
- * Initialize Casper agent runtime
+ * Initialize agent runtime with specific character
  */
-export async function initializeAgent(): Promise<IAgentRuntime> {
-  if (agentRuntime) {
-    return agentRuntime
+export async function initializeAgent(characterId: 'caisper' | 'boo' = 'caisper'): Promise<IAgentRuntime> {
+  // Return existing instance if already initialized
+  if (runtimeInstances.has(characterId)) {
+    return runtimeInstances.get(characterId)!
   }
 
   try {
-    console.log('🚀 Initializing Casper agent runtime...')
+    const characterName = characterId === 'boo' ? 'Boo' : 'Caisper'
+    console.log(`🚀 Initializing ${characterName} agent runtime...`)
 
     // Validate required environment variables
     const requiredEnvVars = ['AI_GATEWAY_API_KEY']
@@ -416,11 +423,14 @@ export async function initializeAgent(): Promise<IAgentRuntime> {
     const databaseAdapter = new ConvexDatabaseAdapter()
     await databaseAdapter.init()
 
-    // Create runtime with Casper character and plugins
+    // Select character based on characterId
+    const character = characterId === 'boo' ? booCharacter : CaisperCharacter
+
+    // Create runtime with selected character and plugins
     // Using SQL plugin (required by ElizaOS) + GhostSpeak + AI Gateway plugins
     const runtime = new AgentRuntime({
-      // @ts-ignore - Character JSON matches ICharacter interface
-      character: CaisperCharacter,
+      // @ts-ignore - Character JSON/object matches ICharacter interface
+      character,
       plugins: [sqlPlugin, ghostspeakPlugin, aiGatewayPlugin], // Removed mcpPlugin for internal runtime
       adapter: databaseAdapter,
       // Settings is Record<string, string> in v1.7.0
@@ -434,23 +444,35 @@ export async function initializeAgent(): Promise<IAgentRuntime> {
     // Initialize runtime
     await runtime.initialize()
 
-    // Register web-app-specific actions
-    runtime.registerAction(discoverAgentsAction)
-    runtime.registerAction(claimAgentAction)
-    runtime.registerAction(queryX402AgentAction)
-    runtime.registerAction(ghostScoreAction)
-    runtime.registerAction(getCredentialsAction)
-    runtime.registerAction(issueCredentialAction)
-    runtime.registerAction(trustAssessmentAction)
-    runtime.registerAction(agentDirectoryAction)
-    runtime.registerAction(evaluateAgentTokensAction)
-    runtime.registerAction(scoreHistoryAction)
-    runtime.registerAction(generateOuijaAction)
-    runtime.registerAction(getUserPortfolioAction)
-    console.log('📝 Registered 12 web-app actions including Portfolio')
+    // Register actions based on character
+    if (characterId === 'caisper') {
+      // Caisper: Full suite of verification and credential actions
+      runtime.registerAction(discoverAgentsAction)
+      runtime.registerAction(claimAgentAction)
+      runtime.registerAction(queryX402AgentAction)
+      runtime.registerAction(ghostScoreAction)
+      runtime.registerAction(getCredentialsAction)
+      runtime.registerAction(issueCredentialAction)
+      runtime.registerAction(trustAssessmentAction)
+      runtime.registerAction(agentDirectoryAction)
+      runtime.registerAction(evaluateAgentTokensAction)
+      runtime.registerAction(scoreHistoryAction)
+      runtime.registerAction(generateOuijaAction)
+      runtime.registerAction(getUserPortfolioAction)
+      console.log('📝 Registered 12 Caisper actions (verification & credentials)')
+    } else if (characterId === 'boo') {
+      // Boo: GhostSpeak community marketing
+      runtime.registerAction(generateImageAction)
+      runtime.registerAction(showMyImagesAction)
+      runtime.registerAction(writeCaptionAction)
+      runtime.registerAction(checkQuotaAction)
+      runtime.registerAction(generateOuijaAction)
+      console.log('📝 Registered 5 Boo actions (community marketing suite)')
+    }
 
-    agentRuntime = runtime
-    console.log('✅ Casper agent initialized successfully')
+    // Store runtime instance
+    runtimeInstances.set(characterId, runtime)
+    console.log(`✅ ${characterName} agent initialized successfully`)
 
     return runtime
   } catch (error) {
@@ -462,15 +484,19 @@ export async function initializeAgent(): Promise<IAgentRuntime> {
 /**
  * Get existing agent runtime or initialize new one
  */
-export async function getAgentRuntime(): Promise<IAgentRuntime> {
-  if (!agentRuntime) {
-    return await initializeAgent()
-  }
-  return agentRuntime
+export async function getAgentRuntime(characterId: 'caisper' | 'boo' = 'caisper'): Promise<IAgentRuntime> {
+  return await initializeAgent(characterId)
 }
 
 /**
- * Process message with Casper agent
+ * Get runtime instance (for direct access, e.g., from image generation webhook)
+ */
+export async function getRuntimeInstance(characterId: 'caisper' | 'boo' = 'caisper'): Promise<IAgentRuntime> {
+  return await getAgentRuntime(characterId)
+}
+
+/**
+ * Process message with agent (Caisper or Boo)
  * Directly evaluates actions to bypass database adapter requirements
  */
 export async function processAgentMessage(params: {
@@ -478,14 +504,16 @@ export async function processAgentMessage(params: {
   message: string
   roomId?: string
   correlationId?: string
+  source?: 'web' | 'telegram' // Image generation source filtering
+  characterId?: 'caisper' | 'boo' // Character selection (default: caisper)
 }): Promise<{
   text: string
   action?: string
   metadata?: Record<string, unknown>
 }> {
   const startTime = Date.now()
-  const { correlationId } = params
-  const runtime = await getAgentRuntime()
+  const { correlationId, characterId = 'caisper' } = params
+  const runtime = await getAgentRuntime(characterId)
   const roomId = params.roomId || `user-${params.userId}`
 
   // Create wide event for agent interaction
@@ -519,7 +547,7 @@ export async function processAgentMessage(params: {
       entityId: params.userId, // v1.7.0 uses entityId
       content: {
         text: params.message,
-        source: 'web-chat',
+        source: params.source || 'web', // Image generation source ('web' | 'telegram')
         walletAddress: params.userId, // Expose wallet address to actions
       },
       createdAt: Date.now(),
@@ -628,9 +656,40 @@ export async function processAgentMessage(params: {
 
       const llmStartTime = Date.now()
       try {
-        // Build a rich prompt with context about Caisper's knowledge
-        const prompt = `You are Caisper, GhostSpeak's credential and reputation verification ghost.
-Answer this user question conversationally, with personality. 
+        // Build character-specific conversational prompt
+        let prompt = ''
+
+        if (characterId === 'boo') {
+          // Boo: Marketing & creative focus
+          prompt = `You are Boo, GhostSpeak's creative marketing ghost and media wizard.
+Answer this user question conversationally, with enthusiasm and creativity.
+
+**User Context:**
+- Telegram User: ${params.userId}
+
+**Your Expertise:**
+- AI image generation with Google Imagen 4
+- 13 branded templates (raids, memes, infographics, quotes, announcements, etc.)
+- Marketing materials for GhostSpeak
+- Creative prompt engineering
+- Social media graphics
+
+**What you can do:**
+- Generate custom images with GhostSpeak branding
+- Create raid graphics for X/Twitter
+- Make memes and viral content
+- Design infographics
+- Suggest templates and creative ideas
+
+${ragContext}
+
+User message: ${params.message}
+
+Respond in character as Boo - be enthusiastic, creative, encouraging. Use visual emojis (🎨 🖼️ ✨ 📸). If they ask about verification or Ghost Scores, refer them to @caisper_bot. Focus on being helpful with image generation and creative content!`
+        } else {
+          // Caisper: Verification & credentials focus
+          prompt = `You are Caisper, GhostSpeak's credential and reputation verification ghost.
+Answer this user question conversationally, with personality.
 
 **User Context:**
 - Wallet Address: ${params.userId}
@@ -667,6 +726,7 @@ ${ragContext}
 User message: ${params.message}
 
 Respond in character as Caisper - be helpful, slightly sarcastic, use ghost puns sparingly. If they're asking HOW something works, explain it. If they want to CHECK something specific, ask for an agent address. If they ask about their own identity or address, use the provided Wallet Address.`
+        }
 
         const result = await runtime.generateText(prompt, {
           includeCharacter: true,

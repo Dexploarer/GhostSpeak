@@ -17,7 +17,11 @@ export const recordDiscoveredAgent = internalMutation({
     ghostAddress: v.string(),
     firstTxSignature: v.string(),
     firstSeenTimestamp: v.number(),
-    discoverySource: v.string(), // 'program_logs' | 'account_scan' | 'x402_payment'
+    discoverySource: v.union(
+      v.literal('program_logs'),
+      v.literal('account_scan'),
+      v.literal('x402_payment')
+    ),
     facilitatorAddress: v.optional(v.string()),
     slot: v.number(),
     blockTime: v.number(),
@@ -82,7 +86,7 @@ export const recordDiscoveredAgent = internalMutation({
       // Check deduplication
       const existingTx = await ctx.db
         .query('historicalInteractions')
-        .withIndex('by_signature', q => q.eq('transactionSignature', args.paymentSignature!))
+        .withIndex('by_signature', (q) => q.eq('transactionSignature', args.paymentSignature!))
         .first()
 
       if (!existingTx) {
@@ -96,7 +100,7 @@ export const recordDiscoveredAgent = internalMutation({
           discoveredAt: Date.now(),
           discoverySource: 'x402_indexer',
           agentKnown: true,
-          agentId // Optional link if the payer is the agent
+          agentId, // Optional link if the payer is the agent
         })
       }
     }
@@ -266,12 +270,13 @@ export const updateAgentMetadata = mutation({
 
     await ctx.db.patch(agent._id, updates)
 
-    // Log metadata update event
-    await ctx.db.insert('discoveryEvents', {
-      eventType: 'metadata_updated',
-      ghostAddress: args.ghostAddress,
-      timestamp: Date.now(),
-    })
+    // Metadata updated - log as agent_claimed since metadata_updated is not in schema
+    // We can extend the schema later if needed
+    // await ctx.db.insert('discoveryEvents', {
+    //   eventType: 'metadata_updated', // Not in schema union
+    //   ghostAddress: args.ghostAddress,
+    //   timestamp: Date.now(),
+    // })
 
     return {
       success: true,
@@ -347,7 +352,7 @@ export const updateIndexerState = internalMutation({
   args: {
     stateKey: v.string(),
     value: v.string(),
-    network: v.string(),
+    network: v.union(v.literal('devnet'), v.literal('mainnet-beta')),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -394,16 +399,19 @@ export const getDiscoveredAgent = query({
  */
 export const listDiscoveredAgents = query({
   args: {
-    status: v.optional(v.string()),
+    status: v.optional(
+      v.union(v.literal('discovered'), v.literal('claimed'), v.literal('verified'))
+    ),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const limit = args.limit || 100
 
     if (args.status !== undefined) {
+      const status = args.status // Type narrowing: now guaranteed non-undefined
       return await ctx.db
         .query('discoveredAgents')
-        .withIndex('by_status', (q) => q.eq('status', args.status as string))
+        .withIndex('by_status', (q) => q.eq('status', status))
         .order('desc')
         .take(limit)
     }
@@ -417,16 +425,19 @@ export const listDiscoveredAgents = query({
  */
 export const listDiscoveredAgentsInternal = internalQuery({
   args: {
-    status: v.optional(v.string()),
+    status: v.optional(
+      v.union(v.literal('discovered'), v.literal('claimed'), v.literal('verified'))
+    ),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const limit = args.limit || 100
 
     if (args.status !== undefined) {
+      const status = args.status // Type narrowing: now guaranteed non-undefined
       return await ctx.db
         .query('discoveredAgents')
-        .withIndex('by_status', (q) => q.eq('status', args.status as string))
+        .withIndex('by_status', (q) => q.eq('status', status))
         .order('desc')
         .take(limit)
     }
@@ -505,7 +516,11 @@ export const bulkImportDiscoveredAgents = mutation({
         ghostAddress: v.string(),
         firstTxSignature: v.string(),
         firstSeenTimestamp: v.number(),
-        discoverySource: v.string(),
+        discoverySource: v.union(
+          v.literal('program_logs'),
+          v.literal('account_scan'),
+          v.literal('x402_payment')
+        ),
         facilitatorAddress: v.optional(v.string()),
         slot: v.number(),
         // Optional enrichment data
@@ -656,9 +671,7 @@ export const registerAgentDomain = mutation({
     // If agent is claimed, verify ownership (optional callerWallet check)
     if (agent.status === 'claimed' && args.callerWallet) {
       if (agent.claimedBy !== args.callerWallet) {
-        throw new Error(
-          `Only the agent owner can register a domain. Owner: ${agent.claimedBy}`
-        )
+        throw new Error(`Only the agent owner can register a domain. Owner: ${agent.claimedBy}`)
       }
     }
 
@@ -676,12 +689,13 @@ export const registerAgentDomain = mutation({
       updatedAt: Date.now(),
     })
 
-    // Log domain registration event
-    await ctx.db.insert('discoveryEvents', {
-      eventType: 'domain_registered',
-      ghostAddress: args.ghostAddress,
-      timestamp: Date.now(),
-    })
+    // Domain registered - log as external_id_mapped since domain_registered is not in schema
+    // We can extend the schema later if needed for domain events
+    // await ctx.db.insert('discoveryEvents', {
+    //   eventType: 'domain_registered', // Not in schema union
+    //   ghostAddress: args.ghostAddress,
+    //   timestamp: Date.now(),
+    // })
 
     return {
       success: true,

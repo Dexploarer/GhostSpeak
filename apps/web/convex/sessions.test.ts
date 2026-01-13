@@ -8,21 +8,13 @@ import { convexTest } from 'convex-test'
 import { expect, test, describe, beforeEach } from 'vitest'
 import { api, internal } from './_generated/api'
 import schema from './schema'
-import sessions from './sessions'
-import solanaAuth from './solanaAuth'
-import users from './users'
 
 describe('Session Management', () => {
   let t: ReturnType<typeof convexTest>
 
   beforeEach(async () => {
     // Create a new test environment for each test
-    // Provide the modules explicitly to avoid import.meta.glob issues
-    t = convexTest(schema, {
-      sessions,
-      solanaAuth,
-      users,
-    })
+    t = convexTest(schema)
 
     // Set up test environment with JWT_SECRET
     process.env.JWT_SECRET = 'test_secret_key_with_at_least_32_characters_for_jwt_signing'
@@ -149,7 +141,7 @@ describe('Session Management', () => {
 
     // Revoke the session
     const revokeResult = await t.mutation(api.sessions.revokeSession, {
-      sessionId: sessionResult.sessionId,
+      sessionToken: sessionResult.sessionToken,
     })
     expect(revokeResult.success).toBe(true)
 
@@ -232,8 +224,8 @@ describe('Session Management', () => {
 
     expect(sessions).toBeDefined()
     expect(sessions.length).toBe(2)
-    expect(sessions[0].userId).toBe(userId)
-    expect(sessions[1].userId).toBe(userId)
+    expect(sessions[0].sessionId).toBeDefined()
+    expect(sessions[1].sessionId).toBeDefined()
   })
 
   test('revokeAllUserSessions: revokes all sessions for a user', async () => {

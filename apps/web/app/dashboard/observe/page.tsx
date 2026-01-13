@@ -136,21 +136,21 @@ export default function ObservePage() {
   }
   const agentGroups: Record<string, AgentGroup> = endpoints
     ? endpoints.reduce(
-      (acc: Record<string, AgentGroup>, ep: Doc<'observedEndpoints'>) => {
-        if (!acc[ep.agentAddress]) {
-          acc[ep.agentAddress] = {
-            agentAddress: ep.agentAddress,
-            baseUrl: ep.baseUrl,
-            endpoints: [],
-            avgQuality: 0,
-            totalTests: 0,
+        (acc: Record<string, AgentGroup>, ep: Doc<'observedEndpoints'>) => {
+          if (!acc[ep.agentAddress]) {
+            acc[ep.agentAddress] = {
+              agentAddress: ep.agentAddress,
+              baseUrl: ep.baseUrl,
+              endpoints: [],
+              avgQuality: 0,
+              totalTests: 0,
+            }
           }
-        }
-        acc[ep.agentAddress].endpoints.push(ep)
-        return acc
-      },
-      {} as Record<string, AgentGroup>
-    )
+          acc[ep.agentAddress].endpoints.push(ep)
+          return acc
+        },
+        {} as Record<string, AgentGroup>
+      )
     : {}
 
   // Calculate agent-level stats
@@ -159,8 +159,8 @@ export default function ObservePage() {
     agent.avgQuality =
       eps.length > 0
         ? Math.round(
-          eps.reduce((sum: number, ep: any) => sum + (ep.avgQualityScore || 50), 0) / eps.length
-        )
+            eps.reduce((sum: number, ep: any) => sum + (ep.avgQualityScore || 50), 0) / eps.length
+          )
         : 0
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     agent.totalTests = eps.reduce((sum: number, ep: any) => sum + (ep.totalTests || 0), 0)
@@ -243,19 +243,21 @@ export default function ObservePage() {
           <div className="bg-[#111111] border border-white/10 p-1 rounded-lg inline-flex">
             <button
               onClick={() => setViewMode('directory')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${viewMode === 'directory'
-                ? 'bg-primary text-primary-foreground shadow-lg'
-                : 'text-white/60 hover:text-white'
-                }`}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                viewMode === 'directory'
+                  ? 'bg-primary text-primary-foreground shadow-lg'
+                  : 'text-white/60 hover:text-white'
+              }`}
             >
               Directory
             </button>
             <button
               onClick={() => setViewMode('live')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${viewMode === 'live'
-                ? 'bg-primary text-primary-foreground shadow-lg'
-                : 'text-white/60 hover:text-white'
-                }`}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
+                viewMode === 'live'
+                  ? 'bg-primary text-primary-foreground shadow-lg'
+                  : 'text-white/60 hover:text-white'
+              }`}
             >
               Live Feed
               <span className="flex h-2 w-2 relative">
@@ -337,7 +339,6 @@ export default function ObservePage() {
               </div>
             </div>
 
-
             {/* Historical Tests */}
             <HistoricalTestsTable />
 
@@ -410,7 +411,7 @@ export default function ObservePage() {
                                     0
                                   ) /
                                     agent.endpoints.length) *
-                                  100
+                                    100
                                 ) / 100}
                                 %
                               </div>
@@ -438,8 +439,9 @@ export default function ObservePage() {
                                 />
                               </div>
                               <ChevronDown
-                                className={`w-5 h-5 text-white/40 transition-transform ${expandedAgent === agent.agentAddress ? 'rotate-180' : ''
-                                  }`}
+                                className={`w-5 h-5 text-white/40 transition-transform ${
+                                  expandedAgent === agent.agentAddress ? 'rotate-180' : ''
+                                }`}
                               />
                             </div>
                           </div>
@@ -456,9 +458,10 @@ export default function ObservePage() {
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                   <div
-                                    className={`w-8 h-8 rounded-lg flex items-center justify-center ${CATEGORY_CONFIG[ep.category]?.color ||
+                                    className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                      CATEGORY_CONFIG[ep.category]?.color ||
                                       CATEGORY_CONFIG.other.color
-                                      }`}
+                                    }`}
                                   >
                                     <span className="text-lg">
                                       {CATEGORY_CONFIG[ep.category]?.icon ||
@@ -468,10 +471,11 @@ export default function ObservePage() {
                                   <div>
                                     <div className="flex items-center gap-2">
                                       <span
-                                        className={`text-xs px-1.5 py-0.5 rounded ${ep.method === 'GET'
-                                          ? 'bg-blue-500/20 text-blue-400'
-                                          : 'bg-green-500/20 text-green-400'
-                                          }`}
+                                        className={`text-xs px-1.5 py-0.5 rounded ${
+                                          ep.method === 'GET'
+                                            ? 'bg-blue-500/20 text-blue-400'
+                                            : 'bg-green-500/20 text-green-400'
+                                        }`}
                                       >
                                         {ep.method}
                                       </span>
@@ -498,12 +502,13 @@ export default function ObservePage() {
                                     {/* Quality */}
                                     <div className="text-right min-w-16">
                                       <div
-                                        className={`text-sm font-medium ${(ep.avgQualityScore || 50) >= 70
-                                          ? 'text-green-400'
-                                          : (ep.avgQualityScore || 50) >= 50
-                                            ? 'text-yellow-400'
-                                            : 'text-red-400'
-                                          }`}
+                                        className={`text-sm font-medium ${
+                                          (ep.avgQualityScore || 50) >= 70
+                                            ? 'text-green-400'
+                                            : (ep.avgQualityScore || 50) >= 50
+                                              ? 'text-yellow-400'
+                                              : 'text-red-400'
+                                        }`}
                                       >
                                         Q{ep.avgQualityScore || 50}
                                       </div>

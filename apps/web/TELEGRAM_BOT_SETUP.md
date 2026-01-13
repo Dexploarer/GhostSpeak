@@ -61,6 +61,12 @@ TELEGRAM_WEBHOOK_SECRET=your-64-char-hex-string-from-step-2
 
 # For local development with ngrok
 NEXT_PUBLIC_APP_URL=https://your-ngrok-url.ngrok.io
+
+# Media Generation Permissions (optional)
+TELEGRAM_MEDIA_MODE=open                           # Permission mode: allowlist | blocklist | group-admins | open (default: open)
+TELEGRAM_MEDIA_ALLOWLIST=username1,@username2,123456789  # Comma-separated usernames/IDs for unlimited access
+TELEGRAM_MEDIA_BLOCKLIST=spammer1,@spammer2        # Comma-separated usernames/IDs to block
+TELEGRAM_MEDIA_RATE_LIMIT=10                       # Default rate limit (images/day) for non-tiered users (default: 10)
 ```
 
 #### Vercel Production
@@ -68,10 +74,16 @@ NEXT_PUBLIC_APP_URL=https://your-ngrok-url.ngrok.io
 Add these to your Vercel project environment variables:
 
 1. Go to Vercel project settings → Environment Variables
-2. Add:
+2. Add required variables:
    - `TELEGRAM_BOT_TOKEN` = `123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11`
    - `TELEGRAM_WEBHOOK_SECRET` = `your-64-char-hex-string`
    - `NEXT_PUBLIC_APP_URL` = `https://ghostspeak.vercel.app` (or your custom domain)
+
+3. Add optional media permission variables:
+   - `TELEGRAM_MEDIA_MODE` = `open` (or `allowlist`, `blocklist`, `group-admins`)
+   - `TELEGRAM_MEDIA_ALLOWLIST` = `username1,@username2,123456789` (if using allowlist mode)
+   - `TELEGRAM_MEDIA_BLOCKLIST` = `spammer1,@spammer2` (if using blocklist mode)
+   - `TELEGRAM_MEDIA_RATE_LIMIT` = `10` (if you want to override default)
 
 ### 4. Deploy to Vercel
 
@@ -136,6 +148,11 @@ Expected output:
 | `/start` | Welcome message with bot introduction |
 | `/help` | Help guide with available commands |
 | `/quota` | Check your daily message quota |
+| `/media <prompt>` | Generate AI images with Google Imagen 4 |
+| `/raid` | Generate X (Twitter) raid status |
+| `/mute` | Mute bot in group (admins only) |
+| `/unmute` | Unmute bot in group (admins only) |
+| `/about` | About Caisper bot |
 
 ## Message Quota
 
@@ -148,6 +165,152 @@ Telegram users use the same quota system as web users:
 | **Whale** | $100+ in $GHOST | Unlimited |
 
 **Future Enhancement**: Link Telegram account to Solana wallet for auto-tier detection.
+
+## Media Generation Permissions
+
+The `/media` command supports flexible permission control to prevent abuse while encouraging community engagement.
+
+### Permission Modes
+
+Configure with `TELEGRAM_MEDIA_MODE`:
+
+#### 1. `open` (Default)
+- **Everyone** can generate images
+- Subject to rate limits based on $GHOST holdings
+- Best for: Public community engagement
+
+#### 2. `allowlist`
+- **Only authorized users** can generate images
+- Users in `TELEGRAM_MEDIA_ALLOWLIST` get unlimited access
+- Everyone else is denied
+- Best for: Private/exclusive communities
+
+#### 3. `blocklist`
+- **Everyone except blocked users** can generate images
+- Users in `TELEGRAM_MEDIA_BLOCKLIST` are denied
+- Everyone else subject to rate limits
+- Best for: Open communities with specific bad actors
+
+#### 4. `group-admins`
+- **Group admins only** in group chats
+- **Everyone** in DMs
+- Best for: Preventing group spam while keeping DMs open
+
+### Rate Limits
+
+All users (except allowlist) are subject to rate limits based on $GHOST holdings:
+
+| Tier | $GHOST Holdings | Daily Images | Notes |
+|------|----------------|--------------|-------|
+| **Free** | $0 | 5 images/day | Default for all users |
+| **Holder** | $10+ in $GHOST | 25 images/day | Auto-detected via wallet |
+| **Whale** | $100+ in $GHOST | 100 images/day | Auto-detected via wallet |
+| **Allowlist** | Any | Unlimited | Overrides all other limits |
+
+**Note**: Rate limits reset every 24 hours and are tracked per wallet address.
+
+### Configuration Examples
+
+#### Example 1: Open to everyone (default)
+```bash
+TELEGRAM_MEDIA_MODE=open
+```
+- Anyone can generate images
+- Free users: 5/day, Holders: 25/day, Whales: 100/day
+
+#### Example 2: Allowlist only
+```bash
+TELEGRAM_MEDIA_MODE=allowlist
+TELEGRAM_MEDIA_ALLOWLIST=the_dexploarer,@alice,123456789
+```
+- Only `@the_dexploarer`, `@alice`, and user ID `123456789` can generate
+- Unlimited images for allowlisted users
+- Everyone else is denied
+
+#### Example 3: Blocklist with custom rate limit
+```bash
+TELEGRAM_MEDIA_MODE=blocklist
+TELEGRAM_MEDIA_BLOCKLIST=spammer1,@badactor
+TELEGRAM_MEDIA_RATE_LIMIT=20
+```
+- Everyone except `@spammer1` and `@badactor` can generate
+- Non-tiered users get 20/day instead of default 10/day
+- $GHOST holders still get tier-based limits
+
+#### Example 4: Group admins only
+```bash
+TELEGRAM_MEDIA_MODE=group-admins
+```
+- Only group admins can use `/media` in groups
+- DMs are unrestricted (subject to rate limits)
+- Prevents group spam
+
+### Allowlist/Blocklist Format
+
+Supports both usernames and Telegram user IDs:
+
+```bash
+# Usernames (with or without @)
+TELEGRAM_MEDIA_ALLOWLIST=alice,@bob,charlie
+
+# User IDs (numeric)
+TELEGRAM_MEDIA_ALLOWLIST=123456789,987654321
+
+# Mix of both
+TELEGRAM_MEDIA_ALLOWLIST=alice,123456789,@bob
+```
+
+**How to find Telegram user ID:**
+1. Forward a message from the user to `@userinfobot`
+2. The bot will reply with user ID
+
+### Permission Check Flow
+
+When a user runs `/media`:
+
+1. **Blocklist check** - Always deny if in blocklist
+2. **Mode check** - Check permission mode rules
+3. **Rate limit check** - Check daily quota (unless allowlisted)
+4. **Generate image** - If all checks pass
+5. **Increment counter** - Track usage for rate limiting
+
+### Error Messages
+
+Users see helpful error messages when denied:
+
+**Blocklist**:
+```
+🚫 You are not authorized to generate images.
+```
+
+**Allowlist mode**:
+```
+🔒 Image generation is restricted to authorized users.
+
+Contact @the_dexploarer to request access.
+```
+
+**Group admins mode**:
+```
+👮 Only group admins can generate images in this chat.
+
+Use /media in a DM with me for unrestricted access!
+```
+
+**Rate limit exceeded**:
+```
+⏱️ Daily image limit reached (5/5)!
+
+**Current Tier:** Free
+
+**Upgrade with $GHOST:**
+• Holder ($10): 25 images/day
+• Whale ($100): 100 images/day
+
+Get $GHOST: https://jup.ag/swap/SOL-GHOST
+
+Limit resets in 12 hours.
+```
 
 ## Local Development with ngrok
 
@@ -275,7 +438,9 @@ apps/web/
 ├── app/api/telegram/webhook/
 │   └── route.ts                    # Webhook handler
 ├── lib/telegram/
-│   └── adapter.ts                  # Telegram ↔ ElizaOS adapter
+│   ├── adapter.ts                  # Telegram ↔ ElizaOS adapter
+│   ├── groupChatLogic.ts           # Group chat handling
+│   └── mediaPermissions.ts         # Media generation permission system
 ├── scripts/
 │   └── setup-telegram-bot.ts      # Webhook registration script
 └── TELEGRAM_BOT_SETUP.md          # This file

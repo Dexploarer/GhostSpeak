@@ -5,56 +5,41 @@
  */
 
 import { api } from '@/convex/_generated/api'
-import { NextRequest } from 'next/server'
-import { checkRateLimit } from '@/lib/rate-limit'
 import { getConvexClient } from '@/lib/convex-client'
+import { withMiddleware, jsonResponse, handleCORS } from '@/lib/api/middleware'
 
-export async function GET(request: NextRequest) {
-  // Rate limit check
-  const rateLimited = checkRateLimit(request)
-  if (rateLimited) return rateLimited
-
-  try {
-    const stats = await getConvexClient().query(api.ghostDiscovery.getDiscoveryStats, {})
-
-    return Response.json(
-      {
-        stats: {
-          total: stats.total,
-          totalDiscovered: stats.totalDiscovered,
-          totalClaimed: stats.totalClaimed,
-          totalVerified: stats.totalVerified,
-          percentageClaimed:
-            stats.total > 0 ? Math.round((stats.totalClaimed / stats.total) * 100) : 0,
-          percentageVerified:
-            stats.total > 0 ? Math.round((stats.totalVerified / stats.total) * 100) : 0,
-        },
-        timestamp: Date.now(),
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
-        },
-      }
-    )
-  } catch (error) {
-    console.error('Discovery stats error:', error)
-    return Response.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    )
+interface DiscoveryStatsResponse {
+  stats: {
+    total: number
+    totalDiscovered: number
+    totalClaimed: number
+    totalVerified: number
+    percentageClaimed: number
+    percentageVerified: number
   }
+  timestamp: number
 }
 
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+export const GET = withMiddleware(async () => {
+  const stats = await getConvexClient().query(api.ghostDiscovery.getDiscoveryStats, {})
+
+  return jsonResponse<DiscoveryStatsResponse>(
+    {
+      stats: {
+        total: stats.total,
+        totalDiscovered: stats.totalDiscovered,
+        totalClaimed: stats.totalClaimed,
+        totalVerified: stats.totalVerified,
+        percentageClaimed:
+          stats.total > 0 ? Math.round((stats.totalClaimed / stats.total) * 100) : 0,
+        percentageVerified:
+          stats.total > 0 ? Math.round((stats.totalVerified / stats.total) * 100) : 0,
+      },
+      timestamp: Date.now(),
     },
-  })
-}
+    { cache: true } // Enable 30s cache
+  )
+})
+
+// CORS preflight handled automatically by middleware
+export const OPTIONS = handleCORS

@@ -1,92 +1,52 @@
 /**
  * Catch-all API Route
  *
- * Handles any unmatched API routes with proper 404 responses
- * and wide event logging.
+ * Handles any unmatched API routes with proper 404 responses.
+ * Wide-event logging has been removed in favor of middleware-based logging.
  */
 
-import { NextRequest } from 'next/server'
-import { completeWideEvent } from '@/lib/logging/hooks'
+import { withMiddleware, errorResponse, handleCORS } from '@/lib/api/middleware'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ slug: string[] }> }
-) {
-  const resolvedParams = await params
-  const path = `/api/${resolvedParams.slug.join('/')}`
+export const GET = withMiddleware(
+  async (request, { params }: { params: Promise<{ slug: string[] }> }) => {
+    const resolvedParams = await params
+    const path = `/api/${resolvedParams.slug.join('/')}`
 
-  completeWideEvent((request as any).wideEvent, {
-    statusCode: 404,
-    durationMs:
-      Date.now() - (request as any).wideEvent?.timestamp
-        ? new Date((request as any).wideEvent.timestamp).getTime()
-        : Date.now(),
-    error: {
-      type: 'NotFoundError',
-      code: 'ENDPOINT_NOT_FOUND',
-      message: `API endpoint not found: ${path}`,
-      retriable: false,
-    },
-  })
+    return errorResponse(
+      JSON.stringify({
+        error: 'API endpoint not found',
+        path,
+        availableEndpoints: [
+          '/api/health',
+          '/api/v1/health',
+          '/api/v1/agent/[address]',
+          '/api/agent/chat',
+        ],
+      }),
+      404
+    )
+  }
+)
 
-  return Response.json(
-    {
-      error: 'API endpoint not found',
-      path,
-      availableEndpoints: [
-        '/api/health',
-        '/api/v1/health',
-        '/api/v1/agent/[address]',
-        '/api/agent/chat',
-      ],
-    },
-    { status: 404 }
-  )
-}
+export const POST = withMiddleware(
+  async (request, { params }: { params: Promise<{ slug: string[] }> }) => {
+    const resolvedParams = await params
+    const path = `/api/${resolvedParams.slug.join('/')}`
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ slug: string[] }> }
-) {
-  const resolvedParams = await params
-  const path = `/api/${resolvedParams.slug.join('/')}`
+    return errorResponse(
+      JSON.stringify({
+        error: 'API endpoint not found',
+        path,
+        availableEndpoints: [
+          '/api/health',
+          '/api/v1/health',
+          '/api/v1/agent/[address]',
+          '/api/agent/chat',
+        ],
+      }),
+      404
+    )
+  }
+)
 
-  completeWideEvent((request as any).wideEvent, {
-    statusCode: 404,
-    durationMs:
-      Date.now() - (request as any).wideEvent?.timestamp
-        ? new Date((request as any).wideEvent.timestamp).getTime()
-        : Date.now(),
-    error: {
-      type: 'NotFoundError',
-      code: 'ENDPOINT_NOT_FOUND',
-      message: `API endpoint not found: ${path}`,
-      retriable: false,
-    },
-  })
-
-  return Response.json(
-    {
-      error: 'API endpoint not found',
-      path,
-      availableEndpoints: [
-        '/api/health',
-        '/api/v1/health',
-        '/api/v1/agent/[address]',
-        '/api/agent/chat',
-      ],
-    },
-    { status: 404 }
-  )
-}
-
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  })
-}
+export const OPTIONS = handleCORS

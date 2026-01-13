@@ -321,18 +321,18 @@ export default function DashboardPage() {
   const primaryScore =
     roles?.isAgentDeveloper && reputation?.ecto
       ? {
-        type: 'ecto' as const,
-        score: reputation.ecto.score,
-        tier: reputation.ecto.tier,
-        progress: ectoTierProgress,
-      }
+          type: 'ecto' as const,
+          score: reputation.ecto.score,
+          tier: reputation.ecto.tier,
+          progress: ectoTierProgress,
+        }
       : roles?.isCustomer && reputation?.ghosthunter
         ? {
-          type: 'ghosthunter' as const,
-          score: reputation.ghosthunter.score,
-          tier: reputation.ghosthunter.tier,
-          progress: ghosthunterTierProgress,
-        }
+            type: 'ghosthunter' as const,
+            score: reputation.ghosthunter.score,
+            tier: reputation.ghosthunter.tier,
+            progress: ghosthunterTierProgress,
+          }
         : null
 
   const formatAddress = (address: string) => {
@@ -346,8 +346,6 @@ export default function DashboardPage() {
           className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8"
           aria-labelledby="dashboard-heading"
         >
-
-
           {/* Dashboard Header with Network Indicator and Streak */}
           <header className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
@@ -754,19 +752,21 @@ export default function DashboardPage() {
             <div className="flex gap-2 mt-2">
               <button
                 onClick={() => setActiveScoreType('ecto')}
-                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${activeScoreType === 'ecto'
-                  ? 'bg-primary/20 border border-primary/40 text-primary'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
-                  }`}
+                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeScoreType === 'ecto'
+                    ? 'bg-primary/20 border border-primary/40 text-primary'
+                    : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
+                }`}
               >
                 Ecto (Developer)
               </button>
               <button
                 onClick={() => setActiveScoreType('ghosthunter')}
-                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${activeScoreType === 'ghosthunter'
-                  ? 'bg-blue-500/20 border border-blue-500/40 text-blue-400'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
-                  }`}
+                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeScoreType === 'ghosthunter'
+                    ? 'bg-blue-500/20 border border-blue-500/40 text-blue-400'
+                    : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
+                }`}
               >
                 Ghosthunter
               </button>
@@ -776,14 +776,16 @@ export default function DashboardPage() {
           <div className="space-y-4 mt-4">
             {/* Current Score */}
             <div
-              className={`p-4 rounded-lg text-center ${activeScoreType === 'ecto'
-                ? 'bg-primary/10 border border-primary/20'
-                : 'bg-blue-500/10 border border-blue-500/20'
-                }`}
+              className={`p-4 rounded-lg text-center ${
+                activeScoreType === 'ecto'
+                  ? 'bg-primary/10 border border-primary/20'
+                  : 'bg-blue-500/10 border border-blue-500/20'
+              }`}
             >
               <p
-                className={`text-5xl font-light mb-1 ${activeScoreType === 'ecto' ? 'text-primary' : 'text-blue-400'
-                  }`}
+                className={`text-5xl font-light mb-1 ${
+                  activeScoreType === 'ecto' ? 'text-primary' : 'text-blue-400'
+                }`}
               >
                 {activeScoreType === 'ecto'
                   ? formatNumber(reputation?.ecto?.score || 0)
@@ -796,10 +798,11 @@ export default function DashboardPage() {
                     : reputation?.ghosthunter?.tier || 'ROOKIE'}
                 </p>
                 <div
-                  className={`px-2 py-0.5 rounded text-xs ${activeScoreType === 'ecto'
-                    ? 'bg-primary/20 text-primary'
-                    : 'bg-blue-500/20 text-blue-400'
-                    }`}
+                  className={`px-2 py-0.5 rounded text-xs ${
+                    activeScoreType === 'ecto'
+                      ? 'bg-primary/20 text-primary'
+                      : 'bg-blue-500/20 text-blue-400'
+                  }`}
                 >
                   {activeScoreType === 'ecto' ? 'Developer' : 'Hunter'}
                 </div>

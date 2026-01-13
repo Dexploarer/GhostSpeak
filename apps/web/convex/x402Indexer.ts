@@ -46,7 +46,9 @@ export const pollX402Transactions = action({
 
       const rpc = createSolanaRpc(rpcUrl)
       const facilitatorAddress = address(facilitatorAddr)
-      const network = rpcUrl.includes('devnet') ? 'solana-devnet' : 'solana'
+      const network: 'devnet' | 'mainnet-beta' = rpcUrl.includes('devnet')
+        ? 'devnet'
+        : 'mainnet-beta'
 
       const lastState = await ctx.runQuery(api.ghostDiscovery.getIndexerState, {
         stateKey: `x402_last_signature_${facilitatorAddr}`,
@@ -150,9 +152,12 @@ export const pollX402Transactions = action({
           // Automatically discover and register endpoints for newly discovered agents
           try {
             console.log(`[X402 Indexer Action] Attempting endpoint discovery for ${payment.payer}`)
-            const endpointResult = await ctx.runAction(api.agentEndpointDiscovery.discoverAndRegisterEndpoints, {
-              agentAddress: payment.payer,
-            })
+            const endpointResult = await ctx.runAction(
+              api.agentEndpointDiscovery.discoverAndRegisterEndpoints,
+              {
+                agentAddress: payment.payer,
+              }
+            )
 
             if (endpointResult.success && endpointResult.registered > 0) {
               console.log(
@@ -226,7 +231,9 @@ export const parseX402Transaction = action({
 
       const { createSolanaRpc } = await import('@solana/rpc')
       const rpc = createSolanaRpc(rpcUrl)
-      const network = rpcUrl.includes('devnet') ? 'solana-devnet' : 'solana'
+      const network: 'devnet' | 'mainnet-beta' = rpcUrl.includes('devnet')
+        ? 'devnet'
+        : 'mainnet-beta'
 
       const response = await rpc
         .getTransaction(args.signature as any, {

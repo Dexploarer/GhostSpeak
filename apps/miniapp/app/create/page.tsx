@@ -14,7 +14,7 @@ const TEMPLATES = [
 ] as const
 
 export default function CreatePage() {
-  const { firstName, username } = useTelegram()
+  const { userId, username } = useTelegram()
   const [selectedTemplate, setSelectedTemplate] = useState<string>('raid')
   const [prompt, setPrompt] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -29,35 +29,46 @@ export default function CreatePage() {
     setGeneratedImage(null)
 
     try {
-      // Route through Boo character on web app
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/agent/chat`, {
+      if (!userId) {
+        throw new Error('Please authenticate with Telegram first')
+      }
+
+      // Use existing agent chat endpoint (same as Boo Telegram webhook uses)
+      const webAppUrl = process.env.NEXT_PUBLIC_WEB_APP_URL || 'https://ghostspeak.io'
+      const walletAddress = `telegram_${userId}` // Same pattern as Boo webhook
+      const message = `Generate a ${selectedTemplate} image: ${prompt}`
+
+      const response = await fetch(`${webAppUrl}/api/agent/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: `Generate a ${selectedTemplate} image: ${prompt}`,
+          message,
+          walletAddress,
+          sessionToken: `session_${userId}_miniapp`,
           characterId: 'boo',
-          source: 'telegram',
-          userId: username || `telegram_${Date.now()}`,
-          metadata: {
-            template: selectedTemplate,
-          },
         }),
       })
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+
+        // Check for quota limit
+        if (response.status === 429) {
+          throw new Error(errorData.message || 'Daily image limit reached. Hold $GHOST for more!')
+        }
+
         throw new Error(errorData.error || 'Image generation failed')
       }
 
       const data = await response.json()
 
-      // Extract image URL from Boo's response
-      const imageUrl = data.metadata?.imageUrl || data.imageUrl
+      // Extract image URL from response metadata
+      const imageUrl = data.metadata?.imageUrl || data.metadata?.ui?.imageUrl
 
       if (!imageUrl) {
-        throw new Error('No image URL in response')
+        throw new Error('No image generated. Try a different prompt!')
       }
 
       setGeneratedImage(imageUrl)

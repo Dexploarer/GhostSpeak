@@ -25,7 +25,15 @@ import { getNetworkMetadata } from './lib/networkMetadata'
 export const listEndpoints = query({
   args: {
     agentAddress: v.optional(v.string()),
-    category: v.optional(v.string()),
+    category: v.optional(
+      v.union(
+        v.literal('research'),
+        v.literal('market_data'),
+        v.literal('social'),
+        v.literal('utility'),
+        v.literal('other')
+      )
+    ),
     activeOnly: v.optional(v.boolean()),
     limit: v.optional(v.number()),
   },
@@ -298,11 +306,11 @@ export const getRecentObservations = query({
           myVote,
           endpoint: endpoint
             ? {
-              baseUrl: endpoint.baseUrl,
-              method: endpoint.method,
-              endpoint: endpoint.endpoint,
-              description: endpoint.description,
-            }
+                baseUrl: endpoint.baseUrl,
+                method: endpoint.method,
+                endpoint: endpoint.endpoint,
+                description: endpoint.description,
+              }
             : null,
         }
       })
@@ -322,10 +330,16 @@ export const addEndpoint = mutation({
     agentAddress: v.string(),
     baseUrl: v.string(),
     endpoint: v.string(),
-    method: v.string(),
+    method: v.union(v.literal('GET'), v.literal('POST')),
     priceUsdc: v.number(),
     description: v.string(),
-    category: v.string(),
+    category: v.union(
+      v.literal('research'),
+      v.literal('market_data'),
+      v.literal('social'),
+      v.literal('utility'),
+      v.literal('other')
+    ),
   },
   handler: async (ctx, args) => {
     // Check if endpoint already exists
@@ -360,10 +374,16 @@ export const upsertObservedEndpointInternal = internalMutation({
     agentAddress: v.string(),
     baseUrl: v.string(),
     endpoint: v.string(),
-    method: v.string(),
+    method: v.union(v.literal('GET'), v.literal('POST')),
     priceUsdc: v.number(),
     description: v.string(),
-    category: v.string(),
+    category: v.union(
+      v.literal('research'),
+      v.literal('market_data'),
+      v.literal('social'),
+      v.literal('utility'),
+      v.literal('other')
+    ),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -397,10 +417,16 @@ export const bulkImportEndpoints = mutation({
         agentAddress: v.string(),
         baseUrl: v.string(),
         endpoint: v.string(),
-        method: v.string(),
+        method: v.union(v.literal('GET'), v.literal('POST')),
         priceUsdc: v.number(),
         description: v.string(),
-        category: v.string(),
+        category: v.union(
+          v.literal('research'),
+          v.literal('market_data'),
+          v.literal('social'),
+          v.literal('utility'),
+          v.literal('other')
+        ),
       })
     ),
   },
@@ -489,10 +515,10 @@ export const recordTestResult = internalMutation({
     }
 
     // Sanitize transcript
-    const sanitizedTranscript = args.transcript?.map(msg => ({
+    const sanitizedTranscript = args.transcript?.map((msg) => ({
       ...msg,
       content: truncate(msg.content, 2000), // Max 2KB per message
-      toolArgs: msg.toolArgs ? truncate(msg.toolArgs, 2000) : undefined
+      toolArgs: msg.toolArgs ? truncate(msg.toolArgs, 2000) : undefined,
     }))
 
     // Safety cap on number of messages
@@ -588,8 +614,18 @@ export const recordTestResult = internalMutation({
 export const recordFraudSignal = internalMutation({
   args: {
     agentAddress: v.string(),
-    signalType: v.string(),
-    severity: v.string(),
+    signalType: v.union(
+      v.literal('fake_reviews'),
+      v.literal('spam_activity'),
+      v.literal('capability_mismatch'),
+      v.literal('response_inconsistency')
+    ),
+    severity: v.union(
+      v.literal('low'),
+      v.literal('medium'),
+      v.literal('high'),
+      v.literal('critical')
+    ),
     evidence: v.string(),
   },
   handler: async (ctx, args) => {
@@ -680,7 +716,7 @@ export const compileDailyReport = internalMutation({
       successRate * 40 + verificationRate * 40 + (avgQualityScore / 100) * 20
     )
 
-    let overallGrade: string
+    let overallGrade: 'A' | 'B' | 'C' | 'D' | 'F'
     if (trustworthiness >= 90) overallGrade = 'A'
     else if (trustworthiness >= 80) overallGrade = 'B'
     else if (trustworthiness >= 70) overallGrade = 'C'
@@ -804,7 +840,13 @@ export const issueObservationCredentials = internalMutation({
     avgQualityScore: v.number(),
     responseConsistency: v.number(), // Variance-based consistency score (0-100)
     verifiedCapabilities: v.array(v.string()),
-    overallGrade: v.string(),
+    overallGrade: v.union(
+      v.literal('A'),
+      v.literal('B'),
+      v.literal('C'),
+      v.literal('D'),
+      v.literal('F')
+    ),
     trustworthiness: v.number(),
   },
   handler: async (ctx, args) => {
@@ -1022,14 +1064,14 @@ export const runHourlyTests = internalAction({
       const endpoint =
         args.forceEndpointId && testsRun === 0
           ? await ctx.runQuery(internal.observation.getObservedEndpointInternal, {
-            endpointId: args.forceEndpointId,
-          })
+              endpointId: args.forceEndpointId,
+            })
           : await ctx.runMutation(internal.observation.getNextEndpointToTest, {
-            maxPriceUsdc:
-              typeof args.maxPriceUsdc === 'number'
-                ? Math.min(args.maxPriceUsdc, remainingBudget)
-                : remainingBudget,
-          })
+              maxPriceUsdc:
+                typeof args.maxPriceUsdc === 'number'
+                  ? Math.min(args.maxPriceUsdc, remainingBudget)
+                  : remainingBudget,
+            })
 
       // If we forced an endpoint that is outside budget, stop early.
       if (
@@ -1112,7 +1154,7 @@ export const runHourlyTests = internalAction({
               },
               body: endpoint.method === 'POST' ? JSON.stringify({ message: prompt }) : undefined,
               redirect: 'manual',
-              signal: controller.signal
+              signal: controller.signal,
             })
             clearTimeout(timeoutId)
 
@@ -1188,16 +1230,19 @@ export const runHourlyTests = internalAction({
 
                 if (amountMicro <= MAX_USDC_PAYMENT_MICRO && paymentRequirements.extra?.feePayer) {
                   // Create x402-compliant USDC payment
-                  const payResult = await ctx.runAction(internal.lib.caisperX402.createX402Payment, {
-                    paymentRequirements: {
-                      scheme: paymentRequirements.scheme,
-                      network: paymentRequirements.network,
-                      asset: paymentRequirements.asset,
-                      payTo: paymentRequirements.payTo,
-                      maxAmountRequired: paymentRequirements.maxAmountRequired,
-                      extra: { feePayer: paymentRequirements.extra.feePayer },
-                    },
-                  })
+                  const payResult = await ctx.runAction(
+                    internal.lib.caisperX402.createX402Payment,
+                    {
+                      paymentRequirements: {
+                        scheme: paymentRequirements.scheme,
+                        network: paymentRequirements.network,
+                        asset: paymentRequirements.asset,
+                        payTo: paymentRequirements.payTo,
+                        maxAmountRequired: paymentRequirements.maxAmountRequired,
+                        extra: { feePayer: paymentRequirements.extra.feePayer },
+                      },
+                    }
+                  )
 
                   if (payResult.success && payResult.encodedPayload) {
                     transcript.push({
@@ -1216,7 +1261,9 @@ export const runHourlyTests = internalAction({
                         'X-PAYMENT': payResult.encodedPayload,
                       },
                       body:
-                        endpoint.method === 'POST' ? JSON.stringify({ message: prompt }) : undefined,
+                        endpoint.method === 'POST'
+                          ? JSON.stringify({ message: prompt })
+                          : undefined,
                       redirect: 'manual',
                     })
 
@@ -1382,9 +1429,7 @@ export const compileDailyReports = internalAction({
       endTime: endOfDay,
     })) as Doc<'endpointTests'>[]
 
-    const uniqueAgents: string[] = [
-      ...new Set(tests.map((t) => t.agentAddress as string)),
-    ]
+    const uniqueAgents: string[] = [...new Set(tests.map((t) => t.agentAddress as string))]
 
     console.log(`[Observation] Found ${uniqueAgents.length} agents with tests yesterday`)
 
@@ -1434,7 +1479,7 @@ export const voteOnObservation = mutation({
   args: {
     observationId: v.id('endpointTests'),
     walletAddress: v.string(), // Authenticated user's wallet
-    voteType: v.string(), // 'upvote' | 'downvote'
+    voteType: v.union(v.literal('upvote'), v.literal('downvote')),
   },
   handler: async (ctx, args) => {
     // 1. Get user

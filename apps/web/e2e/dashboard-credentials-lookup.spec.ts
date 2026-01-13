@@ -80,7 +80,7 @@ async function seedAgentProfileAndCredential({
         firstTxSignature: `e2e_discovery_${Date.now()}`,
         // ghostDiscovery.bulkImportDiscoveredAgents treats this as seconds-ish; it's not user-visible in this test.
         firstSeenTimestamp: Math.floor(Date.now() / 1000),
-        discoverySource: 'e2e',
+        discoverySource: 'account_scan', // E2E test agents treated as account scan
         facilitatorAddress: undefined,
         slot: 0,
       },

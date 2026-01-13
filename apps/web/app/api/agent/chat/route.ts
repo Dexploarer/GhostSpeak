@@ -14,213 +14,198 @@
  * - $100+ in $GHOST: Unlimited
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { withMiddleware, jsonResponse, errorResponse, handleCORS } from '@/lib/api/middleware'
 import { processAgentMessage } from '@/server/elizaos/runtime'
 import { api } from '@/convex/_generated/api'
-import { completeWideEvent } from '@/lib/logging/hooks'
 import { getConvexClient } from '@/lib/convex-client'
 
-// Initialize Convex client
+export const POST = withMiddleware(async (request) => {
+  const correlationId = request.headers.get('x-correlation-id') || `corr_${Date.now()}`
 
-export async function POST(req: NextRequest) {
-  const correlationId = req.headers.get('x-correlation-id') || `corr_${Date.now()}`
+  const body = await request.json()
 
-  // Propagate correlation ID to wide event
-  if ((req as any).wideEvent) {
-    ; (req as any).wideEvent.correlation_id = correlationId
+  // Support both AI SDK format (messages array) and legacy format (message string)
+  const messages = body.messages || []
+  const lastMessage = messages[messages.length - 1]
+  const message = lastMessage?.content || body.message
+  const walletAddress = body.walletAddress
+  const sessionToken = body.sessionToken
+
+  if (!message || !walletAddress) {
+    return errorResponse('Missing required fields: message and walletAddress', 400)
   }
 
-  try {
-    const body = await req.json()
+  // SECURITY: Validate session token
+  // The user proved wallet ownership during login via cryptographic signature (signInWithSolana)
+  // For Phase 1, we trust the walletAddress from the authenticated session
+  // Session token format: session_${userId}_${timestamp}
+  //
+  // Future enhancement: Add JWT with expiration, refresh tokens, and per-message signatures
+  if (sessionToken && !sessionToken.startsWith('session_')) {
+    return errorResponse('Invalid session token format', 401)
+  }
 
-    // Support both AI SDK format (messages array) and legacy format (message string)
-    const messages = body.messages || []
-    const lastMessage = messages[messages.length - 1]
-    const message = lastMessage?.content || body.message
-    const walletAddress = body.walletAddress
-    const sessionToken = body.sessionToken
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MESSAGE QUOTA CHECK
+  // Free: 3/day, $10+ GHOST: 100/day, $100+ GHOST: Unlimited
+  // Admin whitelist: Unlimited (bypass all limits)
+  // ═══════════════════════════════════════════════════════════════════════════
 
-    if (!message || !walletAddress) {
-      return NextResponse.json(
-        { error: 'Missing required fields: message and walletAddress' },
-        { status: 400 }
-      )
-    }
+  // Check if user is on admin whitelist
+  const adminWhitelist = (process.env.ADMIN_WHITELIST || '').split(',').map((w) => w.trim())
+  const isAdmin = adminWhitelist.includes(walletAddress)
 
-    // SECURITY: Validate session token
-    // The user proved wallet ownership during login via cryptographic signature (signInWithSolana)
-    // For Phase 1, we trust the walletAddress from the authenticated session
-    // Session token format: session_${userId}_${timestamp}
-    //
-    // Future enhancement: Add JWT with expiration, refresh tokens, and per-message signatures
-    if (sessionToken && !sessionToken.startsWith('session_')) {
-      return NextResponse.json({ error: 'Invalid session token format' }, { status: 401 })
-    }
+  // Check if this is a Telegram user (skip GHOST balance checks)
+  const isTelegramUser = walletAddress.startsWith('telegram_')
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // MESSAGE QUOTA CHECK
-    // Free: 3/day, $10+ GHOST: 100/day, $100+ GHOST: Unlimited
-    // Admin whitelist: Unlimited (bypass all limits)
-    // ═══════════════════════════════════════════════════════════════════════════
+  if (isAdmin) {
+    console.log(`👑 Admin bypass: ${walletAddress.slice(0, 8)}...`)
+  } else if (isTelegramUser) {
+    console.log(`📱 Telegram user: ${walletAddress} - skipping balance check`)
 
-    // Check if user is on admin whitelist
-    const adminWhitelist = (process.env.ADMIN_WHITELIST || '').split(',').map(w => w.trim())
-    const isAdmin = adminWhitelist.includes(walletAddress)
+    // Still check quota for Telegram users (free tier only)
+    try {
+      const quota = await getConvexClient().query(api.messageQuota.checkMessageQuota, {
+        walletAddress,
+      })
 
-    if (isAdmin) {
-      console.log(`👑 Admin bypass: ${walletAddress.slice(0, 8)}...`)
-    } else {
-      try {
-        // Check and update tier (refreshes balance if cache expired)
-        await getConvexClient().action(api.checkGhostBalance.checkAndUpdateTier, { walletAddress })
-
-        // Check quota
-        const quota = await getConvexClient().query(api.messageQuota.checkMessageQuota, { walletAddress })
-
-        if (!quota.canSend) {
-          console.log(`🚫 Message quota exceeded for ${walletAddress}: ${quota.currentCount}/${quota.limit}`)
-          return NextResponse.json(
-            {
-              error: 'Daily message limit reached',
-              limitReached: true,
-              message: quota.reason,
-              quota: {
-                tier: quota.tier,
-                limit: quota.limit,
-                used: quota.currentCount,
-                remaining: 0,
-              },
-              upgrade: {
-                holder: { threshold: '$10 in $GHOST', limit: 100 },
-                whale: { threshold: '$100 in $GHOST', limit: 'Unlimited' },
-                tokenMint: 'DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump',
-                buyLink: 'https://jup.ag/swap/SOL-DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump',
-              },
+      if (!quota.canSend) {
+        console.log(
+          `🚫 Message quota exceeded for ${walletAddress}: ${quota.currentCount}/${quota.limit}`
+        )
+        return jsonResponse(
+          {
+            error: 'Daily message limit reached',
+            limitReached: true,
+            message: quota.reason,
+            quota: {
+              tier: quota.tier,
+              limit: quota.limit,
+              used: quota.currentCount,
+              remaining: 0,
             },
-            { status: 429 }
-          )
-        }
-
-        console.log(`✅ Quota check passed: ${quota.currentCount}/${quota.limit} (${quota.tier})`)
-      } catch (quotaError) {
-        // If quota check fails, allow message (fail open for now)
-        console.warn('⚠️ Quota check failed, allowing message:', quotaError)
+          },
+          { status: 429 }
+        )
       }
-    }
 
-    console.log(`📨 Received message from ${walletAddress}: ${message}`)
-
-    // Try to store user message in Convex (optional)
-    try {
-      if (process.env.NEXT_PUBLIC_CONVEX_URL) {
-        await getConvexClient().mutation(api.agent.storeUserMessage, {
-          walletAddress,
-          message,
-        })
-      }
-    } catch (storageError) {
-      console.warn('Failed to store user message:', storageError)
-      // Continue without failing - storage is optional
-    }
-
-    // Process message with ElizaOS agent
-    const agentResponse = await processAgentMessage({
-      userId: walletAddress,
-      message,
-      roomId: `user-${walletAddress}`,
-      correlationId,
-    })
-
-    console.log(`🤖 Agent response: ${agentResponse.text}`)
-
-    // Try to store agent response in Convex (optional)
-    try {
-      if (process.env.NEXT_PUBLIC_CONVEX_URL) {
-        await getConvexClient().mutation(api.agent.storeAgentResponse, {
-          walletAddress,
-          response: agentResponse.text,
-          actionTriggered: agentResponse.action,
-          metadata: agentResponse.metadata,
-        })
-      }
-    } catch (storageError) {
-      console.warn('Failed to store agent response:', storageError)
-      // Continue without failing - storage is optional
-    }
-
-    // Return in AI SDK compatible format
-    // Note: AI SDK's useChat hook will look for messages in the response
-    // We need to return a single message object in AI SDK format
-    const responseMessage = {
-      id: `msg-${Date.now()}`,
-      role: 'assistant' as const,
-      content: agentResponse.text,
-      // Include metadata for custom rendering
-      metadata: agentResponse.metadata,
-    }
-
-    // Complete wide event with success
-    completeWideEvent((req as any).wideEvent, {
-      statusCode: 200,
-      durationMs:
-        Date.now() - (req as any).wideEvent?.timestamp
-          ? new Date((req as any).wideEvent.timestamp).getTime()
-          : Date.now(),
-    })
-
-    // Increment message count after successful response
-    try {
-      await getConvexClient().mutation(api.messageQuota.incrementMessageCount, { walletAddress })
+      console.log(`✅ Quota check passed: ${quota.currentCount}/${quota.limit} (${quota.tier})`)
     } catch (quotaError) {
-      console.warn('Failed to increment message count:', quotaError)
+      console.warn('⚠️ Quota check failed, allowing message:', quotaError)
     }
+  } else {
+    // Wallet users: check GHOST balance and tier
+    try {
+      // Check and update tier (refreshes balance if cache expired)
+      await getConvexClient().action(api.checkGhostBalance.checkAndUpdateTier, { walletAddress })
 
-    return NextResponse.json({
-      // AI SDK expects messages array or a single message
-      messages: [responseMessage],
-      // Also include at root level for compatibility
-      ...responseMessage,
-      // Legacy fields for backward compatibility
-      success: true,
-      response: agentResponse.text,
-      actionTriggered: agentResponse.action,
-    })
-  } catch (error) {
-    console.error('❌ Agent API error:', error)
+      // Check quota
+      const quota = await getConvexClient().query(api.messageQuota.checkMessageQuota, {
+        walletAddress,
+      })
 
-    // Complete wide event with error
-    completeWideEvent((req as any).wideEvent, {
-      statusCode: 500,
-      durationMs:
-        Date.now() - (req as any).wideEvent?.timestamp
-          ? new Date((req as any).wideEvent.timestamp).getTime()
-          : Date.now(),
-      error: {
-        type: 'AgentAPIError',
-        code: 'AGENT_CHAT_FAILED',
-        message: error instanceof Error ? error.message : 'Agent chat failed',
-        retriable: true,
-      },
-    })
+      if (!quota.canSend) {
+        console.log(
+          `🚫 Message quota exceeded for ${walletAddress}: ${quota.currentCount}/${quota.limit}`
+        )
+        return jsonResponse(
+          {
+            error: 'Daily message limit reached',
+            limitReached: true,
+            message: quota.reason,
+            quota: {
+              tier: quota.tier,
+              limit: quota.limit,
+              used: quota.currentCount,
+              remaining: 0,
+            },
+            upgrade: {
+              holder: { threshold: '$10 in $GHOST', limit: 100 },
+              whale: { threshold: '$100 in $GHOST', limit: 'Unlimited' },
+              tokenMint: 'DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump',
+              buyLink: 'https://jup.ag/swap/SOL-DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump',
+            },
+          },
+          { status: 429 }
+        )
+      }
 
-    return NextResponse.json(
-      {
-        error: 'Failed to process message with agent',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 }
-    )
+      console.log(`✅ Quota check passed: ${quota.currentCount}/${quota.limit} (${quota.tier})`)
+    } catch (quotaError) {
+      // If quota check fails, allow message (fail open for now)
+      console.warn('⚠️ Quota check failed, allowing message:', quotaError)
+    }
   }
-}
 
-// Add OPTIONS for CORS if needed
-export async function OPTIONS(_req: NextRequest) {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
+  console.log(`📨 Received message from ${walletAddress}: ${message}`)
+
+  // Try to store user message in Convex (optional)
+  try {
+    if (process.env.NEXT_PUBLIC_CONVEX_URL) {
+      await getConvexClient().mutation(api.agent.storeUserMessage, {
+        walletAddress,
+        message,
+      })
+    }
+  } catch (storageError) {
+    console.warn('Failed to store user message:', storageError)
+    // Continue without failing - storage is optional
+  }
+
+  // Process message with ElizaOS agent
+  const agentResponse = await processAgentMessage({
+    userId: walletAddress,
+    message,
+    roomId: `user-${walletAddress}`,
+    correlationId,
+    source: 'web', // Enable web-specific templates (product-focused only)
   })
-}
+
+  console.log(`🤖 Agent response: ${agentResponse.text}`)
+
+  // Try to store agent response in Convex (optional)
+  try {
+    if (process.env.NEXT_PUBLIC_CONVEX_URL) {
+      await getConvexClient().mutation(api.agent.storeAgentResponse, {
+        walletAddress,
+        response: agentResponse.text,
+        actionTriggered: agentResponse.action,
+        metadata: agentResponse.metadata,
+      })
+    }
+  } catch (storageError) {
+    console.warn('Failed to store agent response:', storageError)
+    // Continue without failing - storage is optional
+  }
+
+  // Return in AI SDK compatible format
+  // Note: AI SDK's useChat hook will look for messages in the response
+  // We need to return a single message object in AI SDK format
+  const responseMessage = {
+    id: `msg-${Date.now()}`,
+    role: 'assistant' as const,
+    content: agentResponse.text,
+    // Include metadata for custom rendering
+    metadata: agentResponse.metadata,
+  }
+
+  // Increment message count after successful response
+  try {
+    await getConvexClient().mutation(api.messageQuota.incrementMessageCount, { walletAddress })
+  } catch (quotaError) {
+    console.warn('Failed to increment message count:', quotaError)
+  }
+
+  return jsonResponse({
+    // AI SDK expects messages array or a single message
+    messages: [responseMessage],
+    // Also include at root level for compatibility
+    ...responseMessage,
+    // Legacy fields for backward compatibility
+    success: true,
+    response: agentResponse.text,
+    actionTriggered: agentResponse.action,
+  })
+})
+
+export const OPTIONS = handleCORS

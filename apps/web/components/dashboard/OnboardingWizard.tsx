@@ -33,12 +33,13 @@ function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
       {Array.from({ length: totalSteps }).map((_, index) => (
         <div
           key={index}
-          className={`h-1.5 rounded-full transition-all duration-300 ${index < currentStep
-            ? 'w-8 bg-primary'
-            : index === currentStep
-              ? 'w-8 bg-primary/60'
-              : 'w-4 bg-white/20'
-            }`}
+          className={`h-1.5 rounded-full transition-all duration-300 ${
+            index < currentStep
+              ? 'w-8 bg-primary'
+              : index === currentStep
+                ? 'w-8 bg-primary/60'
+                : 'w-4 bg-white/20'
+          }`}
         />
       ))}
     </div>

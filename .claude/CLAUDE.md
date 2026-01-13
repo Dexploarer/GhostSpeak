@@ -2,6 +2,35 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Context System
+
+**For autonomous operation**, this monorepo uses a hierarchical context system:
+
+- **Rules** (`.claude/rules/`) - Automatic, path-specific rules that load based on file location
+  - `apps-web.md` - Next.js + Convex patterns (auto-loads for `apps/web/**`)
+  - `packages-sdk.md` - SDK development patterns (auto-loads for `packages/sdk-typescript/**`)
+  - `packages-cli.md` - CLI patterns (auto-loads for `packages/cli/**`)
+  - `programs.md` - Rust/Anchor patterns (auto-loads for `programs/**`)
+  - `code-quality.md` - Production-ready naming and code quality standards (auto-loads for all code files)
+
+- **Skills** (`.claude/skills/`) - Auto-discovered capabilities that activate when relevant
+  - `convex/` - Convex backend expertise
+  - `anchor/` - Anchor smart contract expertise
+  - `elizaos/` - ElizaOS plugin development
+  - `testing/` - Testing strategies
+  - `monorepo/` - Turbo monorepo management
+  - `solana/` - Solana blockchain development
+
+- **Slash Commands** (`.claude/commands/`) - Manual workflows
+  - `/context-load [package]` - Load deep context for specific package
+  - `/test-all` - Run all tests with intelligent analysis
+  - `/build-check` - Verify builds across monorepo
+  - `/deploy-check` - Pre-deployment validation
+  - `/cleanup-code [pattern]` - Clean up verbose naming and comments in code files
+  - `/fix-issue [description]` - Research and fix issues directly without creating documentation
+
+**Quick Start**: Rules auto-apply based on file path. For explicit context loading, use `/context-load [package-name]`.
+
 ## Project Overview
 
 **GhostSpeak** is a trust layer for AI agent commerce built on Solana. It provides:

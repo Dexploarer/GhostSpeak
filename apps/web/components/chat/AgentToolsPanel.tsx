@@ -62,12 +62,17 @@ export function AgentToolsPanel({
         {/* Agent Details */}
         <div className="text-center">
           <h3 className="text-lg font-bold text-white mb-2">{agentName}</h3>
-          <p className="text-xs text-white/50 leading-relaxed font-medium px-2">{agentDescription}</p>
+          <p className="text-xs text-white/50 leading-relaxed font-medium px-2">
+            {agentDescription}
+          </p>
         </div>
       </div>
 
       {/* Tools Section */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 min-h-0 space-y-6 scrollbar-none" data-lenis-prevent>
+      <div
+        className="flex-1 overflow-y-auto px-4 py-6 min-h-0 space-y-6 scrollbar-none"
+        data-lenis-prevent
+      >
         <div className="flex items-center gap-2 px-1">
           <Sparkles className="w-3 h-3 text-white/40" />
           <h3 className="text-xs font-medium text-white/40 uppercase tracking-widest">
@@ -85,8 +90,8 @@ export function AgentToolsPanel({
                 key={tool.id}
                 initial={false}
                 animate={{
-                  backgroundColor: isOpen ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0)",
-                  borderColor: isOpen ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.05)"
+                  backgroundColor: isOpen ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0)',
+                  borderColor: isOpen ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
                 }}
                 className="border border-white/5 rounded-xl overflow-hidden transition-colors"
               >
@@ -94,24 +99,39 @@ export function AgentToolsPanel({
                   onClick={() => setOpenId(isOpen ? null : tool.id)}
                   className="w-full flex items-center gap-3 p-3 text-left hover:bg-white/5 transition-colors"
                 >
-                  <div className={cn("shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border", colorClass)}>
+                  <div
+                    className={cn(
+                      'shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border',
+                      colorClass
+                    )}
+                  >
                     {tool.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className={cn("text-xs font-semibold uppercase tracking-wide mb-0.5", isOpen ? "text-white" : "text-white/80")}>
+                    <h4
+                      className={cn(
+                        'text-xs font-semibold uppercase tracking-wide mb-0.5',
+                        isOpen ? 'text-white' : 'text-white/80'
+                      )}
+                    >
                       {tool.name}
                     </h4>
                   </div>
-                  <ChevronDown className={cn("w-4 h-4 text-white/30 transition-transform duration-300", isOpen && "rotate-180")} />
+                  <ChevronDown
+                    className={cn(
+                      'w-4 h-4 text-white/30 transition-transform duration-300',
+                      isOpen && 'rotate-180'
+                    )}
+                  />
                 </button>
 
                 <AnimatePresence initial={false}>
                   {isOpen && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
+                      animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2, ease: "easeInOut" }}
+                      transition={{ duration: 0.2, ease: 'easeInOut' }}
                     >
                       <div className="px-3 pb-3 pt-0">
                         <p className="text-xs text-white/50 mb-3 ml-1 leading-relaxed">
@@ -151,11 +171,7 @@ export const caisperTools: AgentTool[] = [
     description: 'Find unclaimed agents in the registry.',
     icon: <Search className="w-4 h-4" />,
     category: 'discovery',
-    prompts: [
-      'Show me 5 new agents',
-      'Find agents with no owner',
-      'Who are the top agents?',
-    ],
+    prompts: ['Show me 5 new agents', 'Find agents with no owner', 'Who are the top agents?'],
   },
   {
     id: 'issue-credential',
@@ -163,10 +179,7 @@ export const caisperTools: AgentTool[] = [
     description: 'Issue verifiable credentials to agents.',
     icon: <FileCheck className="w-4 h-4" />,
     category: 'credentials',
-    prompts: [
-      'Issue a Known User credential',
-      'How do I verify an agent?',
-    ],
+    prompts: ['Issue a Known User credential', 'How do I verify an agent?'],
   },
   {
     id: 'verification',
@@ -174,10 +187,7 @@ export const caisperTools: AgentTool[] = [
     description: 'Check agent reputation and trust scores.',
     icon: <Zap className="w-4 h-4" />,
     category: 'verification',
-    prompts: [
-      'Check this agent reputation',
-      'Is this wallet safe?',
-    ],
+    prompts: ['Check this agent reputation', 'Is this wallet safe?'],
   },
   {
     id: 'learn',
@@ -185,9 +195,6 @@ export const caisperTools: AgentTool[] = [
     description: 'Learn about GhostSpeak protocol.',
     icon: <Info className="w-4 h-4" />,
     category: 'general',
-    prompts: [
-      'What is a Ghost Score?',
-      'Explain the Trust Layer',
-    ],
+    prompts: ['What is a Ghost Score?', 'Explain the Trust Layer'],
   },
 ]

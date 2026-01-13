@@ -33,7 +33,7 @@ export const snapshotAgent = internalMutation({
         apiQualityMetrics: v.optional(v.number()),
       })
     ),
-    snapshotType: v.string(),
+    snapshotType: v.union(v.literal('daily'), v.literal('on_change'), v.literal('manual')),
   },
   handler: async (ctx, args) => {
     const { agentAddress, score, tier, breakdown, snapshotType } = args

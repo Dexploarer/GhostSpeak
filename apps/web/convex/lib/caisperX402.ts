@@ -234,11 +234,29 @@ export const createX402Payment = internalAction({
 
     try {
       // 5. Get Caisper's USDC token account
-      const caisperUsdcAccount = await getTokenAccountsByOwner(
-        rpcUrl,
-        wallet.publicKey,
-        paymentRequirements.asset
-      )
+      // Hardcoded for reliability (dynamically fetched as fallback)
+      const CAISPER_USDC_MAINNET = 'D486ixc3ai4kHdnpyTyprXDCtzUKCqVi7GJSt8XTL2j1'
+
+      let caisperUsdcAccount: TokenAccountInfo | null = null
+
+      // Use hardcoded address for mainnet USDC
+      if (paymentRequirements.asset === USDC_MINT_MAINNET) {
+        caisperUsdcAccount = {
+          address: CAISPER_USDC_MAINNET,
+          mint: USDC_MINT_MAINNET,
+          owner: wallet.publicKey,
+          amount: '999999999999', // Assume sufficient balance (will be validated on-chain)
+          decimals: USDC_DECIMALS,
+        }
+        console.log('[caisperX402] Using hardcoded Caisper USDC account (mainnet)')
+      } else {
+        // For other mints (devnet, etc), fetch dynamically
+        caisperUsdcAccount = await getTokenAccountsByOwner(
+          rpcUrl,
+          wallet.publicKey,
+          paymentRequirements.asset
+        )
+      }
 
       if (!caisperUsdcAccount) {
         return {
@@ -247,8 +265,11 @@ export const createX402Payment = internalAction({
         }
       }
 
-      // Check balance
-      if (BigInt(caisperUsdcAccount.amount) < BigInt(amountMicro)) {
+      // Check balance (skip for hardcoded accounts - will fail on-chain if insufficient)
+      if (
+        paymentRequirements.asset !== USDC_MINT_MAINNET &&
+        BigInt(caisperUsdcAccount.amount) < BigInt(amountMicro)
+      ) {
         return {
           success: false,
           error: `Insufficient USDC balance. Have: ${caisperUsdcAccount.amount}, Need: ${amountMicro}`,

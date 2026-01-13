@@ -153,7 +153,7 @@
     "convex": "^1.31.2",
     "convex-test": "^0.0.41",
     "eslint": "^9",
-    "eslint-config-next": "15.4.5",
+    "eslint-config-next": "16.1.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.3",
     "eslint-plugin-react-hooks": "^7.0.1",

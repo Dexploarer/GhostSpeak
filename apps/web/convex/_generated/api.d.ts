@@ -64,6 +64,7 @@ import type * as solanaAuth from "../solanaAuth.js";
 import type * as telegram from "../telegram.js";
 import type * as users from "../users.js";
 import type * as workflow_sync from "../workflow_sync.js";
+import type * as x402 from "../x402.js";
 import type * as x402Indexer from "../x402Indexer.js";
 
 import type {
@@ -129,6 +130,7 @@ declare const fullApi: ApiFromModules<{
   telegram: typeof telegram;
   users: typeof users;
   workflow_sync: typeof workflow_sync;
+  x402: typeof x402;
   x402Indexer: typeof x402Indexer;
 }>;
 

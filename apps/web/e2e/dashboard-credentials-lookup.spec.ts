@@ -227,7 +227,7 @@ async function installMockWalletStandard(
       ]
 
       // Run registration methods
-      registerMethods.forEach((method) => method())
+      registerMethods.forEach((method: any) => method())
 
       // Also set up listener for app-ready
       try {

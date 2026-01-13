@@ -28,7 +28,7 @@ export default function LandingPage() {
 
     const ctx = gsap.context(() => {
       // Animate sections on scroll with smoother easing
-      gsap.utils.toArray<HTMLElement>('.animate-on-scroll').forEach((section) => {
+      gsap.utils.toArray<HTMLElement>('.animate-on-scroll').forEach((section: any) => {
         gsap.from(section, {
           scrollTrigger: {
             trigger: section,
@@ -44,7 +44,7 @@ export default function LandingPage() {
       })
 
       // Enhanced stagger animations for grid items
-      gsap.utils.toArray<HTMLElement>('.stagger-item').forEach((item, index) => {
+      gsap.utils.toArray<HTMLElement>('.stagger-item').forEach((item: any, index: number) => {
         gsap.from(item, {
           scrollTrigger: {
             trigger: item,

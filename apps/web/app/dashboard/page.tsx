@@ -688,7 +688,7 @@ export default function DashboardPage() {
                           <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
                             <div className="flex -space-x-2">
                               {/* Decorative visual for reputation peers if available */}
-                              {[1, 2, 3].map((i) => (
+                              {[1, 2, 3].map((i: any) => (
                                 <div
                                   key={i}
                                   className="w-5 h-5 rounded-full border border-[#111111] bg-white/5 flex items-center justify-center"

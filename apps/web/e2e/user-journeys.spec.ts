@@ -41,7 +41,7 @@ async function snapshotState(page: Page, testInfo: TestInfo, name: string, notes
     url: page.url(),
     title: await page.title(),
     timestamp: new Date().toISOString(),
-    cookies: cookies.map((c) => ({ name: c.name, value: c.value, domain: c.domain, path: c.path })),
+    cookies: cookies.map((c: any) => ({ name: c.name, value: c.value, domain: c.domain, path: c.path })),
     storage,
     notes,
   }

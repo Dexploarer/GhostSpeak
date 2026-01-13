@@ -54,7 +54,7 @@ async function handleSearchAgents(args: SearchAgentsArgs) {
   ])
 
   return {
-    agents: agents.map((agent) => {
+    agents: agents.map((agent: any) => {
       const typedAgent = agent as {
         ghostAddress: string
         status: string

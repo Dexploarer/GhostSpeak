@@ -2,7 +2,7 @@
  * Test Caisper x402 payment creation
  */
 
-const CAISPER_WALLET = 'CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc'
+const CAISPER_WALLET = 'DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc'
 const CAISPER_PRIVATE_KEY = '3HocmP5hiWzqDeDnR59YPYPKAQvpj8cKMqSHG51dTmvhnmpS1rBv2cRPFvnYmw9HiL3A7fxEY6meokL25zNWjNLe'
 
 const paymentRequirements = {

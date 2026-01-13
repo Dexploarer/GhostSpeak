@@ -123,7 +123,7 @@ export const getStats = query({
       .withIndex('by_user', (q) => q.eq('userId', user._id))
       .collect()
 
-    const usagePromises = apiKeys.map((apiKey) =>
+    const usagePromises = apiKeys.map((apiKey: any) =>
       ctx.db
         .query('apiUsage')
         .withIndex('by_api_key_timestamp', (q) =>

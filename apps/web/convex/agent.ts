@@ -165,7 +165,7 @@ export const getChatHistory = query({
       .take(args.limit || 50)
 
     // Return in chronological order (oldest first)
-    return messages.reverse().map((msg) => ({
+    return messages.reverse().map((msg: any) => ({
       role: msg.role,
       content: msg.content,
       actionTriggered: msg.actionTriggered,

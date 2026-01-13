@@ -3,7 +3,7 @@
 import { useWallet } from '@/lib/wallet/WalletStandardProvider'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { useMutation, useQuery } from 'convex/react'
+import { useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import {
   Bot,
@@ -13,12 +13,15 @@ import {
   AlertCircle,
   CheckCircle2,
   Sparkles,
+  ShieldCheck,
 } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import Link from 'next/link'
+import { createVerificationMessage } from '@/lib/solana/signature-verification'
+import bs58 from 'bs58'
 
 export default function RegisterAgentPage() {
-  const { publicKey } = useWallet()
+  const { publicKey, signMessage } = useWallet()
   const router = useRouter()
   const { toast } = useToast()
 
@@ -33,8 +36,6 @@ export default function RegisterAgentPage() {
     }
   }, [publicKey, router])
 
-  const claimAgent = useMutation(api.ghostDiscovery.claimAgent)
-
   // Search for agent status
   const discoveredAgent = useQuery(
     api.ghostDiscovery.getDiscoveredAgent,
@@ -46,18 +47,52 @@ export default function RegisterAgentPage() {
 
     setIsRegistering(true)
     try {
-      // Basic claim without tx signature for now (assuming devnet/off-chain claim allowed)
-      // or if backend requires it, this will fail.
-      const _result = await claimAgent({
-        ghostAddress: address,
-        claimedBy: publicKey,
-        // claimTxSignature: undefined // Optional in schema
+      // Step 1: Create verification message
+      const message = createVerificationMessage('claim_agent', address)
+
+      // Step 2: Request wallet signature
+      toast({
+        title: 'Signature Required',
+        description: 'Please sign the message in your wallet to prove ownership...',
       })
 
-      toast({
-        title: 'Agent Registered',
-        description: `Successfully registered agent ${address.slice(0, 8)}...`,
+      const messageString = JSON.stringify(message)
+      const messageBytes = new TextEncoder().encode(messageString)
+
+      const signatureBytes = await signMessage(messageBytes)
+      const signature = bs58.encode(signatureBytes)
+
+      // Step 3: Submit claim with signature
+      const response = await fetch('/api/v1/agent/claim', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          agentAddress: address,
+          signature,
+          message,
+        }),
       })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to claim agent')
+      }
+
+      toast({
+        title: 'Agent Claimed Successfully! 🎉',
+        description: `${address.slice(0, 8)}... is now registered on ${result.agent.registrationNetwork}`,
+      })
+
+      // Show credential info if issued
+      if (result.credentialIssued && result.credentialId) {
+        toast({
+          title: 'Credential Issued',
+          description: `Your agent identity credential (${result.credentialId.slice(0, 12)}...) is ready!`,
+        })
+      }
 
       router.push('/dashboard')
     } catch (error: unknown) {
@@ -95,6 +130,10 @@ export default function RegisterAgentPage() {
           <p className="text-white/60">
             Claim ownership of your AI agent to start building its reputation (Ghost Score).
           </p>
+          <div className="mt-3 flex items-center gap-2 text-sm text-white/40">
+            <ShieldCheck className="w-4 h-4 text-primary" />
+            <span>Secured with wallet signature verification</span>
+          </div>
         </div>
 
         <div className="bg-[#111111] border border-white/10 rounded-xl p-6 md:p-8">
@@ -172,15 +211,18 @@ export default function RegisterAgentPage() {
               {isRegistering ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Registering...
+                  Signing & Claiming...
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-5 h-5" />
-                  Claim Agent
+                  <ShieldCheck className="w-5 h-5" />
+                  Sign & Claim Agent
                 </>
               )}
             </button>
+            <p className="text-xs text-center text-white/40 mt-2">
+              Free claiming via wallet signature • No payment required
+            </p>
           </div>
         </div>
       </div>

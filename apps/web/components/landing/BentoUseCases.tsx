@@ -95,7 +95,7 @@ export function BentoUseCases() {
 
         {/* Bento Grid */}
         <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {useCases.map((useCase, i) => {
+          {useCases.map((useCase: any, i: number) => {
             const isLarge = useCase.size === 'large'
             const isMedium = useCase.size === 'medium'
 
@@ -195,7 +195,7 @@ export function BentoUseCases() {
             { label: 'Network', value: 'Mainnet' },
             { label: 'Integrations', value: '3+' },
             { label: 'Starting Score', value: '1,000' },
-          ].map((stat, i) => (
+          ].map((stat: any, i: number) => (
             <motion.div
               key={i}
               whileHover={{ scale: 1.05 }}

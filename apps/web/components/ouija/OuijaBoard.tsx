@@ -178,7 +178,7 @@ export default function OuijaBoard({
 
         {/* Numbers */}
         <div className="absolute top-[55%] w-full flex justify-center space-x-8 text-2xl font-bold opacity-60">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((n) => (
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((n: any) => (
             <span key={n}>{n}</span>
           ))}
         </div>

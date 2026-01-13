@@ -540,7 +540,7 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {chatHistory.map((msg, idx) => {
+              {chatHistory.map((msg: any, idx: number) => {
                 const isAgent = msg.role === 'agent'
                 const agentAvatar = msg.metadata?.characterId === 'boo' ? '🎨' : '👻'
                 const agentName = msg.metadata?.characterId === 'boo' ? 'Boo' : 'Caisper'

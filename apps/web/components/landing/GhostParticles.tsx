@@ -70,7 +70,7 @@ const GHOST_SHAPE_PATH = (() => {
     { x: centerX - 0.12, y: centerY - 0.05 },
     { x: centerX + 0.12, y: centerY - 0.05 },
   ]
-  eyes.forEach((eye) => {
+  eyes.forEach((eye: any) => {
     for (let i = 0; i < 8; i++) {
       const angle = (i / 8) * Math.PI * 2
       const radius = 0.03
@@ -150,7 +150,7 @@ export function GhostParticles({ scrollProgress = 0 }: GhostParticlesProps) {
       const particleSize = isMobile ? { min: 2, max: 4 } : { min: 1.5, max: 4.5 }
 
       // Create particles along the ghost path
-      GHOST_SHAPE_PATH.forEach((point) => {
+      GHOST_SHAPE_PATH.forEach((point: any) => {
         // Create multiple particles around each path point for density
         for (let i = 0; i < particlesPerPoint; i++) {
           const spreadX = (Math.random() - 0.5) * 60
@@ -191,7 +191,7 @@ export function GhostParticles({ scrollProgress = 0 }: GhostParticlesProps) {
       // Determine particle color based on theme
       const primaryColor = THEME_COLORS[effectiveTheme as 'dark' | 'light'] || THEME_COLORS.dark
 
-      particles.current.forEach((particle) => {
+      particles.current.forEach((particle: any) => {
         // Ease toward target position
         const dx = particle.targetX - particle.x
         const dy = particle.targetY - particle.y

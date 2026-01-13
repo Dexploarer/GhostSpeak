@@ -102,6 +102,11 @@ export const discoveredAgents = defineTable({
   facilitatorAddress: v.optional(walletAddressValidator),
   slot: v.number(),
   blockTime: v.number(),
+  // Network tracking (where agent was discovered)
+  discoveryNetwork: v.optional(v.union(v.literal('mainnet-beta'), v.literal('devnet'), v.literal('testnet'))),
+  // Network where agent is registered on-chain (GhostSpeak program)
+  registrationNetwork: v.optional(v.union(v.literal('mainnet-beta'), v.literal('devnet'), v.literal('testnet'))),
+  registrationTxSignature: v.optional(v.string()),
   // Status
   status: v.union(v.literal('discovered'), v.literal('claimed'), v.literal('verified')),
   // Claim tracking

@@ -92,7 +92,7 @@ export const discoverAndRegisterEndpoints = action({
         discovered: discovered.length,
         registered: imported,
         skipped,
-        endpoints: validEndpoints.map((e) => ({
+        endpoints: validEndpoints.map((e: any) => ({
           url: e.endpoint,
           method: e.method,
           price: e.priceUsdc,

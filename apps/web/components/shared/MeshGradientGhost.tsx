@@ -166,7 +166,7 @@ export function MeshGradientGhost({
           transition={{ type: 'spring', stiffness: 150, damping: 15 }}
         >
           {/* Zipper teeth in pairs (zipped together) with smile curve */}
-          {Array.from({ length: 12 }).map((_, i) => {
+          {Array.from({ length: 12 }).map((_: any, i: number) => {
             const progress = i / 11
             const smileY = Math.sin(progress * Math.PI) * 8
             const toothColor = variant === 'caisper' ? '#ccff00' : '#000000'

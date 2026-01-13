@@ -9,8 +9,9 @@
  */
 
 import { v } from 'convex/values'
-import { mutation, query, action } from './_generated/server'
-import { api } from './_generated/api'
+import { mutation, query, internalAction, internalMutation, ActionCtx } from './_generated/server'
+import { internal } from './_generated/api'
+import { Id } from './_generated/dataModel'
 
 /**
  * Store a base64-encoded image to Convex storage
@@ -18,7 +19,7 @@ import { api } from './_generated/api'
  * Accepts base64 image data, uploads to Convex storage, and creates gallery record.
  * Must be an action (not mutation) to access ctx.storage
  */
-export const storeImage = action({
+export const storeImage: ReturnType<typeof internalAction> = internalAction({
   args: {
     userId: v.string(),
     base64Data: v.string(), // Base64-encoded image (without data:image/png;base64, prefix)
@@ -47,7 +48,7 @@ export const storeImage = action({
     const storageId = await ctx.storage.store(new Blob([bytes], { type: args.contentType }))
 
     // Create gallery record via runMutation (actions can't directly access db)
-    const imageId = await ctx.runMutation(api.images.createImageRecord, {
+    const imageId = await ctx.runMutation(internal.images.createImageRecord, {
       userId: args.userId,
       storageId,
       contentType: args.contentType,
@@ -77,7 +78,7 @@ export const storeImage = action({
  * Internal mutation to create image record in database
  * Called by storeImage action after uploading to storage
  */
-export const createImageRecord = mutation({
+export const createImageRecord = internalMutation({
   args: {
     userId: v.string(),
     storageId: v.id('_storage'),

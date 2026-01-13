@@ -69,7 +69,7 @@ export function withMiddleware(
       // Apply CORS headers if enabled
       if (options.cors) {
         const headers = new Headers(response.headers)
-        Object.entries(CORS_HEADERS).forEach(([key, value]) => {
+        Object.entries(CORS_HEADERS).forEach(([key, value]: [string, any]) => {
           headers.set(key, value)
         })
         return new Response(response.body, {
@@ -102,7 +102,7 @@ export function jsonResponse<T>(
   headers.set('Content-Type', 'application/json')
 
   if (options?.cache) {
-    Object.entries(CACHE_HEADERS).forEach(([key, value]) => {
+    Object.entries(CACHE_HEADERS).forEach(([key, value]: [string, any]) => {
       headers.set(key, value)
     })
   }

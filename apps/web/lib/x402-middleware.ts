@@ -18,20 +18,27 @@ export interface X402PaymentInfo {
 /**
  * Check if request has valid x402 payment
  * Returns the payment signature if valid, null otherwise
+ *
+ * Supports both v2 (PAYMENT-SIGNATURE) and v1 (X-Payment-Signature) headers
  */
 export function getPaymentFromRequest(req: NextRequest): string | null {
-  // Check for payment signature in headers
-  const paymentSignature = req.headers.get('X-Payment-Signature')
-  if (paymentSignature) {
-    // TODO: Verify signature on-chain
-    return paymentSignature
+  // Check for v2 header (PAYMENT-SIGNATURE)
+  const v2PaymentSignature =
+    req.headers.get('PAYMENT-SIGNATURE') || req.headers.get('payment-signature')
+  if (v2PaymentSignature) {
+    return v2PaymentSignature
+  }
+
+  // Check for v1 header (X-Payment-Signature) - backward compatibility
+  const v1PaymentSignature = req.headers.get('X-Payment-Signature')
+  if (v1PaymentSignature) {
+    return v1PaymentSignature
   }
 
   // Check for payment in query params (for GET requests)
   const url = new URL(req.url)
   const queryPayment = url.searchParams.get('payment_signature')
   if (queryPayment) {
-    // TODO: Verify signature on-chain
     return queryPayment
   }
 
@@ -60,9 +67,10 @@ export function createPaymentRequiredResponse(
         cluster: process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet',
       },
       instructions: {
-        method: 'Include X-Payment-Signature header with valid Solana transaction signature',
-        example: 'X-Payment-Signature: <transaction_signature>',
+        method: 'Include PAYMENT-SIGNATURE header with valid Solana transaction signature',
+        example: 'PAYMENT-SIGNATURE: <transaction_signature>',
         docs: 'https://ghostspeak.ai/docs/x402',
+        legacy: 'X-Payment-Signature header also supported (v1 compatibility)',
       },
     },
     {
@@ -70,6 +78,11 @@ export function createPaymentRequiredResponse(
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
+        'PAYMENT-REQUIRED': 'true',
+        'PAYMENT-RECIPIENT': caisperAddress,
+        'PAYMENT-AMOUNT': paymentInfo.priceUsdc.toString(),
+        'PAYMENT-CURRENCY': 'USDC',
+        // v1 compatibility headers
         'X-Payment-Required': 'true',
         'X-Payment-Recipient': caisperAddress,
         'X-Payment-Amount': paymentInfo.priceUsdc.toString(),

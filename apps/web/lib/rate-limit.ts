@@ -29,7 +29,7 @@ const WINDOW_MS = 60 * 1000
  * Get the rate limit tier for a wallet address
  */
 function getTier(walletAddress: string): keyof typeof RATE_LIMITS {
-  const adminWhitelist = (process.env.ADMIN_WHITELIST || '').split(',').map((w) => w.trim())
+  const adminWhitelist = (process.env.ADMIN_WHITELIST || '').split(',').map((w: any) => w.trim())
 
   if (adminWhitelist.includes(walletAddress)) {
     return 'admin'
@@ -37,8 +37,8 @@ function getTier(walletAddress: string): keyof typeof RATE_LIMITS {
 
   // TODO: Implement actual $GHOST balance lookup from Convex cache
   // For now, check if wallet is in whale/holder env vars (temporary workaround)
-  const whaleList = (process.env.WHALE_WHITELIST || '').split(',').map((w) => w.trim())
-  const holderList = (process.env.HOLDER_WHITELIST || '').split(',').map((w) => w.trim())
+  const whaleList = (process.env.WHALE_WHITELIST || '').split(',').map((w: any) => w.trim())
+  const holderList = (process.env.HOLDER_WHITELIST || '').split(',').map((w: any) => w.trim())
 
   if (whaleList.includes(walletAddress)) return 'whale'
   if (holderList.includes(walletAddress)) return 'holder'

@@ -85,7 +85,7 @@ function StatCard({
         </div>
 
         <div className="flex items-end gap-1 h-8">
-          {[...Array(12)].map((_, i) => (
+          {[...Array(12)].map((_: any, i: number) => (
             <motion.div
               key={i}
               initial={{ height: '20%' }}

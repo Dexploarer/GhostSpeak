@@ -53,6 +53,21 @@ const TIER_COLORS = {
   enterprise: 'bg-purple-500',
 }
 
+// Type for API call history
+type ApiCall = {
+  endpoint: string
+  method: string
+  credits: number
+  timestamp: number
+}
+
+// Type for deposit history
+type Deposit = {
+  amount: number
+  token: string
+  timestamp: number
+}
+
 export default function BillingPage() {
   const { publicKey } = useWallet()
   const walletAddress = publicKey?.toString()
@@ -111,7 +126,7 @@ export default function BillingPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Current Tier</CardTitle>
-                <Badge className={TIER_COLORS[balance?.tier || 'free']}>
+                <Badge className={TIER_COLORS[(balance?.tier as keyof typeof TIER_COLORS) || 'free']}>
                   {(balance?.tier || 'Free').toUpperCase()}
                 </Badge>
               </CardHeader>
@@ -192,7 +207,7 @@ export default function BillingPage() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Select Currency</label>
                   <div className="grid grid-cols-3 gap-2">
-                    {(['USDC', 'SOL', 'GHOST'] as const).map((token) => (
+                    {(['USDC', 'SOL', 'GHOST'] as const).map((token: any) => (
                       <Button
                         key={token}
                         variant={selectedToken === token ? 'default' : 'outline'}
@@ -295,7 +310,7 @@ export default function BillingPage() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {usage?.recentCalls.map((call, i) => (
+                            {usage?.recentCalls.map((call: ApiCall, i: number) => (
                               <TableRow key={i}>
                                 <TableCell className="font-mono text-xs">{call.endpoint}</TableCell>
                                 <TableCell>
@@ -329,7 +344,7 @@ export default function BillingPage() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {usage?.deposits.map((deposit, i) => (
+                            {usage?.deposits.map((deposit: Deposit, i: number) => (
                               <TableRow key={i}>
                                 <TableCell>{deposit.amount}</TableCell>
                                 <TableCell>

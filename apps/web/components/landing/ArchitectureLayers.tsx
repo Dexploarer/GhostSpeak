@@ -108,7 +108,7 @@ export function ArchitectureLayers() {
               : 'rotateX(60deg) rotateZ(45deg) translateY(50px)',
           }}
         >
-          {layers.map((layer, index) => {
+          {layers.map((layer: any, index: number) => {
             const isLeft = layer.side === 'left'
             return (
               <motion.div

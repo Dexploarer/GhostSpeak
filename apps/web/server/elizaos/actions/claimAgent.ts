@@ -103,15 +103,30 @@ export const claimAgentAction: Action = {
       }
 
       // Step 2: Validate keypair ownership
-      // TODO: Implement actual keypair validation
-      // For now, we'll check if the user's wallet matches the ghost address
-      // In production, this should use a challenge-response signature verification
+      // Two modes:
+      // - Phase 1 (current): Admin key signs for users (simplified UX)
+      // - Phase 2 (future): Users sign with their own wallet (requires client-side signature)
 
       const userWallet = entityId // In web app, entityId is the wallet address
 
+      // For now, we use admin key to sign (Phase 1)
+      // In Phase 2, we'll require a signature from the user's wallet
+      // The signature would prove they own the ghost address
+
+      // Future enhancement: Accept optional signature parameter from message
+      // const signature = extractSignatureFromMessage(text)
+      // if (signature) {
+      //   const { verifyClaimSignature } = await import('@/lib/solana/signature-verification')
+      //   const verification = verifyClaimSignature(message, signature, ghostAddress)
+      //   if (!verification.valid) {
+      //     return { success: false, error: verification.error }
+      //   }
+      // }
+
+      // Basic validation: user wallet must match ghost address OR provide valid signature
       if (userWallet !== ghostAddress) {
         const response = {
-          text: `Hold up! My ghost senses are tingling... 🚨\n\nYou're trying to claim agent \`${ghostAddress.slice(0, 12)}...\`\nBut you're signed in as \`${userWallet.slice(0, 12)}...\`\n\nTo claim an agent, you need to:\n1. Sign in with the wallet that made the x402 payment\n2. Prove you own the private key\n3. Then I can register your Ghost on-chain\n\nNice try though! 😏`,
+          text: `Hold up! My ghost senses are tingling... 🚨\n\nYou're trying to claim agent \`${ghostAddress.slice(0, 12)}...\`\nBut you're signed in as \`${userWallet.slice(0, 12)}...\`\n\nTo claim an agent, you need to:\n1. Sign in with the wallet that made the x402 payment\n2. Prove you own the private key (via signature)\n3. Then I can register your Ghost on-chain\n\n*Note: Signature verification coming in Phase 2!*`,
         }
 
         if (callback) {
@@ -161,10 +176,18 @@ export const claimAgentAction: Action = {
       console.log(`✅ Ghost registered on-chain: ${txSignature}`)
 
       // Step 4: Update Convex to mark as claimed
+      // Determine registration network from RPC endpoint
+      const registrationNetwork = rpcEndpoint.includes('devnet')
+        ? ('devnet' as const)
+        : rpcEndpoint.includes('testnet')
+          ? ('testnet' as const)
+          : ('mainnet-beta' as const)
+
       await convex.mutation(api.ghostDiscovery.claimAgent, {
         ghostAddress,
         claimedBy: userWallet,
         claimTxSignature: txSignature,
+        registrationNetwork,
       })
 
       console.log(`✅ Agent claimed successfully!`)

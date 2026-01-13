@@ -108,7 +108,7 @@ export const getScoreHistory = query({
       .take(limit)
 
     // Format for frontend charting
-    return history.map((h) => ({
+    return history.map((h: any) => ({
       score: h.score,
       tier: h.tier,
       timestamp: h.timestamp,
@@ -148,7 +148,7 @@ export const compareAgents = query({
         .order('asc')
         .take(100)
 
-      results[address] = history.map((h) => ({
+      results[address] = history.map((h: any) => ({
         score: h.score,
         tier: h.tier,
         timestamp: h.timestamp,
@@ -192,7 +192,7 @@ export const getFraudTimeline = query({
 
     // Build unified timeline
     const timeline = [
-      ...fraudSignals.map((f) => ({
+      ...fraudSignals.map((f: any) => ({
         type: 'fraud_signal' as const,
         timestamp: f.detectedAt,
         date: new Date(f.detectedAt).toISOString(),
@@ -209,7 +209,7 @@ export const getFraudTimeline = query({
           if (i === arr.length - 1) return false
           return Math.abs(s.score - arr[i + 1].score) > 100
         })
-        .map((s) => ({
+        .map((s: any) => ({
           type: 'score_change' as const,
           timestamp: s.timestamp,
           date: new Date(s.timestamp).toISOString(),
@@ -246,7 +246,7 @@ export const getScoreStats = query({
       return null
     }
 
-    const scores = history.map((h) => h.score)
+    const scores = history.map((h: any) => h.score)
     const sortedScores = [...scores].sort((a, b) => a - b)
 
     const currentScore = history[history.length - 1]?.score ?? 0

@@ -3,7 +3,7 @@ import { ConvexHttpClient } from "convex/browser";
 
 // Hardcoded for reliability in this script
 const CONVEX_URL = "https://lovely-cobra-639.convex.cloud";
-const CAISPER_ADDRESS = "CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc";
+const CAISPER_ADDRESS = "DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc";
 
 const client = new ConvexHttpClient(CONVEX_URL);
 

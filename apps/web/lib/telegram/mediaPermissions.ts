@@ -63,7 +63,7 @@ function getAllowlist(): Set<string> {
   return new Set(
     allowlist
       .split(',')
-      .map((item) => item.trim().toLowerCase())
+      .map((item: any) => item.trim().toLowerCase())
       .filter(Boolean)
   )
 }
@@ -76,7 +76,7 @@ function getBlocklist(): Set<string> {
   return new Set(
     blocklist
       .split(',')
-      .map((item) => item.trim().toLowerCase())
+      .map((item: any) => item.trim().toLowerCase())
       .filter(Boolean)
   )
 }
@@ -146,11 +146,11 @@ async function getUserRateLimit(walletAddress: string, username?: string, userId
 
   try {
     // Check user's $GHOST holdings tier
-    const tier = await getConvexClient().query(api.checkGhostBalance.getUserTier, {
+    const tierResult = await getConvexClient().action(api.checkGhostBalance.checkAndUpdateTier, {
       walletAddress,
     })
 
-    switch (tier) {
+    switch (tierResult.tier) {
       case 'whale': // $100+ in $GHOST
         return 100
       case 'holder': // $10+ in $GHOST

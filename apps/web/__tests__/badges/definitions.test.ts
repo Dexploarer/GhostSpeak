@@ -19,7 +19,7 @@ import {
 describe('BADGE_DEFINITIONS', () => {
   describe('structure validation', () => {
     it('should have all required properties for each badge', () => {
-      Object.values(BADGE_DEFINITIONS).forEach((badge) => {
+      Object.values(BADGE_DEFINITIONS).forEach((badge: any) => {
         expect(badge).toHaveProperty('id')
         expect(badge).toHaveProperty('name')
         expect(badge).toHaveProperty('description')
@@ -32,13 +32,13 @@ describe('BADGE_DEFINITIONS', () => {
     })
 
     it('should have id matching the key', () => {
-      Object.entries(BADGE_DEFINITIONS).forEach(([key, badge]) => {
+      Object.entries(BADGE_DEFINITIONS).forEach(([key, badge]: [string, any]) => {
         expect(badge.id).toBe(key)
       })
     })
 
     it('should have non-empty string values for text properties', () => {
-      Object.values(BADGE_DEFINITIONS).forEach((badge) => {
+      Object.values(BADGE_DEFINITIONS).forEach((badge: any) => {
         expect(typeof badge.name).toBe('string')
         expect(badge.name.length).toBeGreaterThan(0)
 
@@ -58,7 +58,7 @@ describe('BADGE_DEFINITIONS', () => {
     const validRarities = ['COMMON', 'UNCOMMON', 'RARE', 'EPIC', 'LEGENDARY']
 
     it('should have valid rarity values', () => {
-      Object.values(BADGE_DEFINITIONS).forEach((badge) => {
+      Object.values(BADGE_DEFINITIONS).forEach((badge: any) => {
         expect(validRarities).toContain(badge.rarity)
       })
     })
@@ -93,7 +93,7 @@ describe('BADGE_DEFINITIONS', () => {
 
   describe('type validation', () => {
     it('should have valid type values (ACHIEVEMENT or CREDENTIAL)', () => {
-      Object.values(BADGE_DEFINITIONS).forEach((badge) => {
+      Object.values(BADGE_DEFINITIONS).forEach((badge: any) => {
         expect(['ACHIEVEMENT', 'CREDENTIAL']).toContain(badge.type)
       })
     })
@@ -116,7 +116,7 @@ describe('BADGE_DEFINITIONS', () => {
 
   describe('icon validation', () => {
     it('should have icon component defined', () => {
-      Object.values(BADGE_DEFINITIONS).forEach((badge) => {
+      Object.values(BADGE_DEFINITIONS).forEach((badge: any) => {
         expect(badge.icon).toBeDefined()
         // Icons are React component objects
         expect(typeof badge.icon).toBe('object')

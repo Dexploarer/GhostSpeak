@@ -104,7 +104,7 @@ export function TrustModel() {
 
         {/* Trust Pillars Grid */}
         <div className="grid md:grid-cols-2 gap-6 mb-16">
-          {trustPillars.map((pillar, i) => (
+          {trustPillars.map((pillar: any, i: number) => (
             <motion.div
               key={pillar.title}
               initial={{ opacity: 0, y: 20 }}
@@ -152,7 +152,7 @@ export function TrustModel() {
                 </tr>
               </thead>
               <tbody>
-                {dependencies.map((dep) => (
+                {dependencies.map((dep: any) => (
                   <tr key={dep.name} className="border-b border-border/50">
                     <td className="py-3 px-4 font-medium">{dep.name}</td>
                     <td className="py-3 px-4 text-muted-foreground">{dep.role}</td>

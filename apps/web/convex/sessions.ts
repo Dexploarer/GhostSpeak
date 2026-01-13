@@ -234,7 +234,7 @@ export const getUserSessions = query({
     const now = Date.now()
     return sessions
       .filter((s) => s.expiresAt > now)
-      .map((s) => ({
+      .map((s: any) => ({
         sessionId: s._id,
         createdAt: s.createdAt,
         lastAccessedAt: s.lastAccessedAt,

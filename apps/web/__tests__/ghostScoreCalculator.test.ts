@@ -317,7 +317,7 @@ describe('calculateGhostScore', () => {
 
 describe('SOURCE_WEIGHTS', () => {
   it('should have valid weights (0-1 range)', () => {
-    Object.values(SOURCE_WEIGHTS).forEach((weight) => {
+    Object.values(SOURCE_WEIGHTS).forEach((weight: any) => {
       expect(weight).toBeGreaterThanOrEqual(0)
       expect(weight).toBeLessThanOrEqual(1)
     })
@@ -330,7 +330,7 @@ describe('SOURCE_WEIGHTS', () => {
 
   it('should have payment activity as highest weight', () => {
     const paymentWeight = SOURCE_WEIGHTS.paymentActivity
-    Object.entries(SOURCE_WEIGHTS).forEach(([key, weight]) => {
+    Object.entries(SOURCE_WEIGHTS).forEach(([key, weight]: [string, any]) => {
       if (key !== 'paymentActivity') {
         expect(paymentWeight).toBeGreaterThan(weight)
       }
@@ -344,13 +344,13 @@ describe('SOURCE_WEIGHTS', () => {
 
 describe('DECAY_HALF_LIVES', () => {
   it('should have positive half-lives for all sources', () => {
-    Object.values(DECAY_HALF_LIVES).forEach((halfLife) => {
+    Object.values(DECAY_HALF_LIVES).forEach((halfLife: any) => {
       expect(halfLife).toBeGreaterThan(0)
     })
   })
 
   it('should have reasonable half-life ranges (days)', () => {
-    Object.values(DECAY_HALF_LIVES).forEach((halfLife) => {
+    Object.values(DECAY_HALF_LIVES).forEach((halfLife: any) => {
       expect(halfLife).toBeLessThanOrEqual(365)
     })
   })

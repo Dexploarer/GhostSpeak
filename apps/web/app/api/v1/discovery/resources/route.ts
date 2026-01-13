@@ -12,6 +12,39 @@ import { api } from '@/convex/_generated/api'
 import { fetchQuery } from 'convex/nextjs'
 import { withMiddleware, jsonResponse, handleCORS } from '@/lib/api/middleware'
 
+// Type for discovered agent from Convex
+type DiscoveredAgent = {
+  _id: string
+  ghostAddress: string
+  name?: string
+  description?: string
+  domainUrl?: string
+  status: 'discovered' | 'claimed' | 'verified'
+  discoverySource?: string
+  firstSeenTimestamp: number
+  claimedBy?: string
+  claimedAt?: number
+}
+
+// Type for agent endpoint from Convex
+type AgentEndpoint = {
+  _id: string
+  _creationTime: number
+  agentAddress: string
+  method: string
+  endpoint: string
+  baseUrl?: string
+  description?: string
+  category?: string
+  priceUsdc: number
+  isActive: boolean
+  lastTestedAt?: number
+  avgQualityScore?: number
+  totalTests?: number
+  successfulTests?: number
+  avgResponseTimeMs?: number
+}
+
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.ghostspeak.io'
 
 export const GET = withMiddleware(async (request) => {
@@ -24,11 +57,11 @@ export const GET = withMiddleware(async (request) => {
   const offset = parseInt(searchParams.get('offset') || '0')
 
   // Get all registered endpoints from Observatory
-  const allEndpoints = await fetchQuery(api.observation.listEndpoints, {})
+  const allEndpoints = (await fetchQuery(api.observation.listEndpoints, {})) as AgentEndpoint[]
 
   // Get all discovered agents for metadata
-  const allAgents = await fetchQuery(api.ghostDiscovery.listDiscoveredAgents, {})
-  const agentMap = new Map(allAgents.map((a) => [a.ghostAddress, a]))
+  const allAgents = (await fetchQuery(api.ghostDiscovery.listDiscoveredAgents, {})) as DiscoveredAgent[]
+  const agentMap = new Map(allAgents.map((a: any) => [a.ghostAddress, a]))
 
   // Filter endpoints (use isActive instead of status which doesn't exist)
   let filteredEndpoints = allEndpoints.filter((ep) => ep.isActive !== false)
@@ -52,7 +85,7 @@ export const GET = withMiddleware(async (request) => {
   const paginatedEndpoints = filteredEndpoints.slice(offset, offset + limit)
 
   // Format as PayAI-compatible resources
-  const resources = paginatedEndpoints.map((endpoint) => {
+  const resources = paginatedEndpoints.map((endpoint: any) => {
     const agent = agentMap.get(endpoint.agentAddress)
     const amountMicroUsdc = Math.floor(endpoint.priceUsdc * 1_000_000)
 
@@ -139,7 +172,7 @@ export const GET = withMiddleware(async (request) => {
   })
 
   // Aggregate categories for discovery
-  const categories = Array.from(new Set(allEndpoints.map((ep) => ep.category).filter(Boolean)))
+  const categories = Array.from(new Set(allEndpoints.map((ep: any) => ep.category).filter(Boolean)))
 
   return jsonResponse(
     {
@@ -153,8 +186,8 @@ export const GET = withMiddleware(async (request) => {
       filters: {
         categories,
         priceRange: {
-          min: Math.min(...allEndpoints.map((ep) => ep.priceUsdc)),
-          max: Math.max(...allEndpoints.map((ep) => ep.priceUsdc)),
+          min: Math.min(...allEndpoints.map((ep: any) => ep.priceUsdc)),
+          max: Math.max(...allEndpoints.map((ep: any) => ep.priceUsdc)),
         },
         networks: ['solana', 'solana-devnet'],
       },

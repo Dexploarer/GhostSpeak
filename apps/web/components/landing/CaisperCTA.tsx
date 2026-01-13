@@ -170,7 +170,7 @@ export function CaisperCTA() {
 
             {/* Feature list */}
             <div className="space-y-4">
-              {features.map((feature, i) => (
+              {features.map((feature: any, i: number) => (
                 <motion.div
                   key={feature.title}
                   initial={{ opacity: 0, x: -30 }}
@@ -313,7 +313,7 @@ export function CaisperCTA() {
             </motion.div>
 
             {/* Orbiting particles */}
-            {[0, 1, 2].map((i) => (
+            {[0, 1, 2].map((i: any) => (
               <motion.div
                 key={i}
                 className="absolute w-2 h-2 rounded-full bg-primary/40"

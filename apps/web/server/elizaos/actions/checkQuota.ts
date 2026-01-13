@@ -6,26 +6,15 @@ export const checkQuotaAction: Action = {
   name: 'CHECK_QUOTA',
   description: 'Show generation quota status',
   similes: ['check quota', 'how many left', 'generations left', 'quota status', 'my limit'],
-  examples: [
-    [
-      {
-        user: '{{user1}}',
-        content: { text: 'How many generations do I have left?' },
-      },
-      {
-        user: '{{agent}}',
-        content: {
-          text: "📊 **Your Generation Quota:**\n\n🆓 **Tier:** Free\n🎨 **Used:** 3/5 images this month\n✅ **Remaining:** 2 images\n⏰ **Resets:** in 17 days\n\n💡 **Upgrade to Holder tier for 25 images/month!**\nHold $10+ worth of $GHOST tokens.",
-        },
-      },
-    ],
-  ],
+  examples: [],
 
   validate: async (_runtime: IAgentRuntime, message: Memory) => {
-    const text = message.content.text.toLowerCase()
+    const text = message.content?.text?.toLowerCase()
+    if (!text) return false
+
     return (
       text.includes('quota') ||
-      text.includes('how many') && (text.includes('left') || text.includes('generations')) ||
+      (text.includes('how many') && (text.includes('left') || text.includes('generations'))) ||
       text.includes('generations left') ||
       text.includes('my limit')
     )
@@ -37,10 +26,10 @@ export const checkQuotaAction: Action = {
     _state?: State,
     _options?: { [key: string]: unknown },
     callback?: HandlerCallback
-  ): Promise<boolean> => {
+  ): Promise<void> => {
     try {
-      const userId = message.userId
-      const convexUrl = runtime.getSetting('CONVEX_URL') || process.env.NEXT_PUBLIC_CONVEX_URL
+      const userId = (message as any).userId || message.id
+      const convexUrl = String(runtime.getSetting('CONVEX_URL') || process.env.NEXT_PUBLIC_CONVEX_URL || '')
 
       if (!convexUrl) {
         throw new Error('CONVEX_URL not configured')
@@ -50,7 +39,7 @@ export const checkQuotaAction: Action = {
 
       // Get user's quota status from Convex
       const quotaStatus = await convex.query(api.messageQuota.checkMessageQuota, {
-        userId,
+        walletAddress: userId,
       })
 
       if (!quotaStatus) {
@@ -59,13 +48,13 @@ export const checkQuotaAction: Action = {
             text: 'Unable to fetch quota status. Please try again.',
           })
         }
-        return false
+        return
       }
 
-      const { tier, count, limit, canSendMessage } = quotaStatus
+      const { tier, currentCount, limit, canSend } = quotaStatus
 
       // Calculate remaining
-      const used = count
+      const used = currentCount
       const remaining = Math.max(0, limit - used)
       const percentUsed = Math.round((used / limit) * 100)
 
@@ -76,7 +65,7 @@ export const checkQuotaAction: Action = {
         whale: { emoji: '🐋', name: 'Whale', upgrade: 'You have unlimited generations!' },
       }
 
-      const info = tierInfo[tier] || tierInfo.free
+      const info = tierInfo[tier as keyof typeof tierInfo] || tierInfo.free
 
       // Calculate reset time (daily reset at UTC midnight)
       const now = new Date()
@@ -89,7 +78,7 @@ export const checkQuotaAction: Action = {
       response += `${info.emoji} **Tier:** ${info.name}\n`
       response += `🎨 **Used:** ${used}/${limit} generations today\n`
 
-      if (!canSendMessage) {
+      if (!canSend) {
         response += `🚫 **Status:** Quota exhausted\n`
       } else {
         response += `✅ **Remaining:** ${remaining} generation${remaining === 1 ? '' : 's'}\n`
@@ -106,8 +95,6 @@ export const checkQuotaAction: Action = {
       if (callback) {
         callback({ text: response })
       }
-
-      return true
     } catch (error) {
       console.error('Error in checkQuota:', error)
       if (callback) {
@@ -115,7 +102,6 @@ export const checkQuotaAction: Action = {
           text: 'Failed to check quota status. Please try again.',
         })
       }
-      return false
     }
   },
 }

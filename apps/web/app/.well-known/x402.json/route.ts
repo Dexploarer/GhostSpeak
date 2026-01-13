@@ -14,7 +14,7 @@ import { NextResponse } from 'next/server'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.ghostspeak.io'
 const CAISPER_ADDRESS =
-  process.env.CAISPER_WALLET_ADDRESS || 'CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc'
+  process.env.CAISPER_WALLET_ADDRESS || 'DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc'
 const FACILITATOR_ADDRESS =
   process.env.PAYAI_FACILITATOR_ADDRESS || '2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4'
 

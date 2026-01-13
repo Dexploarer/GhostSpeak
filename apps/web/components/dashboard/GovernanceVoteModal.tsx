@@ -104,7 +104,7 @@ export function GovernanceVoteModal({
           <div className="space-y-3">
             <label className="text-sm font-medium text-white">Quality Score (1-5)</label>
             <div className="flex items-center gap-2">
-              {[1, 2, 3, 4, 5].map((val) => (
+              {[1, 2, 3, 4, 5].map((val: any) => (
                 <button
                   key={val}
                   onClick={() => setScore(val)}

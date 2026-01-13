@@ -60,7 +60,7 @@ export function CostComparison() {
                   sub: 'Pay per check OR stake for unlimited',
                   color: 'text-primary',
                 },
-              ].map((item, i) => (
+              ].map((item: any, i: number) => (
                 <motion.div
                   key={item.title}
                   initial={{ opacity: 0, y: 10 }}

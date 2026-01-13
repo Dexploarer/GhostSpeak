@@ -91,7 +91,7 @@ export function formatResponseForTelegram(
   if (metadata?.type === 'agents') {
     // Build agent discovery keyboard
     const agents = (metadata.agents as any[]) || []
-    const keyboard = agents.slice(0, 5).map((agent) => [
+    const keyboard = agents.slice(0, 5).map((agent: any) => [
       {
         text: `👻 ${agent.name || agent.address.slice(0, 8)}...`,
         callback_data: `claim_${agent.address}`,

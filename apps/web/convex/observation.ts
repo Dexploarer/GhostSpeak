@@ -234,7 +234,7 @@ export const getObservatoryStats = query({
       .collect()
 
     // Unique agents
-    const uniqueAgents = new Set(endpoints.map((e) => e.agentAddress))
+    const uniqueAgents = new Set(endpoints.map((e: any) => e.agentAddress))
 
     // Calculate success rate
     const successfulTests = recentTests.filter((t) => t.success).length
@@ -515,7 +515,7 @@ export const recordTestResult = internalMutation({
     }
 
     // Sanitize transcript
-    const sanitizedTranscript = args.transcript?.map((msg) => ({
+    const sanitizedTranscript = args.transcript?.map((msg: any) => ({
       ...msg,
       content: truncate(msg.content, 2000), // Max 2KB per message
       toolArgs: msg.toolArgs ? truncate(msg.toolArgs, 2000) : undefined,
@@ -668,7 +668,7 @@ export const compileDailyReport = internalMutation({
       .withIndex('by_agent', (q) => q.eq('agentAddress', args.agentAddress))
       .collect()
 
-    const claimedCapabilities = [...new Set(endpoints.map((e) => e.description))]
+    const claimedCapabilities = [...new Set(endpoints.map((e: any) => e.description))]
 
     // Calculate metrics
     const testsSucceeded = tests.filter((t) => t.success).length
@@ -682,7 +682,7 @@ export const compileDailyReport = internalMutation({
 
     // Calculate response time consistency using coefficient of variation
     // CV = stddev / mean; lower CV = more consistent
-    const responseTimes = tests.map((t) => t.responseTimeMs)
+    const responseTimes = tests.map((t: any) => t.responseTimeMs)
     const variance =
       responseTimes.reduce((sum, t) => sum + Math.pow(t - avgResponseTimeMs, 2), 0) /
       responseTimes.length
@@ -698,14 +698,14 @@ export const compileDailyReport = internalMutation({
       ...new Set(
         tests
           .filter((t) => t.capabilityVerified)
-          .map((t) => endpoints.find((e) => e._id === t.endpointId)?.description || '')
+          .map((t: any) => endpoints.find((e) => e._id === t.endpointId)?.description || '')
       ),
     ].filter(Boolean)
     const failedCapabilities = [
       ...new Set(
         tests
           .filter((t) => !t.capabilityVerified)
-          .map((t) => endpoints.find((e) => e._id === t.endpointId)?.description || '')
+          .map((t: any) => endpoints.find((e) => e._id === t.endpointId)?.description || '')
       ),
     ].filter(Boolean)
 
@@ -766,7 +766,7 @@ export const compileDailyReport = internalMutation({
         overallGrade,
         trustworthiness,
         recommendation,
-        fraudSignals: fraudSignals.map((f) => f.signalType),
+        fraudSignals: fraudSignals.map((f: any) => f.signalType),
         fraudRiskScore,
         compiledAt: Date.now(),
       })
@@ -803,7 +803,7 @@ export const compileDailyReport = internalMutation({
       overallGrade,
       trustworthiness,
       recommendation,
-      fraudSignals: fraudSignals.map((f) => f.signalType),
+      fraudSignals: fraudSignals.map((f: any) => f.signalType),
       fraudRiskScore,
       compiledAt: Date.now(),
     })
@@ -920,7 +920,7 @@ export const issueObservationCredentials = internalMutation({
         recentReports.reduce((sum, r) => sum + r.avgResponseTimeMs, 0) / recentReports.length
 
       // Get period start and end from reports
-      const sortedDates = recentReports.map((r) => r.date).sort()
+      const sortedDates = recentReports.map((r: any) => r.date).sort()
       const periodStart = new Date(sortedDates[0]).getTime()
       const periodEnd =
         new Date(sortedDates[sortedDates.length - 1]).getTime() + 24 * 60 * 60 * 1000
@@ -1429,7 +1429,7 @@ export const compileDailyReports = internalAction({
       endTime: endOfDay,
     })) as Doc<'endpointTests'>[]
 
-    const uniqueAgents: string[] = [...new Set(tests.map((t) => t.agentAddress as string))]
+    const uniqueAgents: string[] = [...new Set(tests.map((t: any) => t.agentAddress as string))]
 
     console.log(`[Observation] Found ${uniqueAgents.length} agents with tests yesterday`)
 

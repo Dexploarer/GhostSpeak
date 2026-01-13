@@ -32,6 +32,9 @@ import { generateImageAction } from './actions/generateImage'
 import { showMyImagesAction } from './actions/showMyImages'
 import { writeCaptionAction } from './actions/writeCaption'
 import { checkQuotaAction } from './actions/checkQuota'
+import { generateThreadAction } from './actions/generateThread'
+import { generatePostAction } from './actions/generatePost'
+import { generateRaidContentAction } from './actions/generateRaidContent'
 
 // Wide Event Logging
 import { createRequestEvent, emitWideEvent } from '@/lib/logging/wide-event'
@@ -262,7 +265,7 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   async getEntitiesByIds(entityIds: any[]): Promise<any[] | null> {
     // Return entity objects for elizaOS v1.7.0
     // The runtime expects to find the agent as an entity
-    return entityIds.map((id) => ({
+    return entityIds.map((id: any) => ({
       id,
       name: 'Caisper',
       type: 'agent',
@@ -347,10 +350,10 @@ class ConvexDatabaseAdapter implements IDatabaseAdapter {
   }
   async updateWorld(world: any): Promise<void> {}
   async getRoomsByIds(roomIds: any[]): Promise<any[] | null> {
-    return roomIds.map((id) => ({ id }))
+    return roomIds.map((id: any) => ({ id }))
   }
   async createRooms(rooms: any[]): Promise<any[]> {
-    return rooms.map((r) => r.id || `room-${Date.now()}`)
+    return rooms.map((r: any) => r.id || `room-${Date.now()}`)
   }
   async deleteRoom(roomId: any): Promise<void> {}
   async deleteRoomsByWorldId(worldId: any): Promise<void> {}
@@ -467,7 +470,10 @@ export async function initializeAgent(characterId: 'caisper' | 'boo' = 'caisper'
       runtime.registerAction(writeCaptionAction)
       runtime.registerAction(checkQuotaAction)
       runtime.registerAction(generateOuijaAction)
-      console.log('📝 Registered 5 Boo actions (community marketing suite)')
+      runtime.registerAction(generateThreadAction)
+      runtime.registerAction(generatePostAction)
+      runtime.registerAction(generateRaidContentAction)
+      console.log('📝 Registered 8 Boo actions (community marketing suite)')
     }
 
     // Store runtime instance

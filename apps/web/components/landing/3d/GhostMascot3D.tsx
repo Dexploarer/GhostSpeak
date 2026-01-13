@@ -55,7 +55,7 @@ function DataRings() {
   useFrame((state) => {
     if (!groupRef.current) return
     const t = state.clock.getElapsedTime()
-    groupRef.current.children.forEach((child, i) => {
+    groupRef.current.children.forEach((child: any, i: number) => {
       child.rotation.x = t * (0.2 + i * 0.1)
       child.rotation.y = t * (0.1 + i * 0.05)
     })
@@ -63,7 +63,7 @@ function DataRings() {
 
   return (
     <group ref={groupRef}>
-      {[...Array(3)].map((_, i) => (
+      {[...Array(3)].map((_: any, i: number) => (
         <mesh key={i} rotation={[Math.random() * Math.PI, Math.random() * Math.PI, 0]}>
           <torusGeometry args={[2 + i * 0.5, 0.01, 16, 100]} />
           <meshBasicMaterial color="#ccff00" transparent opacity={0.2} />

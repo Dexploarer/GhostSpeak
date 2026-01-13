@@ -32,7 +32,7 @@ export function AgentListResponse({ agents, totalCount, onClaimClick }: AgentLis
       </div>
 
       <div className="space-y-2">
-        {agents.map((agent) => (
+        {agents.map((agent: any) => (
           <div
             key={agent.ghostAddress}
             className="group relative p-4 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all"

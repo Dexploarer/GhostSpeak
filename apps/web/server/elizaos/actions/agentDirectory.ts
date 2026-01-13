@@ -117,7 +117,7 @@ export const agentDirectoryAction: Action = {
       // Add agents from discoveredAgents
       for (const agent of agents || []) {
         const agentEndpoints = endpointsByAgent.get(agent.ghostAddress) || []
-        const categories = [...new Set(agentEndpoints.map((ep) => ep.category))]
+        const categories = [...new Set(agentEndpoints.map((ep: any) => ep.category))]
 
         directory.push({
           ghostAddress: agent.ghostAddress,
@@ -152,7 +152,7 @@ export const agentDirectoryAction: Action = {
       // Add agents that only have endpoints (not in discoveredAgents)
       for (const [agentAddress, agentEndpoints] of endpointsByAgent) {
         if (!directory.find((d) => d.ghostAddress === agentAddress)) {
-          const categories = [...new Set(agentEndpoints.map((ep) => ep.category))]
+          const categories = [...new Set(agentEndpoints.map((ep: any) => ep.category))]
           directory.push({
             ghostAddress: agentAddress,
             shortAddress: `${agentAddress.slice(0, 6)}...${agentAddress.slice(-4)}`,

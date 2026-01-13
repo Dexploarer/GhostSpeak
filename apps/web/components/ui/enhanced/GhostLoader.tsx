@@ -19,7 +19,7 @@ export const GhostLoader: React.FC<GhostLoaderProps> = ({
   if (variant === 'card') {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-        {items.map((_, i) => (
+        {items.map((_: any, i: number) => (
           <div
             key={i}
             className={cn(
@@ -42,7 +42,7 @@ export const GhostLoader: React.FC<GhostLoaderProps> = ({
   if (variant === 'list') {
     return (
       <div className="space-y-3 w-full">
-        {items.map((_, i) => (
+        {items.map((_: any, i: number) => (
           <div
             key={i}
             className={cn(

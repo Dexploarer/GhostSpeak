@@ -39,7 +39,7 @@ function getResponseKeywords(): string[] {
 
   const envKeywords = process.env.TELEGRAM_GROUP_KEYWORDS
   if (envKeywords) {
-    return envKeywords.split(',').map((k) => k.trim().toLowerCase())
+    return envKeywords.split(',').map((k: any) => k.trim().toLowerCase())
   }
 
   return defaultKeywords

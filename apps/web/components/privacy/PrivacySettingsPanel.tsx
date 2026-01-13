@@ -184,11 +184,11 @@ export function PrivacySettingsPanel({
 
     // Adjust metric settings based on preset
     if (preset === 'conservative') {
-      Object.keys(newMetricSettings).forEach((key) => {
+      Object.keys(newMetricSettings).forEach((key: any) => {
         newMetricSettings[key] = 'authorized-only'
       })
     } else if (preset === 'balanced') {
-      Object.keys(newMetricSettings).forEach((key) => {
+      Object.keys(newMetricSettings).forEach((key: any) => {
         if (key === 'reputationTier') {
           newMetricSettings[key] = 'public'
         } else {
@@ -197,7 +197,7 @@ export function PrivacySettingsPanel({
       })
     } else {
       // open
-      Object.keys(newMetricSettings).forEach((key) => {
+      Object.keys(newMetricSettings).forEach((key: any) => {
         newMetricSettings[key] = 'public'
       })
     }

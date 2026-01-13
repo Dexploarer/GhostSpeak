@@ -2,7 +2,7 @@
 import { JupiterUltraClient, analyzeTokenRisk, TokenInfo } from '../lib/jupiter-ultra'
 
 async function runVerification() {
-    const targetWallet = 'CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc'
+    const targetWallet = 'DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc'
     console.log(`\n🕵️  Verifying Token Scanner for Wallet: ${targetWallet}`)
     console.log('='.repeat(60))
 
@@ -32,7 +32,7 @@ async function runVerification() {
         ])
 
         const tokenMap = new Map<string, TokenInfo>()
-        tokenInfos.forEach((t) => tokenMap.set(t.id, t))
+        tokenInfos.forEach((t: any) => tokenMap.set(t.id, t))
 
         // 4. Analyze Risks
         let totalValue = holdings.uiAmount // Start with SOL value? (simplified, technically need SQL price)
@@ -43,7 +43,7 @@ async function runVerification() {
         console.log('\n📊 Detailed Token Analysis:')
         console.log('-'.repeat(60))
 
-        const analyzedTokens = topMints.map((mint) => {
+        const analyzedTokens = topMints.map((mint: any) => {
             const token = tokenMap.get(mint)
             const account = holdings.tokens[mint][0]
             const warnings = shieldData.warnings[mint] || []

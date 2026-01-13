@@ -136,7 +136,7 @@ export const GET = withMiddleware(async () => {
           note: 'Pay with GHOST for bonus credits!',
         },
       },
-      tiers: Object.entries(TIER_CONFIG).map(([key, config]) => ({
+      tiers: Object.entries(TIER_CONFIG).map(([key, config]: [string, any]) => ({
         tier: key,
         name: config.name,
         pricePerThousandCredits: `$${config.pricePerThousandCredits}`,

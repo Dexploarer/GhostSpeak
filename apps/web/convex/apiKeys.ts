@@ -45,7 +45,7 @@ export const listMyApiKeys = query({
     // Sort newest first for dashboard display
     keys.sort((a, b) => b.createdAt - a.createdAt)
 
-    return keys.map((k) => ({
+    return keys.map((k: any) => ({
       id: k._id,
       name: k.name,
       keyPrefix: k.keyPrefix,

@@ -484,7 +484,7 @@ export const getUsageHistory = query({
         },
         tier,
       },
-      deposits: deposits.map((d) => ({
+      deposits: deposits.map((d: any) => ({
         token: d.paymentToken,
         amount: d.amountUsdc,
         timestamp: d.timestamp,
@@ -492,12 +492,12 @@ export const getUsageHistory = query({
       })),
       dailyUsage: Object.entries(dailyUsage)
         .sort(([a], [b]) => b.localeCompare(a))
-        .map(([date, data]) => ({
+        .map(([date, data]: [string, any]) => ({
           date,
           credits: data.credits,
           calls: data.calls,
         })),
-      recentCalls: apiUsage.slice(0, 20).map((u) => ({
+      recentCalls: apiUsage.slice(0, 20).map((u: any) => ({
         endpoint: u.endpoint,
         method: u.method,
         credits: u.cost || 1,

@@ -145,7 +145,7 @@ export function ViralGrowth() {
 
             {/* Leaderboard entries */}
             <div className="p-4 space-y-3">
-              {exampleAgents.map((agent, i) => (
+              {exampleAgents.map((agent: any, i: number) => (
                 <div
                   key={agent.name}
                   className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/50"

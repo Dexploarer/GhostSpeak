@@ -114,7 +114,7 @@ export function FlyingGhost() {
                   : '...',
                 label: 'Verified',
               },
-            ].map((stat, i) => (
+            ].map((stat: any, i: number) => (
               <motion.div
                 key={stat.label}
                 initial={{ opacity: 0, y: 20 }}

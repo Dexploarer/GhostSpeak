@@ -145,7 +145,7 @@ function trimOutliers(
   const median = sortedScores[Math.floor(sortedScores.length / 2)].score
 
   // Calculate MAD (Median Absolute Deviation)
-  const absoluteDeviations = scores.map((s) => Math.abs(s.score - median))
+  const absoluteDeviations = scores.map((s: any) => Math.abs(s.score - median))
   const sortedDeviations = [...absoluteDeviations].sort((a, b) => a - b)
   const mad = sortedDeviations[Math.floor(sortedDeviations.length / 2)]
 
@@ -220,7 +220,7 @@ export function calculateGhostScore(sources: Record<string, SourceScore>): {
   const sourceArray = Object.entries(sources)
 
   // Step 1: Apply time decay to each source
-  const decayedSources = sourceArray.map(([key, s]) => ({
+  const decayedSources = sourceArray.map(([key, s]: [string, any]) => ({
     score: s.rawScore * s.timeDecayFactor,
     weight: s.weight * s.confidence, // Weight by confidence
     variance: calculateVariance(s.dataPoints, s.rawScore),
@@ -236,7 +236,7 @@ export function calculateGhostScore(sources: Record<string, SourceScore>): {
     const median = sortedScores[Math.floor(sortedScores.length / 2)].score
 
     // Calculate MAD (Median Absolute Deviation)
-    const absoluteDeviations = decayedSources.map((src) => Math.abs(src.score - median))
+    const absoluteDeviations = decayedSources.map((src: any) => Math.abs(src.score - median))
     const sortedDeviations = [...absoluteDeviations].sort((a, b) => a - b)
     const mad = sortedDeviations[Math.floor(sortedDeviations.length / 2)]
 
@@ -260,7 +260,7 @@ export function calculateGhostScore(sources: Record<string, SourceScore>): {
     return { score: 0, confidence: [0, 0] }
   }
 
-  const normalized = validSources.map((s) => ({
+  const normalized = validSources.map((s: any) => ({
     score: s.score,
     weight: s.weight / totalWeight,
     dataPoints: s.dataPoints,
@@ -556,11 +556,11 @@ export async function calculateCredentialVerifications(
   const rawScore = Math.min(10000, totalScore)
 
   // Confidence based on credential diversity (10 possible types)
-  const uniqueTypes = new Set(allCredentials.map((c) => c.type))
+  const uniqueTypes = new Set(allCredentials.map((c: any) => c.type))
   const confidence = Math.min(1, uniqueTypes.size / 10) // Max at 10 different types
 
   // Time decay based on most recent credential
-  const issuedTimes = allCredentials.map((c) => c.issuedAt || 0).filter((t) => t > 0)
+  const issuedTimes = allCredentials.map((c: any) => c.issuedAt || 0).filter((t) => t > 0)
   const lastUpdated = issuedTimes.length > 0 ? Math.max(...issuedTimes) : Date.now()
   const timeDecayFactor = calculateTimeDecayFactor(
     lastUpdated,

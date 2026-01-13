@@ -950,42 +950,42 @@ export const getAgentCredentialsPublic = query({
 
     // Flatten all credentials into a simple array for chat display
     const allCredentials = [
-      ...identity.map((c) => ({
+      ...identity.map((c: any) => ({
         type: 'identity',
         credentialId: c.credentialId,
         did: c.did,
         issuedAt: c.issuedAt,
         isValid: true,
       })),
-      ...reputation.map((c) => ({
+      ...reputation.map((c: any) => ({
         type: 'reputation',
         credentialId: c.credentialId,
         tier: c.tier,
         issuedAt: c.issuedAt,
         isValid: true,
       })),
-      ...paymentMilestones.map((c) => ({
+      ...paymentMilestones.map((c: any) => ({
         type: 'paymentMilestone',
         credentialId: c.credentialId,
         milestone: c.milestone,
         issuedAt: c.issuedAt,
         isValid: true,
       })),
-      ...staking.map((c) => ({
+      ...staking.map((c: any) => ({
         type: 'staking',
         credentialId: c.credentialId,
         tier: c.tier,
         issuedAt: c.issuedAt,
         isValid: true,
       })),
-      ...verifiedHires.map((c) => ({
+      ...verifiedHires.map((c: any) => ({
         type: 'verifiedHire',
         credentialId: c.credentialId,
         rating: c.rating,
         issuedAt: c.issuedAt,
         isValid: true,
       })),
-      ...validCapability.map((c) => ({
+      ...validCapability.map((c: any) => ({
         type: 'capability',
         credentialId: c.credentialId,
         capabilities: c.capabilities,
@@ -994,21 +994,21 @@ export const getAgentCredentialsPublic = query({
         isValid: true,
         validUntil: c.validUntil,
       })),
-      ...uptimeAttestation.map((c) => ({
+      ...uptimeAttestation.map((c: any) => ({
         type: 'uptime',
         credentialId: c.credentialId,
         tier: c.tier,
         issuedAt: c.issuedAt,
         isValid: true,
       })),
-      ...apiQualityGrade.map((c) => ({
+      ...apiQualityGrade.map((c: any) => ({
         type: 'apiQuality',
         credentialId: c.credentialId,
         grade: c.grade,
         issuedAt: c.issuedAt,
         isValid: true,
       })),
-      ...validTee.map((c) => ({
+      ...validTee.map((c: any) => ({
         type: 'tee',
         credentialId: c.credentialId,
         teeType: c.teeType,
@@ -1016,7 +1016,7 @@ export const getAgentCredentialsPublic = query({
         isValid: true,
         validUntil: c.validUntil,
       })),
-      ...modelProvenance.map((c) => ({
+      ...modelProvenance.map((c: any) => ({
         type: 'modelProvenance',
         credentialId: c.credentialId,
         modelName: c.modelName,
@@ -1137,7 +1137,7 @@ export const listAgentCredentialSummariesPublic = query({
     const now = Date.now()
 
     const summaries = [
-      ...identity.map((c) => {
+      ...identity.map((c: any) => {
         const txSignatures: TxSignaturePointer[] = []
         return {
           credentialType: 'agent_identity' as const,
@@ -1152,7 +1152,7 @@ export const listAgentCredentialSummariesPublic = query({
           },
         }
       }),
-      ...reputation.map((c) => {
+      ...reputation.map((c: any) => {
         const txSignatures: TxSignaturePointer[] = []
         if (c.solanaSignature) {
           txSignatures.push({ kind: 'solana_signature', signature: c.solanaSignature })
@@ -1172,7 +1172,7 @@ export const listAgentCredentialSummariesPublic = query({
           },
         }
       }),
-      ...paymentMilestones.map((c) => ({
+      ...paymentMilestones.map((c: any) => ({
         credentialType: 'payment_milestone' as const,
         credentialId: c.credentialId,
         issuedAt: c.issuedAt,
@@ -1185,7 +1185,7 @@ export const listAgentCredentialSummariesPublic = query({
           milestone: c.milestone,
         },
       })),
-      ...staking.map((c) => ({
+      ...staking.map((c: any) => ({
         credentialType: 'staking' as const,
         credentialId: c.credentialId,
         issuedAt: c.issuedAt,
@@ -1199,7 +1199,7 @@ export const listAgentCredentialSummariesPublic = query({
           amountStaked: c.amountStaked,
         },
       })),
-      ...verifiedHires.map((c) => ({
+      ...verifiedHires.map((c: any) => ({
         credentialType: 'verified_hire' as const,
         credentialId: c.credentialId,
         issuedAt: c.issuedAt,
@@ -1212,7 +1212,7 @@ export const listAgentCredentialSummariesPublic = query({
           clientAddress: c.clientAddress,
         },
       })),
-      ...capabilityVerification.map((c) => {
+      ...capabilityVerification.map((c: any) => {
         const expiresAt = c.validUntil
         return {
           credentialType: 'capability_verification' as const,
@@ -1231,7 +1231,7 @@ export const listAgentCredentialSummariesPublic = query({
           },
         }
       }),
-      ...uptimeAttestation.map((c) => ({
+      ...uptimeAttestation.map((c: any) => ({
         credentialType: 'uptime_attestation' as const,
         credentialId: c.credentialId,
         issuedAt: c.issuedAt,
@@ -1247,7 +1247,7 @@ export const listAgentCredentialSummariesPublic = query({
           periodEnd: c.periodEnd,
         },
       })),
-      ...apiQualityGrade.map((c) => ({
+      ...apiQualityGrade.map((c: any) => ({
         credentialType: 'api_quality_grade' as const,
         credentialId: c.credentialId,
         issuedAt: c.issuedAt,
@@ -1262,7 +1262,7 @@ export const listAgentCredentialSummariesPublic = query({
           endpointsTested: c.endpointsTested,
         },
       })),
-      ...teeAttestation.map((c) => {
+      ...teeAttestation.map((c: any) => {
         const txSignatures: TxSignaturePointer[] = []
         if (c.verificationTxSignature) {
           txSignatures.push({
@@ -1286,7 +1286,7 @@ export const listAgentCredentialSummariesPublic = query({
           },
         }
       }),
-      ...modelProvenance.map((c) => ({
+      ...modelProvenance.map((c: any) => ({
         credentialType: 'model_provenance' as const,
         credentialId: c.credentialId,
         issuedAt: c.issuedAt,

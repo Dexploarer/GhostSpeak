@@ -450,7 +450,7 @@ export default function ObservePage() {
 
                       <CollapsibleContent>
                         <div className="border-t border-white/10 bg-white/5 p-4">
-                          {agent.endpoints.map((ep) => (
+                          {agent.endpoints.map((ep: any) => (
                             <div
                               key={ep._id}
                               className="mb-4 last:mb-0 p-3 rounded-lg bg-[#0a0a0a] border border-white/10"

@@ -29,6 +29,17 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Loader2, Plus, Key, Copy, Trash2, Check, AlertTriangle } from 'lucide-react'
 import { Id } from '@/convex/_generated/dataModel'
 
+// Type for API key from Convex (matches listApiKeys return type)
+type ApiKey = {
+  _id: Id<'apiKeys'>
+  name: string
+  keyPrefix: string
+  tier: string
+  rateLimit: number
+  createdAt: number
+  lastUsedAt?: number
+}
+
 export default function ApiKeysPage() {
   const { publicKey } = useWallet()
   const walletAddress = publicKey?.toString()
@@ -182,7 +193,7 @@ export default function ApiKeysPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {keys.map((key) => (
+                    {keys.map((key: ApiKey) => (
                       <TableRow key={key._id}>
                         <TableCell className="font-medium">{key.name}</TableCell>
                         <TableCell className="font-mono text-xs text-muted-foreground">

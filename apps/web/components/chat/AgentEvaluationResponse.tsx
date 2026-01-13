@@ -28,7 +28,7 @@ export function AgentEvaluationResponse({
   const [selectedBadge, setSelectedBadge] = useState<BadgeDefinition | null>(null)
 
   // Map badge IDs to full definitions
-  const activeBadges = badges.map((id) => BADGE_DEFINITIONS[id]).filter(Boolean)
+  const activeBadges = badges.map((id: any) => BADGE_DEFINITIONS[id]).filter(Boolean)
 
   // Determine color theme based on tier
   const getThemeColor = (t: string) => {
@@ -83,7 +83,7 @@ export function AgentEvaluationResponse({
               <Shield className="w-3 h-3" /> Credentials & Badges
             </div>
             <div className="flex flex-wrap gap-2">
-              {activeBadges.map((badge) => {
+              {activeBadges.map((badge: any) => {
                 const Icon = badge.icon
                 const isLegendary = badge.rarity === 'LEGENDARY'
                 return (

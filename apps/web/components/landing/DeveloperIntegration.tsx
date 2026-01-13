@@ -115,7 +115,7 @@ console.log(\`Ghost Score: \${reputation.ghostScore}/10000\`)`
 
         {/* Integration Cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-12">
-          {integrations.map((integration, i) => (
+          {integrations.map((integration: any, i: number) => (
             <motion.a
               key={integration.title}
               href={integration.link}

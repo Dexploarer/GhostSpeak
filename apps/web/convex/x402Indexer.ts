@@ -138,6 +138,7 @@ export const pollX402Transactions = action({
             facilitatorAddress: facilitatorAddr,
             slot: Number(sig.slot),
             blockTime: Math.floor(payment.timestamp / 1000),
+            discoveryNetwork: network,
             metadataFileId: undefined,
             ipfsCid: undefined,
             paymentAmount: payment.amount,
@@ -266,6 +267,7 @@ export const parseX402Transaction = action({
         facilitatorAddress: facilitatorAddr,
         slot: Number(response.slot || 0n),
         blockTime: Math.floor(payment.timestamp / 1000),
+        discoveryNetwork: network,
         metadataFileId: undefined,
         ipfsCid: undefined,
       })

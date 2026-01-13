@@ -25,6 +25,7 @@ export const recordDiscoveredAgent = internalMutation({
     facilitatorAddress: v.optional(v.string()),
     slot: v.number(),
     blockTime: v.number(),
+    discoveryNetwork: v.optional(v.union(v.literal('mainnet-beta'), v.literal('devnet'), v.literal('testnet'))),
     metadataFileId: v.optional(v.id('_storage')),
     ipfsCid: v.optional(v.string()),
     // x402 Payment Data (for historical feed)
@@ -59,6 +60,7 @@ export const recordDiscoveredAgent = internalMutation({
         facilitatorAddress: args.facilitatorAddress,
         slot: args.slot,
         blockTime: args.blockTime,
+        discoveryNetwork: args.discoveryNetwork,
         status: 'discovered',
         metadataFileId: args.metadataFileId,
         ipfsCid: args.ipfsCid,
@@ -154,6 +156,7 @@ export const claimAgent = mutation({
     ghostAddress: v.string(),
     claimedBy: v.string(),
     claimTxSignature: v.optional(v.string()),
+    registrationNetwork: v.optional(v.union(v.literal('mainnet-beta'), v.literal('devnet'), v.literal('testnet'))),
   },
   handler: async (
     ctx,
@@ -184,6 +187,8 @@ export const claimAgent = mutation({
       status: 'claimed',
       claimedAt: Date.now(),
       claimedBy: args.claimedBy,
+      registrationNetwork: args.registrationNetwork,
+      registrationTxSignature: args.claimTxSignature,
       updatedAt: Date.now(),
     })
 

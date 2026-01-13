@@ -131,7 +131,7 @@ function MeshGradientGhost({ id = 'ghost' }: { id?: string }) {
           }}
           transition={{ type: 'spring', stiffness: 150, damping: 15 }}
         >
-          {Array.from({ length: 12 }).map((_, i) => {
+          {Array.from({ length: 12 }).map((_: any, i: number) => {
             const progress = i / 11
             const smileY = Math.sin(progress * Math.PI) * 8
 

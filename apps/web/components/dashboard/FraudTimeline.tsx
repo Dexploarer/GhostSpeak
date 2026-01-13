@@ -50,7 +50,7 @@ export function FraudTimeline({ agentAddress, days = 90 }: FraudTimelineProps) {
       </div>
 
       <div className="relative ml-2 border-l-2 border-zinc-700 pl-4">
-        {timeline.map((event, i) => (
+        {timeline.map((event: any, i: number) => (
           <div key={i} className="relative mb-4 pb-4 last:mb-0 last:pb-0">
             {/* Timeline dot */}
             <div
@@ -103,7 +103,7 @@ export function FraudTimeline({ agentAddress, days = 90 }: FraudTimelineProps) {
 
               {event.details && (
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {Object.entries(event.details).map(([key, value]) => (
+                  {Object.entries(event.details).map(([key, value]: [string, any]) => (
                     <span
                       key={key}
                       className="rounded-full bg-zinc-700 px-2 py-0.5 text-xs text-zinc-400"

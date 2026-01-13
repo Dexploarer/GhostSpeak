@@ -114,7 +114,7 @@ export function LiveObservationFeed() {
           Sign in to vote.
         </div>
       )}
-      {observations.map((obs) => {
+      {observations.map((obs: any) => {
         const isExpanded = expandedId === obs._id
         const isSuccess = obs.success
         const hasTranscript = obs.transcript && obs.transcript.length > 0
@@ -248,7 +248,7 @@ export function LiveObservationFeed() {
                   {hasTranscript && (
                     <TerminalWindow title="observation_log.txt" className="mb-4">
                       <div className="space-y-3 font-mono text-sm p-6 overflow-x-auto max-h-[500px] overflow-y-auto custom-scrollbar">
-                        {obs.transcript?.map((entry, i) => (
+                        {obs.transcript?.map((entry: any, i: number) => (
                           <div
                             key={i}
                             className={`flex gap-3 ${

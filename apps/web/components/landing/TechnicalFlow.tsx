@@ -129,7 +129,7 @@ export function TechnicalFlow() {
           </svg>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {steps.map((step, i) => {
+            {steps.map((step: any, i: number) => {
               const isExpanded = expandedCard === i
 
               return (
@@ -211,7 +211,7 @@ export function TechnicalFlow() {
                         className="overflow-hidden"
                       >
                         <div className="space-y-2 pt-2 border-t border-border">
-                          {step.details.map((detail, j) => (
+                          {step.details.map((detail: any, j: number) => (
                             <motion.div
                               key={j}
                               initial={{ opacity: 0, x: -20 }}
@@ -301,7 +301,7 @@ export function TechnicalFlow() {
                   'Ed25519 signatures',
                   'IPFS storage',
                   'EVM bridge (Crossmint)',
-                ].map((feature, i) => (
+                ].map((feature: any, i: number) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, y: 20 }}

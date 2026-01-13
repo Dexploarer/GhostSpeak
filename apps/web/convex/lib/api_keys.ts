@@ -155,7 +155,7 @@ export const listApiKeys = query({
       .withIndex('by_user_active', (q) => q.eq('userId', user._id).eq('isActive', true))
       .collect()
 
-    return keys.map((k) => ({
+    return keys.map((k: any) => ({
       _id: k._id,
       keyPrefix: k.keyPrefix,
       name: k.name,

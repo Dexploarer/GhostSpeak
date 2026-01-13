@@ -716,7 +716,7 @@ export async function calculateCredentialVerifications(
 
 ```bash
 bunx convex run credentials:getAgentCredentialsPublic '{
-  "agentAddress": "CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc"
+  "agentAddress": "DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc"
 }'
 ```
 
@@ -726,7 +726,7 @@ bunx convex run credentials:getAgentCredentialsPublic '{
 
 ```bash
 bunx convex run credentials:listAgentCredentialSummariesPublic '{
-  "agentAddress": "CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc",
+  "agentAddress": "DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc",
   "limit": 10,
   "offset": 0
 }'

@@ -30,6 +30,8 @@ export const POST = withMiddleware(async (request) => {
   const message = lastMessage?.content || body.message
   const walletAddress = body.walletAddress
   const sessionToken = body.sessionToken
+  const characterId = body.characterId || 'caisper' // Support character selection (caisper or boo)
+  const source = body.source || 'web' // telegram or web
 
   if (!message || !walletAddress) {
     return errorResponse('Missing required fields: message and walletAddress', 400)
@@ -52,7 +54,7 @@ export const POST = withMiddleware(async (request) => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   // Check if user is on admin whitelist
-  const adminWhitelist = (process.env.ADMIN_WHITELIST || '').split(',').map((w) => w.trim())
+  const adminWhitelist = (process.env.ADMIN_WHITELIST || '').split(',').map((w: any) => w.trim())
   const isAdmin = adminWhitelist.includes(walletAddress)
 
   // Check if this is a Telegram user (skip GHOST balance checks)
@@ -158,7 +160,8 @@ export const POST = withMiddleware(async (request) => {
     message,
     roomId: `user-${walletAddress}`,
     correlationId,
-    source: 'web', // Enable web-specific templates (product-focused only)
+    characterId: characterId as 'caisper' | 'boo', // Support character selection
+    source: source as 'web' | 'telegram', // Pass through source from request
   })
 
   console.log(`🤖 Agent response: ${agentResponse.text}`)

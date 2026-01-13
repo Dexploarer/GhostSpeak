@@ -122,7 +122,7 @@ export function TokenEvaluationCard({
           <span>Risk Score</span>
         </div>
 
-        {(expanded ? tokens : tokens.slice(0, 3)).map((token) => (
+        {(expanded ? tokens : tokens.slice(0, 3)).map((token: any) => (
           <div
             key={token.mint}
             className="p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
@@ -142,7 +142,7 @@ export function TokenEvaluationCard({
 
             {/* Flags */}
             <div className="flex flex-wrap gap-1">
-              {token.flags.red.map((flag, i) => (
+              {token.flags.red.map((flag: any, i: number) => (
                 <span
                   key={`r-${i}`}
                   className="px-1.5 py-0.5 rounded bg-red-500/20 text-[10px] text-red-300 border border-red-500/20"
@@ -150,7 +150,7 @@ export function TokenEvaluationCard({
                   {flag}
                 </span>
               ))}
-              {token.flags.yellow.map((flag, i) => (
+              {token.flags.yellow.map((flag: any, i: number) => (
                 <span
                   key={`y-${i}`}
                   className="px-1.5 py-0.5 rounded bg-amber-500/20 text-[10px] text-amber-300 border border-amber-500/20"

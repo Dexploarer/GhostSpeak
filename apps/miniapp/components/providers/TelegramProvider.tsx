@@ -72,6 +72,7 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
       }
 
       // Get launch parameters for user data and theme
+      // This will throw LaunchParamsRetrieveError when not in Telegram - that's expected
       const launchParams = retrieveLaunchParams()
       const data = launchParams.initData ?? {}
       const theme = launchParams.themeParams ?? {}
@@ -97,15 +98,21 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
       })
 
       // Parse user data (type casting as the SDK types are complex)
-      const user = (data as any)?.user
+      // Try multiple sources for user data
+      const user = (data as any)?.user || window.Telegram?.WebApp?.initDataUnsafe?.user
+
+      // Log user data for debugging
+      if (isDevelopment) {
+        console.log('[Dev] [TelegramProvider] User data:', user)
+      }
 
       const contextData = {
         initDataRaw: initDataRaw || null,
         userId: user?.id ?? null,
         username: user?.username ?? null,
-        firstName: user?.firstName ?? null,
-        lastName: user?.lastName ?? null,
-        isPremium: user?.isPremium ?? false,
+        firstName: (user?.first_name || user?.firstName) ?? null,
+        lastName: (user?.last_name || user?.lastName) ?? null,
+        isPremium: (user?.is_premium || user?.isPremium) ?? false,
         themeParams: theme,
         isReady: true,
       }
@@ -131,13 +138,9 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
       }
     } catch (error) {
       // Suppress LaunchParamsRetrieveError - expected when not in Telegram
-      if (isDevelopment) {
-        console.error('[Dev] [TelegramProvider] Error during initialization:', error)
-        if (error instanceof Error && error.message.includes('launch parameters')) {
-          console.info('[Dev] [TelegramProvider] Running outside Telegram - will require login widget')
-        } else {
-          console.error('[Dev] [TelegramProvider] Failed to initialize Telegram SDK:', error)
-        }
+      // Only log non-launch-parameter errors
+      if (isDevelopment && error instanceof Error && !error.message.includes('launch parameters')) {
+        console.error('[Dev] [TelegramProvider] Failed to initialize Telegram SDK:', error)
       }
 
       // Check if user authenticated via login widget (stored in sessionStorage)
@@ -164,19 +167,40 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
         }
       }
 
-      // Fallback: Not in Telegram and not authenticated
-      // AuthGate will handle showing login widget
-      setContextValue({
-        initDataRaw: null,
-        userId: null,
-        username: null,
-        firstName: null,
-        lastName: null,
-        isPremium: false,
-        themeParams: {},
-        isReady: true,
-      })
-      setIsReady(true)
+      // Fallback: Use dev mode mock user if enabled
+      const devMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
+      const devUserId = parseInt(process.env.NEXT_PUBLIC_DEV_USER_ID || '0')
+      const devUsername = process.env.NEXT_PUBLIC_DEV_USERNAME || 'dev_user'
+
+      if (devMode && devUserId && isDevelopment) {
+        if (isDevelopment) {
+          console.log('[Dev] Using mock user for development:', { devUserId, devUsername })
+        }
+        setContextValue({
+          initDataRaw: null,
+          userId: devUserId,
+          username: devUsername,
+          firstName: 'Dev',
+          lastName: 'User',
+          isPremium: false,
+          themeParams: {},
+          isReady: true,
+        })
+        setIsReady(true)
+      } else {
+        // Not in Telegram and not authenticated - AuthGate will handle showing login widget
+        setContextValue({
+          initDataRaw: null,
+          userId: null,
+          username: null,
+          firstName: null,
+          lastName: null,
+          isPremium: false,
+          themeParams: {},
+          isReady: true,
+        })
+        setIsReady(true)
+      }
     }
 
     // Cleanup
@@ -270,6 +294,16 @@ declare global {
         ready: () => void
         expand: () => void
         close: () => void
+        initDataUnsafe?: {
+          user?: {
+            id: number
+            first_name: string
+            last_name?: string
+            username?: string
+            language_code?: string
+            is_premium?: boolean
+          }
+        }
         MainButton: {
           text: string
           color: string

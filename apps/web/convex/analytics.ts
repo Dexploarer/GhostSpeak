@@ -55,11 +55,11 @@ export const getVerificationVolume = query({
     }
 
     // Calculate averages and format
-    const data = Array.from(dailyMap.entries()).map(([name, { count, scores }]) => ({
+    const data = Array.from(dailyMap.entries()).map(([name, { count, scores }]: [string, any]) => ({
       name,
       count,
       quality:
-        scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length / 100) : 0,
+        scores.length > 0 ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length / 100) : 0,
     }))
 
     return {
@@ -114,7 +114,7 @@ export const getApiEndpointUsage = query({
         )
         .collect()
 
-      allUsage.push(...usage.map((u) => ({ endpoint: u.endpoint, statusCode: u.statusCode })))
+      allUsage.push(...usage.map((u: any) => ({ endpoint: u.endpoint, statusCode: u.statusCode })))
     }
 
     // Group by endpoint category
@@ -145,7 +145,7 @@ export const getApiEndpointUsage = query({
       }
     }
 
-    const data = Array.from(endpointMap.entries()).map(([name, stats]) => ({
+    const data = Array.from(endpointMap.entries()).map(([name, stats]: [string, any]) => ({
       name,
       success: stats.success,
       error: stats.error,
@@ -216,13 +216,13 @@ export const getAnalyticsSummary = query({
         .collect()
 
       currentUsage.push(
-        ...current.map((u) => ({
+        ...current.map((u: any) => ({
           statusCode: u.statusCode,
           responseTime: u.responseTime,
         }))
       )
       previousUsage.push(
-        ...previous.map((u) => ({
+        ...previous.map((u: any) => ({
           statusCode: u.statusCode,
           responseTime: u.responseTime,
         }))

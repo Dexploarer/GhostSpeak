@@ -119,7 +119,7 @@ export function AgentDirectoryCard({
 
       {/* Agent List */}
       <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
-        {agents.slice(0, 10).map((agent) => (
+        {agents.slice(0, 10).map((agent: any) => (
           <div
             key={agent.ghostAddress}
             className="p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
@@ -149,7 +149,7 @@ export function AgentDirectoryCard({
             {/* Categories */}
             {agent.categories.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-2">
-                {agent.categories.map((cat) => (
+                {agent.categories.map((cat: any) => (
                   <span
                     key={cat}
                     className={`px-2 py-0.5 rounded text-[10px] font-medium ${getCategoryColor(cat)}`}
@@ -163,7 +163,7 @@ export function AgentDirectoryCard({
             {/* Endpoints List */}
             {agent.endpoints.length > 0 && (
               <div className="mt-2 space-y-1 border-t border-white/5 pt-2">
-                {agent.endpoints.map((ep, idx) => (
+                {agent.endpoints.map((ep: any, idx: number) => (
                   <div
                     key={idx}
                     className="flex justify-between items-center text-[10px] bg-black/20 px-2 py-1.5 rounded group/ep hover:bg-black/40 transition-colors"

@@ -125,7 +125,7 @@ export class WideEventCollector {
     })
 
     // Calculate averages
-    const endpointMetrics = Object.entries(responseTimes).map(([path, times]) => ({
+    const endpointMetrics = Object.entries(responseTimes).map(([path, times]: [string, any]) => ({
       path,
       avgTime: times.reduce((a, b) => a + b, 0) / times.length,
       count: times.length

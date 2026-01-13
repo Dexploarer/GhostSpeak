@@ -137,7 +137,7 @@ export function AccessControlList({
     if (selectedViewers.size === viewers.length) {
       setSelectedViewers(new Set())
     } else {
-      setSelectedViewers(new Set(viewers.map((v) => v.walletAddress)))
+      setSelectedViewers(new Set(viewers.map((v: any) => v.walletAddress)))
     }
   }
 
@@ -246,7 +246,7 @@ export function AccessControlList({
           </div>
         ) : (
           <div className="space-y-2">
-            {viewers.map((viewer) => {
+            {viewers.map((viewer: any) => {
               const expired = isExpired(viewer.expiresAt)
               return (
                 <div

@@ -131,13 +131,20 @@ export default function VerifyPage() {
             {/* Score Card */}
             <div className="rounded-lg border border-border bg-card/80 backdrop-blur-sm p-6 shadow-md">
               <div className="mb-4 flex items-start justify-between">
-                <div>
+                <div className="flex-1">
                   <h3 className="mb-1 text-lg font-semibold text-card-foreground">
                     Ghost Score
                   </h3>
                   <p className="text-xs font-mono text-muted-foreground">
                     {result.address.slice(0, 8)}...{result.address.slice(-6)}
                   </p>
+                  {scoreHistory && scoreHistory.length > 0 && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {scoreHistory[0]?.timestamp ? new Date(scoreHistory[0].timestamp).toLocaleDateString() : 'N/A'}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <Shield className="h-6 w-6 text-primary" />
               </div>
@@ -240,7 +247,7 @@ export default function VerifyPage() {
                           fontSize: '12px',
                         }}
                         labelStyle={{ color: 'hsl(var(--foreground))' }}
-                        formatter={(value: number) => [`${value}`, 'Score']}
+                        formatter={(value: number | undefined) => [`${value ?? 0}`, 'Score']}
                         labelFormatter={(label) => {
                           const d = new Date(label)
                           return d.toLocaleDateString()

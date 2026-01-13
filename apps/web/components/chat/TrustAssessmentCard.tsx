@@ -85,7 +85,7 @@ export function TrustAssessmentCard({
               <CheckCircle className="w-3 h-3" /> Green Flags
             </div>
             <ul className="space-y-1">
-              {greenFlags.map((flag, i) => (
+              {greenFlags.map((flag: any, i: number) => (
                 <li key={i} className="text-sm text-emerald-300/90 flex items-start gap-2">
                   <span className="text-emerald-400 mt-0.5">•</span>
                   {flag}
@@ -102,7 +102,7 @@ export function TrustAssessmentCard({
               <AlertCircle className="w-3 h-3" /> Yellow Flags
             </div>
             <ul className="space-y-1">
-              {yellowFlags.map((flag, i) => (
+              {yellowFlags.map((flag: any, i: number) => (
                 <li key={i} className="text-sm text-amber-300/90 flex items-start gap-2">
                   <span className="text-amber-400 mt-0.5">•</span>
                   {flag}
@@ -119,7 +119,7 @@ export function TrustAssessmentCard({
               <XCircle className="w-3 h-3" /> Red Flags
             </div>
             <ul className="space-y-1">
-              {redFlags.map((flag, i) => (
+              {redFlags.map((flag: any, i: number) => (
                 <li key={i} className="text-sm text-red-300/90 flex items-start gap-2">
                   <span className="text-red-400 mt-0.5">•</span>
                   {flag}

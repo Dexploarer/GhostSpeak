@@ -68,7 +68,7 @@ export function WalletModal({ open, onOpenChange }: WalletModalProps) {
               </div>
             </div>
           ) : (
-            wallets.map((wallet) => (
+            wallets.map((wallet: any) => (
               <button
                 key={wallet.name}
                 onClick={() => handleConnect(wallet.name)}

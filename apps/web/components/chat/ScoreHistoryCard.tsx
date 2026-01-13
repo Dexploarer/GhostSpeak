@@ -58,7 +58,7 @@ export function ScoreHistoryCard({
         : 'text-zinc-400'
 
   // Format data for chart
-  const chartData = history.map((h) => ({
+  const chartData = history.map((h: any) => ({
     date: h.date,
     score: h.score,
   }))
@@ -124,7 +124,7 @@ export function ScoreHistoryCard({
                   fontSize: '11px',
                 }}
               />
-              {TIER_THRESHOLDS.map((tier) => (
+              {TIER_THRESHOLDS.map((tier: any) => (
                 <ReferenceLine
                   key={tier.label}
                   y={tier.value}

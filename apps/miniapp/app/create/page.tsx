@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useTelegram } from '@/components/providers/TelegramProvider'
-import { Sparkles, Loader2, Image as ImageIcon, Download, AlertCircle, Zap, ExternalLink, X } from 'lucide-react'
+import { Sparkles, Loader2, Image as ImageIcon, Download, AlertCircle, Zap, ExternalLink, X, FileText } from 'lucide-react'
 import { ErrorBoundary } from '@/components/error-boundary'
+import { TextGenerationDisplay } from '@/components/TextGenerationDisplay'
+import type { ThreadTemplate, PostTemplate, RaidType } from '@/lib/types'
 
-const TEMPLATES = [
+const IMAGE_TEMPLATES = [
   { id: 'raid', label: 'Raid Graphics', emoji: '🚀', desc: 'X/Twitter raids' },
   { id: 'meme', label: 'Meme', emoji: '😂', desc: 'Fun community memes' },
   { id: 'announcement', label: 'Announcement', emoji: '📢', desc: 'Product updates' },
@@ -15,15 +17,56 @@ const TEMPLATES = [
   { id: 'profile', label: 'Agent Profile', emoji: '🤖', desc: 'Agent showcases' },
 ] as const
 
+const THREAD_TEMPLATES: Array<{ id: ThreadTemplate; label: string; emoji: string; desc: string }> = [
+  { id: 'raid', label: 'Raid Thread', emoji: '🚀', desc: 'Coordinated X raids' },
+  { id: 'announcement', label: 'Announcement', emoji: '📢', desc: 'Product updates' },
+  { id: 'educational', label: 'Educational', emoji: '📚', desc: 'How-tos & guides' },
+  { id: 'product', label: 'Product', emoji: '🎯', desc: 'Feature showcases' },
+  { id: 'community', label: 'Community', emoji: '💚', desc: 'Milestones & thanks' },
+  { id: 'alpha', label: 'Alpha', emoji: '🔥', desc: 'Insider insights' },
+] as const
+
+const POST_TEMPLATES: Array<{ id: PostTemplate; label: string; emoji: string; desc: string }> = [
+  { id: 'hook', label: 'Hook', emoji: '🎣', desc: 'Attention-grabbing' },
+  { id: 'question', label: 'Question', emoji: '❓', desc: 'Drive engagement' },
+  { id: 'stat', label: 'Stat', emoji: '📊', desc: 'Data-driven' },
+  { id: 'quote', label: 'Quote', emoji: '💬', desc: 'Inspirational' },
+  { id: 'announcement', label: 'Announcement', emoji: '📢', desc: 'News & updates' },
+  { id: 'meme', label: 'Meme', emoji: '😂', desc: 'Fun & playful' },
+  { id: 'general', label: 'General', emoji: '✨', desc: 'Flexible' },
+] as const
+
+const RAID_TYPES: Array<{ id: RaidType; label: string; emoji: string; desc: string }> = [
+  { id: 'product', label: 'Product Launch', emoji: '🎯', desc: 'Feature releases' },
+  { id: 'partnership', label: 'Partnership', emoji: '🤝', desc: 'Collaborations' },
+  { id: 'milestone', label: 'Milestone', emoji: '🏆', desc: 'Achievements' },
+  { id: 'event', label: 'Event', emoji: '📅', desc: 'Conferences & meetups' },
+  { id: 'general', label: 'General', emoji: '🚀', desc: 'Brand awareness' },
+] as const
+
 const GHOST_TOKEN_ADDRESS = 'DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump'
 const JUPITER_SWAP_URL = `https://jup.ag/swap/SOL-${GHOST_TOKEN_ADDRESS}`
 
 export default function CreatePage() {
   const { userId, username } = useTelegram()
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('raid')
+
+  // Mode selection
+  const [contentMode, setContentMode] = useState<'image' | 'text'>('image')
+
+  // Image mode state
+  const [selectedImageTemplate, setSelectedImageTemplate] = useState<string>('raid')
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null)
+
+  // Text mode state
+  const [textType, setTextType] = useState<'thread' | 'post' | 'raid'>('thread')
+  const [selectedThreadTemplate, setSelectedThreadTemplate] = useState<ThreadTemplate>('raid')
+  const [selectedPostTemplate, setSelectedPostTemplate] = useState<PostTemplate>('hook')
+  const [selectedRaidType, setSelectedRaidType] = useState<RaidType>('product')
+  const [generatedTextMetadata, setGeneratedTextMetadata] = useState<any>(null)
+
+  // Shared state
   const [prompt, setPrompt] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [quota, setQuota] = useState<{ used: number; limit: number; tier: 'free' | 'holder' } | null>(null)
   const [showQuotaModal, setShowQuotaModal] = useState(false)
@@ -48,6 +91,7 @@ export default function CreatePage() {
 
   useEffect(() => {
     fetchQuota()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 
   const handleGenerate = async () => {
@@ -110,6 +154,80 @@ export default function CreatePage() {
     }
   }
 
+  const handleGenerateText = async () => {
+    if (!prompt.trim()) return
+
+    // Pre-check quota
+    if (quota && quota.used >= quota.limit) {
+      setShowQuotaModal(true)
+      return
+    }
+
+    // Show warning if only 1 left
+    if (quota && quota.limit - quota.used === 1) {
+      setShowLowQuotaWarning(true)
+    }
+
+    setIsGenerating(true)
+    setError(null)
+    setGeneratedTextMetadata(null)
+    setShowLowQuotaWarning(false)
+
+    try {
+      if (!userId) {
+        throw new Error('Please authenticate with Telegram first')
+      }
+
+      // Determine which API method to call and build message
+      let message = ''
+      let apiMethod: any
+
+      if (textType === 'thread') {
+        message = `generate ${selectedThreadTemplate} thread about ${prompt}`
+        const { generateThread } = await import('@/lib/api-client')
+        apiMethod = generateThread
+      } else if (textType === 'post') {
+        message = `generate ${selectedPostTemplate} post about ${prompt}`
+        const { generatePost } = await import('@/lib/api-client')
+        apiMethod = generatePost
+      } else if (textType === 'raid') {
+        message = `generate ${selectedRaidType} raid content about ${prompt}`
+        const { generateRaidContent } = await import('@/lib/api-client')
+        apiMethod = generateRaidContent
+      }
+
+      const data = await apiMethod({
+        userId: String(userId),
+        message,
+        characterId: 'boo' as const,
+        topic: prompt,
+        ...(textType === 'thread' && { template: selectedThreadTemplate }),
+        ...(textType === 'post' && { template: selectedPostTemplate }),
+        ...(textType === 'raid' && { raidType: selectedRaidType }),
+      })
+
+      if (!data.success || !data.metadata) {
+        throw new Error('Text generation failed. Please try again!')
+      }
+
+      setGeneratedTextMetadata(data.metadata)
+
+      // Refresh quota after successful generation
+      await fetchQuota()
+    } catch (err) {
+      // Handle API errors with quota limit check
+      const { ApiError } = await import('@/lib/api-client')
+      if (err instanceof ApiError && err.status === 429) {
+        setShowQuotaModal(true)
+        return
+      }
+
+      setError(err instanceof Error ? err.message : 'Failed to generate text')
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
   const handleDownload = () => {
     if (!generatedImage) return
     window.open(generatedImage, '_blank')
@@ -117,6 +235,33 @@ export default function CreatePage() {
 
   const quotaPercentage = quota ? (quota.used / quota.limit) * 100 : 0
   const remaining = quota ? quota.limit - quota.used : 0
+
+  // Get current templates based on mode and type
+  const currentTemplates = contentMode === 'image'
+    ? IMAGE_TEMPLATES
+    : textType === 'thread'
+      ? THREAD_TEMPLATES
+      : textType === 'post'
+        ? POST_TEMPLATES
+        : RAID_TYPES
+
+  // Get selected template value
+  const selectedTemplate = contentMode === 'image'
+    ? selectedImageTemplate
+    : textType === 'thread'
+      ? selectedThreadTemplate
+      : textType === 'post'
+        ? selectedPostTemplate
+        : selectedRaidType
+
+  // Get placeholder text
+  const placeholderText = contentMode === 'image'
+    ? "E.g., 'Join the Ghost Army raid - trust the verified agents!'"
+    : textType === 'thread'
+      ? "E.g., 'Ghost Score launch - the credit rating for AI agents'"
+      : textType === 'post'
+        ? "E.g., 'GhostSpeak trust layer for AI commerce'"
+        : "E.g., 'Ghost Score product launch with community raid'"
 
   return (
     <ErrorBoundary>
@@ -127,10 +272,52 @@ export default function CreatePage() {
             <h1 className="mb-2 flex items-center gap-2 text-2xl font-bold text-primary-foreground drop-shadow-sm">
               <span className="text-3xl">🎨</span> Boo
             </h1>
-          <p className="text-sm text-primary-foreground/90">
-            Generate AI images with GhostSpeak branding - powered by Google Imagen 4
-          </p>
-        </div>
+            <p className="text-sm text-primary-foreground/90">
+              {contentMode === 'image'
+                ? 'Generate AI images with GhostSpeak branding - powered by Google Imagen 4'
+                : 'Generate X/Twitter content - threads, posts, and raid packages'}
+            </p>
+          </div>
+
+          {/* Mode Toggle */}
+          <div className="rounded-lg border border-border bg-card/80 backdrop-blur-sm p-4 shadow-md">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setContentMode('image')
+                  setError(null)
+                  setGeneratedTextMetadata(null)
+                }}
+                className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-4 py-3 font-medium transition-all ${
+                  contentMode === 'image'
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+                aria-label="Switch to image generation mode"
+                aria-pressed={contentMode === 'image'}
+              >
+                <ImageIcon className="h-5 w-5" />
+                Images
+              </button>
+              <button
+                onClick={() => {
+                  setContentMode('text')
+                  setError(null)
+                  setGeneratedImage(null)
+                }}
+                className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-4 py-3 font-medium transition-all ${
+                  contentMode === 'text'
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+                aria-label="Switch to text generation mode"
+                aria-pressed={contentMode === 'text'}
+              >
+                <FileText className="h-5 w-5" />
+                Text
+              </button>
+            </div>
+          </div>
 
         {/* Quota Display */}
         {quota && (
@@ -175,16 +362,73 @@ export default function CreatePage() {
           </div>
         )}
 
+        {/* Text Type Selector (only in text mode) */}
+        {contentMode === 'text' && (
+          <div className="rounded-lg border border-border bg-card/80 backdrop-blur-sm p-6 shadow-md">
+            <label className="mb-3 block text-sm font-medium text-card-foreground">
+              Content Type
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => setTextType('thread')}
+                aria-pressed={textType === 'thread'}
+                className={`rounded-lg border p-3 text-center transition-all ${
+                  textType === 'thread'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border bg-background hover:border-primary/50'
+                }`}
+              >
+                <div className="text-2xl mb-1">🧵</div>
+                <div className="text-xs font-medium text-foreground">Thread</div>
+              </button>
+              <button
+                onClick={() => setTextType('post')}
+                aria-pressed={textType === 'post'}
+                className={`rounded-lg border p-3 text-center transition-all ${
+                  textType === 'post'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border bg-background hover:border-primary/50'
+                }`}
+              >
+                <div className="text-2xl mb-1">📝</div>
+                <div className="text-xs font-medium text-foreground">Post</div>
+              </button>
+              <button
+                onClick={() => setTextType('raid')}
+                aria-pressed={textType === 'raid'}
+                className={`rounded-lg border p-3 text-center transition-all ${
+                  textType === 'raid'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border bg-background hover:border-primary/50'
+                }`}
+              >
+                <div className="text-2xl mb-1">🚀</div>
+                <div className="text-xs font-medium text-foreground">Raid</div>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Template Selector */}
         <div className="rounded-lg border border-border bg-card/80 backdrop-blur-sm p-6 shadow-md">
           <label className="mb-3 block text-sm font-medium text-card-foreground">
-            Select Template
+            {contentMode === 'image' ? 'Select Template' : `Select ${textType === 'thread' ? 'Thread' : textType === 'post' ? 'Post' : 'Raid'} Type`}
           </label>
           <div className="grid grid-cols-2 gap-2">
-            {TEMPLATES.map((template) => (
+            {currentTemplates.map((template) => (
               <button
                 key={template.id}
-                onClick={() => setSelectedTemplate(template.id)}
+                onClick={() => {
+                  if (contentMode === 'image') {
+                    setSelectedImageTemplate(template.id)
+                  } else if (textType === 'thread') {
+                    setSelectedThreadTemplate(template.id as ThreadTemplate)
+                  } else if (textType === 'post') {
+                    setSelectedPostTemplate(template.id as PostTemplate)
+                  } else {
+                    setSelectedRaidType(template.id as RaidType)
+                  }
+                }}
                 aria-label={`Select ${template.label} template for ${template.desc}`}
                 aria-pressed={selectedTemplate === template.id}
                 className={`flex items-start gap-3 rounded-lg border p-3 text-left transition-all focus:outline-none focus:ring-2 focus:ring-primary ${
@@ -208,22 +452,28 @@ export default function CreatePage() {
         {/* Prompt Input */}
         <div className="rounded-lg border border-border bg-card/80 backdrop-blur-sm p-6 shadow-md">
           <label className="mb-2 block text-sm font-medium text-card-foreground">
-            Describe Your Image
+            {contentMode === 'image' ? 'Describe Your Image' : 'Describe Your Content'}
           </label>
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="E.g., 'Join the Ghost Army raid - trust the verified agents!'"
+            placeholder={placeholderText}
             rows={4}
-            aria-label="Image description prompt"
+            aria-label={contentMode === 'image' ? 'Image description prompt' : 'Text content prompt'}
             aria-describedby="prompt-hint"
             className="w-full rounded-lg border border-border bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
           />
-          <span id="prompt-hint" className="sr-only">Describe the image you want to generate. Maximum 500 characters.</span>
+          <span id="prompt-hint" className="sr-only">
+            {contentMode === 'image'
+              ? 'Describe the image you want to generate. Maximum 500 characters.'
+              : 'Describe the topic for your X/Twitter content. Maximum 500 characters.'}
+          </span>
           <button
-            onClick={handleGenerate}
+            onClick={contentMode === 'image' ? handleGenerate : handleGenerateText}
             disabled={isGenerating || !prompt.trim() || (quota !== null && quota.used >= quota.limit)}
-            aria-label={isGenerating ? 'Generating image, please wait' : 'Generate AI image from your prompt'}
+            aria-label={isGenerating
+              ? `Generating ${contentMode}, please wait`
+              : `Generate ${contentMode} from your prompt`}
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           >
             {isGenerating ? (
@@ -234,7 +484,7 @@ export default function CreatePage() {
             ) : (
               <>
                 <Sparkles className="h-5 w-5" aria-hidden="true" />
-                Generate Image
+                {contentMode === 'image' ? 'Generate Image' : 'Generate Content'}
               </>
             )}
           </button>
@@ -248,7 +498,7 @@ export default function CreatePage() {
         )}
 
         {/* Generated Image */}
-        {generatedImage && (
+        {contentMode === 'image' && generatedImage && (
           <div className="rounded-lg border border-border bg-card/80 backdrop-blur-sm p-6 shadow-md">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-card-foreground">
@@ -276,14 +526,22 @@ export default function CreatePage() {
             <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
               <ImageIcon className="h-4 w-4" />
               <span>
-                Template: {TEMPLATES.find((t) => t.id === selectedTemplate)?.label}
+                Template: {IMAGE_TEMPLATES.find((t) => t.id === selectedImageTemplate)?.label}
               </span>
             </div>
           </div>
         )}
 
+        {/* Generated Text */}
+        {contentMode === 'text' && generatedTextMetadata && (
+          <TextGenerationDisplay
+            type={textType === 'thread' ? 'thread' : textType === 'post' ? 'post' : 'raid_package'}
+            metadata={generatedTextMetadata}
+          />
+        )}
+
         {/* Loading Skeleton */}
-        {isGenerating && (
+        {isGenerating && contentMode === 'image' && (
           <div className="rounded-lg border border-border bg-card/80 backdrop-blur-sm p-6 shadow-md">
             <div className="mb-4">
               <div className="h-6 w-32 rounded bg-muted animate-pulse" />
@@ -296,15 +554,34 @@ export default function CreatePage() {
           </div>
         )}
 
+        {isGenerating && contentMode === 'text' && (
+          <div className="rounded-lg border border-border bg-card/80 backdrop-blur-sm p-6 shadow-md">
+            <div className="mb-4">
+              <div className="h-6 w-48 rounded bg-muted animate-pulse" />
+              <div className="mt-2 h-4 w-32 rounded bg-muted animate-pulse" />
+            </div>
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-lg border border-border bg-card p-4 space-y-2">
+                  <div className="h-4 w-24 rounded bg-muted animate-pulse" />
+                  <div className="h-16 w-full rounded bg-muted animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Empty State */}
-        {!generatedImage && !error && !isGenerating && (
+        {!generatedImage && !generatedTextMetadata && !error && !isGenerating && (
           <div className="rounded-lg border border-border bg-card/80 backdrop-blur-sm p-8 text-center">
-            <div className="mb-4 text-6xl">✨</div>
+            <div className="mb-4 text-6xl">{contentMode === 'image' ? '✨' : '📝'}</div>
             <h3 className="mb-2 text-lg font-semibold text-card-foreground">
               Ready to Create
             </h3>
             <p className="text-sm text-muted-foreground">
-              Choose a template and describe your image to get started
+              {contentMode === 'image'
+                ? 'Choose a template and describe your image to get started'
+                : `Choose a ${textType} type and describe your topic to get started`}
             </p>
           </div>
         )}
@@ -331,7 +608,7 @@ export default function CreatePage() {
                 </button>
               </div>
               <p className="text-white/90 text-sm">
-                You've used all your generations for today
+                You&apos;ve used all your generations for today
               </p>
             </div>
 

@@ -219,7 +219,7 @@ async function installMockWalletStandard(
         },
       ]
 
-      registerMethods.forEach((method) => method())
+      registerMethods.forEach((method: any) => method())
 
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

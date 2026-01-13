@@ -30,7 +30,7 @@ interface StepIndicatorProps {
 function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
   return (
     <div className="flex items-center gap-2">
-      {Array.from({ length: totalSteps }).map((_, index) => (
+      {Array.from({ length: totalSteps }).map((_: any, index: number) => (
         <div
           key={index}
           className={`h-1.5 rounded-full transition-all duration-300 ${

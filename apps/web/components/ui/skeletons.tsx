@@ -36,7 +36,7 @@ export function AgentCardSkeleton({ className }: SkeletonProps) {
 export function AgentCardSkeletonGrid({ count = 6 }: { count?: number }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {Array.from({ length: count }).map((_, i) => (
+      {Array.from({ length: count }).map((_: any, i: number) => (
         <AgentCardSkeleton key={i} />
       ))}
     </div>
@@ -81,7 +81,7 @@ export function EscrowItemSkeleton({ className }: SkeletonProps) {
 export function EscrowListSkeleton({ count = 3 }: { count?: number }) {
   return (
     <div className="space-y-4">
-      {Array.from({ length: count }).map((_, i) => (
+      {Array.from({ length: count }).map((_: any, i: number) => (
         <EscrowItemSkeleton key={i} />
       ))}
     </div>
@@ -107,7 +107,7 @@ export function StatCardSkeleton({ className }: SkeletonProps) {
 export function StatCardGridSkeleton({ count = 4 }: { count?: number }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {Array.from({ length: count }).map((_, i) => (
+      {Array.from({ length: count }).map((_: any, i: number) => (
         <StatCardSkeleton key={i} />
       ))}
     </div>
@@ -118,7 +118,7 @@ export function StatCardGridSkeleton({ count = 4 }: { count?: number }) {
 export function TableRowSkeleton({ columns = 5 }: { columns?: number }) {
   return (
     <tr className="border-b border-border">
-      {Array.from({ length: columns }).map((_, i) => (
+      {Array.from({ length: columns }).map((_: any, i: number) => (
         <td key={i} className="p-4">
           <Skeleton className="h-4 w-full max-w-[120px]" />
         </td>
@@ -133,7 +133,7 @@ export function TableSkeleton({ rows = 5, columns = 5 }: { rows?: number; column
       <table className="w-full">
         <thead>
           <tr className="border-b border-border bg-muted/50">
-            {Array.from({ length: columns }).map((_, i) => (
+            {Array.from({ length: columns }).map((_: any, i: number) => (
               <th key={i} className="p-4 text-left">
                 <Skeleton className="h-4 w-20" />
               </th>
@@ -141,7 +141,7 @@ export function TableSkeleton({ rows = 5, columns = 5 }: { rows?: number; column
           </tr>
         </thead>
         <tbody>
-          {Array.from({ length: rows }).map((_, i) => (
+          {Array.from({ length: rows }).map((_: any, i: number) => (
             <TableRowSkeleton key={i} columns={columns} />
           ))}
         </tbody>
@@ -162,7 +162,7 @@ export function ChartSkeleton({ className }: SkeletonProps) {
         </div>
       </div>
       <div className="h-[280px] flex items-end gap-2">
-        {Array.from({ length: 12 }).map((_, i) => (
+        {Array.from({ length: 12 }).map((_: any, i: number) => (
           <Skeleton
             key={i}
             className="flex-1 rounded-t-md"
@@ -200,7 +200,7 @@ export function DashboardSkeleton() {
           <div className="rounded-xl border bg-card p-6">
             <Skeleton className="h-6 w-24 mb-4" />
             <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
+              {Array.from({ length: 3 }).map((_: any, i: number) => (
                 <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
                   <Skeleton className="w-10 h-10 rounded-lg" />
                   <div className="flex-1">
@@ -236,7 +236,7 @@ export function DashboardStatCardSkeleton({ className }: SkeletonProps) {
 export function DashboardStatsGridSkeleton() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      {Array.from({ length: 4 }).map((_, i) => (
+      {Array.from({ length: 4 }).map((_: any, i: number) => (
         <DashboardStatCardSkeleton key={i} />
       ))}
     </div>
@@ -272,7 +272,7 @@ export function QuickActionsGridSkeleton() {
         <Skeleton className="h-6 w-28 bg-white/10" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {Array.from({ length: 4 }).map((_, i) => (
+        {Array.from({ length: 4 }).map((_: any, i: number) => (
           <QuickActionSkeleton key={i} />
         ))}
       </div>
@@ -306,7 +306,7 @@ export function RecentActivitySkeleton() {
         <Skeleton className="h-6 w-32 bg-white/10" />
       </div>
       <div className="space-y-3">
-        {Array.from({ length: 4 }).map((_, i) => (
+        {Array.from({ length: 4 }).map((_: any, i: number) => (
           <ActivityItemSkeleton key={i} />
         ))}
       </div>

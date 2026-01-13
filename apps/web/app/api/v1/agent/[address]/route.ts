@@ -4,13 +4,16 @@
  * GET /api/v1/agent/:address - Get comprehensive agent information
  */
 
+import { NextRequest } from 'next/server'
 import { api } from '@/convex/_generated/api'
-import { withMiddleware, jsonResponse, errorResponse, handleCORS } from '@/lib/api/middleware'
+import { jsonResponse, errorResponse, handleCORS } from '@/lib/api/middleware'
 import { getConvexClient } from '@/lib/convex-client'
 
-export const GET = withMiddleware(
-  async (request, { params }: { params: Promise<{ address: string }> }) => {
-    const { address: agentAddress } = await params
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ address: string }> }
+) {
+  const { address: agentAddress } = await context.params
 
     // Validate Solana address format
     const solanaAddressRegex = /^[A-HJ-NP-Za-km-z1-9]{32,44}$/
@@ -106,7 +109,6 @@ export const GET = withMiddleware(
       },
       { cache: true } // Cache agent details for 60s
     )
-  }
-)
+}
 
 export const OPTIONS = handleCORS

@@ -142,6 +142,125 @@ export interface GenerateImageResponse {
 }
 
 // ============================================================================
+// Text Generation Types
+// ============================================================================
+
+/**
+ * Thread template types
+ */
+export type ThreadTemplate = 'raid' | 'announcement' | 'educational' | 'product' | 'community' | 'alpha'
+
+/**
+ * Post template types
+ */
+export type PostTemplate = 'hook' | 'question' | 'stat' | 'quote' | 'announcement' | 'meme' | 'general'
+
+/**
+ * Raid package types
+ */
+export type RaidType = 'product' | 'partnership' | 'milestone' | 'event' | 'general'
+
+/**
+ * Thread generation request parameters
+ */
+export interface GenerateThreadParams {
+  userId: string
+  message: string
+  characterId: 'boo'
+  topic: string
+  template: ThreadTemplate
+  tweetCount?: number
+}
+
+/**
+ * Thread generation API response
+ */
+export interface GenerateThreadResponse {
+  success: boolean
+  message: string
+  metadata?: {
+    type: 'thread'
+    template: ThreadTemplate
+    topic: string
+    tweets: string[]
+    threadStats: {
+      tweetCount: number
+      avgCharsPerTweet: number
+      hashtags: string[]
+    }
+  }
+}
+
+/**
+ * Post generation request parameters
+ */
+export interface GeneratePostParams {
+  userId: string
+  message: string
+  characterId: 'boo'
+  topic: string
+  template: PostTemplate
+}
+
+/**
+ * Post generation API response
+ */
+export interface GeneratePostResponse {
+  success: boolean
+  message: string
+  metadata?: {
+    type: 'post'
+    template: PostTemplate
+    topic: string
+    posts: string[]
+    postStats: {
+      variationCount: number
+      avgCharsPerPost: number
+      shortest: number
+      longest: number
+    }
+  }
+}
+
+/**
+ * Raid content generation request parameters
+ */
+export interface GenerateRaidParams {
+  userId: string
+  message: string
+  characterId: 'boo'
+  topic: string
+  raidType: RaidType
+}
+
+/**
+ * Raid package structure
+ */
+export interface RaidPackage {
+  mainThread: string[]
+  quoteTweets: string[]
+  standalonePosts: string[]
+  callToAction: string
+  hashtags: string[]
+  timing: string
+  strategy: string
+}
+
+/**
+ * Raid content generation API response
+ */
+export interface GenerateRaidResponse {
+  success: boolean
+  message: string
+  metadata?: {
+    type: 'raid_package'
+    raidType: RaidType
+    topic: string
+    package: RaidPackage
+  }
+}
+
+// ============================================================================
 // Message Quota Types
 // ============================================================================
 

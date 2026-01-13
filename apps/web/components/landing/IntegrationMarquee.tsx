@@ -84,7 +84,7 @@ export function IntegrationMarquee() {
             repeat: Infinity,
           }}
         >
-          {[...integrations, ...integrations].map((item, idx) => (
+          {[...integrations, ...integrations].map((item: any, idx: number) => (
             <a
               key={`row1-${item.name}-${idx}`}
               href={item.url}
@@ -131,7 +131,7 @@ export function IntegrationMarquee() {
             repeat: Infinity,
           }}
         >
-          {[...integrations, ...integrations].reverse().map((item, idx) => (
+          {[...integrations, ...integrations].reverse().map((item: any, idx: number) => (
             <a
               key={`row2-${item.name}-${idx}`}
               href={item.url}

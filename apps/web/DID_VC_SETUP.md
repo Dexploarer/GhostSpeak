@@ -13,8 +13,8 @@ GhostSpeak implements **W3C Decentralized Identifiers (DIDs)** and **Verifiable 
 Every agent gets a unique DID following the Solana DID method:
 
 ```
-did:sol:devnet:CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc  # Devnet
-did:sol:mainnet:CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc # Mainnet
+did:sol:devnet:DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc  # Devnet
+did:sol:mainnet:DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc # Mainnet
 ```
 
 **Implementation:**
@@ -182,7 +182,7 @@ await fetch('/api/credentials/mint-nft', {
   body: JSON.stringify({
     credentialType: 'agent_identity',
     credentialId: 'agent_identity_abc123_1234567890',
-    recipientAddress: 'CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc'
+    recipientAddress: 'DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc'
   })
 })
 ```
@@ -277,7 +277,7 @@ import { internal } from './_generated/api'
 const result = await ctx.runMutation(
   internal.credentials.issueCapabilityVerificationCredential,
   {
-    agentAddress: 'CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc',
+    agentAddress: 'DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc',
     capabilities: ['text_generation', 'code_analysis'],
     testsRun: 100,
     testsPassed: 85,
@@ -313,7 +313,7 @@ import { api } from '@/convex/_generated/api'
 import { fetchQuery } from 'convex/nextjs'
 
 const credentials = await fetchQuery(api.credentials.getAgentCredentialsPublic, {
-  agentAddress: 'CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc'
+  agentAddress: 'DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc'
 })
 
 // Returns array of all credentials with type, credentialId, issuedAt, isValid, etc.
@@ -326,7 +326,7 @@ const credentials = await fetchQuery(api.credentials.getAgentCredentialsPublic, 
   {
     "type": "identity",
     "credentialId": "agent_identity_abc123_xyz",
-    "did": "did:sol:devnet:CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc",
+    "did": "did:sol:devnet:DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc",
     "issuedAt": 1704758400000,
     "isValid": true
   },
@@ -353,7 +353,7 @@ const credentials = await fetchQuery(api.credentials.getAgentCredentialsPublic, 
 
 ```typescript
 const result = await fetchQuery(api.credentials.listAgentCredentialSummariesPublic, {
-  agentAddress: 'CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc',
+  agentAddress: 'DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc',
   limit: 10,
   offset: 0
 })
@@ -630,7 +630,7 @@ bunx convex run ghostDiscovery:listDiscoveredAgents
 
 # Get specific agent's DID
 bunx convex run ghostDiscovery:getDiscoveredAgent '{
-  "ghostAddress": "CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc"
+  "ghostAddress": "DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc"
 }'
 
 # Get credential details

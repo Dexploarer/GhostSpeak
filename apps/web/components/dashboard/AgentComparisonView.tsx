@@ -58,17 +58,17 @@ export function AgentComparisonView({
   if (comparison && !('error' in comparison)) {
     // Collect all unique dates
     const allDates = new Set<string>()
-    Object.values(comparison).forEach((history) => {
-      history.forEach((h) => allDates.add(h.date))
+    Object.values(comparison).forEach((history: any) => {
+      history.forEach((h: any) => allDates.add(h.date))
     })
 
     // Build merged data
     Array.from(allDates)
       .sort()
-      .forEach((date) => {
+      .forEach((date: string) => {
         const point: Record<string, number | string> = { date }
-        Object.entries(comparison).forEach(([address, history]) => {
-          const entry = history.find((h) => h.date === date)
+        Object.entries(comparison).forEach(([address, history]: [string, any]) => {
+          const entry = history.find((h: any) => h.date === date)
           if (entry) {
             point[address] = entry.score
           }
@@ -86,7 +86,7 @@ export function AgentComparisonView({
 
       {/* Agent selector */}
       <div className="mb-4 flex flex-wrap gap-2">
-        {agents.map((address, i) => (
+        {agents.map((address: any, i: number) => (
           <div
             key={address}
             className="flex items-center gap-1 rounded-full px-2 py-1 text-xs"
@@ -162,7 +162,7 @@ export function AgentComparisonView({
               )}
             />
 
-            {agents.map((address, i) => (
+            {agents.map((address: any, i: number) => (
               <Line
                 key={address}
                 type="monotone"

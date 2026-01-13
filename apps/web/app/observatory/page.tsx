@@ -44,7 +44,7 @@ function TerminalTabs(props: { active: ObservatoryTab; onChange: (tab: Observato
       className="flex flex-wrap gap-2 border-b border-zinc-800 px-4 py-3 bg-zinc-950"
       data-testid="observatory-tabs"
     >
-      {tabs.map((tab) => (
+      {tabs.map((tab: any) => (
         <button
           key={tab}
           type="button"

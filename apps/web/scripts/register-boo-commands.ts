@@ -22,10 +22,16 @@ const commands = [
   { command: 'start', description: 'Welcome message and bot introduction' },
   { command: 'help', description: 'Show help guide and available commands' },
   { command: 'quota', description: 'Check your daily message quota' },
+  // Image generation commands
   { command: 'media', description: 'Generate custom AI images with GhostSpeak branding' },
   { command: 'raid', description: 'Generate X/Twitter raid graphics' },
   { command: 'meme', description: 'Generate meme templates' },
   { command: 'templates', description: 'List all available image templates' },
+  // Text generation commands (NEW)
+  { command: 'thread', description: 'Generate X/Twitter threads (raid, announcement, etc.)' },
+  { command: 'post', description: 'Generate standalone post variations' },
+  { command: 'raidpackage', description: 'Generate complete raid package with strategy' },
+  // Info & settings
   { command: 'about', description: 'About Boo bot' },
   { command: 'mute', description: 'Mute bot auto-responses in groups (admins only)' },
   { command: 'unmute', description: 'Unmute bot auto-responses in groups (admins only)' },
@@ -87,7 +93,7 @@ async function registerCommands() {
   if (successCount === scopes.length) {
     console.log('\n🎉 All commands registered successfully!')
     console.log('\n📋 Registered commands:')
-    commands.forEach((cmd) => {
+    commands.forEach((cmd: any) => {
       console.log(`   • /${cmd.command} - ${cmd.description}`)
     })
   } else {

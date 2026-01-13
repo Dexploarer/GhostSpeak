@@ -81,9 +81,9 @@ export function AgentToolsPanel({
         </div>
 
         <div className="space-y-3">
-          {tools.map((tool) => {
+          {tools.map((tool: AgentTool) => {
             const isOpen = openId === tool.id
-            const colorClass = categoryColors[tool.category]
+            const colorClass = categoryColors[tool.category as keyof typeof categoryColors]
 
             return (
               <motion.div
@@ -139,7 +139,7 @@ export function AgentToolsPanel({
                         </p>
 
                         <div className="space-y-1.5">
-                          {tool.prompts.map((prompt, idx) => (
+                          {tool.prompts.map((prompt: any, idx: number) => (
                             <button
                               key={idx}
                               onClick={() => onPromptClick(prompt)}

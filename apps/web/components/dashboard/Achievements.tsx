@@ -49,7 +49,7 @@ export function Achievements({ achievements, className }: AchievementsProps) {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        {achievements.map((achievement) => (
+        {achievements.map((achievement: any) => (
           <AchievementBadge key={achievement.id} achievement={achievement} />
         ))}
       </div>

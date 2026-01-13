@@ -74,7 +74,7 @@ export const getAgentProfilePublic = query({
       : null
 
     const discoveredFieldPairs: Array<[string, { present: boolean }]> = discoveredPublic
-      ? Object.entries(discoveredPublic).map(([k, v]) => {
+      ? Object.entries(discoveredPublic).map(([k, v]: [string, any]) => {
           if (typeof v === 'object' && v !== null && 'present' in v) {
             return [k, v as { present: boolean }]
           }
@@ -82,10 +82,10 @@ export const getAgentProfilePublic = query({
         })
       : []
 
-    const presentFields = discoveredFieldPairs.filter(([, p]) => p.present).map(([k]) => k)
-    const missingFields = discoveredFieldPairs.filter(([, p]) => !p.present).map(([k]) => k)
+    const presentFields = discoveredFieldPairs.filter(([, p]) => p.present).map(([k]: [string, any]) => k)
+    const missingFields = discoveredFieldPairs.filter(([, p]) => !p.present).map(([k]: [string, any]) => k)
 
-    const mappingsPublic = mappings.map((m) => ({
+    const mappingsPublic = mappings.map((m: any) => ({
       platform: m.platform,
       externalId: m.externalId,
       verified: m.verified,
@@ -111,7 +111,7 @@ export const getAgentProfilePublic = query({
       : null
 
     const reputationFieldPairs: Array<[string, { present: boolean }]> = reputationPublic
-      ? Object.entries(reputationPublic).map(([k, v]) => {
+      ? Object.entries(reputationPublic).map(([k, v]: [string, any]) => {
           if (typeof v === 'object' && v !== null && 'present' in v) {
             return [k, v as { present: boolean }]
           }
@@ -138,8 +138,8 @@ export const getAgentProfilePublic = query({
       reputationCache: {
         exists: Boolean(reputationPublic),
         record: reputationPublic,
-        presentFields: reputationFieldPairs.filter(([, p]) => p.present).map(([k]) => k),
-        missingFields: reputationFieldPairs.filter(([, p]) => !p.present).map(([k]) => k),
+        presentFields: reputationFieldPairs.filter(([, p]) => p.present).map(([k]: [string, any]) => k),
+        missingFields: reputationFieldPairs.filter(([, p]) => !p.present).map(([k]: [string, any]) => k),
       },
     }
   },

@@ -33,7 +33,7 @@ async function testSearch() {
             });
 
             if (results.results && results.results.length > 0) {
-                results.results.forEach((result, index) => {
+                results.results.forEach((result: any, index: number) => {
                     const snippet = result.content[0]?.text || "No text content";
                     const namespace = result.namespace || "unknown";
                     console.log(`\n📄 [${namespace}] Result ${index + 1} (Score: ${result.score.toFixed(3)}):`);

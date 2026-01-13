@@ -23,6 +23,12 @@ import type {
   GhostScoreData,
   GenerateImageParams,
   GenerateImageResponse,
+  GenerateThreadParams,
+  GenerateThreadResponse,
+  GeneratePostParams,
+  GeneratePostResponse,
+  GenerateRaidParams,
+  GenerateRaidResponse,
   QuotaResponse,
   ChatMessageRequest,
   ChatMessageResponse,
@@ -386,14 +392,137 @@ export async function generateImage(
 ): Promise<GenerateImageResponse> {
   const url = endpoints.agentChat()
 
-  const body: ChatMessageRequest = {
+  const body: any = {
     message: params.message,
     walletAddress: `telegram_${params.userId}`,
     sessionToken: `session_${params.userId}_miniapp`,
     source: 'telegram',
+    characterId: params.characterId || 'boo', // Pass character ID to API
   }
 
   return post<GenerateImageResponse>(url, body)
+}
+
+/**
+ * Generate X/Twitter thread via Boo agent
+ *
+ * @param params - Thread generation parameters (userId, topic, template)
+ * @returns Thread generation response with tweets and metadata
+ * @throws {ApiError} If quota exceeded (429) or generation fails
+ * @throws {NetworkError} If network fails
+ * @throws {TimeoutError} If request times out
+ *
+ * @example
+ * ```typescript
+ * const result = await apiClient.generateThread({
+ *   userId: '123456',
+ *   message: 'generate raid thread about Ghost Score',
+ *   characterId: 'boo',
+ *   topic: 'Ghost Score',
+ *   template: 'raid',
+ * })
+ *
+ * if (result.success && result.metadata?.tweets) {
+ *   console.log('Generated', result.metadata.tweets.length, 'tweets')
+ * }
+ * ```
+ */
+export async function generateThread(
+  params: GenerateThreadParams
+): Promise<GenerateThreadResponse> {
+  const url = endpoints.agentChat()
+
+  const body: any = {
+    message: params.message,
+    walletAddress: `telegram_${params.userId}`,
+    sessionToken: `session_${params.userId}_miniapp`,
+    source: 'telegram',
+    characterId: params.characterId || 'boo', // Pass character ID to API
+  }
+
+  return post<GenerateThreadResponse>(url, body)
+}
+
+/**
+ * Generate standalone X/Twitter post via Boo agent
+ *
+ * @param params - Post generation parameters (userId, topic, template)
+ * @returns Post generation response with post variations and metadata
+ * @throws {ApiError} If quota exceeded (429) or generation fails
+ * @throws {NetworkError} If network fails
+ * @throws {TimeoutError} If request times out
+ *
+ * @example
+ * ```typescript
+ * const result = await apiClient.generatePost({
+ *   userId: '123456',
+ *   message: 'generate hook post about GhostSpeak',
+ *   characterId: 'boo',
+ *   topic: 'GhostSpeak',
+ *   template: 'hook',
+ * })
+ *
+ * if (result.success && result.metadata?.posts) {
+ *   console.log('Generated', result.metadata.posts.length, 'post variations')
+ * }
+ * ```
+ */
+export async function generatePost(
+  params: GeneratePostParams
+): Promise<GeneratePostResponse> {
+  const url = endpoints.agentChat()
+
+  const body: any = {
+    message: params.message,
+    walletAddress: `telegram_${params.userId}`,
+    sessionToken: `session_${params.userId}_miniapp`,
+    source: 'telegram',
+    characterId: params.characterId || 'boo', // Pass character ID to API
+  }
+
+  return post<GeneratePostResponse>(url, body)
+}
+
+/**
+ * Generate complete raid package via Boo agent
+ *
+ * @param params - Raid generation parameters (userId, topic, raidType)
+ * @returns Raid package with main thread, quote tweets, standalone posts, and strategy
+ * @throws {ApiError} If quota exceeded (429) or generation fails
+ * @throws {NetworkError} If network fails
+ * @throws {TimeoutError} If request times out
+ *
+ * @example
+ * ```typescript
+ * const result = await apiClient.generateRaidContent({
+ *   userId: '123456',
+ *   message: 'generate raid content for Ghost Score launch',
+ *   characterId: 'boo',
+ *   topic: 'Ghost Score Launch',
+ *   raidType: 'product',
+ * })
+ *
+ * if (result.success && result.metadata?.package) {
+ *   console.log('Main thread:', result.metadata.package.mainThread.length, 'tweets')
+ *   console.log('Quote tweets:', result.metadata.package.quoteTweets.length)
+ *   console.log('CTA:', result.metadata.package.callToAction)
+ * }
+ * ```
+ */
+export async function generateRaidContent(
+  params: GenerateRaidParams
+): Promise<GenerateRaidResponse> {
+  const url = endpoints.agentChat()
+
+  const body: any = {
+    message: params.message,
+    walletAddress: `telegram_${params.userId}`,
+    sessionToken: `session_${params.userId}_miniapp`,
+    source: 'telegram',
+    characterId: params.characterId || 'boo', // Pass character ID to API
+  }
+
+  return post<GenerateRaidResponse>(url, body)
 }
 
 // ============================================================================
@@ -543,6 +672,9 @@ export const apiClient = {
   getGhostScore,
   getAgentScore,
   generateImage,
+  generateThread,
+  generatePost,
+  generateRaidContent,
   getUserQuota,
   getUserImages,
   sendChatMessage,

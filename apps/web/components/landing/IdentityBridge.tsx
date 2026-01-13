@@ -147,7 +147,7 @@ export function IdentityBridge() {
             { icon: Globe, label: 'Multi-Chain', desc: 'Base, Polygon, Ethereum support' },
             { icon: ArrowRightLeft, label: 'One-Click Sync', desc: 'CLI or SDK credential sync' },
             { icon: Sparkles, label: 'Trustless', desc: 'Cryptographically verifiable' },
-          ].map((item, i) => (
+          ].map((item: any, i: number) => (
             <div
               key={i}
               className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-card/50 border border-border hover:border-primary/30 transition-colors text-center"

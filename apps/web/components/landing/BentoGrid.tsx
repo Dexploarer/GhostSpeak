@@ -37,7 +37,7 @@ export function BentoGrid() {
           {/* Mock Network Visualization */}
           <div className="mt-6 sm:mt-8 h-32 sm:h-48 rounded-xl bg-linear-to-br from-primary/5 to-transparent border border-dashed border-primary/20 flex items-center justify-center relative overflow-hidden">
             <div className="absolute inset-0 grid grid-cols-6 gap-4 opacity-20 animate-pulse">
-              {[...Array(24)].map((_, i) => (
+              {[...Array(24)].map((_: any, i: number) => (
                 <div key={i} className="bg-primary/20 rounded-full w-2 h-2 mx-auto" />
               ))}
             </div>
@@ -73,7 +73,7 @@ export function BentoGrid() {
               { label: 'Range', val: '0-10,000', color: 'text-primary' },
               { label: 'Tier', val: 'GOLD', color: 'text-primary/80' },
               { label: 'Network', val: 'Solana', color: 'text-primary/60' },
-            ].map((stat) => (
+            ].map((stat: any) => (
               <div
                 key={stat.label}
                 className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-border"

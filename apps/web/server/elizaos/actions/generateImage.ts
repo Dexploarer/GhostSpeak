@@ -168,7 +168,7 @@ Type "list templates" to see all available templates!`,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${runtime.settings.AI_GATEWAY_API_KEY}`,
+          Authorization: `Bearer ${String(runtime.getSetting('AI_GATEWAY_API_KEY') || process.env.AI_GATEWAY_API_KEY || '')}`,
         },
         body: JSON.stringify({
           model: template?.size === '1K' ? 'google/imagen-4.0-generate' : 'google/imagen-4.0-ultra-generate',
@@ -231,15 +231,16 @@ Try again in a moment, or simplify your description!`,
         try {
           // Import Convex client
           const { getConvexClient } = await import('../../../lib/convex-client')
-          const { api } = await import('../../../convex/_generated/api')
+          const { internal } = await import('../../../convex/_generated/api')
 
           // Get userId from message (userId is wallet address or telegram_12345)
-          const userId = message.userId || 'unknown'
+          const userId = (message as any).userId || message.id
 
           console.log(`📤 Uploading image to Convex (userId: ${userId}, size: ${imageBase64.length} chars)`)
 
           // Store in Convex (must use action, not mutation, to access storage)
-          const storeResult = await getConvexClient().action(api.images.storeImage, {
+          // Note: storeImage is an internal action, so we need to cast to any
+          const storeResult = await (getConvexClient() as any).action(internal.images.storeImage, {
             userId,
             base64Data: imageBase64,
             contentType: 'image/png', // Imagen returns PNG

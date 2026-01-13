@@ -93,6 +93,7 @@ export default defineSchema({
   payments: billing.payments,
   x402SyncState: billing.x402SyncState,
   x402SyncEvents: billing.x402SyncEvents,
+  x402UsedTransactions: billing.x402UsedTransactions,
   payaiFailedRecordings: billing.payaiFailedRecordings,
   userBillingDeductions: billing.userBillingDeductions,
   userBillingDeposits: billing.userBillingDeposits,

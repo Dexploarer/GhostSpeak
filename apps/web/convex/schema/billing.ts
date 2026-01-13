@@ -202,3 +202,18 @@ export const rewardClaims = defineTable({
   .index('by_wallet', ['walletAddress'])
   .index('by_wallet_timestamp', ['walletAddress', 'timestamp'])
   .index('by_timestamp', ['timestamp'])
+
+// x402 used transactions (replay protection)
+export const x402UsedTransactions = defineTable({
+  transactionSignature: v.string(),
+  network: v.string(),
+  recipient: walletAddressValidator,
+  payer: walletAddressValidator,
+  amount: v.number(),
+  service: v.string(),
+  usedAt: timestampValidator,
+  expiresAt: timestampValidator,
+})
+  .index('by_signature', ['transactionSignature'])
+  .index('by_expires', ['expiresAt'])
+  .index('by_recipient', ['recipient'])

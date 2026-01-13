@@ -146,7 +146,7 @@ export function CredentialCard({
 
       {/* List */}
       <div className="divide-y divide-white/5">
-        {credentials.map((cred, idx) => {
+        {credentials.map((cred: any, idx: number) => {
           const isExpanded = expandedId === cred.credentialId
           const statusColor = cred.isValid ? 'text-lime-400' : 'text-red-400'
 

@@ -436,7 +436,7 @@ class FullIntegrationTester {
     console.log(`Success Rate: ${successRate}%`)
 
     console.log(`\n🔍 DETAILED RESULTS:`)
-    this.testResults.forEach((result, index) => {
+    this.testResults.forEach((result: any, index: number) => {
       const statusIcon = result.status === 'PASS' ? '✅' : '❌'
       console.log(`${index + 1}. ${statusIcon} ${result.name}`)
       console.log(`   Duration: ${result.duration}ms`)

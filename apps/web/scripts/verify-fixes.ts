@@ -17,7 +17,7 @@ const mockAPIResponses = {
 };
 
 console.log('📋 Expected API Responses:');
-Object.entries(mockAPIResponses).forEach(([path, response]) => {
+Object.entries(mockAPIResponses).forEach(([path, response]: [string, any]) => {
   console.log(`  ${path} → ${response.status} (${response.body.status || response.body.error})`);
 });
 

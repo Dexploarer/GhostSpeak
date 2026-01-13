@@ -74,7 +74,7 @@ export function ScoreHistoryChart({
   }
 
   // Format data for chart
-  const chartData = history.map((h) => ({
+  const chartData = history.map((h: any) => ({
     date: h.date,
     score: h.score,
     tier: h.tier,
@@ -144,7 +144,7 @@ export function ScoreHistoryChart({
           />
 
           {/* Tier threshold reference lines */}
-          {TIER_THRESHOLDS.map((tier) => (
+          {TIER_THRESHOLDS.map((tier: any) => (
             <ReferenceLine
               key={tier.label}
               y={tier.value}
@@ -168,7 +168,7 @@ export function ScoreHistoryChart({
 
       {/* Time range selector */}
       <div className="mt-3 flex justify-center gap-2">
-        {[7, 30, 90].map((d) => (
+        {[7, 30, 90].map((d: any) => (
           <button
             key={d}
             className={`rounded px-2 py-1 text-xs ${

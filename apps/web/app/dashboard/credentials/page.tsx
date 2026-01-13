@@ -114,7 +114,7 @@ function summarizeDisplay(display: Record<string, any>): string {
   const cleaned = pairs
     .filter(([, v]) => v !== null && v !== undefined && v !== '')
     .slice(0, 3)
-    .map(([k, v]) => {
+    .map(([k, v]: [string, any]) => {
       if (Array.isArray(v)) return `${k}: ${v.length}`
       if (typeof v === 'number') return `${k}: ${v}`
       if (typeof v === 'boolean') return `${k}: ${v ? 'true' : 'false'}`
@@ -286,7 +286,7 @@ export default function DashboardCredentialsPage() {
                     />
                   </SelectTrigger>
                   <SelectContent>
-                    {(userAgents?.agents ?? []).map((a) => (
+                    {(userAgents?.agents ?? []).map((a: any) => (
                       <SelectItem key={a.address} value={a.address}>
                         {a.address}
                       </SelectItem>
@@ -501,7 +501,7 @@ export default function DashboardCredentialsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6" data-testid="credentials-list">
                 <AnimatePresence mode="popLayout" initial={false}>
-                  {credentialSummaries.map((c, idx) => (
+                  {credentialSummaries.map((c: any, idx: number) => (
                     <motion.button
                       layout
                       key={`${c.credentialType}:${c.credentialId}`}
@@ -714,7 +714,7 @@ export default function DashboardCredentialsPage() {
 
                 {selectedCredential.txSignatures?.length ? (
                   <ul className="space-y-2">
-                    {selectedCredential.txSignatures.map((p) => (
+                    {selectedCredential.txSignatures.map((p: any) => (
                       <li key={`${p.kind}:${p.signature}`} className="text-xs text-white/70">
                         <span className="text-white/40">{p.kind}:</span>{' '}
                         <span className="font-mono break-all">{p.signature}</span>
@@ -765,7 +765,7 @@ export default function DashboardCredentialsPage() {
                       <ul className="space-y-1" data-testid="credential-details-evidence-list">
                         {Object.entries(credentialDetails.evidence)
                           .filter(([, v]) => v !== undefined)
-                          .map(([k, v]) => (
+                          .map(([k, v]: [string, any]) => (
                             <li key={k} className="text-xs text-white/70">
                               <span className="text-white/40">{k}:</span>{' '}
                               <span className="font-mono break-all">

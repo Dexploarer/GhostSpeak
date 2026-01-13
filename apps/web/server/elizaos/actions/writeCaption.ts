@@ -9,11 +9,11 @@ export const writeCaptionAction: Action = {
   examples: [
     [
       {
-        user: '{{user1}}',
+        name: '{{user1}}',
         content: { text: 'Write a caption for my raid graphic about Ghost Score' },
       },
       {
-        user: '{{agent}}',
+        name: '{{agent}}',
         content: {
           text: "📝 **Here are 3 tweet options:**\n\n1. 🚀 Join the Ghost Army! Trust verified agents with Ghost Score - no more rug pulls in AI commerce. #GhostSpeak #Web3\n\n2. 👻 Ghost Score: The credit rating for AI agents you can actually trust. Built on Solana for transparency. #AI #Blockchain\n\n3. ⚡ Verify before you buy! Ghost Score brings trust to AI agent commerce. Join the revolution. #GhostSpeak #Solana",
         },
@@ -22,7 +22,7 @@ export const writeCaptionAction: Action = {
   ],
 
   validate: async (_runtime: IAgentRuntime, message: Memory) => {
-    const text = message.content.text.toLowerCase()
+    const text = (message.content.text || "").toLowerCase()
     return (
       text.includes('caption') ||
       text.includes('tweet') && !text.includes('retweet') ||
@@ -37,9 +37,9 @@ export const writeCaptionAction: Action = {
     _state?: State,
     _options?: { [key: string]: unknown },
     callback?: HandlerCallback
-  ): Promise<boolean> => {
+  ): Promise<void> => {
     try {
-      const userPrompt = message.content.text
+      const userPrompt = message.content.text || ''
 
       // Extract topic from user message
       const topic = userPrompt
@@ -47,7 +47,7 @@ export const writeCaptionAction: Action = {
         .trim()
 
       const openai = createOpenAI({
-        apiKey: runtime.getSetting('AI_GATEWAY_API_KEY') || process.env.AI_GATEWAY_API_KEY,
+        apiKey: String(runtime.getSetting('AI_GATEWAY_API_KEY') || process.env.AI_GATEWAY_API_KEY || ''),
         baseURL: 'https://ai-gateway.vercel.sh/v1',
       })
 
@@ -72,10 +72,9 @@ Generate 3 Twitter/X captions for GhostSpeak community content.
 Return ONLY the 3 captions, numbered 1-3, nothing else.`
 
       const { text: captionsText } = await generateText({
-        model: openai('gpt-4o-mini'),
+        model: openai('gpt-4o-mini') as any,
         prompt: `Generate 3 Twitter captions for: ${topic}`,
         system: systemPrompt,
-        maxTokens: 500,
       })
 
       // Parse and format captions
@@ -86,7 +85,7 @@ Return ONLY the 3 captions, numbered 1-3, nothing else.`
 
       let response = '📝 **Twitter/X Captions Generated!**\n\n'
 
-      captions.forEach((caption, index) => {
+      captions.forEach((caption: any, index: number) => {
         const cleanCaption = caption.replace(/^\d+\.\s*/, '').trim()
         const charCount = cleanCaption.length
         const status = charCount <= 280 ? '✅' : '⚠️'
@@ -100,7 +99,7 @@ Return ONLY the 3 captions, numbered 1-3, nothing else.`
         callback({ text: response })
       }
 
-      return true
+      // Success
     } catch (error) {
       console.error('Error in writeCaption:', error)
       if (callback) {
@@ -108,7 +107,7 @@ Return ONLY the 3 captions, numbered 1-3, nothing else.`
           text: 'Failed to generate captions. Please try again.',
         })
       }
-      return false
+      // Error handled
     }
   },
 }

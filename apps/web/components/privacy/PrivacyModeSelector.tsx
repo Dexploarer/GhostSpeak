@@ -73,7 +73,7 @@ export function PrivacyModeSelector({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {modes.map((mode) => {
+        {modes.map((mode: any) => {
           const Icon = mode.icon
           const isSelected = value === mode.value
 

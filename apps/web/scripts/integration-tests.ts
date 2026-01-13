@@ -286,7 +286,7 @@ function generateTestReport() {
     console.log(`Success Rate: ${((testResults.passed / testResults.totalTests) * 100).toFixed(1)}%`)
 
     console.log(`\n📋 DETAILED RESULTS:`)
-    testResults.results.forEach((result, index) => {
+    testResults.results.forEach((result: any, index: number) => {
         const statusIcon = result.status === 'PASS' ? '✅' : result.status === 'FAIL' ? '❌' : '⏭️'
         console.log(`${index + 1}. ${statusIcon} ${result.name}`)
         console.log(`   Duration: ${result.duration}ms`)

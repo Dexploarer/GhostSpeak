@@ -210,7 +210,7 @@ export const analyzeTokenRisk = (token: TokenInfo, warnings: ShieldWarning[] = [
   }
 
   // Shield Warnings
-  warnings.forEach((w) => {
+  warnings.forEach((w: any) => {
     if (w.severity === 'critical') flags.red.push(w.message)
     else if (w.severity === 'warning') flags.yellow.push(w.message)
     else flags.green.push(w.message) // unlikely for warnings but handled

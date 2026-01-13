@@ -269,14 +269,14 @@ export const getPublicObservationDetail = query({
       paymentAmountUsdc: test.paymentAmountUsdc,
       qualityScore: test.qualityScore,
       caisperNotes: sanitizeFreeTextForPublic(test.caisperNotes, 800),
-      issues: (test.issues ?? []).map((i) => sanitizeFreeTextForPublic(i, 240)),
+      issues: (test.issues ?? []).map((i: any) => sanitizeFreeTextForPublic(i, 240)),
       endpoint: endpoint
         ? {
             method: endpoint.method,
             endpoint: sanitizeUrlForPublic(endpoint.endpoint, 240),
           }
         : null,
-      transcript: (test.transcript ?? []).map((entry) => ({
+      transcript: (test.transcript ?? []).map((entry: any) => ({
         role: entry.role,
         isToolCall: entry.isToolCall,
         toolName: entry.toolName ? truncateText(entry.toolName, 48) : undefined,

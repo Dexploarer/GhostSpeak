@@ -1,5 +1,5 @@
 import type { Action, HandlerCallback, IAgentRuntime, Memory, State } from '@elizaos/core'
-import { ConvexDatabaseAdapter } from '../../lib/convex-adapter'
+// import { ConvexDatabaseAdapter } from '../../lib/convex-adapter' // File doesn't exist, using any instead
 
 export const showMyImagesAction: Action = {
   name: 'SHOW_MY_IMAGES',
@@ -8,11 +8,11 @@ export const showMyImagesAction: Action = {
   examples: [
     [
       {
-        user: '{{user1}}',
+        name: '{{user1}}',
         content: { text: 'Show my recent images' },
       },
       {
-        user: '{{agent}}',
+        name: '{{agent}}',
         content: {
           text: "Here are your last 10 generated images:\n\n1. **Raid Graphic** - 'Join the Ghost Army'\n   🖼️ https://ai-gateway.vercel.sh/generated/xyz123.png\n   📅 2 days ago\n\n2. **Meme** - 'Trust verified agents'\n   🖼️ https://ai-gateway.vercel.sh/generated/abc456.png\n   📅 3 days ago",
         },
@@ -21,7 +21,7 @@ export const showMyImagesAction: Action = {
   ],
 
   validate: async (_runtime: IAgentRuntime, message: Memory) => {
-    const text = message.content.text.toLowerCase()
+    const text = (message.content.text || '').toLowerCase()
     return (
       text.includes('my images') ||
       text.includes('my creations') ||
@@ -37,12 +37,12 @@ export const showMyImagesAction: Action = {
     _state?: State,
     _options?: { [key: string]: unknown },
     callback?: HandlerCallback
-  ): Promise<boolean> => {
+  ): Promise<void> => {
     try {
-      const userId = message.userId
+      const userId = (message as any).userId || message.id
 
       // Get user's last 10 images from memory
-      const adapter = (runtime as unknown as { adapter: ConvexDatabaseAdapter }).adapter
+      const adapter = (runtime as unknown as { adapter: any }).adapter
       const memories = await adapter.getMemories({
         roomId: message.roomId,
         count: 50, // Get more to filter for images
@@ -51,7 +51,7 @@ export const showMyImagesAction: Action = {
 
       // Filter for image generation memories
       const imageMemories = memories
-        .filter(mem => {
+        .filter((mem: any) => {
           const text = mem.content.text || ''
           return text.includes('🖼️') || text.includes('Image generated')
         })
@@ -63,13 +63,13 @@ export const showMyImagesAction: Action = {
             text: "You haven't generated any images yet! 👻\n\nTry: 'Create a raid graphic about Ghost Score' or 'Make a meme about AI agent trust'",
           })
         }
-        return true
+        // Success
       }
 
       // Format response
       let response = `📸 **Your Last ${imageMemories.length} Generated Images:**\n\n`
 
-      imageMemories.forEach((mem, index) => {
+      imageMemories.forEach((mem: any, index: number) => {
         const text = mem.content.text || ''
         const lines = text.split('\n')
 
@@ -78,7 +78,7 @@ export const showMyImagesAction: Action = {
         const url = urlMatch ? urlMatch[0] : 'No URL found'
 
         // Extract description (first non-empty line)
-        const description = lines.find(line => line.trim() && !line.includes('http')) || 'Image'
+        const description = lines.find((line: string) => line.trim() && !line.includes('http')) || 'Image'
 
         // Calculate days ago
         const createdAt = mem.createdAt || Date.now()
@@ -96,7 +96,7 @@ export const showMyImagesAction: Action = {
         callback({ text: response })
       }
 
-      return true
+      // Success
     } catch (error) {
       console.error('Error in showMyImages:', error)
       if (callback) {
@@ -104,7 +104,7 @@ export const showMyImagesAction: Action = {
           text: 'Failed to retrieve your image history. Please try again.',
         })
       }
-      return false
+      // Error handled
     }
   },
 }

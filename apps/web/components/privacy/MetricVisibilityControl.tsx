@@ -66,7 +66,7 @@ export function MetricVisibilityControl({
 }: MetricVisibilityControlProps): React.JSX.Element {
   const [expandedCategory, setExpandedCategory] = useState<string | null>('Core')
 
-  const categories = [...new Set(metrics.map((m) => m.category))]
+  const categories = [...new Set(metrics.map((m: any) => m.category))]
 
   const handleMetricChange = (metricName: string, visibility: MetricVisibility) => {
     onChange({
@@ -77,7 +77,7 @@ export function MetricVisibilityControl({
 
   const handleBulkChange = (visibility: MetricVisibility) => {
     const newSettings: MetricSettings = {}
-    metrics.forEach((metric) => {
+    metrics.forEach((metric: any) => {
       newSettings[metric.name] = visibility
     })
     onChange(newSettings)
@@ -116,7 +116,7 @@ export function MetricVisibilityControl({
         {/* Quick Actions */}
         <div className="flex flex-wrap gap-2 pb-4 border-b">
           <span className="text-sm text-muted-foreground mr-2">Quick set all to:</span>
-          {visibilityOptions.map((option) => {
+          {visibilityOptions.map((option: any) => {
             const Icon = option.icon
             return (
               <Button
@@ -134,7 +134,7 @@ export function MetricVisibilityControl({
 
         {/* Metrics by Category */}
         <div className="space-y-4">
-          {categories.map((category) => {
+          {categories.map((category: any) => {
             const categoryMetrics = metrics.filter((m) => m.category === category)
             const isExpanded = expandedCategory === category
 
@@ -155,7 +155,7 @@ export function MetricVisibilityControl({
 
                 {isExpanded && (
                   <div className="p-4 space-y-3">
-                    {categoryMetrics.map((metric) => {
+                    {categoryMetrics.map((metric: any) => {
                       const currentVisibility = settings[metric.name] || 'public'
 
                       return (
@@ -180,7 +180,7 @@ export function MetricVisibilityControl({
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {visibilityOptions.map((option) => {
+                              {visibilityOptions.map((option: any) => {
                                 const Icon = option.icon
                                 return (
                                   <SelectItem key={option.value} value={option.value}>

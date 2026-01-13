@@ -121,7 +121,7 @@ export function TokenomicsStaking() {
 
         {/* Staking Tiers */}
         <div className="grid md:grid-cols-3 gap-6 mb-12">
-          {stakingTiers.map((tier, i) => (
+          {stakingTiers.map((tier: any, i: number) => (
             <motion.div
               key={tier.name}
               initial={{ opacity: 0, y: 30 }}
@@ -150,7 +150,7 @@ export function TokenomicsStaking() {
               </div>
 
               <div className="space-y-3">
-                {tier.benefits.map((benefit, j) => (
+                {tier.benefits.map((benefit: any, j: number) => (
                   <div key={j} className="flex items-start gap-3">
                     <Zap className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                     <span className="text-sm text-zinc-300">{benefit}</span>

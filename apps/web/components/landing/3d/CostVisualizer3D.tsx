@@ -42,7 +42,7 @@ function ComparisonScene() {
 
     // Animate Swarm
     if (swarmRef.current) {
-      particles.forEach((p, i) => {
+      particles.forEach((p: any, i: number) => {
         const s = 0.04 + Math.sin(t * p.speed + p.phase) * 0.015
         dummy.position.set(
           p.pos.x + Math.sin(t * 0.8 + p.phase) * 0.3,

@@ -86,7 +86,7 @@ export const evaluateAgentTokensAction: Action = {
 
       // Map results for easy lookup
       const tokenMap = new Map<string, TokenInfo>()
-      tokenInfos.forEach((t) => tokenMap.set(t.id, t))
+      tokenInfos.forEach((t: any) => tokenMap.set(t.id, t))
 
       // 4. Analyze Risks
       let totalValue = holdings.uiAmount // Start with SOL
@@ -94,7 +94,7 @@ export const evaluateAgentTokensAction: Action = {
       let verifiedTokenCount = 0
       let exploitScore = 0 // 0 = Good, 100 = BAD
 
-      const analyzedTokens = topMints.map((mint) => {
+      const analyzedTokens = topMints.map((mint: any) => {
         const token = tokenMap.get(mint)
         const account = holdings.tokens[mint][0]
         const warnings = shieldData.warnings[mint] || []
@@ -157,7 +157,7 @@ export const evaluateAgentTokensAction: Action = {
       const redFlagTokens = analyzedTokens.filter((t) => t.safetyScore < 40)
       if (redFlagTokens.length > 0) {
         responseText += `🚩 **Risk Alerts:**\n`
-        redFlagTokens.slice(0, 3).forEach((t) => {
+        redFlagTokens.slice(0, 3).forEach((t: any) => {
           responseText += `- **${t.symbol}**: ${t.flags.red.join(', ') || 'Low Trust Score'}\n`
         })
         if (redFlagTokens.length > 3)

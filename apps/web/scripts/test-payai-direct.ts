@@ -5,7 +5,7 @@
  */
 
 const PAYAI_ECHO_ENDPOINT = 'https://x402.payai.network/weather'
-const CAISPER_PUBLIC_KEY = 'CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc'
+const CAISPER_PUBLIC_KEY = 'DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc'
 
 console.log('🚀 Testing PayAI Echo Merchant (Direct HTTP)\n')
 console.log('='.repeat(80))

@@ -39,7 +39,7 @@ async function main() {
         // Step 1: Check if old Caisper exists and remove it
         console.log('🔍 Checking for existing Caisper records...')
 
-        const oldCaisperAddress = 'CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc'
+        const oldCaisperAddress = 'DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc'
         const oldAgent = await convex.query(api.ghostDiscovery.getDiscoveredAgent, {
             ghostAddress: oldCaisperAddress
         })

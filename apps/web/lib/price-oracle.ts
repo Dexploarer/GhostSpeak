@@ -99,7 +99,7 @@ export async function getTokenPrices(
 async function fetchJupiterPrices(
   tokens: ('SOL' | 'USDC' | 'GHOST')[]
 ): Promise<Record<string, TokenPrice>> {
-  const mints = tokens.map((t) => TOKEN_MINTS[t])
+  const mints = tokens.map((t: keyof typeof TOKEN_MINTS) => TOKEN_MINTS[t])
   const url = `${JUPITER_PRICE_API}?ids=${mints.join(',')}`
 
   const response = await fetch(url, {
@@ -151,7 +151,7 @@ async function fetchCoinGeckoPrices(
   }
 
   const ids = tokens
-    .map((t) => geckoIds[t])
+    .map((t: keyof typeof geckoIds) => geckoIds[t])
     .filter(Boolean)
     .join(',')
   const url = `${COINGECKO_API}?ids=${ids}&vs_currencies=usd`

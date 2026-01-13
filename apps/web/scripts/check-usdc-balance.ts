@@ -78,7 +78,7 @@ async function main() {
   if (!CAISPER_PUBLIC_KEY) {
     console.error('❌ CAISPER_WALLET_ADDRESS environment variable not set')
     console.error('\n💡 Set it in your .env file:')
-    console.error('   CAISPER_WALLET_ADDRESS=CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc')
+    console.error('   CAISPER_WALLET_ADDRESS=DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc')
     process.exit(1)
   }
 

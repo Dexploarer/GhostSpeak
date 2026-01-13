@@ -120,7 +120,7 @@ export default function AnalyticsPage() {
 
         <div className="flex items-center gap-2">
           <div className="flex bg-white/5 border border-white/10 rounded-lg p-1">
-            {['24h', '7d', '30d', '90d'].map((range) => (
+            {['24h', '7d', '30d', '90d'].map((range: any) => (
               <button
                 key={range}
                 onClick={() => setTimeRange(range)}
@@ -348,7 +348,7 @@ export default function AnalyticsPage() {
           <span className="text-[10px] text-white/40 font-mono">Last 365 Days</span>
         </div>
         <div className="flex flex-wrap gap-1">
-          {Array.from({ length: 52 * 7 }).map((_, i) => {
+          {Array.from({ length: 52 * 7 }).map((_: any, i: number) => {
             // Generate deterministic pattern based on index (avoids hydration mismatch)
             const intensity = (i * 7 + 3) % 10
             return (

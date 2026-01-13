@@ -71,6 +71,43 @@ export default function AgentDetailsPage() {
     uptime: 'text-orange-400',
   }
 
+  // Type for endpoint
+  type Endpoint = {
+    _id: string
+    method: string
+    endpoint: string
+    description?: string
+    priceUsdc: number
+    totalTests?: number
+    successfulTests?: number
+    avgResponseTimeMs?: number
+    avgQualityScore?: number
+  }
+
+  // Type for observation
+  type Observation = {
+    _id: string
+    success: boolean
+    capabilityVerified: boolean
+    qualityScore: number
+    testedAt: number
+    responseTimeMs: number
+    responseStatus: number
+    paymentAmountUsdc: number
+    caisperNotes?: string
+    issues?: string[]
+    transcript?: Array<{ role: string; content: string }>
+    paymentSignature?: string
+  }
+
+  // Type for credential
+  type Credential = {
+    credentialId?: string
+    type: string
+    isValid: boolean
+    issuedAt?: number
+  }
+
   // Health status calculation
   const getHealthStatus = (successRate: number) => {
     if (successRate >= 90) return { color: 'text-green-400', label: 'Healthy' }
@@ -198,7 +235,7 @@ export default function AgentDetailsPage() {
 
               {endpoints && endpoints.length > 0 ? (
                 <div className="grid gap-3">
-                  {endpoints.map((ep) => {
+                  {endpoints.map((ep: Endpoint) => {
                     const successRate =
                       ep.totalTests && ep.totalTests > 0
                         ? ((ep.successfulTests || 0) / ep.totalTests) * 100
@@ -254,7 +291,7 @@ export default function AgentDetailsPage() {
 
               {observations && observations.length > 0 ? (
                 <div className="grid gap-3">
-                  {observations.map((obs) => {
+                  {observations.map((obs: Observation) => {
                     const isExpanded = expandedTest === obs._id
 
                     return (
@@ -315,7 +352,7 @@ export default function AgentDetailsPage() {
                                   Issues Found:
                                 </p>
                                 <ul className="list-disc list-inside text-red-400/70 text-xs">
-                                  {obs.issues.map((issue, i) => (
+                                  {obs.issues.map((issue: any, i: number) => (
                                     <li key={i}>{issue}</li>
                                   ))}
                                 </ul>
@@ -327,7 +364,7 @@ export default function AgentDetailsPage() {
                                 <p className="text-white/40 text-xs font-medium mb-2">
                                   Transcript:
                                 </p>
-                                {obs.transcript.map((msg, i) => (
+                                {obs.transcript.map((msg: any, i: number) => (
                                   <div
                                     key={i}
                                     className={`text-xs mb-2 ${
@@ -379,7 +416,7 @@ export default function AgentDetailsPage() {
 
               {credentials && credentials.length > 0 ? (
                 <div className="grid gap-3">
-                  {credentials.map((cred, i) => (
+                  {credentials.map((cred: Credential, i: number) => (
                     <div
                       key={cred.credentialId || i}
                       className="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-white/5"

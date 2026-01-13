@@ -86,7 +86,7 @@ export function ClaimGhost() {
       // Removed floating animation - using scroll-based motion instead
 
       // Particle animations
-      gsap.utils.toArray<HTMLElement>('.particle').forEach((particle, i) => {
+      gsap.utils.toArray<HTMLElement>('.particle').forEach((particle: any, i: number) => {
         gsap.to(particle, {
           y: -100,
           x: gsap.utils.random(-50, 50),
@@ -157,7 +157,7 @@ export function ClaimGhost() {
           { x: 32, size: 2.5 },
           { x: 72, size: 5.5 },
           { x: 92, size: 3 },
-        ].map((particle, i) => (
+        ].map((particle: any, i: number) => (
           <div
             key={i}
             className="particle absolute"
@@ -228,7 +228,7 @@ export function ClaimGhost() {
 
             {/* Feature cards */}
             <div ref={cardsRef} className="space-y-4 pt-4">
-              {features.map((feature, i) => (
+              {features.map((feature: any, i: number) => (
                 <div
                   key={i}
                   className="claim-card group p-6 rounded-2xl bg-linear-to-br from-card/80 to-card/40 border border-border/50 hover:border-primary/40 transition-all duration-300 backdrop-blur-sm hover:shadow-[0_0_30px_rgba(204,255,0,0.1)]"

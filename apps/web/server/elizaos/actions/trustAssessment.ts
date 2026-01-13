@@ -86,13 +86,13 @@ export const trustAssessmentAction: Action = {
             ])
 
             const tokenMap = new Map()
-            tokenInfos.forEach((t) => tokenMap.set(t.id, t))
+            tokenInfos.forEach((t: any) => tokenMap.set(t.id, t))
 
             let riskyCount = 0
             let verifiedCount = 0
             let totalExploitScore = 0
 
-            mints.forEach((mint) => {
+            mints.forEach((mint: any) => {
               const token = tokenMap.get(mint)
               const warnings = shieldData.warnings[mint] || []
               const risk = analyzeTokenRisk(token || ({} as Partial<TokenInfo>), warnings)
@@ -190,19 +190,19 @@ export const trustAssessmentAction: Action = {
 
       if (greenFlags.length > 0) {
         responseText += `✅ **Green Flags:**\n`
-        greenFlags.forEach((f) => (responseText += `- ${f}\n`))
+        greenFlags.forEach((f: any) => (responseText += `- ${f}\n`))
         responseText += `\n`
       }
 
       if (yellowFlags.length > 0) {
         responseText += `⚠️ **Yellow Flags:**\n`
-        yellowFlags.forEach((f) => (responseText += `- ${f}\n`))
+        yellowFlags.forEach((f: any) => (responseText += `- ${f}\n`))
         responseText += `\n`
       }
 
       if (redFlags.length > 0) {
         responseText += `🚩 **Red Flags:**\n`
-        redFlags.forEach((f) => (responseText += `- ${f}\n`))
+        redFlags.forEach((f: any) => (responseText += `- ${f}\n`))
         responseText += `\n`
       }
 

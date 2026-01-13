@@ -313,7 +313,7 @@ class ComprehensiveIntegrationRunner {
     })
 
     // Identify bottlenecks (>2 seconds)
-    Object.entries(this.results.performance.apiResponseTimes).forEach(([path, metrics]) => {
+    Object.entries(this.results.performance.apiResponseTimes).forEach(([path, metrics]: [string, any]) => {
       if (metrics.avg > 2000) {
         this.results.performance.bottlenecks.push(`${path}: ${metrics.avg.toFixed(0)}ms avg`)
       }
@@ -405,7 +405,7 @@ class ComprehensiveIntegrationRunner {
     console.log(`Average Chain Length: ${this.results.correlations.averageChainLength.toFixed(1)} events`)
 
     console.log('\nService Distribution:')
-    Object.entries(this.results.correlations.serviceHops).forEach(([service, count]) => {
+    Object.entries(this.results.correlations.serviceHops).forEach(([service, count]: [string, any]) => {
       console.log(`  ${service}: ${count} events`)
     })
 
@@ -432,7 +432,7 @@ class ComprehensiveIntegrationRunner {
     } else {
       console.log(`Total Errors: ${totalErrors}`)
       console.log('Error Breakdown:')
-      Object.entries(this.results.errors.errorTypes).forEach(([type, count]) => {
+      Object.entries(this.results.errors.errorTypes).forEach(([type, count]: [string, any]) => {
         console.log(`  ${type}: ${count} occurrences`)
       })
       console.log(`Error Recovery: ${this.results.errors.errorRecovery} successful recoveries`)

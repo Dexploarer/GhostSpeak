@@ -444,7 +444,7 @@ Your limit resets at midnight UTC. Come back tomorrow for more! 👻`,
 
               {/* Starter Prompts */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl w-full">
-                {starterPrompts.map((starter) => (
+                {starterPrompts.map((starter: any) => (
                   <button
                     key={starter.label}
                     onClick={() => handleSend(starter.prompt)}
@@ -461,7 +461,7 @@ Your limit resets at midnight UTC. Come back tomorrow for more! 👻`,
             </div>
           ) : (
             <div className="space-y-6 max-w-3xl mx-auto">
-              {localMessages.map((msg, idx) => (
+              {localMessages.map((msg: any, idx: number) => (
                 <div key={idx} className="flex items-start gap-4">
                   <div className="shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
                     <span className="text-xs text-white">{msg.role === 'user' ? 'You' : 'AI'}</span>

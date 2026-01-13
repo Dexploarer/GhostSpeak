@@ -128,7 +128,7 @@ export const Navigation: React.FC = () => {
               layout
               className="hidden md:flex items-center justify-center absolute left-1/2 -translate-x-1/2"
             >
-              {navItems.map((item) => {
+              {navItems.map((item: any) => {
                 const Icon = item.icon
                 const LinkComponent = item.external ? 'a' : Link
                 const isCurrent = !item.external && pathname === item.href
@@ -221,7 +221,7 @@ export const Navigation: React.FC = () => {
                 <ConnectWalletButton variant="gradient" className="w-full justify-center" />
               </motion.div>
 
-              {navItems.map((item, idx) => {
+              {navItems.map((item: any, idx: number) => {
                 const LinkComponent = item.external ? 'a' : Link
                 const isCurrent = !item.external && pathname === item.href
 

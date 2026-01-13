@@ -77,12 +77,14 @@ const USDC_DECIMALS = 6
 const DEFAULT_COMPUTE_UNIT_LIMIT = 8_000
 const DEFAULT_COMPUTE_UNIT_PRICE_MICROLAMPORTS = 1n
 
-// Network mapping (v1 string -> CAIP-2)
+// Network mapping (supports CAIP-2 format and legacy v1 strings)
 const NETWORK_TO_RPC: Record<string, string> = {
+  // v1 compatibility
   solana: 'https://api.mainnet-beta.solana.com',
-  'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp': 'https://api.mainnet-beta.solana.com',
   'solana-devnet': 'https://api.devnet.solana.com',
-  'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1': 'https://api.devnet.solana.com',
+  // v2 CAIP-2 format (network:genesis_hash)
+  'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp': 'https://api.mainnet-beta.solana.com', // Mainnet
+  'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1': 'https://api.devnet.solana.com', // Devnet
 }
 
 // Safety limit: max $0.10 USDC per payment (100,000 micro-USDC)
@@ -222,12 +224,13 @@ export const createX402Payment = internalAction({
     }
 
     // 4. Determine RPC URL from network
+    // x402 payments use mainnet by default (real USDC, real PayAI)
     const rpcUrl =
       NETWORK_TO_RPC[paymentRequirements.network] ||
-      process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
-      'https://api.mainnet-beta.solana.com'
+      'https://api.mainnet-beta.solana.com' // Default to mainnet for x402
 
     console.log('[caisperX402] Using RPC:', rpcUrl)
+    console.log('[caisperX402] Network:', paymentRequirements.network)
 
     try {
       // 5. Get Caisper's USDC token account

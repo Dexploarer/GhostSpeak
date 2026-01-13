@@ -86,7 +86,7 @@ export const POST = withMiddleware(async (request) => {
     responseStatus = response.status
 
     // Capture response headers
-    response.headers.forEach((value, key) => {
+    response.headers.forEach((value: string, key: string) => {
       responseHeaders[key] = value
     })
 

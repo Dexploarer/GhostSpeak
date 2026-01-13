@@ -5,7 +5,7 @@
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '../convex/_generated/api'
 
-const OLD_ADDRESS = 'CjNXSBUPTM3aAuqLB2KWBN66VTmnh5o1sYeQW8YaQimc'
+const OLD_ADDRESS = 'DwQDiEQzk5QAdYvA8aBcf9txLCUhV1MG5zzoDcDLnEqc'
 const NEW_ADDRESS = process.env.CAISPER_WALLET_ADDRESS!
 
 async function main() {

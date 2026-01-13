@@ -33,7 +33,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({ items, class
       {/* Vertical Line */}
       <div className="absolute left-[19px] top-6 bottom-6 w-[2px] bg-white/5" />
 
-      {items.map((item, index) => (
+      {items.map((item: ActivityTimelineItem, index: number) => (
         <motion.div
           key={item.id}
           initial={{ opacity: 0, x: -20 }}
@@ -45,7 +45,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({ items, class
           <div
             className={cn(
               'absolute left-[15px] top-1.5 w-[10px] h-[10px] rounded-full ring-4 z-10 transition-all duration-300 group-hover:scale-125',
-              dotColors[item.type]
+              dotColors[item.type as keyof typeof dotColors]
             )}
           />
 

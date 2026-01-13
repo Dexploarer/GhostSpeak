@@ -14,6 +14,38 @@ import { api } from '@/convex/_generated/api'
 import { fetchQuery, fetchMutation, fetchAction } from 'convex/nextjs'
 import { withMiddleware, jsonResponse, errorResponse, handleCORS } from '@/lib/api/middleware'
 
+// Type for discovered agent from Convex
+type DiscoveredAgent = {
+  _id: string
+  ghostAddress: string
+  name?: string
+  description?: string
+  domainUrl?: string
+  status: 'discovered' | 'claimed' | 'verified'
+  discoverySource?: string
+  firstSeenTimestamp: number
+  claimedBy?: string
+  claimedAt?: number
+}
+
+// Type for agent endpoint from Convex
+type AgentEndpoint = {
+  _id: string
+  agentAddress: string
+  method: string
+  endpoint: string
+  baseUrl?: string
+  description?: string
+  category?: string
+  priceUsdc: number
+  isActive: boolean
+  lastTestedAt?: number
+  avgQualityScore?: number
+  totalTests?: number
+  successfulTests?: number
+  avgResponseTimeMs?: number
+}
+
 export const GET = withMiddleware(async (request) => {
   const searchParams = request.nextUrl.searchParams
   const address = searchParams.get('address')
@@ -23,13 +55,13 @@ export const GET = withMiddleware(async (request) => {
   const offset = parseInt(searchParams.get('offset') || '0')
 
   // Get all discovered agents from Convex
-  const allAgents = await fetchQuery(api.ghostDiscovery.listDiscoveredAgents, {})
+  const allAgents = (await fetchQuery(api.ghostDiscovery.listDiscoveredAgents, {})) as DiscoveredAgent[]
 
   // Get all registered endpoints
-  const allEndpoints = await fetchQuery(api.observation.listEndpoints, {})
+  const allEndpoints = (await fetchQuery(api.observation.listEndpoints, {})) as AgentEndpoint[]
 
   // Build endpoint map: agentAddress -> endpoints[]
-  const endpointsByAgent = new Map<string, typeof allEndpoints>()
+  const endpointsByAgent = new Map<string, AgentEndpoint[]>()
   for (const endpoint of allEndpoints) {
     if (!endpointsByAgent.has(endpoint.agentAddress)) {
       endpointsByAgent.set(endpoint.agentAddress, [])
@@ -59,7 +91,7 @@ export const GET = withMiddleware(async (request) => {
           firstSeen: agent.firstSeenTimestamp,
           claimedBy: agent.claimedBy,
         },
-        endpoints: endpoints.map((ep) => ({
+        endpoints: endpoints.map((ep: any) => ({
           name: ep.description || `${ep.method} ${ep.endpoint}`,
           description: ep.description,
           url: ep.endpoint,
@@ -101,7 +133,7 @@ export const GET = withMiddleware(async (request) => {
   const paginatedAgents = filteredAgents.slice(offset, offset + limit)
 
   // Format response
-  const agents = paginatedAgents.map((agent) => {
+  const agents = paginatedAgents.map((agent: any) => {
     const endpoints = endpointsByAgent.get(agent.ghostAddress) || []
     return {
       address: agent.ghostAddress,

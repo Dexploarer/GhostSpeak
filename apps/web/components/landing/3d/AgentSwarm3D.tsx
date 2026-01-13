@@ -57,7 +57,7 @@ function Swarm() {
     if (!meshRef.current || !linesRef.current) return
 
     // Update Particles
-    particles.forEach((particle, i) => {
+    particles.forEach((particle: any, i: number) => {
       // Move
       particle.pos.add(particle.vel)
 

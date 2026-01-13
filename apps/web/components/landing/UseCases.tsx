@@ -97,7 +97,7 @@ export function UseCases() {
 
         {/* Use Case Grid */}
         <div className="grid md:grid-cols-2 gap-6 mb-12">
-          {useCases.map((useCase, i) => (
+          {useCases.map((useCase: any, i: number) => (
             <motion.div
               key={useCase.title}
               initial={{ opacity: 0, y: 30 }}
@@ -136,7 +136,7 @@ export function UseCases() {
 
                   {/* Benefits */}
                   <div className="space-y-3">
-                    {useCase.benefits.map((benefit, j) => (
+                    {useCase.benefits.map((benefit: any, j: number) => (
                       <div key={j} className="flex items-start gap-3">
                         <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />
                         <span className="text-sm text-muted-foreground">{benefit}</span>
@@ -162,7 +162,7 @@ export function UseCases() {
             { label: 'Network', value: 'Mainnet' },
             { label: 'Initial Integrations', value: '3+' },
             { label: 'Starting Ghost Score', value: '1,000' },
-          ].map((stat, i) => (
+          ].map((stat: any, i: number) => (
             <div key={i} className="text-center p-4">
               <div className="text-3xl font-black text-primary mb-1">{stat.value}</div>
               <div className="text-xs text-muted-foreground font-mono uppercase tracking-wider">

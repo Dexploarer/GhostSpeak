@@ -7,6 +7,16 @@ import { Footer } from '@/components/layout/Footer'
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
+// Type for discovered agent from Convex
+type DiscoveredAgent = {
+  _id: string
+  ghostAddress: string
+  name?: string
+  description?: string
+  status: 'verified' | 'claimed' | 'discovered'
+  discoverySource?: string
+}
+
 export default function AgentsDirectoryPage() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
@@ -24,14 +34,14 @@ export default function AgentsDirectoryPage() {
   // Build a Set of agent addresses that have endpoints
   const agentsWithEndpoints = useMemo(() => {
     if (!allEndpoints) return new Set<string>()
-    return new Set(allEndpoints.map((e) => e.agentAddress))
+    return new Set(allEndpoints.map((e: { agentAddress: string }) => e.agentAddress))
   }, [allEndpoints])
 
   // Filter and search agents
   const filteredAgents = useMemo(() => {
     if (!agents) return []
 
-    return agents.filter((agent) => {
+    return agents.filter((agent: DiscoveredAgent) => {
       // Search filter
       const query = searchQuery.toLowerCase()
       const matchesSearch =
@@ -60,9 +70,9 @@ export default function AgentsDirectoryPage() {
 
     return {
       total: agents.length,
-      verified: agents.filter((a) => a.status === 'verified').length,
-      claimed: agents.filter((a) => a.status === 'claimed').length,
-      withEndpoints: agents.filter((a) => agentsWithEndpoints.has(a.ghostAddress)).length,
+      verified: agents.filter((a: DiscoveredAgent) => a.status === 'verified').length,
+      claimed: agents.filter((a: DiscoveredAgent) => a.status === 'claimed').length,
+      withEndpoints: agents.filter((a: DiscoveredAgent) => agentsWithEndpoints.has(a.ghostAddress)).length,
     }
   }, [agents, agentsWithEndpoints])
 
@@ -171,7 +181,7 @@ export default function AgentsDirectoryPage() {
 
         {!isLoading && filteredAgents.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredAgents.map((agent) => {
+            {filteredAgents.map((agent: DiscoveredAgent) => {
               const hasEndpoints = agentsWithEndpoints.has(agent.ghostAddress)
 
               return (

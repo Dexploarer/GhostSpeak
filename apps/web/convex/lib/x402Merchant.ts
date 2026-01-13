@@ -28,7 +28,7 @@ export interface MerchantPaymentConfig {
 
 export interface PaymentRequirements402 {
   scheme: 'exact' | 'upto'
-  network: string // 'solana' or CAIP-2 format
+  network: string // CAIP-2 format (e.g., 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp')
   asset: string // USDC mint address
   payTo: string // Merchant address
   maxAmountRequired: string // Amount in atomic units (micro-USDC)
@@ -65,8 +65,9 @@ const USDC_MINT_DEVNET = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'
 // PayAI facilitator address (devnet)
 const PAYAI_FACILITATOR_DEVNET = 'PayAiFacilitatorDevnetAddress11111111111111'
 
-// Default network
-const DEFAULT_NETWORK = 'solana'
+// Network identifiers (CAIP-2 format)
+const SOLANA_MAINNET_CAIP2 = 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp' // Mainnet genesis hash
+const SOLANA_DEVNET_CAIP2 = 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1' // Devnet genesis hash
 
 // ─── HELPER: Get USDC Mint for Network ───────────────────────────────────────
 
@@ -100,7 +101,11 @@ export function generate402Response(config: MerchantPaymentConfig): {
   body: PaymentRequirements402
   accepts: PaymentRequirements402[]
 } {
-  const network = process.env.SOLANA_NETWORK || DEFAULT_NETWORK
+  // x402 payments ALWAYS use mainnet (real USDC, real PayAI)
+  // Even when GhostSpeak program is on devnet
+  const envNetwork = process.env.X402_NETWORK || 'mainnet'
+  const network = envNetwork.includes('devnet') ? SOLANA_DEVNET_CAIP2 : SOLANA_MAINNET_CAIP2
+
   const usdcMint = getUsdcMint(network)
   const facilitator = config.facilitatorAddress || process.env.PAYAI_FACILITATOR_ADDRESS
 
@@ -109,7 +114,7 @@ export function generate402Response(config: MerchantPaymentConfig): {
 
   const requirements: PaymentRequirements402 = {
     scheme: 'exact',
-    network,
+    network, // Now uses CAIP-2 format
     asset: usdcMint,
     payTo: config.payTo,
     maxAmountRequired: amountMicro,
@@ -119,8 +124,8 @@ export function generate402Response(config: MerchantPaymentConfig): {
     },
   }
 
-  // Build WWW-Authenticate header per x402 spec
-  // Format: x402 scheme="exact", network="solana", asset="...", payTo="...", maxAmountRequired="..."
+  // Build WWW-Authenticate header per x402 v2 spec
+  // Format: x402 scheme="exact", network="solana:...", asset="...", payTo="...", maxAmountRequired="..."
   const headerParts = [
     `x402`,
     `scheme="${requirements.scheme}"`,

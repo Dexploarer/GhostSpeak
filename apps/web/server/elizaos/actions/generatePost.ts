@@ -1,6 +1,4 @@
 import type { Action, IAgentRuntime, Memory, State, HandlerCallback } from '@elizaos/core'
-import { generateText } from 'ai'
-import { createOpenAI } from '@ai-sdk/openai'
 
 /**
  * Post template types for different use cases
@@ -309,13 +307,9 @@ export const generatePostAction: Action = {
       console.log(`📋 Post type: ${template.name}`)
       console.log(`📝 Topic: ${topic}`)
 
-      // Initialize AI Gateway OpenAI client
-      const openai = createOpenAI({
-        apiKey: String(runtime.getSetting('AI_GATEWAY_API_KEY') || process.env.AI_GATEWAY_API_KEY || ''),
-        baseURL: 'https://ai-gateway.vercel.sh/v1',
-      })
-
-      if (!openai) {
+      // Get AI Gateway API key
+      const apiKey = String(runtime.getSetting('AI_GATEWAY_API_KEY') || process.env.AI_GATEWAY_API_KEY || '')
+      if (!apiKey) {
         throw new Error('AI Gateway API key not configured')
       }
 
@@ -342,14 +336,34 @@ ${GHOSTSPEAK_POST_VOICE.toneRules.map(r => `- ${r}`).join('\n')}
 
 Return ONLY the ${template.variationCount} posts, numbered 1-${template.variationCount}, nothing else.`
 
-      // Generate posts using AI Gateway
-      // Note: Cast to any due to @ai-sdk/provider version mismatch (v2 vs v3)
-      const { text: postsText } = await generateText({
-        model: openai('gpt-4o-mini') as any,
-        prompt: `Generate ${template.variationCount} ${template.name.toLowerCase()} variations about: ${topic}`,
-        system: systemPrompt,
-        temperature: 0.9, // High creativity for varied posts
+      // Generate posts using AI Gateway (direct fetch)
+      const aiResponse = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'openai/gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `Generate ${template.variationCount} ${template.name.toLowerCase()} variations about: ${topic}` },
+          ],
+          temperature: 0.9,
+        }),
       })
+
+      if (!aiResponse.ok) {
+        const errorText = await aiResponse.text()
+        throw new Error(`AI Gateway request failed: ${aiResponse.status} ${errorText}`)
+      }
+
+      const data = await aiResponse.json()
+      const postsText = data.choices[0]?.message?.content || ''
+
+      if (!postsText) {
+        throw new Error('No post content generated')
+      }
 
       console.log('✅ Posts generated, parsing variations...')
 

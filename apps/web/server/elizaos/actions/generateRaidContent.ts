@@ -1,6 +1,4 @@
 import type { Action, IAgentRuntime, Memory, State, HandlerCallback } from '@elizaos/core'
-import { generateText } from 'ai'
-import { createOpenAI } from '@ai-sdk/openai'
 
 /**
  * Raid package types
@@ -279,13 +277,9 @@ export const generateRaidContentAction: Action = {
       console.log(`📋 Raid type: ${config.name}`)
       console.log(`📝 Topic: ${topic}`)
 
-      // Initialize AI Gateway OpenAI client
-      const openai = createOpenAI({
-        apiKey: String(runtime.getSetting('AI_GATEWAY_API_KEY') || process.env.AI_GATEWAY_API_KEY || ''),
-        baseURL: 'https://ai-gateway.vercel.sh/v1',
-      })
-
-      if (!openai) {
+      // Get AI Gateway API key
+      const apiKey = String(runtime.getSetting('AI_GATEWAY_API_KEY') || process.env.AI_GATEWAY_API_KEY || '')
+      if (!apiKey) {
         throw new Error('AI Gateway API key not configured')
       }
 
@@ -293,10 +287,18 @@ export const generateRaidContentAction: Action = {
       console.log('🧵 Generating main raid thread...')
       const threadLength = Math.ceil((config.threadLength.min + config.threadLength.max) / 2)
 
-      const { text: threadText } = await generateText({
-        model: openai('gpt-4o-mini') as any,
-        prompt: `Generate a ${threadLength}-tweet raid thread for GhostSpeak about: ${topic}`,
-        system: `${config.systemPrompt}
+      const threadResponse = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'openai/gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `${config.systemPrompt}
 
 Generate the MAIN THREAD only (${threadLength} tweets).
 
@@ -308,17 +310,36 @@ Generate the MAIN THREAD only (${threadLength} tweets).
 - High energy, FOMO-inducing
 
 Return numbered tweets only.`,
-        temperature: 0.8,
+            },
+            { role: 'user', content: `Generate a ${threadLength}-tweet raid thread for GhostSpeak about: ${topic}` },
+          ],
+          temperature: 0.8,
+        }),
       })
 
+      if (!threadResponse.ok) {
+        const errorText = await threadResponse.text()
+        throw new Error(`AI Gateway request failed (thread): ${threadResponse.status} ${errorText}`)
+      }
+
+      const threadData = await threadResponse.json()
+      const threadText = threadData.choices[0]?.message?.content || ''
       const mainThread = parseThreadTweets(threadText, threadLength)
 
       // Generate quote tweets
       console.log('💬 Generating quote tweet variations...')
-      const { text: quotesText } = await generateText({
-        model: openai('gpt-4o-mini') as any,
-        prompt: `Generate ${config.quoteCount} quote tweet variations for a raid about: ${topic}`,
-        system: `Generate ${config.quoteCount} QUOTE TWEET variations that community members can use to quote tweet the main thread.
+      const quotesResponse = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'openai/gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `Generate ${config.quoteCount} QUOTE TWEET variations that community members can use to quote tweet the main thread.
 
 **QUOTE TWEET PURPOSE:**
 - Amplify the main thread
@@ -333,17 +354,36 @@ Return numbered tweets only.`,
 - Genuine enthusiasm
 
 Return numbered quote tweets only (1-${config.quoteCount}).`,
-        temperature: 0.9,
+            },
+            { role: 'user', content: `Generate ${config.quoteCount} quote tweet variations for a raid about: ${topic}` },
+          ],
+          temperature: 0.9,
+        }),
       })
 
+      if (!quotesResponse.ok) {
+        const errorText = await quotesResponse.text()
+        throw new Error(`AI Gateway request failed (quotes): ${quotesResponse.status} ${errorText}`)
+      }
+
+      const quotesData = await quotesResponse.json()
+      const quotesText = quotesData.choices[0]?.message?.content || ''
       const quoteTweets = parsePostVariations(quotesText, config.quoteCount)
 
       // Generate standalone posts
       console.log('📝 Generating standalone posts...')
-      const { text: postsText } = await generateText({
-        model: openai('gpt-4o-mini') as any,
-        prompt: `Generate ${config.postCount} standalone posts for a raid about: ${topic}`,
-        system: `Generate ${config.postCount} STANDALONE POST variations for the raid.
+      const postsResponse = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'openai/gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `Generate ${config.postCount} STANDALONE POST variations for the raid.
 
 **STANDALONE POST PURPOSE:**
 - Alternative shares (not quote tweets)
@@ -358,8 +398,20 @@ Return numbered quote tweets only (1-${config.quoteCount}).`,
 - Complete thoughts (not thread-dependent)
 
 Return numbered posts only (1-${config.postCount}).`,
-        temperature: 0.9,
+            },
+            { role: 'user', content: `Generate ${config.postCount} standalone posts for a raid about: ${topic}` },
+          ],
+          temperature: 0.9,
+        }),
       })
+
+      if (!postsResponse.ok) {
+        const errorText = await postsResponse.text()
+        throw new Error(`AI Gateway request failed (posts): ${postsResponse.status} ${errorText}`)
+      }
+
+      const postsData = await postsResponse.json()
+      const postsText = postsData.choices[0]?.message?.content || ''
 
       const standalonePosts = parsePostVariations(postsText, config.postCount)
 

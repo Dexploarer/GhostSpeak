@@ -1,6 +1,4 @@
 import type { Action, HandlerCallback, IAgentRuntime, Memory, State } from '@elizaos/core'
-import { generateText } from 'ai'
-import { createOpenAI } from '@ai-sdk/openai'
 
 export const writeCaptionAction: Action = {
   name: 'WRITE_CAPTION',
@@ -46,10 +44,11 @@ export const writeCaptionAction: Action = {
         .replace(/write|caption|tweet|for|about|post/gi, '')
         .trim()
 
-      const openai = createOpenAI({
-        apiKey: String(runtime.getSetting('AI_GATEWAY_API_KEY') || process.env.AI_GATEWAY_API_KEY || ''),
-        baseURL: 'https://ai-gateway.vercel.sh/v1',
-      })
+      // Get AI Gateway API key
+      const apiKey = String(runtime.getSetting('AI_GATEWAY_API_KEY') || process.env.AI_GATEWAY_API_KEY || '')
+      if (!apiKey) {
+        throw new Error('AI Gateway API key not configured')
+      }
 
       const systemPrompt = `You are Boo, GhostSpeak's community marketing helper.
 
@@ -71,16 +70,38 @@ Generate 3 Twitter/X captions for GhostSpeak community content.
 
 Return ONLY the 3 captions, numbered 1-3, nothing else.`
 
-      const { text: captionsText } = await generateText({
-        model: openai('gpt-4o-mini') as any,
-        prompt: `Generate 3 Twitter captions for: ${topic}`,
-        system: systemPrompt,
+      // Generate captions using AI Gateway (direct fetch)
+      const aiResponse = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'openai/gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `Generate 3 Twitter captions for: ${topic}` },
+          ],
+        }),
       })
+
+      if (!aiResponse.ok) {
+        const errorText = await aiResponse.text()
+        throw new Error(`AI Gateway request failed: ${aiResponse.status} ${errorText}`)
+      }
+
+      const data = await aiResponse.json()
+      const captionsText = data.choices[0]?.message?.content || ''
+
+      if (!captionsText) {
+        throw new Error('No caption content generated')
+      }
 
       // Parse and format captions
       const captions = captionsText
         .split(/\n(?=\d\.)/)
-        .filter(line => line.trim())
+        .filter((line: string) => line.trim())
         .slice(0, 3)
 
       let response = '📝 **Twitter/X Captions Generated!**\n\n'

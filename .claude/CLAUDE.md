@@ -52,7 +52,6 @@ apps/
   web/                      # Next.js 15 + Convex backend + React 19
 packages/
   sdk-typescript/           # @ghostspeak/sdk - Core TypeScript SDK
-  api/                      # @ghostspeak/api - REST API (Bun.serve)
   plugin-ghostspeak/        # @ghostspeak/plugin-elizaos - ElizaOS plugin
 programs/                   # Anchor smart contracts (Rust)
   src/
@@ -67,7 +66,6 @@ Note: CLI (@ghostspeak/cli) is in a separate repository at github.com/Ghostspeak
 
 ```
 web → sdk + plugin-ghostspeak
-api → sdk
 plugin-ghostspeak → sdk
 ```
 

@@ -8,10 +8,8 @@
 |---------|---------|----------|
 | **@ghostspeak/sdk** | Core TypeScript SDK | `packages/sdk-typescript/` |
 | **@ghostspeak/cli** | Terminal interface | [github.com/Ghostspeak/cli](https://github.com/Ghostspeak/cli) *(separate repo)* |
-| **web** | Next.js frontend | `packages/web/` |
-| **@ghostspeak/api** | REST API | `packages/api/` |
+| **web** | Next.js frontend + API | `apps/web/` |
 | **@ghostspeak/plugin-elizaos** | ElizaOS integration | `packages/plugin-ghostspeak/` |
-| **@ghostspeak/shared** | Shared types & utilities | `packages/shared/` |
 | **ghostspeak-marketplace** | Anchor program (Rust) | `programs/ghostspeak-marketplace/` |
 
 ---
@@ -27,23 +25,16 @@
           ┌─────────────────────────┼─────────────────────────┐
           │                         │                         │
           ▼                         ▼                         ▼
-┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
-│ @ghostspeak/cli │       │ @ghostspeak/api │       │ plugin-elizaos  │
-│ (separate repo) │       │    (REST)       │       │   (agents)      │
-└─────────────────┘       └────────┬────────┘       └────────┬────────┘
+┌─────────────────┐                │                ┌─────────────────┐
+│ @ghostspeak/cli │                │                │ plugin-elizaos  │
+│ (separate repo) │                │                │   (agents)      │
+└─────────────────┘                │                └────────┬────────┘
                                    │                         │
-                                   ▼                         │
-                          ┌─────────────────┐                │
-                          │ @ghostspeak/    │                │
-                          │    shared       │◄───────────────┘
-                          │  (types/utils)  │
-                          └────────┬────────┘
-                                   │
-                                   ▼
-                          ┌─────────────────┐
-                          │      web        │
-                          │  (Next.js +     │
-                          │   Convex)       │
+                                   ▼                         ▼
+                          ┌─────────────────┐       ┌─────────────────┐
+                          │      web        │       │   miniapp       │
+                          │  (Next.js +     │       │  (Telegram)     │
+                          │   Convex + API) │       └─────────────────┘
                           └─────────────────┘
 ```
 
@@ -141,29 +132,7 @@ bun add -g @ghostspeak/cli
 
 ---
 
-### 4. @ghostspeak/api (`packages/api/`)
-
-**Public REST API for agent identity & reputation lookup.**
-
-#### Endpoints (`src/routes/`)
-```
-GET  /health                        # Health check
-GET  /stats                         # API statistics
-GET  /ghosts/:address               # Get ghost by Solana address
-GET  /ghosts/:address/score         # Get Ghost Score
-GET  /ghosts/:address/reputation    # Get reputation breakdown
-GET  /ghosts/external/:platform/:id # Get ghost by external ID
-```
-
-#### Architecture
-- Built with `Bun.serve()` (no Express)
-- Rate limiting (100 req/min default)
-- CORS-enabled
-- Convex integration for data
-
----
-
-### 5. @ghostspeak/plugin-elizaos (`packages/plugin-ghostspeak/`)
+### 4. @ghostspeak/plugin-elizaos (`packages/plugin-ghostspeak/`)
 
 **ElizaOS plugin for AI agent integration.**
 
@@ -371,17 +340,6 @@ GhostSpeak/
 │   │   │   └── utils/        # Utilities
 │   │   └── dist/             # Build output
 │   │
-│   ├── web/                  # Next.js app
-│   │   ├── app/              # Pages & routes
-│   │   ├── components/       # React components
-│   │   ├── convex/           # Backend functions
-│   │   └── server/           # Server-side code
-│   │
-│   ├── api/                  # REST API
-│   │   └── src/
-│   │       ├── routes/       # Endpoints
-│   │       └── services/     # Business logic
-│   │
 │   ├── plugin-ghostspeak/    # ElizaOS plugin
 │   │   └── src/
 │   │       ├── actions/      # Agent actions
@@ -393,6 +351,13 @@ GhostSpeak/
 │           ├── types/        # Type definitions
 │           ├── convex/       # Convex client
 │           └── solana/       # Solana helpers
+│
+├── apps/
+│   └── web/                  # Next.js app
+│       ├── app/              # Pages & routes
+│       ├── components/       # React components
+│       ├── convex/           # Backend functions
+│       └── server/           # Server-side code
 │
 ├── programs/
 │   └── ghostspeak-marketplace/  # Anchor program

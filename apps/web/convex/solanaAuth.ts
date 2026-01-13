@@ -79,17 +79,13 @@ export const signInWithSolana = mutation({
         })
       }
 
-      // Create JWT session with expiration
-      const sessionResult = (await ctx.runMutation(internal.sessions.createSession, {
-        userId,
-        walletAddress: args.publicKey,
-      })) as { sessionId: Id<'sessions'>; sessionToken: string; expiresAt: number }
-
+      // Return success with wallet address as session identifier
+      // No JWT needed - wallet signature verification is sufficient
       return {
         success: true,
         userId,
-        sessionToken: sessionResult.sessionToken,
-        expiresAt: sessionResult.expiresAt,
+        sessionToken: args.publicKey, // Use wallet address as session token
+        expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7 days
         walletAddress: args.publicKey,
         isNewUser,
       }

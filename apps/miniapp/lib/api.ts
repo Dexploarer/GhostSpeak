@@ -5,7 +5,9 @@
  * All business logic lives in apps/web, Mini App is just a UI
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://www.ghostspeak.io'
+import { config } from './config'
+
+const API_BASE = config.webAppUrl
 
 interface ApiError {
   error: string

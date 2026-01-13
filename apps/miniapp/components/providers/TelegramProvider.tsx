@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { init, backButton, themeParams, retrieveLaunchParams, retrieveRawInitData } from '@tma.js/sdk'
+import { isDevelopment } from '@/lib/env'
 
 interface TelegramContextValue {
   initDataRaw: string | null
@@ -56,25 +57,31 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
 
     try {
       // Initialize Telegram Mini App SDK
-      console.log('[TelegramProvider] Initializing Telegram SDK...')
+      if (isDevelopment) {
+        console.log('[Dev] [TelegramProvider] Initializing Telegram SDK...')
+      }
       init()
 
       // Get raw init data directly from @tma.js/bridge (2026 pattern)
       const initDataRaw = retrieveRawInitData()
-      console.log('[TelegramProvider] Raw init data retrieved:', {
-        hasInitDataRaw: !!initDataRaw,
-        initDataRawLength: initDataRaw?.length,
-      })
+      if (isDevelopment) {
+        console.log('[Dev] [TelegramProvider] Raw init data retrieved:', {
+          hasInitDataRaw: !!initDataRaw,
+          initDataRawLength: initDataRaw?.length,
+        })
+      }
 
       // Get launch parameters for user data and theme
       const launchParams = retrieveLaunchParams()
       const data = launchParams.initData ?? {}
       const theme = launchParams.themeParams ?? {}
 
-      console.log('[TelegramProvider] Launch params:', {
-        hasInitData: !!launchParams.initData,
-        hasUser: !!(launchParams.initData as any)?.user,
-      })
+      if (isDevelopment) {
+        console.log('[Dev] [TelegramProvider] Launch params:', {
+          hasInitData: !!launchParams.initData,
+          hasUser: !!(launchParams.initData as any)?.user,
+        })
+      }
 
       // Mount back button (hidden by default)
       backButton.mount()
@@ -103,28 +110,34 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
         isReady: true,
       }
 
-      console.log('[TelegramProvider] Setting context:', {
-        hasInitDataRaw: !!contextData.initDataRaw,
-        userId: contextData.userId,
-        username: contextData.username,
-      })
+      if (isDevelopment) {
+        console.log('[Dev] [TelegramProvider] Setting context:', {
+          hasInitDataRaw: !!contextData.initDataRaw,
+          userId: contextData.userId,
+          username: contextData.username,
+        })
+      }
 
       setContextValue(contextData)
       setIsReady(true)
 
       // Notify Telegram that Mini App is ready
       if (window.Telegram?.WebApp) {
-        console.log('[TelegramProvider] Notifying Telegram WebApp ready')
+        if (isDevelopment) {
+          console.log('[Dev] [TelegramProvider] Notifying Telegram WebApp ready')
+        }
         window.Telegram.WebApp.ready()
         window.Telegram.WebApp.expand()
       }
     } catch (error) {
       // Suppress LaunchParamsRetrieveError - expected when not in Telegram
-      console.error('[TelegramProvider] Error during initialization:', error)
-      if (error instanceof Error && error.message.includes('launch parameters')) {
-        console.info('[TelegramProvider] Running outside Telegram - will require login widget')
-      } else {
-        console.error('[TelegramProvider] Failed to initialize Telegram SDK:', error)
+      if (isDevelopment) {
+        console.error('[Dev] [TelegramProvider] Error during initialization:', error)
+        if (error instanceof Error && error.message.includes('launch parameters')) {
+          console.info('[Dev] [TelegramProvider] Running outside Telegram - will require login widget')
+        } else {
+          console.error('[Dev] [TelegramProvider] Failed to initialize Telegram SDK:', error)
+        }
       }
 
       // Check if user authenticated via login widget (stored in sessionStorage)
@@ -145,7 +158,9 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
           setIsReady(true)
           return
         } catch (parseError) {
-          console.error('Failed to parse stored telegram user:', parseError)
+          if (isDevelopment) {
+            console.error('[Dev] Failed to parse stored telegram user:', parseError)
+          }
         }
       }
 
@@ -189,7 +204,9 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
             lastName: user.last_name ?? null,
           })
         } catch (error) {
-          console.error('Failed to parse telegram user from storage:', error)
+          if (isDevelopment) {
+            console.error('[Dev] Failed to parse telegram user from storage:', error)
+          }
         }
       }
     }

@@ -1,0 +1,3 @@
+# Bun configuration for miniapp
+[test]
+preload = ["./__tests__/setup.ts"]

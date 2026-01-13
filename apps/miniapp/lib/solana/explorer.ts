@@ -4,6 +4,8 @@
  * Provides network detection and explorer URL generation for Solana
  */
 
+import { config } from '@/lib/config'
+
 export type SolanaNetwork = 'mainnet' | 'devnet' | 'testnet'
 
 /**
@@ -11,13 +13,13 @@ export type SolanaNetwork = 'mainnet' | 'devnet' | 'testnet'
  * Defaults to mainnet if not specified
  */
 export function getSolanaNetwork(): SolanaNetwork {
-  const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK?.toLowerCase()
+  const network = config.solana.network.toLowerCase()
 
   if (network === 'devnet') return 'devnet'
   if (network === 'testnet') return 'testnet'
 
   // Also check RPC URL for network hints
-  const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL?.toLowerCase() || ''
+  const rpcUrl = config.solana.rpcUrl.toLowerCase()
   if (rpcUrl.includes('devnet')) return 'devnet'
   if (rpcUrl.includes('testnet')) return 'testnet'
 

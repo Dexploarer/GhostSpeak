@@ -14,7 +14,6 @@
   "scripts": {
     "dev": "turbo dev:next dev:convex --filter=web",
     "dev:web": "cd apps/web && bun run dev",
-    "dev:cli": "cd packages/cli && bun run dev",
     "dev:api": "cd packages/api && bun run dev",
     "dev:sdk": "cd packages/sdk-typescript && bun run dev",
     "build": "turbo build && cd apps/web && bun run deploy:convex:prod",
@@ -22,7 +21,6 @@
     "build:miniapp": "cd apps/miniapp && bun run build",
     "build:packages": "turbo build --filter=!web",
     "build:sdk": "cd packages/sdk-typescript && bun run build",
-    "build:cli": "cd packages/cli && bun run build",
     "build:api": "cd packages/api && bun run build",
     "build:plugin": "cd packages/plugin-ghostspeak && bun run build",
     "build:anchor": "anchor build",
@@ -32,7 +30,6 @@
     "test": "turbo test",
     "test:web": "cd apps/web && bun run test",
     "test:sdk": "cd packages/sdk-typescript && bun run test",
-    "test:cli": "cd packages/cli && bun run test",
     "test:unit": "vitest run packages/**/tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "cd apps/web && bun run test:e2e",

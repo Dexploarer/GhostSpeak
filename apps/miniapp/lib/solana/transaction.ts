@@ -1,5 +1,6 @@
 import { createServerSolanaClient } from './client'
-import { TREASURY_WALLET, TOKENS } from '@/convex/lib/treasury'
+import { TREASURY_WALLET, TOKENS } from '@/lib/treasury'
+import { isDevelopment } from '@/lib/env'
 
 interface VerifyResult {
   valid: boolean
@@ -43,9 +44,8 @@ export async function verifyTransaction(
     // Using 'unknown' as intermediate cast to avoid branded type issues,
     // then casting to our defined interface
 
-    const response = (await client.rpc
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .getTransaction(signature as any, {
+    const response = (await client
+      .getTransaction(signature as unknown as never, {
         encoding: 'jsonParsed',
         maxSupportedTransactionVersion: 0,
         commitment: 'confirmed',
@@ -116,7 +116,9 @@ export async function verifyTransaction(
 
     return { valid: true }
   } catch (error) {
-    console.error('Verify transaction error:', error)
+    if (isDevelopment) {
+      console.error('[Dev] Verify transaction error:', error)
+    }
     return {
       valid: false,
       error: error instanceof Error ? error.message : 'Failed to verify transaction',

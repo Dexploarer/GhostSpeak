@@ -45,14 +45,16 @@ export function TabNavigation() {
             <Link
               key={tab.id}
               href={tab.href}
+              aria-label={`Navigate to ${tab.label}`}
+              aria-current={isActive ? 'page' : undefined}
               className={clsx(
-                'flex flex-col items-center justify-center gap-1 py-3 transition-colors',
+                'flex flex-col items-center justify-center gap-1 py-3 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset',
                 isActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground active:text-primary'
               )}
             >
-              <span className="text-2xl">{tab.icon}</span>
+              <span className="text-2xl" aria-hidden="true">{tab.icon}</span>
               <span className="text-xs font-medium">{tab.label}</span>
             </Link>
           )

@@ -9,8 +9,10 @@ import { createSolanaRpc } from '@solana/rpc'
 import { address } from '@solana/addresses'
 import type { Address } from '@solana/addresses'
 import { signature } from '@solana/keys'
+import { config } from '@/lib/config'
+import { isDevelopment } from '@/lib/env'
 
-const SOLANA_RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
+const SOLANA_RPC_URL = config.solana.rpcUrl
 const USDC_MINT_DEVNET = 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr' // Devnet USDC
 const USDC_MINT_MAINNET = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' // Mainnet USDC
 
@@ -91,7 +93,13 @@ export async function verifyPaymentTransaction(
         instruction.parsed.type === 'transfer' &&
         instruction.parsed.info
       ) {
-        const info = instruction.parsed.info as any
+        const info = instruction.parsed.info as {
+          source: string
+          destination: string
+          amount: string
+          mint?: string
+          authority?: string
+        }
         payer = info.source
         recipient = info.destination
         amount = parseFloat(info.amount) / 1_000_000 // Convert from microUSDC to USDC
@@ -114,14 +122,20 @@ export async function verifyPaymentTransaction(
       for (let i = 0; i < accounts.length; i++) {
         const account = accounts[i]
         // In Solana v5, accountKeys are objects with pubkey property
-        const accountKey = typeof account === 'string' ? account : (account as any).pubkey
+        const accountKey =
+          typeof account === 'string'
+            ? account
+            : (account as { pubkey: string }).pubkey
         if (accountKey && accountKey === expectedRecipient) {
           // Balances are bigint in Solana v5, convert to number
           const balanceChange = Number(postBalances[i]) - Number(preBalances[i])
           if (balanceChange > 0) {
             paymentFound = true
             const firstAccount = accounts[0]
-            payer = typeof firstAccount === 'string' ? firstAccount : (firstAccount as any).pubkey
+            payer =
+              typeof firstAccount === 'string'
+                ? firstAccount
+                : (firstAccount as { pubkey: string }).pubkey
             recipient = accountKey
             amount = balanceChange / 1_000_000_000 // Convert lamports to SOL
             tokenMint = 'SOL'
@@ -162,7 +176,9 @@ export async function verifyPaymentTransaction(
       },
     }
   } catch (error) {
-    console.error('Payment verification error:', error)
+    if (isDevelopment) {
+      console.error('[Dev] Payment verification error:', error)
+    }
     return {
       valid: false,
       error: error instanceof Error ? error.message : 'Unknown verification error',
@@ -171,11 +187,18 @@ export async function verifyPaymentTransaction(
 }
 
 /**
+ * Minimal Convex client interface for payment queries
+ */
+interface ConvexQueryClient {
+  query: (name: string, args: Record<string, unknown>) => Promise<unknown>
+}
+
+/**
  * Check if a transaction signature has already been used (prevent replay attacks)
  */
 export async function isTransactionUsed(
   transactionSignature: string,
-  convexClient: any // ConvexReactClient
+  convexClient: ConvexQueryClient
 ): Promise<boolean> {
   try {
     // Check in payments table
@@ -189,10 +212,17 @@ export async function isTransactionUsed(
 }
 
 /**
+ * Minimal Convex client interface for payment mutations
+ */
+interface ConvexMutationClient {
+  mutation: (name: string, args: Record<string, unknown>) => Promise<unknown>
+}
+
+/**
  * Record a verified payment in the database
  */
 export async function recordVerifiedPayment(
-  convexClient: any,
+  convexClient: ConvexMutationClient,
   paymentDetails: {
     transactionSignature: string
     payer: string

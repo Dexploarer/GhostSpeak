@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { isDevelopment } from '@/lib/env'
 
 interface WalletModalProps {
   open: boolean
@@ -27,7 +28,9 @@ export function WalletModal({ open, onOpenChange }: WalletModalProps) {
       await connect(walletName)
       onOpenChange(false)
     } catch (error) {
-      console.error('Connection error:', error)
+      if (isDevelopment) {
+        console.error('[Dev] Connection error:', error)
+      }
       alert(`Failed to connect: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setSelectedWallet(null)

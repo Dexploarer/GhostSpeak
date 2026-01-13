@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
+import { config } from '@/lib/config'
+import { isDevelopment } from '@/lib/env'
 
-interface JupiterSwapModalProps {
+interface JupiterSwapModalProps{
   isOpen: boolean
   onClose: () => void
 }
@@ -36,12 +38,14 @@ export function JupiterSwapModal({ isOpen, onClose }: JupiterSwapModalProps) {
           integratedTargetId: 'jupiter-terminal',
           formProps: {
             initialInputMint: 'So11111111111111111111111111111111111111112', // SOL
-            fixedOutputMint: process.env.NEXT_PUBLIC_GHOST_TOKEN_ADDRESS || 'DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump', // $GHOST
+            fixedOutputMint: config.solana.ghostTokenAddress, // $GHOST
           },
         })
         setIsLoaded(true)
       } catch (error) {
-        console.error('Error initializing Jupiter:', error)
+        if (isDevelopment) {
+          console.error('[Dev] Error initializing Jupiter:', error)
+        }
       }
     }
 

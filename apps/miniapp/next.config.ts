@@ -38,12 +38,9 @@ const nextConfig: NextConfig = {
     ]
   },
 
-  // Environment variables available to browser
-  env: {
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    NEXT_PUBLIC_CONVEX_URL: process.env.NEXT_PUBLIC_CONVEX_URL,
-    NEXT_PUBLIC_SOLANA_RPC_URL: process.env.NEXT_PUBLIC_SOLANA_RPC_URL,
-  },
+  // Environment variables are automatically exposed via NEXT_PUBLIC_ prefix
+  // No need to explicitly pass them here - Next.js handles this natively
+  // Validation is done in lib/env.ts using Zod schemas
 
   // Optimize for production
   poweredByHeader: false,

@@ -17,6 +17,8 @@ import {
 import { address, type Address } from '@solana/addresses'
 import { createSolanaRpc, type Rpc, type SolanaRpcApi } from '@solana/rpc'
 import { getSolanaNetwork, type SolanaNetwork } from '@/lib/solana/explorer'
+import { config } from '@/lib/config'
+import { isDevelopment } from '@/lib/env'
 
 // Wallet Standard Context Types
 interface WalletStandardContextValue {
@@ -50,7 +52,7 @@ interface WalletStandardProviderProps {
   children: React.ReactNode
   /**
    * Solana RPC endpoint URL
-   * @default process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
+   * @default config.solana.rpcUrl
    */
   endpoint?: string
 
@@ -75,8 +77,7 @@ export function WalletStandardProvider({
 
   // Create RPC client
   const rpc = useMemo(() => {
-    const rpcUrl =
-      endpoint || process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
+    const rpcUrl = endpoint || config.solana.rpcUrl
     return createSolanaRpc(rpcUrl)
   }, [endpoint])
 
@@ -163,12 +164,16 @@ export function WalletStandardProvider({
 
           // NOTE: User creation/authentication is handled by ConnectWalletButton component
           // via SIWS (Sign-In With Solana) flow - do not duplicate here
-          console.log(`[WalletProvider] Wallet connected: ${result.accounts[0].address}`)
+          if (isDevelopment) {
+            console.log(`[Dev] [WalletProvider] Wallet connected: ${result.accounts[0].address}`)
+          }
         } else {
           throw new Error('No accounts returned from wallet')
         }
       } catch (error) {
-        console.error('Failed to connect wallet:', error)
+        if (isDevelopment) {
+          console.error('[Dev] Failed to connect wallet:', error)
+        }
         throw error
       } finally {
         setConnecting(false)
@@ -186,9 +191,13 @@ export function WalletStandardProvider({
     if (lastConnectedWallet && availableWallets.length > 0 && !connected) {
       const wallet = availableWallets.find((w) => w.name === lastConnectedWallet)
       if (wallet) {
-        console.log(`[WalletProvider] Auto-connecting to ${lastConnectedWallet}...`)
+        if (isDevelopment) {
+          console.log(`[Dev] [WalletProvider] Auto-connecting to ${lastConnectedWallet}...`)
+        }
         connect(lastConnectedWallet).catch((error) => {
-          console.error('[WalletProvider] Auto-connect failed:', error)
+          if (isDevelopment) {
+            console.error('[Dev] [WalletProvider] Auto-connect failed:', error)
+          }
           // Clear saved wallet if auto-connect fails
           localStorage.removeItem('walletName')
         })
@@ -210,7 +219,9 @@ export function WalletStandardProvider({
         await disconnectFeature.disconnect()
       }
     } catch (error) {
-      console.error('Failed to disconnect:', error)
+      if (isDevelopment) {
+        console.error('[Dev] Failed to disconnect:', error)
+      }
     } finally {
       setWallet(null)
       setAccount(null)

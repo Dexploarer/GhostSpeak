@@ -4,8 +4,10 @@
  */
 
 import { Connection, PublicKey } from '@solana/web3.js'
+import { config } from './config'
+import { isDevelopment } from './env'
 
-const GHOST_TOKEN_MINT = 'DFQ9ejBt1T192Xnru1J21bFq9FSU7gjRRRYJkehvpump'
+const GHOST_TOKEN_MINT = config.solana.ghostTokenAddress
 
 /**
  * Get user's linked Solana wallet address
@@ -37,7 +39,7 @@ export async function getGhostBalance(walletAddress: string): Promise<{
   }
 
   try {
-    const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
+    const rpcUrl = config.solana.rpcUrl
 
     const response = await fetch(rpcUrl, {
       method: 'POST',
@@ -69,7 +71,9 @@ export async function getGhostBalance(walletAddress: string): Promise<{
       const priceData = await priceResponse.json()
       priceUsd = priceData.data?.[GHOST_TOKEN_MINT]?.price || 0
     } catch (e) {
-      console.warn('Could not fetch $GHOST price:', e)
+      if (isDevelopment) {
+        console.warn('[Dev] Could not fetch $GHOST price:', e)
+      }
     }
 
     return {
@@ -77,7 +81,9 @@ export async function getGhostBalance(walletAddress: string): Promise<{
       usdValue: balance * priceUsd,
     }
   } catch (error) {
-    console.error('Error fetching $GHOST balance:', error)
+    if (isDevelopment) {
+      console.error('[Dev] Error fetching $GHOST balance:', error)
+    }
     return { balance: 0, usdValue: 0 }
   }
 }

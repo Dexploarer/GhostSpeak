@@ -8,6 +8,7 @@ import { QueryProvider } from '@/components/providers/QueryProvider'
 import { ConvexProvider } from '@/components/providers/ConvexProvider'
 import { WalletStandardProvider } from '@/lib/wallet/WalletStandardProvider'
 import { TabNavigation } from '@/components/layout/TabNavigation'
+import { config } from '@/lib/config'
 import '@/styles/globals.css'
 
 export const metadata: Metadata = {
@@ -47,9 +48,9 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
         <TelegramProvider>
-          <TelegramAuthGate botUsername={process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'ghostspeak_bot'}>
+          <TelegramAuthGate botUsername={config.telegram.botUsername}>
             <ConvexProvider>
-              <WalletStandardProvider endpoint={process.env.NEXT_PUBLIC_SOLANA_RPC_URL} autoConnect={false}>
+              <WalletStandardProvider endpoint={config.solana.rpcUrl} autoConnect={false}>
                 <QueryProvider>
                   <div className="pb-20">{children}</div>
                   <TabNavigation />

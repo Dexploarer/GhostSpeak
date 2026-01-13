@@ -7,7 +7,7 @@
 | Package | Purpose | Location |
 |---------|---------|----------|
 | **@ghostspeak/sdk** | Core TypeScript SDK | `packages/sdk-typescript/` |
-| **@ghostspeak/cli** | Terminal interface | `packages/cli/` |
+| **@ghostspeak/cli** | Terminal interface | [github.com/Ghostspeak/cli](https://github.com/Ghostspeak/cli) *(separate repo)* |
 | **web** | Next.js frontend | `packages/web/` |
 | **@ghostspeak/api** | REST API | `packages/api/` |
 | **@ghostspeak/plugin-elizaos** | ElizaOS integration | `packages/plugin-ghostspeak/` |
@@ -29,17 +29,15 @@
           ▼                         ▼                         ▼
 ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
 │ @ghostspeak/cli │       │ @ghostspeak/api │       │ plugin-elizaos  │
-│   (terminal)    │       │    (REST)       │       │   (agents)      │
-└────────┬────────┘       └────────┬────────┘       └────────┬────────┘
-         │                         │                         │
-         │                         ▼                         │
-         │                ┌─────────────────┐                │
-         │                │ @ghostspeak/    │                │
-         │                │    shared       │◄───────────────┘
-         │                │  (types/utils)  │
-         │                └────────┬────────┘
-         │                         │
-         └─────────────────────────┼─────────────────────────┘
+│ (separate repo) │       │    (REST)       │       │   (agents)      │
+└─────────────────┘       └────────┬────────┘       └────────┬────────┘
+                                   │                         │
+                                   ▼                         │
+                          ┌─────────────────┐                │
+                          │ @ghostspeak/    │                │
+                          │    shared       │◄───────────────┘
+                          │  (types/utils)  │
+                          └────────┬────────┘
                                    │
                                    ▼
                           ┌─────────────────┐
@@ -92,49 +90,20 @@ import { ... } from '@ghostspeak/sdk/x402'                   // Payment protocol
 
 ---
 
-### 2. @ghostspeak/cli (`packages/cli/`)
+### 2. @ghostspeak/cli (Separate Repository)
 
 **Beautiful terminal UI for GhostSpeak operations.**
 
-#### Binary Commands
+**Repository**: https://github.com/Ghostspeak/cli
+
+**Installation**:
 ```bash
-ghostspeak [command]    # Full command
-ghost [command]         # Alias
+npm install -g @ghostspeak/cli
+# or
+bun add -g @ghostspeak/cli
 ```
 
-#### Command Categories (`src/commands/`)
-
-**Setup**
-- `quickstart` - Onboarding flow
-- `wallet` - Wallet management
-- `config` - Configuration
-- `faucet` / `airdrop` - Get test tokens
-
-**Core Features**
-- `agent` - Agent registration
-- `ghost` / `ghost-claim` - External agent claiming
-- `reputation` - Ghost Score operations
-- `staking` - GHOST token staking
-- `privacy` - Privacy controls
-- `did` - DID management
-- `escrow` - Escrow operations
-- `multisig` - Multi-sig wallets
-- `credentials` - Credential management
-
-**UI Dashboards**
-- `dashboard` - Main analytics
-- `reputation-ui` / `staking-ui` / `ghost-ui` - Feature dashboards
-
-**Dev Tools**
-- `sdk` - SDK utilities
-- `diagnose` - Debugging tools
-- `governance` - Protocol governance
-
-#### Tech Stack
-- **Commander.js** - CLI parsing
-- **Ink** - React for terminals
-- **Clack** - Interactive prompts
-- **TSUp** - Bundling
+**Note**: The CLI package is maintained in a separate repository and published to npm independently. See the CLI repository for full documentation and development instructions.
 
 ---
 
@@ -402,12 +371,6 @@ GhostSpeak/
 │   │   │   └── utils/        # Utilities
 │   │   └── dist/             # Build output
 │   │
-│   ├── cli/                  # Terminal UI
-│   │   ├── src/
-│   │   │   ├── commands/     # CLI commands
-│   │   │   └── components/   # Ink components
-│   │   └── dist/
-│   │
 │   ├── web/                  # Next.js app
 │   │   ├── app/              # Pages & routes
 │   │   ├── components/       # React components
@@ -441,6 +404,8 @@ GhostSpeak/
 ├── scripts/                  # Build & deploy scripts
 ├── turbo.json               # Turbo config
 └── package.json             # Root workspace config
+
+Note: CLI is maintained in a separate repository at github.com/Ghostspeak/cli
 ```
 
 ---

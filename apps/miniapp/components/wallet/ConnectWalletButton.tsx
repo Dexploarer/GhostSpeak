@@ -7,6 +7,7 @@ import { useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import bs58 from 'bs58'
 import { useTelegram } from '@/components/providers/TelegramProvider'
+import { isDevelopment } from '@/lib/env'
 
 export function ConnectWalletButton() {
   const { userId } = useTelegram()
@@ -50,7 +51,9 @@ export function ConnectWalletButton() {
       })
 
       // Success!
-      console.log('Wallet linked successfully')
+      if (isDevelopment) {
+        console.log('[Dev] Wallet linked successfully')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to link wallet')
     } finally {
@@ -76,16 +79,17 @@ export function ConnectWalletButton() {
         <button
           onClick={handleConnect}
           disabled={connecting}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          aria-label={connecting ? 'Connecting to Solana wallet, please wait' : 'Connect your Solana wallet'}
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
         >
           {connecting ? (
             <>
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
               Connecting...
             </>
           ) : (
             <>
-              <Wallet className="h-5 w-5" />
+              <Wallet className="h-5 w-5" aria-hidden="true" />
               Connect Wallet
             </>
           )}
@@ -115,16 +119,17 @@ export function ConnectWalletButton() {
       <button
         onClick={handleLinkWallet}
         disabled={isAuthenticating}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+        aria-label={isAuthenticating ? 'Linking wallet to your Telegram account, please wait' : 'Link wallet to your Telegram account'}
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
       >
         {isAuthenticating ? (
           <>
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
             Linking Wallet...
           </>
         ) : (
           <>
-            <CheckCircle2 className="h-5 w-5" />
+            <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
             Link to Telegram Account
           </>
         )}
@@ -132,7 +137,8 @@ export function ConnectWalletButton() {
 
       <button
         onClick={disconnect}
-        className="w-full rounded-lg border border-border bg-background px-6 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+        aria-label="Disconnect Solana wallet"
+        className="w-full rounded-lg border border-border bg-background px-6 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
       >
         Disconnect
       </button>

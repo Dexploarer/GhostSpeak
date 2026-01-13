@@ -41,6 +41,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Tech Stack**: Solana (Anchor/Rust), TypeScript, Bun, Next.js 15, React 19, Convex, TailwindCSS 4
 
+**Design System**: Comprehensive color palette and theming system (see `apps/web/DESIGN_SYSTEM.md`)
+
 ## Architecture
 
 ### Monorepo Structure
@@ -50,7 +52,6 @@ apps/
   web/                      # Next.js 15 + Convex backend + React 19
 packages/
   sdk-typescript/           # @ghostspeak/sdk - Core TypeScript SDK
-  cli/                      # @ghostspeak/cli - Terminal UI (Ink + Commander)
   api/                      # @ghostspeak/api - REST API (Bun.serve)
   plugin-ghostspeak/        # @ghostspeak/plugin-elizaos - ElizaOS plugin
 programs/                   # Anchor smart contracts (Rust)
@@ -58,16 +59,19 @@ programs/                   # Anchor smart contracts (Rust)
     instructions/           # Program instructions
     state/                  # Account structures
     security/               # Security utilities
+
+Note: CLI (@ghostspeak/cli) is in a separate repository at github.com/Ghostspeak/cli
 ```
 
 ### Dependency Flow
 
 ```
 web → sdk + plugin-ghostspeak
-cli → sdk
 api → sdk
 plugin-ghostspeak → sdk
 ```
+
+**Note**: CLI is published to npm and depends on the published `@ghostspeak/sdk` package.
 
 **Critical**: All packages use `workspace:*` for internal dependencies.
 
@@ -92,7 +96,6 @@ bun install
 # Development (starts web + Convex in parallel)
 bun run dev                      # Web app on port 3333 + Convex
 bun run dev:web                  # Web only
-bun run dev:cli                  # CLI watch mode
 bun run dev:sdk                  # SDK watch mode
 
 # Build
@@ -100,7 +103,6 @@ bun run build                    # Build all + deploy Convex prod
 bun run build:web                # Next.js build
 bun run build:packages           # All packages (excludes web)
 bun run build:sdk                # SDK only
-bun run build:cli                # CLI only
 bun run build:anchor             # Rust smart contracts
 
 # Test
@@ -114,7 +116,6 @@ bun run test:coverage            # Coverage report
 # Individual package tests
 bun run test:web
 bun run test:sdk
-bun run test:cli
 
 # Quality Assurance
 bun run lint                     # Lint all packages
@@ -354,12 +355,11 @@ NEXT_PUBLIC_APP_URL=https://your-domain.com
 5. Add tests in `tests/unit/your-module.test.ts`
 6. Build: `bun run build`
 
-### Adding a new CLI command
+### Working with CLI
 
-1. Create command in `packages/cli/src/commands/your-command.ts`
-2. Register in `src/index.ts` (Commander program)
-3. Add Ink UI component if interactive
-4. Test: `./dist/index.js your-command --help`
+**Note**: CLI is now in a separate repository at https://github.com/Ghostspeak/cli
+
+For CLI development, clone the separate repository and install the published `@ghostspeak/sdk` package from npm.
 
 ### Adding a new Anchor instruction
 
@@ -455,9 +455,8 @@ Packages are published to npm:
 → Run `bunx convex dev` to get URL
 
 **CLI: "Command not found"**
-→ Build CLI: `cd packages/cli && bun run build`
-→ Run from repo: `./packages/cli/dist/index.js`
-→ Or install globally: `bun add -g @ghostspeak/cli`
+→ Install CLI from npm: `npm install -g @ghostspeak/cli` or `bun add -g @ghostspeak/cli`
+→ CLI is maintained in separate repository: https://github.com/Ghostspeak/cli
 
 **Turbo cache issues**
 → Clear cache: `rm -rf .turbo`

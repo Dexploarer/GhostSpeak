@@ -1,48 +1,42 @@
 /**
- * Solana Client Utilities using Gill
+ * Solana Client Utilities using Modern Solana Web3.js v5
  *
- * Provides centralized Solana RPC client management with Gill for:
+ * Provides centralized Solana RPC client management with v5 for:
  * - Client-side operations (browser)
  * - Server-side operations (API routes)
  * - Singleton pattern for efficiency
  */
 
-import { createSolanaClient } from 'gill'
-import type { SolanaClient } from 'gill'
+import { createSolanaRpc, type Rpc } from '@solana/rpc'
+import type { SolanaRpcApi } from '@solana/rpc'
+import { config } from '@/lib/config'
+
+// Type for Solana RPC client
+export type SolanaClient = Rpc<SolanaRpcApi>
 
 // Singleton client for client-side usage
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _clientSideClient: SolanaClient<any> | null = null
+let _clientSideClient: SolanaClient | null = null
 
 /**
  * Get or create the singleton Solana client for browser use
  * Uses NEXT_PUBLIC_SOLANA_RPC_URL from environment
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getSolanaClient(): SolanaClient<any> {
+export function getSolanaClient(): SolanaClient {
   if (!_clientSideClient) {
-    const url = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
-    // Gill requires an object with urlOrMoniker
-    _clientSideClient = createSolanaClient({ urlOrMoniker: url })
+    _clientSideClient = createSolanaRpc(config.solana.rpcUrl)
   }
   return _clientSideClient
 }
 
 /**
  * Create a new Solana client for server-side use (API routes)
- * Uses SOLANA_RPC_URL from server environment (can be different from client)
+ * Uses config.solana.rpcUrl
  *
- * @param rpcUrl - Optional custom RPC URL (falls back to env)
+ * @param rpcUrl - Optional custom RPC URL (falls back to config)
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function createServerSolanaClient(rpcUrl?: string): SolanaClient<any> {
-  const url =
-    rpcUrl ||
-    process.env.SOLANA_RPC_URL ||
-    process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
-    'https://api.mainnet-beta.solana.com'
-  // Gill requires an object with urlOrMoniker
-  return createSolanaClient({ urlOrMoniker: url })
+export function createServerSolanaClient(rpcUrl?: string): SolanaClient {
+  const url = rpcUrl || config.solana.rpcUrl
+  return createSolanaRpc(url)
 }
 
 /**
@@ -52,11 +46,6 @@ export function resetSolanaClient() {
   _clientSideClient = null
 }
 
-// Re-export commonly used Gill functions for convenience
-export {
-  // Client creation
-  createSolanaClient,
-
-  // Type exports
-  type SolanaClient,
-} from 'gill'
+// Re-export commonly used Solana v5 functions for convenience
+export { createSolanaRpc } from '@solana/rpc'
+export type { Rpc, SolanaRpcApi } from '@solana/rpc'

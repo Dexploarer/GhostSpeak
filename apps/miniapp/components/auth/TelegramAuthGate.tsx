@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { TelegramLoginButton, type TelegramUser } from './TelegramLoginButton'
 import { useTelegram } from '@/components/providers/TelegramProvider'
+import { isDevelopment } from '@/lib/env'
 
-interface TelegramAuthGateProps {
+interface TelegramAuthGateProps{
   children: React.ReactNode
   botUsername: string
 }
@@ -29,7 +30,9 @@ export function TelegramAuthGate({ children, botUsername }: TelegramAuthGateProp
           setTelegramUser(user)
           setAuthenticated(true)
         } catch (error) {
-          console.error('Failed to parse stored telegram user:', error)
+          if (isDevelopment) {
+            console.error('[Dev] Failed to parse stored telegram user:', error)
+          }
           sessionStorage.removeItem('telegram_user')
         }
       }
@@ -37,7 +40,9 @@ export function TelegramAuthGate({ children, botUsername }: TelegramAuthGateProp
   }, [isFromTelegram])
 
   const handleTelegramAuth = (user: TelegramUser) => {
-    console.log('Telegram auth successful:', user)
+    if (isDevelopment) {
+      console.log('[Dev] Telegram auth successful:', user)
+    }
     setTelegramUser(user)
     setAuthenticated(true)
     // Store in sessionStorage for this session
